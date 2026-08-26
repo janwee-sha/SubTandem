@@ -1,0 +1,7 @@
+module CFFmpeg [system] {
+  header "shim.h"
+  link "avformat"
+  link "avcodec"
+  link "avutil"
+  export *
+}

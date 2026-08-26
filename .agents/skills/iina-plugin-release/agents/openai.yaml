@@ -1,0 +1,4 @@
+interface:
+  display_name: "IINA 插件发布"
+  short_description: "统一执行版本变更、规格驱动的英文用户发布说明、构建与打包"
+  default_prompt: "使用 $iina-plugin-release，根据我提供的版本规格生成只描述用户功能变化的英文 release notes 并保存到 docs/releases/vX.Y.Z.md，再完成 SubTandem 发布验证与正式打包。"

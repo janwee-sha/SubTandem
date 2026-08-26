@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "name": "FFmpeg",
+  "version": "8.1.2",
+  "sourceAssetName": "ffmpeg-8.1.2.tar.xz",
+  "sourceUrl": "https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz",
+  "sha256": "464beb5e7bf0c311e68b45ae2f04e9cc2af88851abb4082231742a74d97b524c",
+  "license": "LGPL-2.1-or-later",
+  "configure": [
+    "--disable-everything",
+    "--disable-autodetect",
+    "--disable-network",
+    "--disable-gpl",
+    "--disable-nonfree",
+    "--disable-version3",
+    "--disable-programs",
+    "--disable-doc",
+    "--disable-debug",
+    "--disable-avdevice",
+    "--disable-avfilter",
+    "--disable-swresample",
+    "--disable-swscale",
+    "--disable-encoders",
+    "--disable-muxers",
+    "--disable-filters",
+    "--disable-devices",
+    "--disable-bsfs",
+    "--disable-hwaccels",
+    "--disable-parsers",
+    "--disable-protocols",
+    "--disable-demuxers",
+    "--disable-decoders",
+    "--disable-indevs",
+    "--disable-outdevs",
+    "--disable-x86asm",
+    "--enable-pic",
+    "--enable-static",
+    "--disable-shared",
+    "--enable-zlib",
+    "--enable-protocol=file",
+    "--enable-demuxer=matroska,mov",
+    "--enable-decoder=subrip,ass,ssa,movtext"
+  ],
+  "protocols": [
+    "file"
+  ],
+  "demuxers": [
+    "matroska",
+    "mov"
+  ],
+  "decoders": [
+    "subrip",
+    "ass",
+    "ssa",
+    "movtext"
+  ],
+  "codecWhitelist": [
+    "subrip",
+    "ass",
+    "ssa",
+    "mov_text"
+  ],
+  "containerWhitelist": [
+    "matroska",
+    "mov",
+    "mp4"
+  ],
+  "sourceDistribution": {
+    "assetName": "ffmpeg-8.1.2.tar.xz",
+    "checksumAssetName": "ffmpeg-8.1.2.tar.xz.sha256"
+  }
+}

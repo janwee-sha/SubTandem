@@ -1,0 +1,39 @@
+# IDE
+.idea/
+
+# Node / build
+node_modules/
+.parcel-cache/
+dist/
+build/
+coverage/
+*.log
+.env*
+
+# Native build output
+native/.build/
+native/transport/.build/
+native/subtitle-extractor/.build/
+
+# Plugin runtime state and validation artifacts
+@data/
+@tmp/
+credentials.json
+*.credentials.json
+docs/validation/artifacts/
+manual-tests/
+docs/open_issues/
+docs/plans/
+
+# macOS / editors
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+
+# IINA packages
+*.iinaplgz
+/docs/providers/ollama-official.md
+/docs/providers/openai-local.md
+/docs/providers/ollama-local.md

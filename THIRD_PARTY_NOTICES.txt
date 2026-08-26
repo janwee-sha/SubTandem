@@ -1,0 +1,79 @@
+SubTandem includes the following third-party software in its release package.
+
+FFmpeg 8.1.2
+https://ffmpeg.org/
+SPDX-License-Identifier: LGPL-2.1-or-later
+
+FFmpeg is licensed under the GNU Lesser General Public License version 2.1 or
+later. SubTandem builds it from the source and configuration fixed in
+native/ffmpeg.lock.json with network, GPL, nonfree, programs, unrelated
+demuxers, codecs, protocols, and other unused components disabled. The exact
+corresponding source asset is ffmpeg-8.1.2.tar.xz and is distributed with its
+SHA-256 checksum alongside each SubTandem release. Its locked SHA-256 is
+464beb5e7bf0c311e68b45ae2f04e9cc2af88851abb4082231742a74d97b524c.
+
+@noble/hashes 2.3.0
+https://github.com/paulmillr/noble-hashes
+
+The MIT License (MIT)
+
+Copyright (c) 2022 Paul Miller (https://paulmillr.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+franc-min 6.2.0
+https://github.com/wooorm/franc
+
+trigram-utils 2.0.1
+https://github.com/wooorm/trigram-utils
+
+collapse-white-space 2.1.0
+https://github.com/wooorm/collapse-white-space
+
+n-gram 2.0.2
+https://github.com/wooorm/n-gram
+
+The MIT License (MIT)
+
+franc-min and trigram-utils:
+Copyright (c) 2014 Titus Wormer <tituswormer@gmail.com>
+
+collapse-white-space:
+Copyright (c) 2015 Titus Wormer <tituswormer@gmail.com>
+
+n-gram:
+Copyright (c) 2014 Titus Wormer <tituswormer@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.

@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+coverage/
+native/.build/
+native/
+package-lock.json
+*.iinaplgz
+docs/validation/artifacts/
+providers/
+.agents/
+.specify/
+specs/

@@ -1,0 +1,31 @@
+{
+  "name": "SubTandem",
+  "version": "0.1.0",
+  "identifier": "io.subtandem.iina",
+  "ghRepo": "janwee-sha/SubTandem",
+  "ghVersion": 1000,
+  "description": "Translates the selected local embedded text subtitle or external SRT/ASS subtitle and renders translated subtitles itself in IINA.",
+  "author": {
+    "name": "SubTandem Contributors"
+  },
+  "entry": "dist/main.js",
+  "globalEntry": "dist/global.js",
+  "minIINAVersion": "1.4.0",
+  "sidebarTab": {
+    "name": "SubTandem"
+  },
+  "permissions": ["network-request", "file-system", "show-alert", "video-overlay"],
+  "allowedDomains": ["127.0.0.1"],
+  "permissionDescriptions": {
+    "network-request": "Connect to the bundled loopback helper. Configured or edited endpoints may receive subtitle-free model-list requests; only the selected profile receives subtitle text for translation.",
+    "file-system": "Read only the selected text subtitle from the current local media or external subtitle, store optional provider keys in a plugin-private local file, and remove temporary extracted source subtitle data when the session ends. Remote and graphic embedded subtitles are not read.",
+    "show-alert": "Confirm permanent deletion of a translation profile and its saved credential.",
+    "video-overlay": "Display the current translated subtitle in a local non-interactive translation overlay."
+  },
+  "preferenceDefaults": {
+    "enabledByDefault": false,
+    "targetLanguage": "zh-Hans",
+    "sourceLanguageMode": "track",
+    "translationOverlayPosition": 0
+  }
+}

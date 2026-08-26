@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SubTandem</title>
+    <link rel="stylesheet" href="./sidebar.css" />
+  </head>
+  <body>
+    <main id="app">
+      <section class="sidebar-section" aria-labelledby="languages-heading">
+        <div class="section-title-row">
+          <h2 id="languages-heading">Subtitle</h2>
+          <div class="translation-toggle">
+            <label class="switch">
+              <input id="enabled" type="checkbox" />
+              <span>Translate</span>
+            </label>
+            <p
+              id="translation-status"
+              class="operation-status"
+              role="status"
+              aria-live="polite"
+            ></p>
+          </div>
+        </div>
+        <label class="setting-row">
+          <span>Target Language</span>
+          <select id="target-language" aria-describedby="language-status" disabled></select>
+        </label>
+        <p id="language-status" class="operation-status" role="status" aria-live="polite"></p>
+        <div class="position-control">
+          <label for="translation-position">Position</label>
+          <div class="position-input-row">
+            <input
+              id="translation-position"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value="0"
+              aria-describedby="translation-position-status"
+            />
+            <output id="translation-position-value" for="translation-position">0</output>
+          </div>
+          <p
+            id="translation-position-status"
+            class="operation-status"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </div>
+      </section>
+
+      <section class="sidebar-section" aria-labelledby="provider-heading">
+        <div class="section-heading">
+          <div>
+            <h2 id="provider-heading">Translation service</h2>
+            <p>Subtitle text is sent only to the service you explicitly select.</p>
+          </div>
+        </div>
+        <label class="field">
+          <span>Service type</span>
+          <select id="provider-kind">
+            <option value="openai">OpenAI</option>
+            <option value="ollama">Ollama</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Profile name</span>
+          <input id="profile-name" type="text" value="OpenAI" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span>Endpoint</span>
+          <input
+            id="provider-endpoint"
+            type="url"
+            value="https://api.openai.com/v1"
+            aria-describedby="endpoint-hint"
+            autocomplete="off"
+            required
+          />
+          <small id="endpoint-hint"
+            >Enter a complete HTTP(S) API root, usually ending in /v1.</small
+          >
+          <small id="request-url">Requests will use /chat/completions below this root.</small>
+        </label>
+        <div id="model-row" class="field">
+          <label for="provider-model-select">Model ID</label>
+          <div class="model-control">
+            <select id="provider-model-select" aria-describedby="model-hint">
+              <option value="__custom__">Custom model ID…</option>
+            </select>
+            <button
+              id="refresh-models"
+              class="secondary"
+              type="button"
+              aria-label="Refresh model list"
+              aria-busy="false"
+            >
+              <svg class="refresh-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M20 11a8 8 0 1 0-2.34 5.66M20 4v7h-7" />
+              </svg>
+            </button>
+          </div>
+          <input
+            id="provider-model"
+            type="text"
+            placeholder="e.g. gpt-4.1-mini"
+            aria-describedby="model-hint"
+            autocomplete="off"
+            required
+          />
+          <small id="model-hint">Choose a discovered model or enter its exact identifier.</small>
+          <p
+            id="model-catalog-status"
+            class="operation-status domain-status"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </div>
+        <label class="field">
+          <span>Network route</span>
+          <select id="provider-proxy-mode" aria-describedby="proxy-mode-hint">
+            <option value="system">Use macOS proxy settings</option>
+            <option value="direct">Connect directly</option>
+          </select>
+          <small id="proxy-mode-hint"
+            >Use direct only when the configured macOS proxy rejects this service.</small
+          >
+        </label>
+        <label id="credential-row" class="field">
+          <span>API key</span>
+          <input
+            id="provider-key"
+            type="password"
+            autocomplete="new-password"
+            placeholder="Not shown after saving"
+            aria-describedby="credential-hint"
+            maxlength="8192"
+          />
+          <small id="credential-hint"
+            >Write-only; optional when unauthenticated. Enter a key and refresh models before saving
+            a protected service.</small
+          >
+        </label>
+        <div class="form-actions">
+          <button id="save-profile" type="button">Save profile</button>
+          <button id="new-profile" class="secondary" type="button" hidden>New profile</button>
+        </div>
+        <p id="profile-editor-status" class="operation-status" role="status" aria-live="polite"></p>
+        <p id="credential-state" class="credential-state">
+          Saved API keys use SubTandem's private local file (mode 0600).
+        </p>
+        <div id="profiles" class="profiles group-surface">
+          <p class="empty">No saved profiles yet.</p>
+        </div>
+      </section>
+
+      <section class="sidebar-section session-section" aria-labelledby="status-heading">
+        <div class="session-group group-surface">
+          <div class="status-line">
+            <span id="status-dot" aria-hidden="true"></span>
+            <div>
+              <h2 id="status-heading">Session</h2>
+              <p id="status" role="status" aria-live="polite">Waiting for IINA…</p>
+              <div id="source-preparation-controls" class="source-preparation-controls" hidden>
+                <button id="retry-subtitle" class="secondary" type="button" hidden>Retry</button>
+                <p
+                  id="subtitle-retry-status"
+                  class="operation-status"
+                  role="status"
+                  aria-live="polite"
+                ></p>
+              </div>
+            </div>
+          </div>
+          <dl id="source-summary" hidden>
+            <div>
+              <dt>Format</dt>
+              <dd id="source-format">—</dd>
+            </div>
+            <div>
+              <dt>Cues</dt>
+              <dd id="source-cues">—</dd>
+            </div>
+            <div>
+              <dt>Detected language</dt>
+              <dd id="source-detected-language">—</dd>
+            </div>
+            <div>
+              <dt>Session cache</dt>
+              <dd id="cache-size">0 cues</dd>
+            </div>
+            <div>
+              <dt>Work bound</dt>
+              <dd id="work-bound">120 s / 40 cues</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+      <p id="operation-announcer" class="assistive-only" role="status" aria-live="polite"></p>
+    </main>
+    <script src="./provider-status.ts"></script>
+    <script src="./sidebar-state.ts"></script>
+    <script src="./sidebar.ts"></script>
+  </body>
+</html>

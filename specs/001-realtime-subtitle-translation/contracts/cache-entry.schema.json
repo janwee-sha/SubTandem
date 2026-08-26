@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://subtandem.local/schemas/session-cache-entry.json",
+  "title": "SubTandem In-Memory Session Cache Entry",
+  "description": "Internal test contract. Instances MUST remain in the owning PlaybackSession and MUST NOT be persisted.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sessionId",
+    "cacheKey",
+    "cueId",
+    "sourceContentHash",
+    "sourceLanguage",
+    "targetLanguage",
+    "providerSemanticFingerprint",
+    "translation"
+  ],
+  "properties": {
+    "sessionId": { "type": "string", "format": "uuid" },
+    "cacheKey": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "cueId": { "type": "string", "minLength": 1 },
+    "sourceContentHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "sourceLanguage": { "type": "string", "minLength": 2 },
+    "targetLanguage": { "type": "string", "minLength": 2 },
+    "providerSemanticFingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "translation": { "type": "string", "minLength": 1 }
+  }
+}

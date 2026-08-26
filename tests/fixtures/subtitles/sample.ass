@@ -1,0 +1,7 @@
+[Script Info]
+Title: SubTandem fixture
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:03.25,Default,Alice,0,0,0,,{\i1}Hello, world{\i0}\NSecond line
+Dialogue: 0,0:00:03.00,0:00:05.00,Default,Bob,0,0,0,,Overlapping cue

@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2020", "DOM"],
+    "types": [],
+    "rootDir": "ui",
+    "outDir": "build/webview"
+  },
+  "include": ["ui/**/*.ts"]
+}

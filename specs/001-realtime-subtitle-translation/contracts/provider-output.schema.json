@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://subtandem.local/schemas/provider-output.json",
+  "title": "Subtitle Translation Batch Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["translations"],
+  "properties": {
+    "translations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "text"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "text": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

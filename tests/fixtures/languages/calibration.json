@@ -1,0 +1,229 @@
+{
+  "source": "SubTandem synthetic calibration corpus 2026-08-18",
+  "license": "CC0-1.0",
+  "cycles": 5,
+  "languages": [
+    {
+      "id": "en",
+      "trackLanguage": "ja",
+      "templates": [
+        "The last train leaves after midnight, so we should hurry to the station.",
+        "Please close the kitchen window before the heavy rain begins.",
+        "My sister found the missing letter beneath an old wooden chair.",
+        "We can meet beside the river when the morning market opens."
+      ]
+    },
+    {
+      "id": "es",
+      "trackLanguage": "en",
+      "templates": [
+        "El último tren sale después de medianoche y debemos llegar temprano.",
+        "Por favor cierra la ventana antes de que empiece la lluvia fuerte.",
+        "Mi hermana encontró la carta perdida debajo de una silla antigua.",
+        "Podemos reunirnos junto al río cuando abra el mercado mañana."
+      ]
+    },
+    {
+      "id": "pt",
+      "trackLanguage": "es",
+      "templates": [
+        "O último trem parte depois da meia-noite e precisamos chegar cedo.",
+        "Por favor feche a janela antes que a chuva forte comece.",
+        "Minha irmã encontrou a carta perdida debaixo de uma cadeira antiga.",
+        "Podemos nos encontrar perto do rio quando o mercado abrir amanhã."
+      ]
+    },
+    {
+      "id": "fr",
+      "trackLanguage": "de",
+      "templates": [
+        "Le dernier train part après minuit et nous devons arriver tôt.",
+        "Fermez la fenêtre avant que la forte pluie ne commence.",
+        "Ma sœur a trouvé la lettre perdue sous une vieille chaise.",
+        "Nous pouvons nous retrouver près de la rivière demain matin."
+      ]
+    },
+    {
+      "id": "de",
+      "trackLanguage": "fr",
+      "templates": [
+        "Der letzte Zug fährt nach Mitternacht und wir müssen früh ankommen.",
+        "Bitte schließe das Fenster bevor der starke Regen beginnt.",
+        "Meine Schwester fand den verlorenen Brief unter einem alten Stuhl.",
+        "Wir können uns morgen früh am Fluss beim Markt treffen."
+      ]
+    },
+    {
+      "id": "it",
+      "trackLanguage": "en",
+      "templates": [
+        "L'ultimo treno parte dopo mezzanotte e dobbiamo arrivare presto.",
+        "Per favore chiudi la finestra prima che inizi la pioggia forte.",
+        "Mia sorella ha trovato la lettera perduta sotto una vecchia sedia.",
+        "Possiamo incontrarci vicino al fiume quando apre il mercato."
+      ]
+    },
+    {
+      "id": "ru",
+      "trackLanguage": "uk",
+      "templates": [
+        "Последний поезд отправляется после полуночи, поэтому надо спешить.",
+        "Пожалуйста, закрой окно до того, как начнётся сильный дождь.",
+        "Моя сестра нашла потерянное письмо под старым деревянным стулом.",
+        "Мы встретимся у реки, когда утром откроется рынок."
+      ]
+    },
+    {
+      "id": "ar",
+      "trackLanguage": "fa",
+      "templates": [
+        "يغادر القطار الأخير بعد منتصف الليل ولذلك يجب أن نصل مبكرا.",
+        "من فضلك أغلق النافذة قبل أن يبدأ المطر الغزير.",
+        "وجدت أختي الرسالة المفقودة تحت كرسي خشبي قديم.",
+        "يمكننا أن نلتقي قرب النهر عندما يفتح السوق صباحا."
+      ]
+    },
+    {
+      "id": "hi",
+      "trackLanguage": "en",
+      "templates": [
+        "आखिरी रेल आधी रात के बाद जाती है इसलिए हमें जल्दी पहुँचना होगा।",
+        "तेज़ बारिश शुरू होने से पहले कृपया रसोई की खिड़की बंद कर दो।",
+        "मेरी बहन को पुरानी कुर्सी के नीचे खोया हुआ पत्र मिला।",
+        "सुबह बाज़ार खुलने पर हम नदी के पास मिल सकते हैं।"
+      ]
+    },
+    {
+      "id": "bn",
+      "trackLanguage": "hi",
+      "templates": [
+        "শেষ ট্রেনটি মধ্যরাতের পরে ছাড়ে তাই আমাদের তাড়াতাড়ি পৌঁছাতে হবে।",
+        "ভারী বৃষ্টি শুরু হওয়ার আগে রান্নাঘরের জানালাটি বন্ধ করো।",
+        "আমার বোন পুরোনো চেয়ারের নিচে হারানো চিঠিটি খুঁজে পেয়েছে।",
+        "সকালে বাজার খুললে আমরা নদীর পাশে দেখা করতে পারি।"
+      ]
+    },
+    {
+      "id": "ja",
+      "trackLanguage": "ko",
+      "templates": [
+        "最終列車は真夜中を過ぎて出発するので駅へ急ぎましょう。",
+        "強い雨が降り始める前に台所の窓を閉めてください。",
+        "妹は古い木の椅子の下で失くした手紙を見つけました。",
+        "朝の市場が開いたら川のそばで会うことができます。"
+      ]
+    },
+    {
+      "id": "ko",
+      "trackLanguage": "ja",
+      "templates": [
+        "마지막 기차는 자정이 지나 출발하니 역으로 서둘러야 합니다.",
+        "세찬 비가 내리기 전에 부엌 창문을 닫아 주세요.",
+        "여동생은 낡은 나무 의자 아래에서 잃어버린 편지를 찾았습니다.",
+        "아침 시장이 열리면 강가에서 만날 수 있습니다."
+      ]
+    },
+    {
+      "id": "te",
+      "trackLanguage": "ta",
+      "templates": [
+        "చివరి రైలు అర్ధరాత్రి తర్వాత బయలుదేరుతుంది కాబట్టి త్వరగా చేరాలి.",
+        "భారీ వర్షం మొదలయ్యే ముందు వంటగది కిటికీని మూసివేయండి.",
+        "నా సోదరి పాత చెక్క కుర్చీ కింద పోయిన ఉత్తరాన్ని కనుగొంది.",
+        "ఉదయం మార్కెట్ తెరిచినప్పుడు మనం నది దగ్గర కలుసుకోవచ్చు."
+      ]
+    },
+    {
+      "id": "ta",
+      "trackLanguage": "te",
+      "templates": [
+        "கடைசி ரயில் நள்ளிரவுக்குப் பிறகு புறப்படுவதால் விரைவாக செல்ல வேண்டும்.",
+        "கனமழை தொடங்கும் முன் சமையலறை ஜன்னலை மூடுங்கள்.",
+        "என் சகோதரி பழைய நாற்காலியின் கீழே தொலைந்த கடிதத்தைக் கண்டாள்.",
+        "காலை சந்தை திறக்கும்போது நாம் ஆற்றின் அருகே சந்திக்கலாம்."
+      ]
+    },
+    {
+      "id": "tr",
+      "trackLanguage": "en",
+      "templates": [
+        "Son tren gece yarısından sonra kalkıyor, bu yüzden erken varmalıyız.",
+        "Şiddetli yağmur başlamadan önce mutfak penceresini kapat lütfen.",
+        "Kız kardeşim kayıp mektubu eski tahta sandalyenin altında buldu.",
+        "Sabah pazar açıldığında nehrin yanında buluşabiliriz."
+      ]
+    },
+    {
+      "id": "fa",
+      "trackLanguage": "ar",
+      "templates": [
+        "آخرین قطار پس از نیمه شب حرکت می‌کند و باید زود به ایستگاه برسیم.",
+        "لطفاً پیش از شروع باران شدید پنجره آشپزخانه را ببند.",
+        "خواهرم نامه گمشده را زیر یک صندلی چوبی قدیمی پیدا کرد.",
+        "وقتی بازار صبح باز شد می‌توانیم کنار رودخانه همدیگر را ببینیم."
+      ]
+    },
+    {
+      "id": "th",
+      "trackLanguage": "en",
+      "templates": [
+        "รถไฟเที่ยวสุดท้ายออกหลังเที่ยงคืน เราจึงต้องรีบไปถึงสถานี",
+        "กรุณาปิดหน้าต่างห้องครัวก่อนที่ฝนหนักจะเริ่มตก",
+        "น้องสาวของฉันพบจดหมายที่หายไปใต้เก้าอี้ไม้เก่า",
+        "เราพบกันริมแม่น้ำได้เมื่อตลาดเช้าเปิด"
+      ]
+    },
+    {
+      "id": "el",
+      "trackLanguage": "en",
+      "templates": [
+        "Το τελευταίο τρένο φεύγει μετά τα μεσάνυχτα και πρέπει να βιαστούμε.",
+        "Κλείσε το παράθυρο της κουζίνας πριν αρχίσει η δυνατή βροχή.",
+        "Η αδελφή μου βρήκε το χαμένο γράμμα κάτω από μια παλιά καρέκλα.",
+        "Μπορούμε να συναντηθούμε δίπλα στο ποτάμι όταν ανοίξει η αγορά."
+      ]
+    },
+    {
+      "id": "zh-Hans",
+      "trackLanguage": "zh-Hant",
+      "templates": [
+        "最后一班列车午夜后出发，我们必须提前赶到车站。",
+        "请在大雨开始之前关上厨房的窗户。",
+        "妹妹在旧木椅下面找到了丢失的信件。",
+        "早晨市场开门后我们可以在河边见面，头发软件网络后台发展。"
+      ]
+    },
+    {
+      "id": "zh-Hant",
+      "trackLanguage": "zh-Hans",
+      "templates": [
+        "最後一班列車午夜後出發，我們必須提前趕到車站。",
+        "請在大雨開始之前關上廚房的窗戶。",
+        "妹妹在舊木椅下面找到了遺失的信件。",
+        "早上市場開門後我們可以在河邊見面，頭髮軟體網路後臺發展。"
+      ]
+    }
+  ],
+  "unreliable": [
+    {
+      "id": "symbols",
+      "expected": "unknown",
+      "templates": ["... ?! 12345", "https://example.test"]
+    },
+    {
+      "id": "mixed-2x2",
+      "expected": "unknown",
+      "templates": [
+        "The door is open and the room is quiet.",
+        "La puerta está abierta y la habitación está tranquila.",
+        "The train will arrive before the rain.",
+        "El tren llegará antes de la lluvia."
+      ]
+    },
+    {
+      "id": "unsupported-armenian",
+      "expected": "unsupported",
+      "templates": ["Վերջին գնացքը մեկնում է կեսգիշերից հետո, ուստի պետք է շտապենք կայարան։"]
+    }
+  ]
+}

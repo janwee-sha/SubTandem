@@ -1,0 +1,4 @@
+interface:
+  display_name: "SubTandem 图片压缩"
+  short_description: "压缩 SubTandem 文档图片并同步维护引用路径"
+  default_prompt: "使用 $repo-img-compressor 压缩指定的 SubTandem 文档图片并更新受影响的引用。"

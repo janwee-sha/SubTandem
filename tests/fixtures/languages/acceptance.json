@@ -1,0 +1,225 @@
+{
+  "source": "SubTandem independent synthetic acceptance corpus 2026-08-18",
+  "license": "CC0-1.0",
+  "cycles": 5,
+  "languages": [
+    {
+      "id": "en",
+      "trackLanguage": "fr",
+      "templates": [
+        "A bright lamp was still burning inside the empty library.",
+        "Several passengers waited while the damaged engine was repaired.",
+        "Our neighbors planted flowers along both sides of the narrow road.",
+        "The doctor asked whether the pain had changed since yesterday."
+      ]
+    },
+    {
+      "id": "es",
+      "trackLanguage": "pt",
+      "templates": [
+        "Una lámpara brillante seguía encendida dentro de la biblioteca vacía.",
+        "Varios pasajeros esperaron mientras reparaban el motor averiado.",
+        "Nuestros vecinos plantaron flores a ambos lados del camino estrecho.",
+        "La doctora preguntó si el dolor había cambiado desde ayer."
+      ]
+    },
+    {
+      "id": "pt",
+      "trackLanguage": "es",
+      "templates": [
+        "Uma lâmpada brilhante ainda estava acesa dentro da biblioteca vazia.",
+        "Vários passageiros esperaram enquanto o motor danificado era reparado.",
+        "Nossos vizinhos plantaram flores nos dois lados da estrada estreita.",
+        "A médica perguntou se a dor tinha mudado desde ontem."
+      ]
+    },
+    {
+      "id": "fr",
+      "trackLanguage": "it",
+      "templates": [
+        "Une lampe brillante brûlait encore dans la bibliothèque vide.",
+        "Plusieurs passagers ont attendu pendant la réparation du moteur.",
+        "Nos voisins ont planté des fleurs des deux côtés du chemin étroit.",
+        "Le médecin a demandé si la douleur avait changé depuis hier."
+      ]
+    },
+    {
+      "id": "de",
+      "trackLanguage": "en",
+      "templates": [
+        "In der leeren Bibliothek brannte noch immer eine helle Lampe.",
+        "Mehrere Fahrgäste warteten während der beschädigte Motor repariert wurde.",
+        "Unsere Nachbarn pflanzten Blumen auf beiden Seiten der schmalen Straße.",
+        "Die Ärztin fragte ob sich die Schmerzen seit gestern verändert hatten."
+      ]
+    },
+    {
+      "id": "it",
+      "trackLanguage": "fr",
+      "templates": [
+        "Una lampada luminosa era ancora accesa nella biblioteca vuota.",
+        "Diversi passeggeri aspettarono mentre riparavano il motore danneggiato.",
+        "I nostri vicini piantarono fiori su entrambi i lati della strada stretta.",
+        "La dottoressa chiese se il dolore fosse cambiato da ieri."
+      ]
+    },
+    {
+      "id": "ru",
+      "trackLanguage": "en",
+      "templates": [
+        "В пустой библиотеке всё ещё горела яркая лампа.",
+        "Несколько пассажиров ждали, пока ремонтировали повреждённый двигатель.",
+        "Наши соседи посадили цветы по обеим сторонам узкой дороги.",
+        "Врач спросила, изменилась ли боль со вчерашнего дня."
+      ]
+    },
+    {
+      "id": "ar",
+      "trackLanguage": "en",
+      "templates": [
+        "ظل مصباح ساطع مضاء داخل المكتبة الفارغة.",
+        "انتظر عدد من الركاب بينما كان المحرك المعطل يجري إصلاحه.",
+        "زرع جيراننا الزهور على جانبي الطريق الضيق.",
+        "سألت الطبيبة إن كان الألم قد تغير منذ الأمس."
+      ]
+    },
+    {
+      "id": "hi",
+      "trackLanguage": "bn",
+      "templates": [
+        "खाली पुस्तकालय के भीतर एक चमकीला दीपक अब भी जल रहा था।",
+        "कई यात्री खराब इंजन की मरम्मत होने तक प्रतीक्षा करते रहे।",
+        "हमारे पड़ोसियों ने संकरी सड़क के दोनों ओर फूल लगाए।",
+        "डॉक्टर ने पूछा कि क्या कल से दर्द में कोई बदलाव आया है।"
+      ]
+    },
+    {
+      "id": "bn",
+      "trackLanguage": "hi",
+      "templates": [
+        "খালি গ্রন্থাগারের ভেতরে একটি উজ্জ্বল বাতি তখনও জ্বলছিল।",
+        "ইঞ্জিন মেরামত হওয়ার সময় কয়েকজন যাত্রী অপেক্ষা করেছিল।",
+        "আমাদের প্রতিবেশীরা সরু রাস্তার দুই পাশে ফুল লাগিয়েছে।",
+        "চিকিৎসক জানতে চাইলেন গতকাল থেকে ব্যথা বদলেছে কি না।"
+      ]
+    },
+    {
+      "id": "ja",
+      "trackLanguage": "en",
+      "templates": [
+        "誰もいない図書館の中で明るいランプがまだ灯っていました。",
+        "壊れたエンジンが修理される間、何人もの乗客が待ちました。",
+        "近所の人たちは細い道の両側に花を植えました。",
+        "医師は昨日から痛みが変わったかどうか尋ねました。"
+      ]
+    },
+    {
+      "id": "ko",
+      "trackLanguage": "en",
+      "templates": [
+        "빈 도서관 안에는 밝은 등이 아직 켜져 있었습니다.",
+        "고장 난 엔진을 수리하는 동안 여러 승객이 기다렸습니다.",
+        "이웃들은 좁은 길 양쪽에 꽃을 심었습니다.",
+        "의사는 어제부터 통증이 달라졌는지 물었습니다."
+      ]
+    },
+    {
+      "id": "te",
+      "trackLanguage": "en",
+      "templates": [
+        "ఖాళీ గ్రంథాలయంలో ఒక ప్రకాశవంతమైన దీపం ఇంకా వెలుగుతోంది.",
+        "దెబ్బతిన్న ఇంజిన్ మరమ్మతు అయ్యే వరకు ప్రయాణికులు వేచి ఉన్నారు.",
+        "మా పొరుగువారు ఇరుకైన రహదారి రెండు వైపులా పూలు నాటారు.",
+        "నిన్నటి నుంచి నొప్పి మారిందా అని వైద్యురాలు అడిగింది."
+      ]
+    },
+    {
+      "id": "ta",
+      "trackLanguage": "en",
+      "templates": [
+        "காலியான நூலகத்திற்குள் ஒரு பிரகாசமான விளக்கு இன்னும் எரிந்தது.",
+        "பழுதான இயந்திரம் சரிசெய்யப்படும் வரை பயணிகள் காத்திருந்தனர்.",
+        "எங்கள் அண்டை வீட்டார் குறுகிய சாலையின் இருபுறமும் பூக்களை நட்டனர்.",
+        "நேற்றிலிருந்து வலி மாறியதா என்று மருத்துவர் கேட்டார்."
+      ]
+    },
+    {
+      "id": "tr",
+      "trackLanguage": "de",
+      "templates": [
+        "Boş kütüphanenin içinde parlak bir lamba hâlâ yanıyordu.",
+        "Hasarlı motor onarılırken birkaç yolcu sabırla bekledi.",
+        "Komşularımız dar yolun iki yanına çiçekler dikti.",
+        "Doktor ağrının dünden beri değişip değişmediğini sordu."
+      ]
+    },
+    {
+      "id": "fa",
+      "trackLanguage": "en",
+      "templates": [
+        "چراغ روشنی هنوز درون کتابخانه خالی می‌سوخت.",
+        "چند مسافر تا پایان تعمیر موتور آسیب دیده منتظر ماندند.",
+        "همسایه‌های ما در دو سوی جاده باریک گل کاشتند.",
+        "پزشک پرسید آیا درد از دیروز تغییر کرده است."
+      ]
+    },
+    {
+      "id": "th",
+      "trackLanguage": "en",
+      "templates": [
+        "โคมไฟสว่างยังคงเปิดอยู่ภายในห้องสมุดที่ว่างเปล่า",
+        "ผู้โดยสารหลายคนรอระหว่างที่เครื่องยนต์เสียกำลังซ่อมแซม",
+        "เพื่อนบ้านปลูกดอกไม้ไว้ทั้งสองข้างของถนนแคบ",
+        "แพทย์ถามว่าอาการปวดเปลี่ยนไปจากเมื่อวานหรือไม่"
+      ]
+    },
+    {
+      "id": "el",
+      "trackLanguage": "en",
+      "templates": [
+        "Μια φωτεινή λάμπα έκαιγε ακόμη μέσα στην άδεια βιβλιοθήκη.",
+        "Αρκετοί επιβάτες περίμεναν όσο επισκεύαζαν τη μηχανή.",
+        "Οι γείτονές μας φύτεψαν λουλούδια στις δύο πλευρές του στενού δρόμου.",
+        "Η γιατρός ρώτησε αν ο πόνος είχε αλλάξει από χθες."
+      ]
+    },
+    {
+      "id": "zh-Hans",
+      "trackLanguage": "en",
+      "templates": [
+        "空荡的图书馆里仍然亮着一盏明灯。",
+        "几名乘客耐心等待损坏的发动机修好。",
+        "邻居们在狭窄道路两边种下鲜花。",
+        "医生询问疼痛从昨天起是否改变，头发软件网络后台发展。"
+      ]
+    },
+    {
+      "id": "zh-Hant",
+      "trackLanguage": "en",
+      "templates": [
+        "空蕩的圖書館裡仍然亮著一盞明燈。",
+        "幾名乘客耐心等待損壞的發動機修好。",
+        "鄰居們在狹窄道路兩邊種下鮮花。",
+        "醫生詢問疼痛從昨天起是否改變，頭髮軟體網路後臺發展。"
+      ]
+    }
+  ],
+  "unreliable": [
+    { "id": "blank", "expected": "unknown", "templates": [" "] },
+    {
+      "id": "mixed-3x1",
+      "expected": "unknown",
+      "templates": [
+        "The room is quiet tonight.",
+        "The station opens before sunrise.",
+        "We should wait beside the door.",
+        "La habitación está tranquila esta noche."
+      ]
+    },
+    {
+      "id": "unsupported-armenian",
+      "expected": "unsupported",
+      "templates": ["Դատարկ գրադարանի ներսում դեռ վառվում էր պայծառ լամպը։"]
+    }
+  ]
+}

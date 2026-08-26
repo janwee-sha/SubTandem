@@ -1,0 +1,4 @@
+interface:
+  display_name: "SubTandem 测试样本"
+  short_description: "检索并验证 SubTandem 各类测试所需媒体样本"
+  default_prompt: "使用 $find-test-samples 为 SubTandem 寻找并验证测试所需媒体样本。"
