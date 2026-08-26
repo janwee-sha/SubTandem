@@ -1,4 +1,4 @@
-# 数据模型：SubLingo 双平台打赏入口
+# 数据模型：SubTandem 双平台打赏入口
 
 ## 打赏渠道
 
@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | 规范地址 | 临时资料中已确认的 item 链接 | `https://ko-fi.com/ianhsia` |
 | 受众 | 中国大陆用户 | 海外用户 |
-| 支持语义 | 请 SubLingo 作者喝杯咖啡 | Buy the SubLingo creator a Coffee |
+| 支持语义 | 请 SubTandem 作者喝杯咖啡 | Buy the SubTandem creator a Coffee |
 | 权益 | 无额外权益、无模型额度 | 无额外权益、无模型额度 |
 
 **校验规则**：所有公开入口必须使用规范地址；渠道不得暗示购买产品能力或翻译额度。
@@ -25,8 +25,8 @@
 | --- | --- |
 | 展示名 | `Ian` |
 | 用户名 | `ianhsia` |
-| 简介 | `Support SubLingo by buying its creator a coffee.` |
-| 网站 | `https://github.com/janwee-sha/SubLingo` |
+| 简介 | `Support SubTandem by buying its creator a coffee.` |
+| 网站 | `https://github.com/janwee-sha/SubTandem` |
 | 类别 | `Software` |
 | 国家 | `United States` |
 | 邮编 | 用户确认的美国邮编，只提交到 Ko-fi；仓库与验证输出不得记录具体值 |

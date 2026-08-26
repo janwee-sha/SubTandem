@@ -1,4 +1,4 @@
-# 实现计划：SubLingo 双平台打赏入口
+# 实现计划：SubTandem 双平台打赏入口
 
 **功能标识**：`006-sponsor-entry` | **日期**：2026-08-14 | **规格**：[spec.md](spec.md)
 

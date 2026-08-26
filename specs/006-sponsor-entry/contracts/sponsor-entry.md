@@ -4,7 +4,7 @@
 
 - 爱发电：以功能输入资产提供的完整地址为唯一值。
 - Ko-fi：`https://ko-fi.com/ianhsia`。
-- 项目：`https://github.com/janwee-sha/SubLingo`。
+- 项目：`https://github.com/janwee-sha/SubTandem`。
 
 ## GitHub Sponsor
 

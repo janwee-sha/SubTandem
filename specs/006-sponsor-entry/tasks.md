@@ -1,4 +1,4 @@
-# 任务：SubLingo 双平台打赏入口
+# 任务：SubTandem 双平台打赏入口
 
 **输入**：`specs/006-sponsor-entry/` 中的规格与设计文档
 
@@ -34,7 +34,7 @@
 
 ## 阶段 5：用户故事 3——Ko-fi Coffee 页面（P3）
 
-**目标**：Ko-fi 公开页以 5 美元 Coffee 支持 SubLingo 创作者。
+**目标**：Ko-fi 公开页以 5 美元 Coffee 支持 SubTandem 创作者。
 
 **独立测试**：保存后以公开页面和设置页核对规格要求的全部字段，不执行付款。
 

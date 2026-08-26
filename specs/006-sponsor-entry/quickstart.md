@@ -1,4 +1,4 @@
-# 验证指南：SubLingo 双平台打赏入口
+# 验证指南：SubTandem 双平台打赏入口
 
 ## 自动检查
 
@@ -28,4 +28,4 @@ npm run format:check
 
 ## 爱发电认证
 
-仓库公开更新后，在爱发电认证页提交 `https://github.com/janwee-sha/SubLingo` 作为公开宣传与创作者身份的证明页面。审批结果不影响代码功能验收。
+仓库公开更新后，在爱发电认证页提交 `https://github.com/janwee-sha/SubTandem` 作为公开宣传与创作者身份的证明页面。审批结果不影响代码功能验收。
