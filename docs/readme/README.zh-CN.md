@@ -39,7 +39,7 @@ SubTandem 不会下载或启动翻译模型。
 
 ## 🚀 安装
 
-打开 IINA，进入“**设置 → 插件**”。插件管理界面支持以下两种安装方式。
+打开 IINA，进入“**设置 → 插件**”。插件管理界面支持以下安装方式。
 
 <div align="center">
 
@@ -53,13 +53,33 @@ SubTandem 不会下载或启动翻译模型。
 2. 在 `user/repo` 输入框中填写 `janwee-sha/SubTandem`，然后确认安装。
 3. 等待 SubTandem 出现在“已安装插件”列表中。
 
-SubTandem v0.1.0 已包含 IINA 更新元数据。通过“从 GitHub 安装”或下载的插件包完成安装后，IINA 可以检查并安装后续版本。
+<div align="center">
+
+![从 GitHub 安装 SubTandem 的 IINA 对话框](assets/install_from_github.webp)
+
+</div>
+
+SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成安装后，IINA 可以检查并安装后续版本。
 
 ### 安装下载的插件包
 
 1. 打开 [Releases](https://github.com/janwee-sha/SubTandem/releases) 页面，下载最新的 `SubTandem-X.Y.Z.iinaplgz`。
 2. 返回“**设置 → 插件**”，点击“**安装插件…**”。
 3. 选择刚下载的 `.iinaplgz` 文件并确认安装。
+
+### 从插件列表安装（开发版 IINA）
+
+开发版 IINA 可以直接从可用插件列表安装 SubTandem。
+
+1. 打开“**设置 → 插件**”，进入新插件安装界面。
+2. 在可用插件列表中选择 **SubTandem**。
+3. 确认安装，并等待 SubTandem 出现在“已安装插件”列表中。
+
+<div align="center">
+
+![开发版 IINA 的可用插件列表中已选择 SubTandem](assets/install_from_plugins_list.webp)
+
+</div>
 
 无论使用哪种方式，如 IINA 提示授权，请批准所请求的插件权限；确认 SubTandem 左侧的复选框已勾选，然后重启 IINA。之后播放视频、打开 IINA 侧边栏并选择 **SubTandem** 标签页。
 

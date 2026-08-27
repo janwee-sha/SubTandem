@@ -40,7 +40,7 @@ SubTandem does not download or start translation models.
 
 ## 🚀 Installation
 
-Open IINA and go to **Settings → Plugins**. The plugin manager supports both installation methods below.
+Open IINA and go to **Settings → Plugins**. The plugin manager supports the installation methods below.
 
 <div align="center">
 
@@ -54,7 +54,13 @@ Open IINA and go to **Settings → Plugins**. The plugin manager supports both i
 2. Enter `janwee-sha/SubTandem` in the `user/repo` field, then confirm the installation.
 3. Wait for SubTandem to appear in the installed plugins list.
 
-SubTandem v0.1.0 includes IINA update metadata. Install it from GitHub or a downloaded package so IINA can check for and install later releases.
+<div align="center">
+
+![IINA dialog for installing SubTandem from GitHub](docs/readme/assets/install_from_github.webp)
+
+</div>
+
+SubTandem v0.1.0 includes IINA update metadata. Install it by any method above so IINA can check for and install later releases.
 
 ### Install a downloaded package
 
@@ -62,7 +68,21 @@ SubTandem v0.1.0 includes IINA update metadata. Install it from GitHub or a down
 2. Return to **Settings → Plugins** and click **Install Package…**.
 3. Select the downloaded `.iinaplgz` file and confirm the installation.
 
-After either method, approve the requested plugin permissions if prompted, make sure the checkbox next to SubTandem is enabled, and restart IINA. Then play a video, open IINA's sidebar, and select the **SubTandem** tab.
+### Install from the plugin list (IINA development builds)
+
+Development builds of IINA can install SubTandem directly from the available plugins list.
+
+1. Open **Settings → Plugins**, then open the new plugin installation dialog.
+2. Select **SubTandem** from the available plugins list.
+3. Confirm the installation and wait for SubTandem to appear in the installed plugins list.
+
+<div align="center">
+
+![SubTandem selected in the available plugins list in an IINA development build](docs/readme/assets/install_from_plugins_list.webp)
+
+</div>
+
+After any installation method, approve the requested plugin permissions if prompted, make sure the checkbox next to SubTandem is enabled, and restart IINA. Then play a video, open IINA's sidebar, and select the **SubTandem** tab.
 
 ## 🌍 Quick Start
 

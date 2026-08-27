@@ -39,7 +39,7 @@ SubTandem는 번역 모델을 다운로드하거나 실행하지 않습니다.
 
 ## 🚀 설치
 
-IINA를 열고 **환경설정 → 플러그인**으로 이동합니다. 플러그인 관리 화면에서는 다음 두 가지 설치 방법을 사용할 수 있습니다.
+IINA를 열고 **환경설정 → 플러그인**으로 이동합니다. 플러그인 관리 화면에서는 다음 설치 방법을 사용할 수 있습니다.
 
 <div align="center">
 
@@ -53,13 +53,33 @@ IINA를 열고 **환경설정 → 플러그인**으로 이동합니다. 플러�
 2. `user/repo` 입력란에 `janwee-sha/SubTandem`를 입력하고 설치를 확인합니다.
 3. 설치된 플러그인 목록에 SubTandem가 나타날 때까지 기다립니다.
 
-SubTandem v0.1.0에는 IINA 업데이트 메타데이터가 포함되어 있습니다. GitHub 또는 다운로드한 패키지로 설치하면 IINA에서 이후 버전을 확인하고 설치할 수 있습니다.
+<div align="center">
+
+![GitHub에서 SubTandem를 설치하는 IINA 대화상자](assets/install_from_github.webp)
+
+</div>
+
+SubTandem v0.1.0에는 IINA 업데이트 메타데이터가 포함되어 있습니다. 위 방법 중 하나로 설치하면 IINA에서 이후 버전을 확인하고 설치할 수 있습니다.
 
 ### 다운로드한 패키지 설치
 
 1. [Releases](https://github.com/janwee-sha/SubTandem/releases) 페이지에서 최신 `SubTandem-X.Y.Z.iinaplgz` 패키지를 다운로드합니다.
 2. **환경설정 → 플러그인**으로 돌아가 **패키지 설치…**를 클릭합니다.
 3. 다운로드한 `.iinaplgz` 파일을 선택하고 설치를 확인합니다.
+
+### 플러그인 목록에서 설치(IINA 개발 버전)
+
+IINA 개발 버전에서는 사용 가능한 플러그인 목록에서 SubTandem를 직접 설치할 수 있습니다.
+
+1. **환경설정 → 플러그인**을 열고 새 플러그인 설치 화면으로 이동합니다.
+2. 사용 가능한 플러그인 목록에서 **SubTandem**를 선택합니다.
+3. 설치를 확인하고 설치된 플러그인 목록에 SubTandem가 나타날 때까지 기다립니다.
+
+<div align="center">
+
+![IINA 개발 버전의 사용 가능한 플러그인 목록에서 선택된 SubTandem](assets/install_from_plugins_list.webp)
+
+</div>
 
 어느 방법을 사용하든 권한 요청이 표시되면 승인하고 SubTandem 옆의 체크상자가 활성화되어 있는지 확인한 다음 IINA를 다시 시작합니다. 이후 영상을 재생하고 IINA 사이드바를 연 뒤 **SubTandem** 탭을 선택합니다.
 

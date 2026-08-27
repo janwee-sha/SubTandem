@@ -39,7 +39,7 @@ SubTandem ne télécharge ni ne démarre les modèles de traduction.
 
 ## 🚀 Installation
 
-Ouvrez IINA et accédez à **Préférences → Modules externes**. Le gestionnaire de modules permet les deux méthodes d'installation suivantes.
+Ouvrez IINA et accédez à **Préférences → Modules externes**. Le gestionnaire de modules permet les méthodes d'installation suivantes.
 
 <div align="center">
 
@@ -53,7 +53,13 @@ Ouvrez IINA et accédez à **Préférences → Modules externes**. Le gestionnai
 2. Saisissez `janwee-sha/SubTandem` dans le champ `user/repo`, puis confirmez l'installation.
 3. Attendez que SubTandem apparaisse dans la liste des modules installés.
 
-SubTandem v0.1.0 inclut les métadonnées de mise à jour IINA. Installez-le depuis GitHub ou avec le paquet téléchargé afin qu’IINA puisse rechercher et installer les versions ultérieures.
+<div align="center">
+
+![Boîte de dialogue IINA pour installer SubTandem depuis GitHub](assets/install_from_github.webp)
+
+</div>
+
+SubTandem v0.1.0 inclut les métadonnées de mise à jour IINA. Installez-le avec l’une des méthodes ci-dessus afin qu’IINA puisse rechercher et installer les versions ultérieures.
 
 ### Installer un paquet téléchargé
 
@@ -61,7 +67,21 @@ SubTandem v0.1.0 inclut les métadonnées de mise à jour IINA. Installez-le dep
 2. Revenez dans **Préférences → Modules externes** et cliquez sur **Installer le paquet…**.
 3. Sélectionnez le fichier `.iinaplgz` téléchargé et confirmez l'installation.
 
-Avec l'une ou l'autre méthode, approuvez les autorisations demandées si IINA les affiche, vérifiez que la case à côté de SubTandem est cochée, puis redémarrez IINA. Lancez ensuite une vidéo, ouvrez la barre latérale d'IINA et sélectionnez l'onglet **SubTandem**.
+### Installer depuis la liste des modules (version de développement d’IINA)
+
+Les versions de développement d’IINA permettent d’installer SubTandem directement depuis la liste des modules disponibles.
+
+1. Ouvrez **Préférences → Modules externes**, puis la boîte de dialogue d’installation d’un nouveau module.
+2. Sélectionnez **SubTandem** dans la liste des modules disponibles.
+3. Confirmez l’installation et attendez que SubTandem apparaisse dans la liste des modules installés.
+
+<div align="center">
+
+![SubTandem sélectionné dans la liste des modules disponibles d’une version de développement d’IINA](assets/install_from_plugins_list.webp)
+
+</div>
+
+Quelle que soit la méthode choisie, approuvez les autorisations demandées si IINA les affiche, vérifiez que la case à côté de SubTandem est cochée, puis redémarrez IINA. Lancez ensuite une vidéo, ouvrez la barre latérale d'IINA et sélectionnez l'onglet **SubTandem**.
 
 ## 🌍 Démarrage rapide
 
