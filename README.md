@@ -17,6 +17,16 @@
 
 SubTandem translates the local embedded text subtitle or external SRT/ASS subtitle currently selected in [IINA](https://iina.io/) and renders the translation itself in an independent overlay. It looks only a short distance ahead of playback, translates in bounded batches, and keeps the original subtitle selection and video playing when a translation is delayed or fails.
 
+## 🎬 In Action
+
+SubTandem keeps the original subtitle visible while independently displaying the translation at your chosen position.
+
+<div align="center">
+
+![SubTandem displaying Japanese and English bilingual subtitles in IINA](docs/readme/assets/real-time-bilingual-subtitle.webp)
+
+</div>
+
 ## ✨ Features
 
 - **Live bilingual subtitles:** Keep the original subtitle selected in IINA while SubTandem renders translations centered horizontally at your chosen vertical position without occupying another subtitle track.

@@ -16,6 +16,16 @@
 
 SubTandem 翻译 [IINA](https://iina.io/) 当前选中的本地内嵌文本字幕或外部 SRT/ASS 字幕，并自行渲染译文。它只在播放位置附近有限前瞻、分批翻译；即使翻译延迟或失败，原字幕选择与视频播放也不受影响。
 
+## 🎬 使用效果
+
+SubTandem 保留原字幕，同时在你选择的位置独立显示译文。
+
+<div align="center">
+
+![SubTandem 在 IINA 中显示日英双语字幕](assets/real-time-bilingual-subtitle.webp)
+
+</div>
+
 ## ✨ 功能
 
 - **实时双语字幕：** 原字幕继续由 IINA 显示，SubTandem 在你选择的垂直位置横向居中渲染译文，不占用其他字幕轨。
