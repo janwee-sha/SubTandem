@@ -59,7 +59,7 @@ def validate_inputs(args: argparse.Namespace) -> tuple[Path, Path]:
         raise ValueError("sha256 must contain 64 hexadecimal characters")
     if args.max_bytes <= 0:
         raise ValueError("max-bytes must be positive")
-    samples = repo_root / "manual-tests" / "samples"
+    samples = repo_root / "docs" /"local" / "samples"
     samples.mkdir(parents=True, exist_ok=True)
     resolved_samples = samples.resolve()
     if repo_root not in resolved_samples.parents or not resolved_samples.is_dir():
@@ -97,7 +97,7 @@ def report(status: str, target: Path, digest: str, size: int, inspection: dict) 
         json.dumps(
             {
                 "status": status,
-                "target": str(Path("manual-tests") / "samples" / target.name),
+                "target": str(Path("docs") / "local" / "samples" / target.name),
                 "bytes": size,
                 "sha256": digest,
                 "inspection": inspection,
