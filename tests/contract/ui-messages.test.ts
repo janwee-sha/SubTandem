@@ -320,6 +320,9 @@ describe("Sidebar/Main/Global security messages", () => {
         credentialSource: "none",
       }),
     ).toMatch(/enter an API key/i);
+    expect(modelCatalogStatusMessage({ ok: false, category: "protocol" })).toMatch(
+      /compatible model catalog.*custom model ID/i,
+    );
   });
 
   it("uses exact translation-selection guidance without authorization wording", () => {

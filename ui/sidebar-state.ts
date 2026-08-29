@@ -106,6 +106,7 @@ interface SidebarStateSnapshot {
 interface SidebarStateCoordinator {
   readonly snapshot: SidebarStateSnapshot;
   applyProfiles(profiles: SidebarStateProfile[]): SidebarStateProfile[];
+  reconcileEditingProfile(profile: SidebarStateProfile): SidebarStateProfile;
   setProfileContext(context: {
     editingProfileId?: string | null;
     selectedProfileId?: string | null;
@@ -211,6 +212,13 @@ function createSubTandemSidebarState(
     const deleted = new Set(snapshot.deletedProfileIds);
     snapshot.profiles = profiles.filter((profile) => !deleted.has(profile.profileId));
     return snapshot.profiles;
+  };
+
+  const reconcileEditingProfile = (profile: SidebarStateProfile): SidebarStateProfile => {
+    const latest = snapshot.profiles.find((candidate) => candidate.profileId === profile.profileId);
+    if (!latest || (snapshot.pendingProfileSave && latest.revision !== profile.revision))
+      return profile;
+    return latest;
   };
 
   const setProfileContext = (context: {
@@ -503,6 +511,7 @@ function createSubTandemSidebarState(
   return {
     snapshot,
     applyProfiles,
+    reconcileEditingProfile,
     setProfileContext,
     setProfileTest,
     beginOperation,

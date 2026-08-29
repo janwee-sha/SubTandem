@@ -51,7 +51,7 @@ npm run format:check
 - Service type 严格按 OpenAI、Claude、DeepSeek、Ollama 排序；Claude 默认名称/Root 正确，Model ID 为空且 Custom 可用，四种草稿与反馈不串用。
 - 新建、kind 转换或未配置 Claude 缺 Key 时 Save 被阻止；已配置 Profile 可留空保留 Key。缺 Key 的 Global Test、Select、刷新和翻译本地失败且不联网。
 - Claude Profile 完成 Save、fresh Test、Select、Update、Delete、revision、选择失效和凭据清理；安全视图只含 `credentialConfigured`。
-- `/v1/models` 每页携带 `x-api-key` 与版本头；分页按 `last_id/after_id` 原子完成，跨页去重；空/重复 cursor、后页失败和旧 owner 均零提交并保留 Model ID、目录与 Custom。
+- `/v1/models` 每页携带 `x-api-key` 与版本头；Anthropic 分页按 `last_id/after_id` 原子完成，Ollama-compatible `object: "list"` 目录以单页完成，两者均精确去重；空/重复 cursor、后页失败和旧 owner 均零提交并保留 Model ID、目录与 Custom。
 - `/v1/messages` 使用顶层 system、user message、`max_tokens: 8192` 与 `stream: false`，不含 `temperature`、`top_p`、`top_k`、Schema、format、tools、thinking、prefill 或本地 session header。
 - 多个 text blocks 按顺序直接拼接；只有无拒绝信号的 `end_turn` 和精确完整 ID JSON 可提交。空、截断、畸形、额外/缺失/重复 ID 与空译文使当前 wire 提交数为 0。
 - 401/403、402、404、429、500/504/529、版本错误、拒绝、timeout、network、cancel 与空输出只形成固定安全分类，不暴露上游 message/body/header。
@@ -120,7 +120,7 @@ npm run pack
 使用同一个最终 `.iinaplgz`，先移除开发链接，记录包 SHA-256、macOS、架构、IINA 版本、非敏感场景 ID、耗时和实际结果。
 
 1. 安装并启用正式包。从 New Profile 选择 Claude，确认顺序、默认名称/Root、空 Model ID、system route 与必填 Key；不填写 Key 时 Save 被阻止且没有外部请求。
-2. 输入 Key，手动 Refresh；目录成功时可选择任一返回 ID，目录不支持时仍可输入 Custom。Save、fresh Test、Select，播放受支持字幕并在 180 秒内看到首条译文；Test 不得自动 Select。
+2. 输入 Key，手动 Refresh；Anthropic 分页目录或 Ollama-compatible `object: "list"` 单页目录成功时可选择任一返回 ID，目录不支持时仍可输入 Custom。Save、fresh Test、Select，播放受支持字幕并在 180 秒内看到首条译文；Test 不得自动 Select。
 3. 连续完成至少 20 个 wire；确认译文完整，无理由、说明或包装内容，且等待、重试和失败从不暂停视频或原字幕。
 4. 分别验证缺失、错误和正确 Key，以及账单/配额、429、不可达、版本不兼容、无效 Root/Model；反馈可操作且不含服务原文，刷新失败保留 Model ID、目录和 Custom。
 5. 用分页 Endpoint 验证跨页完整目录、去重和终态原子提交；制造空/重复 cursor、后页失败与页间 owner 变化，确认部分目录和旧 Key 后续请求不提交或继续。

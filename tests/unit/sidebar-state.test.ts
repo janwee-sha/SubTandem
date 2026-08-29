@@ -537,6 +537,32 @@ describe("Sidebar Profile name source", () => {
 });
 
 describe("Sidebar two-stage Profile Update", () => {
+  it("keeps the editing revision stable until its correlated save response arrives", () => {
+    const state = createState();
+    const editingProfile = { profileId: "retained", revision: 1, displayName: "Before" };
+    state.setProfileContext({ editingProfileId: editingProfile.profileId });
+    state.beginProfileSave("save-request", false);
+    state.applyProfiles([
+      { profileId: "deleted", revision: 2 },
+      { profileId: "retained", revision: 2, displayName: "After" },
+    ]);
+
+    expect(state.reconcileEditingProfile(editingProfile)).toEqual(editingProfile);
+
+    state.profileRevisionCreated("save-request", {
+      profileId: "retained",
+      revision: 2,
+      selectionInvalidated: true,
+    });
+    state.completeProfileSave("save-request", "Profile saved.");
+
+    expect(state.reconcileEditingProfile(editingProfile)).toEqual({
+      profileId: "retained",
+      revision: 2,
+      displayName: "After",
+    });
+  });
+
   it.each([false, true])(
     "preserves selection invalidation through credentialPending=%s",
     (credentialPending) => {

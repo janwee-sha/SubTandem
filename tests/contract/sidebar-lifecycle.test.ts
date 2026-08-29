@@ -282,6 +282,7 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(sidebarSource).toContain("beginProfileSave");
     expect(sidebarSource).toContain("profileRevisionCreated");
     expect(sidebarSource).toContain("completeProfileSave");
+    expect(sidebarSource).toContain("reconcileEditingProfile");
     expect(sidebarSource).toContain("Profile updated. Select it again for translation.");
     expect(sidebarSource).toContain("Profile saved, but the credential was not saved.");
     expect(sidebarSource).not.toContain("to authorize translation");

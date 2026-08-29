@@ -4,7 +4,7 @@
 
 ## 摘要
 
-新增独立 `claude` Service type 与 `ClaudeProvider`，把 Claude Profile 接入现有 Sidebar、Global、凭据、模型目录、Test、Select、Broker 和播放会话。Provider 使用非流式 Messages 契约，不发送采样参数、服务端 Schema 或工具字段；顶层 system 约束唯一 JSON 输出，响应按拒绝信号、`end_turn`、文本块拼接和精确 wire ID 集合一次性校验。模型刷新使用 `/v1/models` 游标分页和逐页 owner guard，失败保留现有目录与 Custom Model ID。既有 OpenAI、DeepSeek 与 Ollama 行为不变，并同步用户披露、自动化回归、正式构建和打包验收。
+新增独立 `claude` Service type 与 `ClaudeProvider`，把 Claude Profile 接入现有 Sidebar、Global、凭据、模型目录、Test、Select、Broker 和播放会话。Provider 使用非流式 Messages 契约，不发送采样参数、服务端 Schema 或工具字段；顶层 system 约束唯一 JSON 输出，响应按拒绝信号、`end_turn`、文本块拼接和精确 wire ID 集合一次性校验。模型刷新使用 `/v1/models`，接受 Anthropic 游标分页与 Ollama-compatible `object: "list"` 单页终态，并由逐页 owner guard 保护；失败保留现有目录与 Custom Model ID。既有 OpenAI、DeepSeek 与 Ollama Profile 行为不变，并同步用户披露、自动化回归、正式构建和打包验收。
 
 ## 技术上下文
 
@@ -16,7 +16,7 @@
 - **项目类型**：包含 Global、逐窗口 Main、Sidebar WebView、native helper 与发布自动化的 IINA 桌面插件。
 - **性能目标**：不改变每批最多 25 cues/5000 code points、每个远端 wire 最多 2 个目标和播放非阻塞行为；正常服务条件下 3 分钟内完成 Profile 全流程，连续至少 20 个 Claude wire 不因 Messages 格式或 Schema 依赖失败。
 - **约束**：固定 Service type 顺序为 OpenAI、Claude、DeepSeek、Ollama；默认 API Root 为 `https://api.anthropic.com` 且 API Key 必填，不预置 Model ID；请求不发送采样参数、Schema、tools 或 thinking；只接受无拒绝信号的 `end_turn` 完整 JSON；凭据、Provider 原始响应和 Claude 字幕内容不得进入禁止位置；生产代码不新增注释且自然语言使用英语。
-- **规模与范围**：第四种 Service type、一个专用 Messages Provider、共享 Claude URL 构造、模型分页与 owner guard、跨运行时 kind 枚举、Sidebar 第四份草稿、当前用户文档和聚焦回归；不新增 native RPC、依赖、权限、模型推荐或持久化目录。
+- **规模与范围**：第四种 Service type、一个专用 Messages Provider、共享 Claude URL 构造、Anthropic 分页与 Ollama-compatible 单页模型目录、owner guard、跨运行时 kind 枚举、Sidebar 第四份草稿、当前用户文档和聚焦回归；不新增 native RPC、依赖、权限、模型推荐或持久化目录。
 
 ## 宪法检查
 

@@ -63,7 +63,7 @@ Sidebar 与 Main 只能看到 `credentialConfigured`。未保存 Key 仅属于�
 
 ## Claude 模型刷新
 
-一次分页刷新是单个原子事务。
+一次分页或 Ollama-compatible 单页刷新是单个原子事务。
 
 | 字段 | 类型 | 规则 |
 | --- | --- | --- |
@@ -84,6 +84,7 @@ Sidebar 与 Main 只能看到 `credentialConfigured`。未保存 Key 仅属于�
 idle/cached ──有效触发──> pending(page 1)
 pending ──has_more=true 且 owner/cursor 有效──> pending(next page)
 pending ──has_more=false 且 owner 有效──> succeeded / 原子提交完整目录
+pending ──object=list 且省略 has_more、owner 有效──> succeeded / 原子提交单页目录
 pending ──HTTP、结构、cursor 或 owner 失败──> failed/cancelled / 不提交部分目录
 superseded ──迟到响应──> discarded
 ```

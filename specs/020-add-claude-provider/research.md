@@ -32,9 +32,9 @@
 
 ## 模型目录与分页所有权
 
-- **决策**：Claude 模型刷新首次请求 `/v1/models`，后续仅以 URL 编码的唯一非空 `last_id` 作为 `after_id`。每页要求 `data` 数组和布尔 `has_more`；跨页 trim、过滤空 ID、精确去重并保留首次顺序。仅在 `has_more: false` 且 owner 仍有效时原子提交完整目录。
-- **理由**：这符合官方游标契约和 FR-005。任一页 HTTP、JSON、结构、空/重复游标失败时不返回部分目录，因此现有 Model ID、成功目录和 Custom 输入可继续使用。
-- **备选方案**：接受 Ollama/OpenAI 风格的无游标目录会伪造 Claude 分页语义；逐页提交会在后页失败时留下不完整目录；硬编码模型清单会过期。
+- **决策**：Claude 模型刷新首次请求 `/v1/models`。Anthropic 响应要求 `data` 数组和布尔 `has_more`，后续仅以 URL 编码的唯一非空 `last_id` 作为 `after_id`；Ollama-compatible 响应仅在 `object` 精确为 `list` 且省略 `has_more` 时作为单页终态。两种响应都 trim、过滤空 ID、精确去重并保留首次顺序，且只在 owner 仍有效时原子提交完整目录。
+- **理由**：这同时符合官方 Anthropic 游标契约和 Ollama 同路径单页目录。任一页 HTTP、JSON、结构、空/重复游标失败时不返回部分目录，因此现有 Model ID、成功目录和 Custom 输入可继续使用。
+- **备选方案**：请求 `/api/tags` 或执行能力探测会扩大 Claude Profile 的外部请求契约；逐页提交会在后页失败时留下不完整目录；硬编码模型清单会过期。
 
 ## 分页取消与竞态
 

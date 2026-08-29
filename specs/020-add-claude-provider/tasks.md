@@ -81,17 +81,17 @@ description: "添加 Claude 翻译服务的可执行任务清单"
 - [X] T018 [P] [US1] 增加 Global 对 Claude Profile、凭据、Test、Select、翻译、编辑与删除的严格 RPC 测试，修改 `tests/contract/global-rpc.test.ts`
 - [X] T019 [P] [US1] 增加 Main↔Global↔Sidebar 对 `kind: "claude"` 的允许字段、未知字段拒绝和发送方身份隔离测试，修改 `tests/contract/ui-messages.test.ts`
 - [X] T020 [P] [US1] 增加 Service type 顺序、Claude 默认值、Messages URL hint、空 Model ID、Custom 模式与必填 Key 表单测试，修改 `tests/contract/sidebar-form.test.ts`
-- [X] T021 [P] [US1] 增加 Claude 两阶段保存、部分失败、fresh Test、Select、Update、Delete、类型草稿隔离与迟到操作反馈测试，修改 `tests/contract/sidebar-lifecycle.test.ts`
-- [X] T022 [P] [US1] 增加系统名称 ownership、Claude 草稿、模型控件、保存 owner 与可访问状态的单元测试，修改 `tests/unit/sidebar-state.test.ts`
+- [X] T021 [P] [US1] 增加 Claude 两阶段保存、权威列表先到时的 revision owner、部分失败、fresh Test、Select、Update、Delete、类型草稿隔离与迟到操作反馈测试，修改 `tests/contract/sidebar-lifecycle.test.ts`
+- [X] T022 [P] [US1] 增加系统名称 ownership、Claude 草稿、模型控件、保存期间编辑 revision 协调、保存 owner 与可访问状态的单元测试，修改 `tests/unit/sidebar-state.test.ts`
 - [X] T023 [P] [US1] 增加 Claude credential epoch 导致 Provider cache 失效且不影响其他 Profile 的测试，修改 `tests/unit/provider-cache.test.ts`
 - [X] T024 [P] [US1] 增加 Claude Save→fresh Test→Select→翻译→Update/Delete 的跨运行时集成测试，修改 `tests/integration/provider-connection-lifecycle.test.ts`
 - [X] T025 [P] [US1] 增加四种 Provider 共存、精确 revision 选择和当前窗口 Claude 翻译的集成回归，修改 `tests/integration/us3-providers.test.ts`
 - [X] T026 [P] [US1] 增加 Claude Key、认证 header、原始 Messages 数据不进入安全视图、preferences、日志、诊断和进程参数的测试，修改 `tests/security/credential-leakage.test.ts`
-- [X] T027 [P] [US1] 增加 Claude Models URL、必填 headers、有效目录、精确去重、Custom ID 与目录失败保留行为的基础契约测试，修改 `tests/contract/provider-model-discovery.test.ts`
+- [X] T027 [P] [US1] 增加 Claude Models URL、必填 headers、Anthropic 分页与 Ollama-compatible 单页目录、精确去重、Custom ID 与目录失败保留行为的基础契约测试，修改 `tests/contract/provider-model-discovery.test.ts`
 
 ### 用户故事 1 实现
 
-- [X] T028 [US1] 在 `src/providers/model-discovery.ts` 接入 Claude `/v1/models` 游标分页、逐页 headers、ID 清洗去重、原子终态和可注入 `assertActive` guard，不向 OpenAI/Ollama 方言降级
+- [X] T028 [US1] 在 `src/providers/model-discovery.ts` 接入 Claude `/v1/models` 的 Anthropic 游标分页与 Ollama-compatible `object: "list"` 单页终态、逐页 headers、ID 清洗去重、原子终态和可注入 `assertActive` guard，不请求其他目录或执行能力探测
 - [X] T029 [US1] 在 `src/global.ts` 恢复和持久化 Claude metadata、构造 `ClaudeProvider`、强制保存 Key、维护 credential epoch/cache/选择/lease，并完成模型刷新、Test、Select、翻译、编辑和删除的安全生命周期
 - [X] T030 [P] [US1] 在 `src/main.ts` 接受并转发 Claude Profile、模型、Test、选择与翻译消息，继续以 IINA Global 发送方 ID 授权并以 Main 生命周期 ID 校验最终提交
 - [X] T031 [P] [US1] 在 `ui/sidebar-state.ts` 建立 Claude 系统名称、Profile 保存 owner、credential pending 与模型控件状态，保留既有可访问反馈和 latest-only 规则

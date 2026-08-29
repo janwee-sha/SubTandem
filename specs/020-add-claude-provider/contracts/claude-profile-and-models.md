@@ -73,7 +73,7 @@ anthropic-version: 2023-06-01
 
 首次不发送 cursor；只使用 `after_id`，不发送 `before_id`、固定 model filter 或内置 Model ID。未保存 Key 只能通过手动 `provider:models-preview` 用于本次请求。
 
-## 分页响应
+## 模型目录响应
 
 ```json
 {
@@ -86,7 +86,7 @@ anthropic-version: 2023-06-01
 }
 ```
 
-规则：
+Anthropic 分页规则：
 
 - 每页必须为 object，`data` 必须为数组，`has_more` 必须为 boolean。
 - 只收集 `data[].id` 中 trim 后非空的字符串；跨页精确、区分大小写去重，保留首次顺序。
@@ -95,7 +95,9 @@ anthropic-version: 2023-06-01
 - `has_more: false` 时结束；只有此时且 owner 仍有效，才一次提交完整 `models`。
 - 任一页 HTTP、JSON、结构或 cursor 失败时不返回已累积的部分目录。
 
-Claude-compatible Endpoint 可以只实现 Messages。`/v1/models` 404、无效或不支持时显示安全错误，保留当前 Model ID、上次成功目录与 Custom 输入，不降级解析 OpenAI/Ollama 目录。
+Ollama-compatible Endpoint 可以在同一 `/v1/models` 返回 `object: "list"`、`data` 数组且不提供 `has_more`；该形状作为单页终态，沿用相同 ID 清洗、去重和 owner 检查，不请求 `/api/tags` 或其他目录。其他缺失 `has_more` 的形状无效。
+
+Claude-compatible Endpoint 可以只实现 Messages。`/v1/models` 404、无效或不支持时显示安全错误，保留当前 Model ID、上次成功目录与 Custom 输入。
 
 ## 请求 owner
 

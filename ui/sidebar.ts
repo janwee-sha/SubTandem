@@ -1435,10 +1435,10 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
       renderedProfilesSignature = signature;
       renderProfiles(visibleProfiles);
     }
-    if (editingProfile) {
-      const latest = profiles.get(editingProfile.profileId);
-      if (latest) editingProfile = latest;
-    }
+    if (editingProfile)
+      editingProfile = sidebarState.reconcileEditingProfile(
+        editingProfile as unknown as SidebarStateProfile,
+      ) as unknown as ProfileView;
   }
 });
 

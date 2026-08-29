@@ -107,8 +107,7 @@ export async function discoverProviderModels(
       } catch {
         throw protocolError("CLAUDE_MODELS_MALFORMED_RESPONSE");
       }
-      if (!Array.isArray(parsed.data) || typeof parsed.has_more !== "boolean")
-        throw protocolError("CLAUDE_MODELS_MALFORMED_RESPONSE");
+      if (!Array.isArray(parsed.data)) throw protocolError("CLAUDE_MODELS_MALFORMED_RESPONSE");
       for (const model of cleanedUnique(
         parsed.data.map((item) =>
           item && typeof item === "object" && !Array.isArray(item)
@@ -120,6 +119,9 @@ export async function discoverProviderModels(
         seenModels.add(model);
         models.push(model);
       }
+      if (parsed.object === "list" && parsed.has_more === undefined) return models;
+      if (typeof parsed.has_more !== "boolean")
+        throw protocolError("CLAUDE_MODELS_MALFORMED_RESPONSE");
       if (parsed.has_more === false) return models;
       const cursor = typeof parsed.last_id === "string" ? parsed.last_id.trim() : "";
       if (parsed.data.length === 0 || !cursor || seenCursors.has(cursor))

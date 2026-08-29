@@ -67,7 +67,7 @@
 
 - Claude 官方服务或兼容 Endpoint 因 API Key 缺失、无效、余额不足、限流、版本不兼容或服务不可用而拒绝请求时，必须沿用现有安全错误分类，且不得暴露请求头或原始敏感响应。
 - Endpoint 只实现 Messages 而不提供模型目录时，用户仍可填写自定义 Model ID，并通过 Test 判断该模型能否用于翻译。
-- 模型目录采用分页时，用户应能获得服务在 `has_more` 变为 false 前公开的全部有效 Model ID；所需分页游标为空、重复或异常时必须终止刷新，且不得清空已有选择。
+- 模型目录采用 Anthropic 分页时，用户应能获得服务在 `has_more` 变为 false 前公开的全部有效 Model ID；所需分页游标为空、重复或异常时必须终止刷新，且不得清空已有选择。Ollama-compatible Endpoint 返回 `object: "list"` 且省略 `has_more` 时，该响应必须作为单页终态处理。
 - Messages 响应包含多个文本块时，其文本只能按服务返回顺序形成一个候选结果；没有文本块、候选结果不是单一完整 JSON、`stop_reason` 不是 `end_turn`，或响应包含拒绝信号时，结果均视为协议失败。
 - JSON 语法有效但结构或字幕 ID 集合不符合请求时，结果仍视为协议失败，不得部分提交。
 - 用户在 Claude、OpenAI、DeepSeek 与 Ollama 之间切换时，各 Service type 的草稿、模型目录、凭据状态和请求结果不得串用。
@@ -81,7 +81,7 @@
 - **FR-002**：新建 Claude Profile 必须以 “Claude” 作为系统拥有的默认名称，并以 `https://api.anthropic.com` 作为初始 API Root；用户仍可编辑名称与有效的完整 HTTP(S) API Root。
 - **FR-003**：Claude Profile 必须支持现有 Profile 的保存、模型刷新、Test、Select、编辑、删除、revision 与网络路线流程；只有用户明确 Select 的当前 revision 才能接收当前窗口授权外发的字幕。
 - **FR-004**：Claude API Root 必须用于访问 `/v1/messages` 与 `/v1/models`；路径组合必须避免重复版本段，并对末尾斜杠产生一致结果，使官方服务及遵循相同路径的自定义兼容服务均可配置。
-- **FR-005**：Claude 模型目录必须从当前 API Root 的模型列表响应提取非空 Model ID、去除完全重复项，并在 `has_more` 为 true 时把唯一非空的 `last_id` 作为 `after_id` 继续刷新，直至 `has_more` 为 false；产品不得预置、推荐、猜测或自动选择 Claude Model ID。
+- **FR-005**：Claude 模型目录必须从当前 API Root 的模型列表响应提取非空 Model ID、去除完全重复项；Anthropic 响应在 `has_more` 为 true 时必须把唯一非空的 `last_id` 作为 `after_id` 继续刷新，直至 `has_more` 为 false；`object: "list"` 且未提供 `has_more` 的 Ollama-compatible 响应必须作为单页终态处理。产品不得预置、推荐、猜测或自动选择 Claude Model ID。
 - **FR-006**：模型刷新失败、模型目录不受支持或分页响应无效时，系统必须保留当前 Model ID、上次成功列表与自定义输入能力；只有当前 Service type、Endpoint、Profile、凭据状态和请求时序完全匹配的最新结果可以更新当前目录。
 - **FR-007**：Claude Profile 必须要求用户提供非空 API Key；该 Key 必须作为 Claude 契约凭据用于所属 Profile 的模型刷新、Test 和翻译，并沿用现有只写、替换、已配置状态与随 Profile 删除的凭据生命周期。
 - **FR-008**：每次 Claude 模型刷新、Test 与翻译请求必须携带 `x-api-key` 和 `anthropic-version: 2023-06-01`，且凭据保存后不得向 Sidebar 或 Main 返回其值。
@@ -130,7 +130,7 @@
 
 - Anthropic 官方 API Root 为 `https://api.anthropic.com`，Messages 位于 `/v1/messages`，模型目录位于 `/v1/models`，稳定版本请求头使用 `2023-06-01`。
 - 自定义 Claude-compatible Endpoint 至少实现本规格所需的非流式 Messages 行为；模型目录是可选兼容能力，不提供时可使用自定义 Model ID。
-- Ollama 0.14.0 或更高版本的 Anthropic-compatible Endpoint 是本功能的单开发者 live test 目标之一，但不是产品默认 Endpoint、内置模型来源或运行时依赖。
+- Ollama 0.14.0 或更高版本的 Anthropic-compatible Endpoint 是本功能的单开发者 live test 目标之一；其 `/v1/models` 返回 `object: "list"` 单页目录，但它不是产品默认 Endpoint、内置模型来源或运行时依赖。
 - 用户自行取得可用 API Key、选择服务当前可用模型并承担远程服务费用；无需认证但兼容客户端要求非空 Key 的本地服务由用户填写其接受的占位值。
 - Claude-compatible 验证目标不提供本功能可依赖的 JSON Schema 输出约束，因此严格提示与响应校验是所有 Claude Profile 的一致行为。
 - 既有 Provider Profile、凭据存储、模型目录、翻译提交和会话清理契约可扩展到第四种 Service type，无需迁移已有 OpenAI、DeepSeek 或 Ollama Profile。

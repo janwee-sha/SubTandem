@@ -185,6 +185,39 @@ describe("provider model discovery", () => {
     });
   });
 
+  it("accepts the non-paginated model list returned by Ollama's Claude endpoint", async () => {
+    const client = transport({
+      object: "list",
+      data: [
+        { id: " translategemma:12b ", object: "model", owned_by: "library" },
+        { id: "translategemma:12b", object: "model", owned_by: "library" },
+        { id: "qwen3:14b", object: "model", owned_by: "library" },
+      ],
+    });
+
+    await expect(
+      discoverProviderModels(
+        {
+          jobId: "models-ollama-claude",
+          kind: "claude",
+          endpoint: "http://127.0.0.1:11434",
+          apiKey: "ollama",
+          proxyMode: "direct",
+        },
+        client,
+      ),
+    ).resolves.toEqual(["translategemma:12b", "qwen3:14b"]);
+    expect(client.requests).toHaveLength(1);
+    expect(client.requests[0]).toMatchObject({
+      method: "GET",
+      url: "http://127.0.0.1:11434/v1/models",
+      headers: {
+        "x-api-key": "ollama",
+        "anthropic-version": "2023-06-01",
+      },
+    });
+  });
+
   it("requires a Claude key and rejects an unsupported or malformed catalog safely", async () => {
     await expect(
       discoverProviderModels(
