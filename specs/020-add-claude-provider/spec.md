@@ -85,7 +85,7 @@
 - **FR-006**：模型刷新失败、模型目录不受支持或分页响应无效时，系统必须保留当前 Model ID、上次成功列表与自定义输入能力；只有当前 Service type、Endpoint、Profile、凭据状态和请求时序完全匹配的最新结果可以更新当前目录。
 - **FR-007**：Claude Profile 必须要求用户提供非空 API Key；该 Key 必须作为 Claude 契约凭据用于所属 Profile 的模型刷新、Test 和翻译，并沿用现有只写、替换、已配置状态与随 Profile 删除的凭据生命周期。
 - **FR-008**：每次 Claude 模型刷新、Test 与翻译请求必须携带 `x-api-key` 和 `anthropic-version: 2023-06-01`，且凭据保存后不得向 Sidebar 或 Main 返回其值。
-- **FR-009**：Claude Test 与翻译必须使用非流式 Messages 契约；请求必须包含精确 Model ID、正数生成上限、`temperature: 0`、顶层 system 指令，以及承载该批目标的 user 消息。
+- **FR-009**：Claude Test 与翻译必须使用非流式 Messages 契约；请求必须包含精确 Model ID、正数生成上限、顶层 system 指令，以及承载该批目标的 user 消息。请求不得发送 `temperature`、`top_p` 或 `top_k`；确定性必须由严格提示、结束状态、拒绝信号及本地完整校验保证。
 - **FR-010**：Claude 翻译指令必须把目标文本及上下文视为不可信数据，只翻译每个目标的 `text`，仅使用上下文消歧，并要求每个输入 ID 恰好返回一次非空目标语言译文及单一 JSON 对象，不得输出说明、包装文本或额外字段。
 - **FR-011**：Claude 请求不得发送 OpenAI `response_format`、Ollama `format`、JSON Schema、工具调用或其他 Claude-compatible 验证目标不要求的结构化输出能力；结构化结果必须由严格指令和本地完整校验共同保证。
 - **FR-012**：Claude 响应只能从 `content` 中的文本块按返回顺序形成候选结果；候选结果必须通过完整 JSON、目标集合、精确 ID、唯一性和非空译文校验，`stop_reason` 必须为 `end_turn`，且响应不得包含拒绝信号。任一检查失败时，该次 wire 结果不得部分提交。
