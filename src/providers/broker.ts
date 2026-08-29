@@ -1,6 +1,7 @@
 import type { PlayerId } from "../domain/types.js";
 import type { TranslationProvider } from "./provider.js";
 import type { ProviderProfiles } from "./profiles.js";
+import type { WindowSelection } from "./profiles.js";
 import type {
   ProviderProfileSnapshot,
   TranslationBatchRequest,
@@ -32,8 +33,13 @@ export class ProviderBroker {
     ) => TranslationProvider | Promise<TranslationProvider>,
   ) {}
 
-  select(windowId: string, profileId: string, revision: number, endpointFingerprint: string): void {
-    this.profiles.select(windowId, profileId, revision, endpointFingerprint);
+  select(
+    windowId: string,
+    profileId: string,
+    revision: number,
+    endpointFingerprint: string,
+  ): WindowSelection {
+    return this.profiles.select(windowId, profileId, revision, endpointFingerprint);
   }
 
   lease(windowId: string, profileId: string, revision: number): void {

@@ -3,6 +3,52 @@ import { normalizeProviderEndpoint, ProviderProfiles } from "../../src/providers
 import { sanitizedProfileView } from "../../src/domain/messages.js";
 
 describe("immutable provider profile revisions", () => {
+  it("stores DeepSeek as an independent normalized Profile identity", () => {
+    const profiles = new ProviderProfiles(() => "deepseek-profile");
+    const deepseek = profiles.save({
+      displayName: "DeepSeek",
+      kind: "deepseek",
+      endpoint: "https://API.DeepSeek.com/",
+      model: " exact-model ",
+    });
+    const openai = profiles.save({
+      profileId: "openai-profile",
+      expectedRevision: 0,
+      displayName: "OpenAI",
+      kind: "openai",
+      endpoint: "https://api.deepseek.com",
+      model: "exact-model",
+    });
+    expect(deepseek).toMatchObject({
+      kind: "deepseek",
+      endpoint: "https://api.deepseek.com",
+      model: "exact-model",
+    });
+    expect(deepseek.endpointFingerprint).not.toBe(openai.endpointFingerprint);
+    expect(profiles.listLatest()).toEqual([deepseek, openai]);
+  });
+
+  it("publishes a new identity when a DeepSeek Profile changes kind", () => {
+    const profiles = new ProviderProfiles(() => "kind-change-profile");
+    const deepseek = profiles.save({
+      displayName: "DeepSeek",
+      kind: "deepseek",
+      endpoint: "https://api.deepseek.com",
+      model: "exact-model",
+    });
+    const ollama = profiles.save({
+      profileId: deepseek.profileId,
+      expectedRevision: deepseek.revision,
+      displayName: "Ollama",
+      kind: "ollama",
+      endpoint: "http://127.0.0.1:11434",
+      model: "qwen",
+    });
+    expect(ollama).toMatchObject({ kind: "ollama", revision: 2 });
+    expect(ollama.endpointFingerprint).not.toBe(deepseek.endpointFingerprint);
+    expect(profiles.get(deepseek.profileId, 1)).toEqual(deepseek);
+  });
+
   it("keeps an existing display name and internal kind while using a custom OpenAI API root", () => {
     const profiles = new ProviderProfiles(() => "existing-openai-profile");
     const saved = profiles.save({

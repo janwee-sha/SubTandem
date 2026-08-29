@@ -403,7 +403,7 @@ export function parseEnvelope(value: unknown): RpcEnvelope {
 
 export interface ProviderModelsRequestPayload {
   trigger: "open" | "endpoint" | "profile" | "credential" | "manual";
-  kind: "openai" | "ollama";
+  kind: "openai" | "deepseek" | "ollama";
   endpoint: string;
   proxyMode: "system" | "direct";
   profileId?: string;
@@ -415,7 +415,7 @@ export type ProviderModelsRequest = RpcEnvelope<ProviderModelsRequestPayload>;
 
 export interface ProviderModelsPreviewRequestPayload {
   trigger: "manual";
-  kind: "openai" | "ollama";
+  kind: "openai" | "deepseek" | "ollama";
   endpoint: string;
   proxyMode: "system" | "direct";
   draftCredentialEpoch: number;
@@ -441,7 +441,7 @@ export function parseProviderModelsRequest(value: unknown): ProviderModelsReques
   if (
     Object.keys(payload).some((key) => !allowed.has(key)) ||
     !["open", "endpoint", "profile", "credential", "manual"].includes(String(payload.trigger)) ||
-    (payload.kind !== "openai" && payload.kind !== "ollama") ||
+    (payload.kind !== "openai" && payload.kind !== "deepseek" && payload.kind !== "ollama") ||
     typeof payload.endpoint !== "string" ||
     !payload.endpoint ||
     (payload.proxyMode !== "system" && payload.proxyMode !== "direct") ||
@@ -465,7 +465,7 @@ export function parseProviderModelsPreviewRequest(value: unknown): ProviderModel
     Object.keys(payload).sort().join(",") !==
       "credential,draftCredentialEpoch,endpoint,kind,proxyMode,trigger" ||
     payload.trigger !== "manual" ||
-    (payload.kind !== "openai" && payload.kind !== "ollama") ||
+    (payload.kind !== "openai" && payload.kind !== "deepseek" && payload.kind !== "ollama") ||
     typeof payload.endpoint !== "string" ||
     !payload.endpoint ||
     (payload.proxyMode !== "system" && payload.proxyMode !== "direct") ||
@@ -547,7 +547,7 @@ export function sanitizedProfileView(profile: {
   profileId: string;
   revision: number;
   displayName: string;
-  kind: "openai" | "ollama";
+  kind: "openai" | "deepseek" | "ollama";
   endpoint: string;
   endpointFingerprint: string;
   proxyMode?: "system" | "direct";
@@ -558,7 +558,7 @@ export function sanitizedProfileView(profile: {
   profileId: string;
   revision: number;
   displayName: string;
-  kind: "openai" | "ollama";
+  kind: "openai" | "deepseek" | "ollama";
   endpoint: string;
   endpointFingerprint: string;
   proxyMode: "system" | "direct";

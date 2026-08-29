@@ -82,6 +82,20 @@ describe("credential and content leakage boundaries", () => {
     for (const value of sensitive) expect(output).not.toContain(value);
   });
 
+  it("keeps saved DeepSeek credentials out of every readable Profile field", () => {
+    const view = sanitizedProfileView({
+      profileId: "deepseek-profile",
+      revision: 1,
+      displayName: "DeepSeek",
+      kind: "deepseek",
+      endpoint: "https://api.deepseek.com",
+      endpointFingerprint: "safe-fingerprint",
+      credential: { apiKey: "PRIVATE_DEEPSEEK_KEY" },
+    });
+    expect(view).toMatchObject({ kind: "deepseek", credentialConfigured: true });
+    expect(JSON.stringify(view)).not.toMatch(/PRIVATE_DEEPSEEK_KEY|apiKey|authorization/i);
+  });
+
   it("keeps media paths, subtitle text, job IDs and native details out of preparation views", async () => {
     const sensitive = [
       "/private/media/private-title.mkv",

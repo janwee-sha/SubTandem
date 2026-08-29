@@ -21,6 +21,7 @@ import { ProviderConnectionTests } from "./providers/connection-tests.js";
 import { CredentialScopedProviderCache } from "./providers/provider-cache.js";
 import { OllamaProvider } from "./providers/ollama.js";
 import { OpenAICompatibleProvider } from "./providers/openai.js";
+import { DeepSeekProvider } from "./providers/deepseek.js";
 import { ProviderProfiles } from "./providers/profiles.js";
 import { normalizeProviderEndpoint } from "./providers/profiles.js";
 import { discoverProviderModels } from "./providers/model-discovery.js";
@@ -54,6 +55,12 @@ const overlayPositionAuthority = new OverlayPositionAuthority(
   overlayPositionPreferences.read().position,
 );
 
+function advanceCredentialEpoch(profileId: string): number {
+  const next = (modelCredentialEpochs.get(profileId) ?? 0) + 1;
+  modelCredentialEpochs.set(profileId, next);
+  return next;
+}
+
 try {
   targetLanguagePreferences.clearLegacySourcePreferences();
 } catch (error) {
@@ -73,7 +80,7 @@ function restoreProfileMetadata(): void {
         typeof value.profileId !== "string" ||
         !value.profileId ||
         typeof value.displayName !== "string" ||
-        (value.kind !== "openai" && value.kind !== "ollama") ||
+        (value.kind !== "openai" && value.kind !== "deepseek" && value.kind !== "ollama") ||
         typeof value.endpoint !== "string" ||
         typeof value.model !== "string"
       )
@@ -87,9 +94,10 @@ function restoreProfileMetadata(): void {
           endpoint: value.endpoint,
           model: value.model,
           proxyMode: value.proxyMode === "direct" ? "direct" : "system",
-          ...(value.capability === "strict-json-schema" ||
-          value.capability === "json-object" ||
-          value.capability === "prompt-json"
+          ...(value.kind === "openai" &&
+          (value.capability === "strict-json-schema" ||
+            value.capability === "json-object" ||
+            value.capability === "prompt-json")
             ? { capability: value.capability }
             : {}),
         });
@@ -164,7 +172,7 @@ function recordProfileModelCatalog(profileId: string, contextKey: string, models
 }
 
 function modelContextKey(input: {
-  kind: "openai" | "ollama";
+  kind: "openai" | "deepseek" | "ollama";
   endpoint: string;
   proxyMode: "system" | "direct";
   profileId?: string;
@@ -231,7 +239,27 @@ async function buildProvider(profile: ProviderProfileSnapshot): Promise<Configur
         providerTransport,
       );
     }
+    case "deepseek": {
+      if (!profile.model)
+        throw {
+          category: "model",
+          retryable: false,
+          providerCode: "MODEL_REQUIRED",
+          userAction: "CHECK_MODEL",
+        };
+      const secret = await credentials.getSecret(profile.profileId);
+      return new DeepSeekProvider(
+        {
+          endpoint: profile.endpoint,
+          model: profile.model,
+          ...(secret?.apiKey ? { apiKey: secret.apiKey } : {}),
+          proxyMode: profile.proxyMode ?? "system",
+        },
+        providerTransport,
+      );
+    }
   }
+  throw new Error("UNSUPPORTED_PROVIDER_KIND");
 }
 
 const providerCache = new CredentialScopedProviderCache(
@@ -290,8 +318,8 @@ function requestId(raw: unknown): string {
   return typeof value === "string" ? value : localUuid();
 }
 
-function supportedProviderKind(value: unknown): "openai" | "ollama" {
-  if (value === "openai" || value === "ollama") return value;
+function supportedProviderKind(value: unknown): "openai" | "deepseek" | "ollama" {
+  if (value === "openai" || value === "deepseek" || value === "ollama") return value;
   throw new Error("UNSUPPORTED_PROVIDER_KIND");
 }
 
@@ -563,24 +591,45 @@ iina.global.onMessage("profile:create-revision", async (raw: unknown, playerId?:
   if (!playerId) return;
   try {
     const values = payload(raw);
+    const kind = supportedProviderKind(values.kind);
+    const profileId = typeof values.profileId === "string" ? values.profileId : undefined;
+    const expectedRevision =
+      typeof values.expectedRevision === "number" ? values.expectedRevision : undefined;
+    const currentProfile = profileId ? profiles.get(profileId) : null;
+    const endpoint = normalizeProviderEndpoint(kind, String(values.endpoint ?? ""));
+    const model = typeof values.model === "string" ? values.model.trim() : "";
+    if (!model) throw new Error("MODEL_REQUIRED");
+    if (currentProfile && currentProfile.revision !== expectedRevision)
+      throw new Error("STALE_PROFILE_REVISION");
+    const kindChanged = Boolean(currentProfile && currentProfile.kind !== kind);
+    if (kindChanged && profileId) {
+      await Promise.all([
+        broker.cancelProfile(profileId),
+        providerConnectionTests.cancelProfile(profileId),
+        cancelProfileModelRequests(profileId),
+      ]);
+      await credentials.deleteSecret(profileId);
+      advanceCredentialEpoch(profileId);
+      clearProfileProviderCache(profileId);
+      clearProfileModelCatalogs(profileId);
+    }
     const previousSelection = profiles.selection(playerId);
     const profile = profiles.save({
-      ...(typeof values.profileId === "string" ? { profileId: values.profileId } : {}),
-      ...(typeof values.expectedRevision === "number"
-        ? { expectedRevision: values.expectedRevision }
-        : {}),
+      ...(profileId ? { profileId } : {}),
+      ...(expectedRevision === undefined ? {} : { expectedRevision }),
       editingWindowId: playerId,
       displayName: String(values.displayName ?? "Provider"),
-      kind: supportedProviderKind(values.kind),
-      endpoint: String(values.endpoint ?? ""),
+      kind,
+      endpoint,
       proxyMode: values.proxyMode === "direct" ? "direct" : "system",
-      ...(typeof values.model === "string" ? { model: values.model } : {}),
+      model,
     });
-    await Promise.all([
-      broker.cancelProfile(profile.profileId),
-      providerConnectionTests.cancelProfile(profile.profileId),
-      cancelProfileModelRequests(profile.profileId),
-    ]);
+    if (!kindChanged)
+      await Promise.all([
+        broker.cancelProfile(profile.profileId),
+        providerConnectionTests.cancelProfile(profile.profileId),
+        cancelProfileModelRequests(profile.profileId),
+      ]);
     clearProfileProviderCache(profile.profileId);
     clearProfileModelCatalogs(profile.profileId);
     persistProfileMetadata();
@@ -612,10 +661,10 @@ iina.global.onMessage("profile:delete", async (raw: unknown, playerId?: string) 
     await providerConnectionTests.cancelProfile(profileId);
     await cancelProfileModelRequests(profileId);
     await credentials.deleteSecret(profileId);
+    advanceCredentialEpoch(profileId);
     const affectedPlayerIds = profiles.delete(profileId);
     clearProfileProviderCache(profileId);
     clearProfileModelCatalogs(profileId);
-    modelCredentialEpochs.delete(profileId);
     persistProfileMetadata();
     for (const target of new Set([playerId, ...affectedPlayerIds]))
       postToPlayer(target, "profile:deleted", {
@@ -645,10 +694,7 @@ iina.global.onMessage("credential:set", async (raw: unknown, playerId?: string) 
       providerConnectionTests.cancelProfile(secret.profileId),
       cancelProfileModelRequests(secret.profileId),
     ]);
-    modelCredentialEpochs.set(
-      secret.profileId,
-      (modelCredentialEpochs.get(secret.profileId) ?? 0) + 1,
-    );
+    advanceCredentialEpoch(secret.profileId);
     clearProfileProviderCache(secret.profileId);
     clearProfileModelCatalogs(secret.profileId);
     postToPlayer(playerId, "credential:result", {
@@ -669,9 +715,17 @@ iina.global.onMessage("profile:select", (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     const selection = parseProfileSelection(payload(raw));
-    broker.select(playerId, selection.profileId, selection.revision, selection.endpointFingerprint);
+    const authorized = broker.select(
+      playerId,
+      selection.profileId,
+      selection.revision,
+      selection.endpointFingerprint,
+    );
     broker.lease(playerId, selection.profileId, selection.revision);
-    postToPlayer(playerId, "profile:selected", { requestId: requestId(raw), selection });
+    postToPlayer(playerId, "profile:selected", {
+      requestId: requestId(raw),
+      selection: authorized,
+    });
   } catch {
     postToPlayer(playerId, "operation:error", {
       requestId: requestId(raw),

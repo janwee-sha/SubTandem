@@ -11,7 +11,7 @@ type SessionStatus =
   | "partialFailure"
   | "serviceUnavailable";
 
-type ProviderKind = "openai" | "ollama";
+type ProviderKind = "openai" | "deepseek" | "ollama";
 
 interface SessionProviderError {
   category?: string;
@@ -134,7 +134,34 @@ const providerDrafts: Record<
   { endpoint: string; model: string; proxyMode: "system" | "direct" }
 > = {
   openai: { endpoint: "https://api.openai.com/v1", model: "", proxyMode: "system" },
+  deepseek: { endpoint: "https://api.deepseek.com", model: "", proxyMode: "system" },
   ollama: { endpoint: "http://127.0.0.1:11434", model: "", proxyMode: "system" },
+};
+const providerLabels: Record<ProviderKind, string> = {
+  openai: "OpenAI",
+  deepseek: "DeepSeek",
+  ollama: "Ollama",
+};
+const providerUi: Record<
+  ProviderKind,
+  { endpointHint: string; modelHint: string; modelPlaceholder: string }
+> = {
+  openai: {
+    endpointHint: "Enter a complete HTTP(S) API root. Every value receives /chat/completions.",
+    modelHint: "Enter the exact model identifier exposed by this service.",
+    modelPlaceholder: "e.g. gpt-translate-fast",
+  },
+  deepseek: {
+    endpointHint:
+      "Enter a complete HTTP(S) DeepSeek API root. Chat requests append /chat/completions.",
+    modelHint: "Refresh the catalog or enter the exact DeepSeek model identifier.",
+    modelPlaceholder: "Exact DeepSeek model ID",
+  },
+  ollama: {
+    endpointHint: "Enter a complete HTTP(S) Ollama server root.",
+    modelHint: "Enter the exact Ollama tag, for example translategemma:12b or qwen3:14b.",
+    modelPlaceholder: "e.g. qwen3:14b",
+  },
 };
 const profiles = new Map<string, ProfileView>();
 const sidebarState = window.createSubTandemSidebarState();
@@ -152,7 +179,13 @@ const pendingOperations = new Set<string>();
 let activeProviderKind: ProviderKind = "openai";
 let editingProfile: ProfileView | null = null;
 let selectedProfileId: string | null = null;
-let pendingProfileSave: { requestId: string; secret: string | null } | null = null;
+let pendingProfileSave: {
+  requestId: string;
+  secret: string | null;
+  contextSignature: string;
+  profileId: string | null;
+  revision: number | null;
+} | null = null;
 let renderedAssistiveFeedbackSignature = "";
 let requestSequence = 0;
 let renderedProfilesSignature = "";
@@ -393,6 +426,30 @@ function modelContextKey(): string {
   });
 }
 
+function editorContextSignature(): string {
+  return JSON.stringify({
+    kind: providerKind.value,
+    endpoint: providerEndpoint.value.trim(),
+    proxyMode: providerProxyMode.value,
+    profileId: editingProfile?.profileId ?? null,
+    profileRevision: editingProfile?.revision ?? null,
+    model: sidebarState.snapshot.modelControl.value,
+    draftCredentialEpoch,
+  });
+}
+
+function cancelPendingProfileSaveForContextChange(): void {
+  if (!pendingProfileSave) return;
+  const requestId = pendingProfileSave.requestId;
+  pendingProfileSave = null;
+  sidebarState.cancelProfileSave(requestId);
+  finishOperation(
+    requestId,
+    "The editor changed before this save completed. Refresh the Profile list to review it.",
+    "cancelled",
+  );
+}
+
 function validModelEndpoint(): boolean {
   const value = providerEndpoint.value.trim();
   try {
@@ -522,18 +579,18 @@ function setModelContext(value: string, catalog?: { contextKey: string; models: 
 
 function updateRequestUrl(): void {
   const value = providerEndpoint.value.trim().replace(/\/+$/, "");
-  requestUrl.textContent =
-    providerKind.value === "openai"
-      ? value
-        ? `Actual request: ${value}/chat/completions`
-        : "Requests append /chat/completions to this API root."
-      : value
-        ? `Ollama API root: ${value}`
-        : "Enter the Ollama server root.";
+  const kind = providerKind.value as ProviderKind;
+  if (kind === "ollama") {
+    requestUrl.textContent = value ? `Ollama API root: ${value}` : "Enter the Ollama server root.";
+    return;
+  }
+  requestUrl.textContent = value
+    ? `Actual request: ${value}/chat/completions`
+    : "Requests append /chat/completions to this API root.";
 }
 
 function selectedServiceTypeLabel(): string {
-  return providerKind.selectedOptions.item(0)?.textContent?.trim() ?? "";
+  return providerLabels[providerKind.value as ProviderKind];
 }
 
 function applyProviderKind(): void {
@@ -545,19 +602,15 @@ function applyProviderKind(): void {
   profileName.value = sidebarState.snapshot.profileName.value;
   document.querySelector<HTMLElement>("#credential-row")!.hidden = false;
   document.querySelector<HTMLElement>("#endpoint-hint")!.textContent =
-    kind === "openai"
-      ? "Enter a complete HTTP(S) API root. Every value receives /chat/completions."
-      : "Enter a complete HTTP(S) Ollama server root.";
-  document.querySelector<HTMLElement>("#model-hint")!.textContent =
-    kind === "openai"
-      ? "Enter the exact model identifier exposed by this service."
-      : "Enter the exact Ollama tag, for example translategemma:12b or qwen3:14b.";
-  providerModel.placeholder = kind === "openai" ? "e.g. gpt-translate-fast" : "e.g. qwen3:14b";
+    providerUi[kind].endpointHint;
+  document.querySelector<HTMLElement>("#model-hint")!.textContent = providerUi[kind].modelHint;
+  providerModel.placeholder = providerUi[kind].modelPlaceholder;
   setModelContext(providerDrafts[kind].model);
   updateRequestUrl();
 }
 
 providerKind.addEventListener("change", () => {
+  cancelPendingProfileSaveForContextChange();
   saveActiveDraft();
   draftCredentialEpoch += 1;
   providerKey.value = "";
@@ -565,34 +618,41 @@ providerKind.addEventListener("change", () => {
   requestModels("profile");
 });
 providerEndpoint.addEventListener("input", () => {
+  cancelPendingProfileSaveForContextChange();
   updateRequestUrl();
   scheduleEndpointModelRefresh();
 });
 providerProxyMode.addEventListener("change", () => {
+  cancelPendingProfileSaveForContextChange();
   setModelContext(sidebarState.snapshot.modelControl.value);
   requestModels("profile");
 });
 refreshModelsButton.addEventListener("click", () => requestModels("manual"));
 providerModelSelect.addEventListener("change", () => {
+  cancelPendingProfileSaveForContextChange();
   if (providerModelSelect.value === "__custom__") sidebarState.selectCustomModel();
   else sidebarState.selectKnownModel(providerModelSelect.value);
   renderModelControl();
   if (providerModelSelect.value === "__custom__") providerModel.focus();
 });
 providerModel.addEventListener("input", () => {
+  cancelPendingProfileSaveForContextChange();
   sidebarState.inputCustomModelValue(providerModel.value);
 });
 providerKey.addEventListener("input", () => {
+  cancelPendingProfileSaveForContextChange();
   draftCredentialEpoch += 1;
   pendingModelRefresh = null;
   setModelContext(sidebarState.snapshot.modelControl.value);
   setModelRefreshFeedback("idle");
 });
 profileName.addEventListener("input", () => {
+  cancelPendingProfileSaveForContextChange();
   sidebarState.inputProfileName(profileName.value);
 });
 
-function loadEditor(profile: ProfileView): void {
+function loadEditor(profile: ProfileView, preservePendingSave = false): void {
+  if (!preservePendingSave) cancelPendingProfileSaveForContextChange();
   editingProfile = profile;
   draftCredentialEpoch += 1;
   providerKey.value = "";
@@ -620,6 +680,7 @@ function loadEditor(profile: ProfileView): void {
 }
 
 function resetEditor(): void {
+  cancelPendingProfileSaveForContextChange();
   editingProfile = null;
   draftCredentialEpoch += 1;
   providerKey.value = "";
@@ -685,6 +746,7 @@ retrySubtitleButton.addEventListener("click", () => {
 });
 
 saveProfileButton.addEventListener("click", () => {
+  cancelPendingProfileSaveForContextChange();
   const model = sidebarState.snapshot.modelControl.value.trim();
   if (!model) {
     setModelRefreshFeedback("error", "Refresh models and choose one, or enter a custom model ID.");
@@ -698,7 +760,13 @@ saveProfileButton.addEventListener("click", () => {
     editingProfile?.profileId,
     editingProfile?.revision,
   );
-  pendingProfileSave = { requestId, secret: providerKey.value || null };
+  pendingProfileSave = {
+    requestId,
+    secret: providerKey.value || null,
+    contextSignature: editorContextSignature(),
+    profileId: editingProfile?.profileId ?? null,
+    revision: editingProfile?.revision ?? null,
+  };
   sidebarState.beginProfileSave(requestId, Boolean(pendingProfileSave.secret));
   window.iina?.postMessage(
     "profile:save",
@@ -791,7 +859,12 @@ window.iina?.onMessage("profile:revision-created", (raw: unknown) => {
     profile?: ProfileView;
     selectionInvalidated?: boolean;
   };
-  if (!result.profile || !pendingProfileSave || result.requestId !== pendingProfileSave.requestId)
+  if (
+    !result.profile ||
+    !pendingProfileSave ||
+    result.requestId !== pendingProfileSave.requestId ||
+    pendingProfileSave.contextSignature !== editorContextSignature()
+  )
     return;
   const transition = sidebarState.profileRevisionCreated(result.requestId, {
     profileId: result.profile.profileId,
@@ -800,7 +873,10 @@ window.iina?.onMessage("profile:revision-created", (raw: unknown) => {
   });
   if (!transition.accepted) return;
   profileTestStates.delete(result.profile.profileId);
-  loadEditor(result.profile);
+  pendingProfileSave.profileId = result.profile.profileId;
+  pendingProfileSave.revision = result.profile.revision;
+  loadEditor(result.profile, true);
+  pendingProfileSave.contextSignature = editorContextSignature();
   if (pendingProfileSave.secret) {
     window.iina?.postMessage(
       "secret:set",
@@ -863,6 +939,10 @@ window.iina?.onMessage("provider:test-result", (raw: unknown) => {
   const tested =
     typeof result.requestId === "string" ? pendingProfileTests.get(result.requestId) : undefined;
   const testedProfile = tested ? profiles.get(tested.profileId) : undefined;
+  if (tested && (!testedProfile || testedProfile.revision !== tested.revision)) {
+    pendingProfileTests.delete(result.requestId!);
+    return;
+  }
   const accepted = finishOperation(
     result.requestId,
     window.subtandemProviderTestStatusMessage({
@@ -941,11 +1021,18 @@ window.iina?.onMessage("credential:state", (raw: unknown) => {
     state?: string;
     code?: string;
     userAction?: string;
+    profileId?: string;
   };
   const ready = result.state === "ready";
   const message = window.subtandemCredentialStatusMessage(result);
-  credentialState.textContent = message;
-  if (pendingProfileSave && result.requestId === pendingProfileSave.requestId) {
+  if (
+    pendingProfileSave &&
+    result.requestId === pendingProfileSave.requestId &&
+    pendingProfileSave.contextSignature === editorContextSignature() &&
+    (result.profileId === undefined || result.profileId === pendingProfileSave.profileId)
+  ) {
+    if (result.profileId !== undefined && result.profileId !== pendingProfileSave.profileId) return;
+    credentialState.textContent = message;
     const saveMessage = sidebarState.completeProfileSave(
       result.requestId,
       ready ? "Profile and local credential saved." : profileCredentialPartialFailureMessage,
@@ -1080,7 +1167,7 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
     article.innerHTML = `<div><strong></strong><span class="profile-summary"></span><code></code></div><div class="profile-actions"></div>`;
     article.querySelector("strong")!.textContent = profile.displayName;
     article.querySelector<HTMLElement>(".profile-summary")!.textContent =
-      `${profile.kind === "openai" ? "OpenAI" : "Ollama"}${profile.model ? ` · ${profile.model}` : ""}` +
+      `${providerLabels[profile.kind]}${profile.model ? ` · ${profile.model}` : ""}` +
       `${profile.proxyMode === "direct" ? " · direct" : " · macOS proxy"}` +
       `${profile.credentialConfigured ? " · key saved" : " · no key saved"}`;
     const savedProfileTestState = profileTestStates.get(profile.profileId);

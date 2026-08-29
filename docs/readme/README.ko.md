@@ -30,7 +30,7 @@ SubTandem는 원본 자막을 그대로 유지하면서 선택한 위치에 번�
 
 - **실시간 이중 언어 자막:** 원본 자막은 IINA에서 그대로 유지하고 SubTandem가 다른 자막 트랙을 차지하지 않은 채 선택한 세로 위치에 번역문을 가로 중앙 정렬로 표시합니다.
 - **내장 및 외부 텍스트 자막:** 로컬 Matroska SubRip/ASS/SSA, MOV/MP4 `mov_text`, 외부 SRT/ASS를 지원합니다. extractor가 포함되어 외부 `ffmpeg`나 `ffprobe`가 필요하지 않습니다.
-- **번역 서비스 선택:** OpenAI Chat Completions 계약과 호환되는 endpoint 또는 로컬/원격 Ollama 서버를 사용할 수 있습니다.
+- **번역 서비스 선택:** OpenAI Chat Completions 계약과 호환되는 endpoint, DeepSeek 또는 로컬/원격 Ollama 서버를 사용할 수 있습니다.
 - **재생 우선 동작:** 번역 작업 때문에 영상이 일시 정지되거나 원본 자막이 숨겨지지 않습니다.
 - **제한된 요청:** 재생 위치 주변의 자막만 번역하고 플레이어 창마다 동시 작업을 제한하며, 성공한 결과는 현재 영상 세션에만 캐시합니다.
 - **여러 Profile:** 번역 서비스 Profile을 저장하고 테스트한 뒤, 자막 텍스트를 받을 정확한 endpoint를 명시적으로 선택할 수 있습니다.
@@ -43,6 +43,7 @@ SubTandem는 원본 자막을 그대로 유지하면서 선택한 위치에 번�
 - 지원되는 로컬 내장 텍스트 자막 또는 읽을 수 있는 외부 SRT/ASS/SSA 자막
 - 다음 번역 서비스 중 하나:
   - OpenAI endpoint, Model ID, 그리고 서비스에서 요구하는 경우 API key
+  - DeepSeek API key와 정확한 DeepSeek Model ID
   - 호환 모델이 이미 설치된 Ollama 서버
 
 SubTandem는 번역 모델을 다운로드하거나 실행하지 않습니다.
@@ -97,7 +98,7 @@ IINA 개발 버전에서는 사용 가능한 플러그인 목록에서 SubTandem
 
 1. 로컬 영상을 열고 지원되는 내장 텍스트 자막 또는 외부 SRT/ASS를 IINA 주 자막으로 선택합니다.
 2. **Languages**에서 모국어를 선택합니다. IINA가 자막 언어를 식별하지 못하면 직접 확인한 뒤 언어 설정을 저장합니다.
-3. **Translation service**에서 OpenAI 또는 Ollama Profile을 만듭니다. 인증이 필요하면 API key를 입력한 뒤 모델 목록을 수동으로 새로 고칩니다. 반환된 모델을 선택하거나 정확한 사용자 지정 Model ID를 입력합니다.
+3. **Translation service**에서 OpenAI, DeepSeek 또는 Ollama Profile을 만듭니다. 인증이 필요하면 API key를 입력한 뒤 모델 목록을 수동으로 새로 고칩니다. 반환된 모델을 선택하거나 정확한 사용자 지정 Model ID를 입력합니다.
 4. Profile을 저장하고 테스트한 다음 **Select**를 클릭합니다. Profile 선택은 화면에 표시된 endpoint로 재생 위치 주변의 자막 텍스트를 전송하도록 SubTandem에 명시적으로 허용하는 동작입니다.
 5. **Translate**를 켭니다. 원본 자막은 IINA에서 계속 표시되고 번역된 cue는 SubTandem 오버레이에 나타납니다. **Languages**의 **Translation position**으로 오버레이를 위쪽(`0`)에서 아래쪽(`100`)까지 옮길 수 있습니다.
 
@@ -113,6 +114,14 @@ Endpoint, 모델, API key 또는 네트워크 경로가 바뀌면 Profile을 다
 - Endpoint가 인증 없는 요청을 허용하는 경우에만 Bearer API key를 생략할 수 있습니다. 저장 후 key 입력란은 쓰기 전용이며 다시 표시되지 않습니다.
 - 원격 endpoint는 HTTPS를 사용해야 합니다.
 
+### DeepSeek
+
+- 고정 기본 API root는 `https://api.deepseek.com`입니다. 번역에는 `/chat/completions`, 모델 목록에는 `/models`를 덧붙입니다.
+- 모델 목록을 새로 고치거나 정확한 사용자 지정 Model ID를 입력합니다. SubTandem는 DeepSeek 모델을 미리 선택하거나 추천 또는 추측하지 않습니다.
+- 공식 서비스에는 사용 가능한 API key가 필요합니다. 저장 후 입력란은 쓰기 전용이며 key를 다시 표시하지 않습니다.
+- **Save**와 **Test**는 Profile을 선택하거나 자막 텍스트 전송을 승인하지 않습니다. 명시적으로 **Select**해야 하며, 그전에는 자막 없는 모델 목록 요청만 기본 root에 도달할 수 있습니다.
+- DeepSeek는 요청 요금을 부과하고 잔액, 할당량, rate limit을 적용할 수 있습니다.
+
 ### Ollama
 
 - 기본 서버 root는 `http://127.0.0.1:11434`입니다.
@@ -126,9 +135,9 @@ Endpoint, 모델, API key 또는 네트워크 경로가 바뀌면 Profile을 다
 
 - SubTandem는 명시적으로 선택한 Profile에만 재생 위치 주변의 자막 텍스트, 언어 방향, 불투명한 cue ID와 소량의 인접 문맥을 보냅니다. 영상이나 오디오 내용은 보내지 않습니다.
 - `video-overlay` 권한은 현재 번역을 로컬 비대화형 Overlay에 표시하는 데만 사용됩니다. Overlay는 입력이나 영상 위 드래그를 받지 않고 네트워크 또는 WebView 저장소를 사용하지 않으며 재생 세션과 함께 지워집니다.
-- OpenAI 및 Ollama API key는 플러그인 전용 `credentials.json` 파일에 로컬 평문으로 저장됩니다. 디렉터리는 `0700`, 파일은 `0600` 권한을 사용합니다. Key는 IINA preferences, 로그, 진단, Sidebar 상태 또는 플러그인 패키지에 기록되지 않으며 저장 후 다시 표시되지 않습니다.
+- OpenAI, DeepSeek 및 Ollama API key는 플러그인 전용 `credentials.json` 파일에 로컬 평문으로 저장됩니다. 디렉터리는 `0700`, 파일은 `0600` 권한을 사용합니다. Key는 IINA preferences, 로그, 진단, Sidebar 상태 또는 플러그인 패키지에 기록되지 않으며 저장 후 다시 표시되지 않습니다.
 - 파일 권한은 다른 macOS 계정과 일반적인 우발적 접근으로부터 key를 보호하지만, 현재 macOS 사용자 권한으로 파일을 읽을 수 있는 프로세스로부터는 보호하지 못합니다.
-- 번들 transport helper는 임시 `127.0.0.1` 포트에서만 수신합니다. 저장했거나 편집 중인 endpoint는 Select 전에 자막 없는 모델 목록 요청을 받을 수 있으며, 선택한 Profile만 번역용 자막 텍스트를 받습니다.
+- 번들 transport helper는 임시 `127.0.0.1` 포트에서만 수신합니다. 저장했거나 편집 중인 endpoint에는 기본 DeepSeek root `https://api.deepseek.com`가 포함되며 Select 전에 자막 없는 모델 목록 요청을 받을 수 있습니다. 선택한 Profile revision만 번역용 자막 텍스트를 받습니다.
 - 번역 결과는 현재 영상 세션에만 캐시되며 영상 변경, 재생 종료 또는 창 닫기 시 삭제됩니다.
 - 번역 Provider는 요청 비용을 청구하고 자체 데이터 및 콘텐츠 정책을 적용할 수 있습니다. 묶음 처리와 캐시는 호출 횟수를 줄이지만 최대 비용을 보장하지 않습니다.
 
@@ -140,7 +149,7 @@ SubTandem는 오디오 전사, 이미지 기반 자막 OCR/추출, 원격 미디
 
 - **Select a supported text subtitle:** 로컬 내장 SubRip/ASS/SSA/`mov_text` 또는 외부 SRT/ASS를 주 자막으로 선택하세요. 이미지 기반 및 원격 내장 자막은 지원하지 않으며, 상태 안내에 따라 다시 선택하거나 준비 실패 후 Retry하세요.
 - **Confirm the subtitle language:** `en-US`와 같은 BCP 47 언어 tag를 입력하고 언어 설정을 저장하세요.
-- **Translation service unavailable:** Profile을 테스트하고 endpoint, 모델, API key, 네트워크 경로 또는 Ollama 프로세스를 확인하세요. 영상과 원본 자막은 계속 정상 재생됩니다.
+- **Translation service unavailable:** Profile을 테스트하고 endpoint, 정확한 Model ID, API key, 네트워크 경로 또는 Ollama 프로세스를 확인하세요. DeepSeek는 잔액, 할당량, rate limit과 고정 API 경로 접근도 확인해야 합니다. 영상과 원본 자막은 계속 정상 재생됩니다.
 - **Credential could not be saved:** 불완전한 개발 사본 대신 Release 패키지를 설치하고 플러그인 데이터 디렉터리가 쓰기 가능한지 확인한 뒤 IINA를 완전히 종료하고 다시 시작하세요.
 - **번역문이 표시되지 않음:** Profile을 테스트하고 선택했는지, 원본 언어와 모국어가 다른지, **Translate**가 켜져 있는지, 재생 위치가 번역된 cue의 시간 범위 안에 있는지 확인하세요.
 - **프록시가 서비스를 차단함:** 먼저 기본 macOS 프록시 경로를 사용하세요. 프록시가 서비스를 거부하면 해당 Profile을 **Connect directly**로 바꾸고 저장한 뒤 다시 Select/Test하세요.

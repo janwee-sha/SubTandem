@@ -46,4 +46,17 @@ describe("credential-scoped Provider cache", () => {
       providerCode: "CREDENTIAL_CONTEXT_CHANGED",
     });
   });
+
+  it("clears cached Providers for every revision of one DeepSeek Profile", async () => {
+    const build = vi.fn(async () => ({}) as ConfiguredProvider);
+    const cache = new CredentialScopedProviderCache(() => 0, build);
+    const first = { ...profile, revision: 1, kind: "deepseek" as const };
+    const second = { ...profile, revision: 2, kind: "deepseek" as const };
+    await cache.get(first);
+    await cache.get(second);
+    cache.clearProfile(profile.profileId);
+    await cache.get(first);
+    await cache.get(second);
+    expect(build).toHaveBeenCalledTimes(4);
+  });
 });

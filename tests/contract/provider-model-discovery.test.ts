@@ -26,6 +26,73 @@ function transport(body: unknown, statusCode = 200): CapturingTransport {
 }
 
 describe("provider model discovery", () => {
+  it("uses the DeepSeek models contract with optional Bearer and exact stable IDs", async () => {
+    const client = transport({
+      data: [
+        { id: " model-a ", owned_by: "deepseek" },
+        { id: "model-a" },
+        { id: "Model-A" },
+        { id: "custom/model:v2" },
+        { id: " " },
+        { id: 3 },
+      ],
+    });
+    await expect(
+      discoverProviderModels(
+        {
+          jobId: "models-deepseek",
+          kind: "deepseek",
+          endpoint: "https://API.DeepSeek.com/",
+          apiKey: "deepseek-secret",
+          proxyMode: "system",
+        },
+        client,
+      ),
+    ).resolves.toEqual(["model-a", "Model-A", "custom/model:v2"]);
+    expect(client.requests[0]).toEqual({
+      jobId: "models-deepseek",
+      method: "GET",
+      url: "https://api.deepseek.com/models",
+      headers: { Authorization: "Bearer deepseek-secret" },
+      proxyMode: "system",
+      timeoutMs: 10_000,
+      maxResponseBytes: 1_048_576,
+    });
+    await expect(
+      discoverProviderModels(
+        { jobId: "deepseek-empty", kind: "deepseek", endpoint: "https://api.deepseek.com" },
+        transport({ data: [] }),
+      ),
+    ).resolves.toEqual([]);
+  });
+
+  it("rejects malformed and failed DeepSeek catalogs without exposing response data", async () => {
+    await expect(
+      discoverProviderModels(
+        { jobId: "deepseek-invalid", kind: "deepseek", endpoint: "https://api.deepseek.com" },
+        transport({ models: [{ id: "wrong-shape" }] }),
+      ),
+    ).rejects.toMatchObject({
+      category: "protocol",
+      providerCode: "DEEPSEEK_MODELS_MALFORMED_RESPONSE",
+    });
+    const failure = await discoverProviderModels(
+      {
+        jobId: "deepseek-auth",
+        kind: "deepseek",
+        endpoint: "https://api.deepseek.com",
+        apiKey: "PRIVATE_KEY",
+      },
+      transport({ error: { message: "PRIVATE_RESPONSE" } }, 401),
+    ).catch((error) => error);
+    expect(failure).toMatchObject({
+      category: "authentication",
+      statusCode: 401,
+      userAction: "CHECK_CREDENTIALS",
+    });
+    expect(JSON.stringify(failure)).not.toMatch(/PRIVATE/);
+  });
+
   it("extracts every valid OpenAI model without owned_by filtering", async () => {
     const client = transport({
       data: [

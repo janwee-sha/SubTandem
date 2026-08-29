@@ -1,9 +1,45 @@
 import { describe, expect, it } from "vitest";
 import { buildTranslationTask } from "../../src/providers/translation-task.js";
-import { validateIdOutput } from "../../src/providers/validation.js";
+import { validateIdOutput, validateStrictIdOutput } from "../../src/providers/validation.js";
 import { encodeWireItems, providerOutputSchema } from "../../src/providers/wire-items.js";
 
 describe("strict provider output", () => {
+  it("accepts only an exact complete DeepSeek translation object", () => {
+    expect(
+      validateStrictIdOutput(["c1", "c2"], {
+        translations: [
+          { id: "c2", text: " two " },
+          { id: "c1", text: "one" },
+        ],
+      }),
+    ).toEqual({
+      translations: [
+        { id: "c2", text: "two" },
+        { id: "c1", text: "one" },
+      ],
+    });
+  });
+
+  it.each([
+    ["extra top-level field", { translations: [{ id: "c1", text: "one" }], extra: true }],
+    ["extra item field", { translations: [{ id: "c1", text: "one", extra: true }] }],
+    ["missing id", { translations: [] }],
+    ["unknown id", { translations: [{ id: "outside", text: "one" }] }],
+    [
+      "duplicate id",
+      {
+        translations: [
+          { id: "c1", text: "one" },
+          { id: "c1", text: "two" },
+        ],
+      },
+    ],
+    ["blank text", { translations: [{ id: "c1", text: " " }] }],
+    ["non-object", []],
+  ])("rejects DeepSeek %s all-or-nothing", (_name, output) => {
+    expect(() => validateStrictIdOutput(["c1"], output)).toThrow(/MALFORMED_PROVIDER_OUTPUT/);
+  });
+
   it("accepts only unique requested IDs with non-empty text while retaining partial valid results", () => {
     const output = validateIdOutput(["c1", "c2", "c3"], {
       translations: [

@@ -65,6 +65,9 @@ describe("IINA package manifest", () => {
     expect(manifest.permissionDescriptions["network-request"]).toMatch(
       /selected profile receives subtitle text/i,
     );
+    expect(manifest.permissionDescriptions["network-request"]).toMatch(
+      /DeepSeek.*api\.deepseek\.com.*before Select/i,
+    );
   });
 
   it("declares only the non-interactive translation overlay permission and default position", () => {

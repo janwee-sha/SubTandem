@@ -4,8 +4,49 @@ import { SubtitleExtractorError } from "../../src/adapters/iina/subtitle-extract
 import { PlaybackController, type TranslationOverlaySink } from "../../src/app/controller.js";
 import type { TranslationProvider } from "../../src/providers/provider.js";
 import { parseTargetLanguageSave } from "../../src/domain/messages.js";
+import { DeepSeekProvider } from "../../src/providers/deepseek.js";
+import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 
 describe("allowlist-only diagnostics", () => {
+  it.each([
+    [401, "authentication", false, "CHECK_CREDENTIALS"],
+    [403, "authentication", false, "CHECK_CREDENTIALS"],
+    [402, "quota", false, "CHECK_QUOTA"],
+    [429, "http", true, "CHECK_NETWORK"],
+    [400, "configuration", false, "CHECK_ENDPOINT"],
+    [422, "configuration", false, "CHECK_ENDPOINT"],
+    [500, "http", true, "CHECK_NETWORK"],
+    [503, "http", true, "CHECK_NETWORK"],
+  ] as const)(
+    "classifies DeepSeek HTTP %s without exposing upstream content",
+    async (statusCode, category, retryable, userAction) => {
+      const provider = new DeepSeekProvider(
+        { endpoint: "https://api.deepseek.com", model: "exact-model" },
+        {
+          request: async () => ({
+            statusCode,
+            headers: {
+              "x-request-id": "bad\nAuthorization: Bearer upstream-secret",
+              "x-private": "private-header",
+            },
+            bodyText: JSON.stringify({
+              error: {
+                code: "PRIVATE_UPSTREAM_CODE",
+                message: "PRIVATE_UPSTREAM_BODY",
+              },
+            }),
+          }),
+        },
+      );
+
+      const failure = await provider.attempt(makeProviderRequest()).catch((error) => error);
+      expect(failure).toMatchObject({ category, retryable, statusCode, userAction });
+      expect(JSON.stringify(failure)).not.toMatch(
+        /PRIVATE|upstream-secret|authorization|x-request-id|x-private/i,
+      );
+    },
+  );
+
   it("copies safe metadata and drops bodies, headers, credentials and subtitle text", () => {
     const output = diagnostic({
       code: "PROVIDER_HTTP",

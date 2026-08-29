@@ -60,3 +60,38 @@ export function validateIdOutput(
     : undefined;
   return { translations, missingIds, ...(usage && Object.keys(usage).length ? { usage } : {}) };
 }
+
+export function validateStrictIdOutput(
+  requestedIds: readonly string[],
+  value: unknown,
+): TranslationBatchResult {
+  const parsed = parsedObject(value);
+  if (Object.keys(parsed).join(",") !== "translations" || !Array.isArray(parsed.translations))
+    throw new Error("MALFORMED_PROVIDER_OUTPUT");
+  if (
+    requestedIds.length === 0 ||
+    new Set(requestedIds).size !== requestedIds.length ||
+    parsed.translations.length !== requestedIds.length
+  )
+    throw new Error("MALFORMED_PROVIDER_OUTPUT");
+  const requested = new Set(requestedIds);
+  const seen = new Set<string>();
+  const translations = parsed.translations.map((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item))
+      throw new Error("MALFORMED_PROVIDER_OUTPUT");
+    const record = item as Record<string, unknown>;
+    if (
+      Object.keys(record).sort().join(",") !== "id,text" ||
+      typeof record.id !== "string" ||
+      !requested.has(record.id) ||
+      seen.has(record.id) ||
+      typeof record.text !== "string" ||
+      !record.text.trim()
+    )
+      throw new Error("MALFORMED_PROVIDER_OUTPUT");
+    seen.add(record.id);
+    return { id: record.id, text: record.text.trim() };
+  });
+  if (seen.size !== requested.size) throw new Error("MALFORMED_PROVIDER_OUTPUT");
+  return { translations };
+}

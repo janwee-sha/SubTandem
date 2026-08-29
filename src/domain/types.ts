@@ -32,7 +32,7 @@ export interface SanitizedConnectionView {
   profileId: ProfileId;
   revision: number;
   displayName: string;
-  kind: "openai" | "ollama";
+  kind: "openai" | "deepseek" | "ollama";
   endpoint: string;
   credentialConfigured: boolean;
 }

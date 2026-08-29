@@ -16,7 +16,7 @@
 
 **目的**：确认 OpenAI、Ollama、Profile、模型目录、Sidebar 与安全边界的现有基线。
 
-- [ ] T001 按 `specs/019-add-deepseek-provider/quickstart.md` 的聚焦范围运行当前已存在的 OpenAI、Ollama、Profile、模型目录、Sidebar、集成与安全测试并记录基线失败，不运行尚未创建的 DeepSeek 测试或真实联网测试
+- [X] T001 按 `specs/019-add-deepseek-provider/quickstart.md` 的聚焦范围运行当前已存在的 OpenAI、Ollama、Profile、模型目录、Sidebar、集成与安全测试并记录基线失败，不运行尚未创建的 DeepSeek 测试或真实联网测试
 
 ---
 
@@ -26,10 +26,10 @@
 
 **关键要求**：本阶段完成前不得进入用户故事实现。
 
-- [ ] T002 [P] 扩展可控 Provider 测试服务以支持 DeepSeek `/models`、`/chat/completions`、Bearer 校验、请求体捕获、延迟及空或畸形响应，修改 `tests/helpers/provider-server.ts` 并新增 `tests/fixtures/providers/deepseek-success.json`
-- [ ] T003 [P] 为 `deepseek` kind 的消息解析、安全 Profile view、未知字段拒绝与敏感字段拒绝编写失败优先的契约测试，修改 `tests/contract/ui-messages.test.ts`、`tests/contract/global-rpc.test.ts` 与 `tests/contract/provider-profiles.test.ts`
-- [ ] T004 扩展 Provider/Profile/模型消息与安全连接视图的严格联合类型为 `openai | deepseek | ollama`，并保持 `fake` 只用于测试，修改 `src/providers/types.ts`、`src/domain/types.ts` 与 `src/domain/messages.ts` 使 T003 的消息断言通过
-- [ ] T005 让 Profile 保存、Endpoint 规范化、fingerprint 与安全 snapshot 接受独立 `deepseek` 身份且不迁移或改写既有 OpenAI/Ollama 数据，修改 `src/providers/profiles.ts` 使 T003 的 Profile 断言通过
+- [X] T002 [P] 扩展可控 Provider 测试服务以支持 DeepSeek `/models`、`/chat/completions`、Bearer 校验、请求体捕获、延迟及空或畸形响应，修改 `tests/helpers/provider-server.ts` 并新增 `tests/fixtures/providers/deepseek-success.json`
+- [X] T003 [P] 为 `deepseek` kind 的消息解析、安全 Profile view、未知字段拒绝与敏感字段拒绝编写失败优先的契约测试，修改 `tests/contract/ui-messages.test.ts`、`tests/contract/global-rpc.test.ts` 与 `tests/contract/provider-profiles.test.ts`
+- [X] T004 扩展 Provider/Profile/模型消息与安全连接视图的严格联合类型为 `openai | deepseek | ollama`，并保持 `fake` 只用于测试，修改 `src/providers/types.ts`、`src/domain/types.ts` 与 `src/domain/messages.ts` 使 T003 的消息断言通过
+- [X] T005 让 Profile 保存、Endpoint 规范化、fingerprint 与安全 snapshot 接受独立 `deepseek` 身份且不迁移或改写既有 OpenAI/Ollama 数据，修改 `src/providers/profiles.ts` 使 T003 的 Profile 断言通过
 
 **检查点**：跨运行时 payload 只接受三种产品 kind；API Key、Authorization、字幕、译文和原始响应仍无法进入安全 Profile view。
 
@@ -43,18 +43,18 @@
 
 ### 测试
 
-- [ ] T006 [P] [US1] 为 DeepSeek fresh Test、有效单项和双项 wire、分批 progress、取消及无 capability probe 的成功路径编写失败优先的 Provider 契约测试，新增 `tests/contract/deepseek.test.ts`
-- [ ] T007 [P] [US1] 为 Service type 顺序、DeepSeek 默认名称与 Root、空 Custom Model ID、metadata 恢复、独立草稿、Save/Test/Select/Update/Delete 和 revision 失效编写失败优先的 UI/Profile 契约测试，修改 `tests/contract/sidebar-form.test.ts`、`tests/contract/sidebar-lifecycle.test.ts`、`tests/contract/provider-profiles.test.ts` 与 `tests/contract/global-rpc.test.ts`
-- [ ] T008 [P] [US1] 为 DeepSeek Profile 从模型刷新到字幕提交的完整 happy path、Test 不自动 Select、编辑后重选及删除不影响其他 Profile 编写失败优先的集成回归，修改 `tests/integration/provider-connection-lifecycle.test.ts` 与 `tests/integration/us3-providers.test.ts`
+- [X] T006 [P] [US1] 为 DeepSeek fresh Test、有效单项和双项 wire、分批 progress、取消及无 capability probe 的成功路径编写失败优先的 Provider 契约测试，新增 `tests/contract/deepseek.test.ts`
+- [X] T007 [P] [US1] 为 Service type 顺序、DeepSeek 默认名称与 Root、空 Custom Model ID、metadata 恢复、独立草稿、Save/Test/Select/Update/Delete 和 revision 失效编写失败优先的 UI/Profile 契约测试，修改 `tests/contract/sidebar-form.test.ts`、`tests/contract/sidebar-lifecycle.test.ts`、`tests/contract/provider-profiles.test.ts` 与 `tests/contract/global-rpc.test.ts`
+- [X] T008 [P] [US1] 为 DeepSeek Profile 从模型刷新到字幕提交的完整 happy path、Test 不自动 Select、编辑后重选及删除不影响其他 Profile 编写失败优先的集成回归，修改 `tests/integration/provider-connection-lifecycle.test.ts` 与 `tests/integration/us3-providers.test.ts`
 
 ### 实现
 
-- [ ] T009 [P] [US1] 从 `src/providers/openai.ts` 提取可复用的 Chat Completions 分批、取消、usage 与 progress 内核，并新增公开 `DeepSeekProvider` 的 fresh Test 和有效响应成功路径到 `src/providers/deepseek.ts`，保持 OpenAI capability probe 与 fallback 行为不变
-- [ ] T010 [P] [US1] 让 DeepSeek 模型成功路径请求规范化 `{API Root}/models`、读取 `data[].id`、trim、精确去重并保留顺序，修改 `src/providers/model-discovery.ts`
-- [ ] T011 [P] [US1] 在固定 OpenAI、DeepSeek、Ollama 顺序下实现 DeepSeek 默认值、独立非敏感草稿、穷举文案、模型控件及 Profile 操作，修改 `ui/sidebar.html`、`ui/sidebar-state.ts`、`ui/provider-status.ts` 与 `ui/sidebar.ts`
-- [ ] T012 [P] [US1] 让 Main 从当前安全 Profile view 解析并保存所选 kind，将其传入 Controller 的选择上下文供服务专属本地行为使用，修改 `src/main.ts` 与 `src/app/controller.ts`
-- [ ] T013 [US1] 在 Global 恢复和持久化 DeepSeek metadata、构造 `DeepSeekProvider`、复用只写 API Key、provider cache、Test、Broker、选择、revision 与删除流程，修改 `src/global.ts` 并保持 OpenAI/Ollama 分支不变
-- [ ] T014 [US1] 运行 US1 聚焦测试并核对 Refresh、Save 与 Test 均不自动 Select、只有当前明确选择的 DeepSeek revision 能提交字幕，验证 `tests/contract/deepseek.test.ts`、`tests/contract/sidebar-form.test.ts`、`tests/contract/sidebar-lifecycle.test.ts`、`tests/integration/provider-connection-lifecycle.test.ts` 与 `tests/integration/us3-providers.test.ts`
+- [X] T009 [P] [US1] 从 `src/providers/openai.ts` 提取可复用的 Chat Completions 分批、取消、usage 与 progress 内核，并新增公开 `DeepSeekProvider` 的 fresh Test 和有效响应成功路径到 `src/providers/deepseek.ts`，保持 OpenAI capability probe 与 fallback 行为不变
+- [X] T010 [P] [US1] 让 DeepSeek 模型成功路径请求规范化 `{API Root}/models`、读取 `data[].id`、trim、精确去重并保留顺序，修改 `src/providers/model-discovery.ts`
+- [X] T011 [P] [US1] 在固定 OpenAI、DeepSeek、Ollama 顺序下实现 DeepSeek 默认值、独立非敏感草稿、穷举文案、模型控件及 Profile 操作，修改 `ui/sidebar.html`、`ui/sidebar-state.ts`、`ui/provider-status.ts` 与 `ui/sidebar.ts`
+- [X] T012 [P] [US1] 让 Main 从当前安全 Profile view 解析并保存所选 kind，将其传入 Controller 的选择上下文供服务专属本地行为使用，修改 `src/main.ts` 与 `src/app/controller.ts`
+- [X] T013 [US1] 在 Global 恢复和持久化 DeepSeek metadata、构造 `DeepSeekProvider`、复用只写 API Key、provider cache、Test、Broker、选择、revision 与删除流程，修改 `src/global.ts` 并保持 OpenAI/Ollama 分支不变
+- [X] T014 [US1] 运行 US1 聚焦测试并核对 Refresh、Save 与 Test 均不自动 Select、只有当前明确选择的 DeepSeek revision 能提交字幕，验证 `tests/contract/deepseek.test.ts`、`tests/contract/sidebar-form.test.ts`、`tests/contract/sidebar-lifecycle.test.ts`、`tests/integration/provider-connection-lifecycle.test.ts` 与 `tests/integration/us3-providers.test.ts`
 
 **检查点**：US1 可独立演示完整 DeepSeek Profile 主流程；这是可演示 MVP，但尚未完成 US2 的全部协议拒绝与 US3 的竞态安全验收，不可作为生产交付终点。
 
@@ -68,17 +68,17 @@
 
 ### 测试
 
-- [ ] T015 [P] [US2] 为 `response_format: {type: "json_object"}`、`thinking: {type: "disabled"}`、`temperature: 0`、JSON 指令、无 Schema/probe/fallback/`X-Session-Id` 及每次 fresh Test 编写失败优先的请求契约，修改 `tests/contract/deepseek.test.ts`
-- [ ] T016 [P] [US2] 为完整对象、顶层和条目精确字段、数量、目标集合、唯一 ID 与非空译文的全量接受和零部分接受编写失败优先的验证测试，修改 `tests/contract/provider-output.test.ts`
-- [ ] T017 [P] [US2] 为 401/403、402、429、400/422、500/503、refusal、length、空内容、timeout、network 与 cancel 的 allowlist 分类及上游正文/code/header 清洗编写失败优先的安全测试，修改 `tests/security/redaction.test.ts` 与 `tests/security/credential-leakage.test.ts`
-- [ ] T018 [P] [US2] 为前序成功 wire 保持渐进提交、失败 wire 零提交、播放和原字幕不阻塞及 DeepSeek 内容不进入 Log Viewer 编写失败优先的集成回归，修改 `tests/integration/progressive-translation.test.ts` 与 `tests/integration/us1-playback.test.ts`
+- [X] T015 [P] [US2] 为 `response_format: {type: "json_object"}`、`thinking: {type: "disabled"}`、`temperature: 0`、JSON 指令、无 Schema/probe/fallback/`X-Session-Id` 及每次 fresh Test 编写失败优先的请求契约，修改 `tests/contract/deepseek.test.ts`
+- [X] T016 [P] [US2] 为完整对象、顶层和条目精确字段、数量、目标集合、唯一 ID 与非空译文的全量接受和零部分接受编写失败优先的验证测试，修改 `tests/contract/provider-output.test.ts`
+- [X] T017 [P] [US2] 为 401/403、402、429、400/422、500/503、refusal、length、空内容、timeout、network 与 cancel 的 allowlist 分类及上游正文/code/header 清洗编写失败优先的安全测试，修改 `tests/security/redaction.test.ts` 与 `tests/security/credential-leakage.test.ts`
+- [X] T018 [P] [US2] 为前序成功 wire 保持渐进提交、失败 wire 零提交、播放和原字幕不阻塞及 DeepSeek 内容不进入 Log Viewer 编写失败优先的集成回归，修改 `tests/integration/progressive-translation.test.ts` 与 `tests/integration/us1-playback.test.ts`
 
 ### 实现
 
-- [ ] T019 [US2] 新增不改变 OpenAI/Ollama 宽松语义的 DeepSeek 严格验证入口，对顶层、条目、数量、精确 ID 集合、唯一性和非空文本执行 all-or-nothing 校验，修改 `src/providers/validation.ts`
-- [ ] T020 [US2] 固定 DeepSeek 请求体、JSON 目标提示、fresh Test、完整外层/content/finish reason 解析、受限 usage/request ID 与安全本地错误 code，修改 `src/providers/deepseek.ts`、`src/providers/translation-task.ts` 与 `src/providers/errors.ts` 使 T015-T017 通过
-- [ ] T021 [US2] 将严格 wire 结果接入现有分批 progress、取消和会话所有权，确保失败 wire 不调用 progress 或 cache 且 DeepSeek 选择禁用字幕对照日志，修改 `src/providers/deepseek.ts` 与 `src/app/controller.ts` 使 T018 通过
-- [ ] T022 [US2] 运行 US2 聚焦测试及现有 OpenAI/Ollama Provider 回归，确认 OpenAI capability probe 与 Ollama schema/prompt fallback 未改变，验证 `tests/contract/deepseek.test.ts`、`tests/contract/provider-output.test.ts`、`tests/contract/openai.test.ts`、`tests/contract/ollama.test.ts`、`tests/integration/progressive-translation.test.ts` 与 `tests/security/redaction.test.ts`
+- [X] T019 [US2] 新增不改变 OpenAI/Ollama 宽松语义的 DeepSeek 严格验证入口，对顶层、条目、数量、精确 ID 集合、唯一性和非空文本执行 all-or-nothing 校验，修改 `src/providers/validation.ts`
+- [X] T020 [US2] 固定 DeepSeek 请求体、JSON 目标提示、fresh Test、完整外层/content/finish reason 解析、受限 usage/request ID 与安全本地错误 code，修改 `src/providers/deepseek.ts`、`src/providers/translation-task.ts` 与 `src/providers/errors.ts` 使 T015-T017 通过
+- [X] T021 [US2] 将严格 wire 结果接入现有分批 progress、取消和会话所有权，确保失败 wire 不调用 progress 或 cache 且 DeepSeek 选择禁用字幕对照日志，修改 `src/providers/deepseek.ts` 与 `src/app/controller.ts` 使 T018 通过
+- [X] T022 [US2] 运行 US2 聚焦测试及现有 OpenAI/Ollama Provider 回归，确认 OpenAI capability probe 与 Ollama schema/prompt fallback 未改变，验证 `tests/contract/deepseek.test.ts`、`tests/contract/provider-output.test.ts`、`tests/contract/openai.test.ts`、`tests/contract/ollama.test.ts`、`tests/integration/progressive-translation.test.ts` 与 `tests/security/redaction.test.ts`
 
 **检查点**：每个 DeepSeek wire 只有“全部有效并提交”或“全部拒绝”两种结果，固定请求方言从首个请求起生效，失败不暴露服务原文且不阻塞播放。
 
@@ -92,18 +92,18 @@
 
 ### 测试
 
-- [ ] T023 [P] [US3] 为 DeepSeek `/models` 可选 Bearer、全部有效 ID、成功空目录、畸形响应、安全错误及自定义 Model ID 保留编写失败优先的契约测试，修改 `tests/contract/provider-model-discovery.test.ts`
-- [ ] T024 [P] [US3] 为 kind 转换原子清理旧 Key、清理失败保留旧 revision、替换/删除递增 credential epoch、取消 owner 并清理全部 revision cache/目录编写失败优先的契约测试，修改 `tests/contract/provider-profiles.test.ts`、`tests/contract/global-rpc.test.ts` 与 `tests/unit/provider-cache.test.ts`
-- [ ] T025 [P] [US3] 为三种独立草稿、切换清空未保存 Key、模型/凭据反馈 owner、失败保留与乱序 busy 状态编写失败优先的 Sidebar 回归，修改 `tests/unit/sidebar-state.test.ts`、`tests/contract/sidebar-form.test.ts` 与 `tests/contract/sidebar-lifecycle.test.ts`
-- [ ] T026 [P] [US3] 为 kind/Endpoint/route/Profile/revision/Key/窗口交错、迟到模型/Test/译文拒绝及三种服务互不覆盖编写失败优先的集成回归，修改 `tests/integration/provider-connection-lifecycle.test.ts` 与 `tests/integration/us3-providers.test.ts`
-- [ ] T027 [P] [US3] 为草稿和已保存 DeepSeek Key、Authorization、字幕、译文、完整响应不进入 preferences、消息、目录、日志、诊断、进程参数或包编写失败优先的安全回归，修改 `tests/security/credential-leakage.test.ts` 与 `tests/security/redaction.test.ts`
+- [X] T023 [P] [US3] 为 DeepSeek `/models` 可选 Bearer、全部有效 ID、成功空目录、畸形响应、安全错误及自定义 Model ID 保留编写失败优先的契约测试，修改 `tests/contract/provider-model-discovery.test.ts`
+- [X] T024 [P] [US3] 为 kind 转换原子清理旧 Key、清理失败保留旧 revision、替换/删除递增 credential epoch、取消 owner 并清理全部 revision cache/目录编写失败优先的契约测试，修改 `tests/contract/provider-profiles.test.ts`、`tests/contract/global-rpc.test.ts` 与 `tests/unit/provider-cache.test.ts`
+- [X] T025 [P] [US3] 为三种独立草稿、切换清空未保存 Key、模型/凭据反馈 owner、失败保留与乱序 busy 状态编写失败优先的 Sidebar 回归，修改 `tests/unit/sidebar-state.test.ts`、`tests/contract/sidebar-form.test.ts` 与 `tests/contract/sidebar-lifecycle.test.ts`
+- [X] T026 [P] [US3] 为 kind/Endpoint/route/Profile/revision/Key/窗口交错、迟到模型/Test/译文拒绝及三种服务互不覆盖编写失败优先的集成回归，修改 `tests/integration/provider-connection-lifecycle.test.ts` 与 `tests/integration/us3-providers.test.ts`
+- [X] T027 [P] [US3] 为草稿和已保存 DeepSeek Key、Authorization、字幕、译文、完整响应不进入 preferences、消息、目录、日志、诊断、进程参数或包编写失败优先的安全回归，修改 `tests/security/credential-leakage.test.ts` 与 `tests/security/redaction.test.ts`
 
 ### 实现
 
-- [ ] T028 [P] [US3] 完成 DeepSeek 模型目录的成功空数组、失败保留、安全错误与 `/models` 路径分支，同时保持 OpenAI/Ollama 解析不变，修改 `src/providers/model-discovery.ts`
-- [ ] T029 [US3] 在 kind 变化时先清理旧凭据和 owner 再发布新 revision，并在凭据替换或删除后递增代次、取消模型/Test/翻译、清理 Provider cache 与目录且核对最新 owner，修改 `src/providers/profiles.ts`、`src/providers/provider-cache.ts` 与 `src/global.ts`
-- [ ] T030 [P] [US3] 将 Sidebar 的 DeepSeek 草稿、draft credential epoch、模型 context、凭据保存结果和操作反馈绑定完整当前编辑上下文，拒绝迟到结果且失败保留 Model ID、目录和 Custom 能力，修改 `ui/sidebar-state.ts`、`ui/sidebar.ts`、`ui/provider-status.ts` 与 `src/adapters/iina/model-catalog-sync.ts`
-- [ ] T031 [US3] 运行 US3 聚焦契约、状态、集成与安全测试，使用 sentinel 确认禁止位置命中数为零并确认 OpenAI/Ollama 全流程无回归，验证 `tests/contract/provider-model-discovery.test.ts`、`tests/unit/provider-cache.test.ts`、`tests/unit/sidebar-state.test.ts`、`tests/integration/provider-connection-lifecycle.test.ts`、`tests/integration/us3-providers.test.ts` 与 `tests/security/credential-leakage.test.ts`
+- [X] T028 [P] [US3] 完成 DeepSeek 模型目录的成功空数组、失败保留、安全错误与 `/models` 路径分支，同时保持 OpenAI/Ollama 解析不变，修改 `src/providers/model-discovery.ts`
+- [X] T029 [US3] 在 kind 变化时先清理旧凭据和 owner 再发布新 revision，并在凭据替换或删除后递增代次、取消模型/Test/翻译、清理 Provider cache 与目录且核对最新 owner，修改 `src/providers/profiles.ts`、`src/providers/provider-cache.ts` 与 `src/global.ts`
+- [X] T030 [P] [US3] 将 Sidebar 的 DeepSeek 草稿、draft credential epoch、模型 context、凭据保存结果和操作反馈绑定完整当前编辑上下文，拒绝迟到结果且失败保留 Model ID、目录和 Custom 能力，修改 `ui/sidebar-state.ts`、`ui/sidebar.ts`、`ui/provider-status.ts` 与 `src/adapters/iina/model-catalog-sync.ts`
+- [X] T031 [US3] 运行 US3 聚焦契约、状态、集成与安全测试，使用 sentinel 确认禁止位置命中数为零并确认 OpenAI/Ollama 全流程无回归，验证 `tests/contract/provider-model-discovery.test.ts`、`tests/unit/provider-cache.test.ts`、`tests/unit/sidebar-state.test.ts`、`tests/integration/provider-connection-lifecycle.test.ts`、`tests/integration/us3-providers.test.ts` 与 `tests/security/credential-leakage.test.ts`
 
 **检查点**：DeepSeek 目录和凭据只属于完整当前 owner；任何服务切换、revision、Key、窗口或请求时序变化都能使旧结果失效，失败不会改变翻译授权。
 
@@ -113,12 +113,12 @@
 
 **目的**：完成网络披露、当前用户文档、可选真实服务验证、完整测试、正式构建、最小安装包与 IINA 宿主验收。
 
-- [ ] T032 [P] 为 DeepSeek 默认网络目的地披露、权限与 `allowedDomains: ["127.0.0.1"]` 不变及包内无凭据或 DeepSeek 运行数据补充生产接口回归，修改 `tests/contract/package-manifest.test.ts`
-- [ ] T033 [P] 新增显式 opt-in 的 DeepSeek live test，覆盖 fresh Test、至少 40 个目标和 20 个双项 wire，并确保输出只含计数与安全分类，修改 `tests/integration/live-providers.test.ts`
-- [ ] T034 更新支持服务、DeepSeek 默认 Root、模型刷新/Custom ID、只写 Key、Select 授权、费用与排错说明，并披露 Select 前无字幕模型请求且不扩大权限，修改 `Info.json` 与 `README.md` 使 T032 通过
-- [ ] T035 [P] 同步 DeepSeek 配置、安全、费用和排错说明到当前本地化与开发文档，修改 `docs/readme/README.zh-CN.md`、`docs/readme/README.fr.md`、`docs/readme/README.ja.md`、`docs/readme/README.ko.md`、`docs/readme/README.ru.md`、`docs/readme/README.ar.md` 与 `docs/engineering/development.md`
-- [ ] T036 按 `specs/019-add-deepseek-provider/quickstart.md` 运行全部聚焦 Vitest、`npm run test:native`、`npm run typecheck`、`npm run lint` 与 `npm run format:check`，修复所有失败后再继续
-- [ ] T037 严格依次运行 `npm run test`、`npm run typecheck`、`npm run lint`、`npm run build:native`、`npm run test:native`、`npm run build`、`npm run verify:package` 与 `npm run pack`，并按 `specs/019-add-deepseek-provider/quickstart.md` 审计同一候选包的架构、签名、权限、白名单和敏感材料
+- [X] T032 [P] 为 DeepSeek 默认网络目的地披露、权限与 `allowedDomains: ["127.0.0.1"]` 不变及包内无凭据或 DeepSeek 运行数据补充生产接口回归，修改 `tests/contract/package-manifest.test.ts`
+- [X] T033 [P] 新增显式 opt-in 的 DeepSeek live test，覆盖 fresh Test、至少 40 个目标和 20 个双项 wire，并确保输出只含计数与安全分类，修改 `tests/integration/live-providers.test.ts`
+- [X] T034 更新支持服务、DeepSeek 默认 Root、模型刷新/Custom ID、只写 Key、Select 授权、费用与排错说明，并披露 Select 前无字幕模型请求且不扩大权限，修改 `Info.json` 与 `README.md` 使 T032 通过
+- [X] T035 [P] 同步 DeepSeek 配置、安全、费用和排错说明到当前本地化与开发文档，修改 `docs/readme/README.zh-CN.md`、`docs/readme/README.fr.md`、`docs/readme/README.ja.md`、`docs/readme/README.ko.md`、`docs/readme/README.ru.md`、`docs/readme/README.ar.md` 与 `docs/engineering/development.md`
+- [X] T036 按 `specs/019-add-deepseek-provider/quickstart.md` 运行全部聚焦 Vitest、`npm run test:native`、`npm run typecheck`、`npm run lint` 与 `npm run format:check`，修复所有失败后再继续
+- [X] T037 严格依次运行 `npm run test`、`npm run typecheck`、`npm run lint`、`npm run build:native`、`npm run test:native`、`npm run build`、`npm run verify:package` 与 `npm run pack`，并按 `specs/019-add-deepseek-provider/quickstart.md` 审计同一候选包的架构、签名、权限、白名单和敏感材料
 - [ ] T038 仅在用户明确批准真实联网与可能费用后，按 `specs/019-add-deepseek-provider/quickstart.md` 运行 `tests/integration/live-providers.test.ts` 的 DeepSeek opt-in 场景；未获授权、Key/余额不可用或公网不稳定时保持未验收而不得标记通过
 - [ ] T039 由开发者一人使用 T037 的同一正式 `.iinaplgz` 完成 `specs/019-add-deepseek-provider/quickstart.md` 的 IINA 1.4.4 九项人工验收，仅在实际通过后将包 SHA-256、环境、非敏感场景 ID、耗时和结果记录到 `docs/validation/iina-matrix.md`
 

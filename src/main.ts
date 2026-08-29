@@ -108,6 +108,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     profileId: string;
     revision: number;
     endpointFingerprint: string;
+    kind: "openai" | "deepseek" | "ollama";
   } | null = null;
   const boundedWork = "120 s / 40 cues; 25 cues / 5,000 code points per request";
   let sidebarState: Record<string, unknown> = {
@@ -749,14 +750,20 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   runtime.global.onMessage("profile:selected", (raw: unknown) => {
     const selection = (
       raw as {
-        selection?: { profileId?: unknown; revision?: unknown; endpointFingerprint?: unknown };
+        selection?: {
+          profileId?: unknown;
+          revision?: unknown;
+          endpointFingerprint?: unknown;
+          kind?: unknown;
+        };
       }
     ).selection;
     if (
       !selection ||
       typeof selection.profileId !== "string" ||
       typeof selection.revision !== "number" ||
-      typeof selection.endpointFingerprint !== "string"
+      typeof selection.endpointFingerprint !== "string" ||
+      (selection.kind !== "openai" && selection.kind !== "deepseek" && selection.kind !== "ollama")
     )
       return;
     if (currentSelection) {
@@ -770,8 +777,12 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
       profileId: selection.profileId,
       revision: selection.revision,
       endpointFingerprint: selection.endpointFingerprint,
+      kind: selection.kind,
     };
-    controller.setProviderSelection(currentSelection);
+    controller.setProviderSelection({
+      ...currentSelection,
+      kind: currentSelection.kind,
+    });
     updateSidebarState({
       selection: currentSelection,
     });

@@ -14,11 +14,49 @@ describe("authoritative global RPC routing", () => {
     expect(source).toContain("broker.cancelProfile(secret.profileId)");
   });
 
+  it("clears the old kind credential and owner before publishing a converted revision", () => {
+    const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+    const start = source.indexOf('onMessage("profile:create-revision"');
+    const end = source.indexOf('onMessage("profile:delete"', start);
+    const handler = source.slice(start, end);
+    const kindChange = handler.indexOf("currentProfile.kind !== kind");
+    const cancel = handler.indexOf("broker.cancelProfile(profileId)", kindChange);
+    const credentialDelete = handler.indexOf(
+      "await credentials.deleteSecret(profileId)",
+      kindChange,
+    );
+    const epoch = handler.indexOf("advanceCredentialEpoch(profileId)", kindChange);
+    const save = handler.indexOf("profiles.save", kindChange);
+
+    expect(kindChange).toBeGreaterThan(-1);
+    expect(cancel).toBeGreaterThan(kindChange);
+    expect(credentialDelete).toBeGreaterThan(cancel);
+    expect(epoch).toBeGreaterThan(credentialDelete);
+    expect(save).toBeGreaterThan(epoch);
+  });
+
+  it("advances credential ownership when a Profile is deleted", () => {
+    const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+    const start = source.indexOf('onMessage("profile:delete"');
+    const end = source.indexOf('onMessage("credential:set"', start);
+    const handler = source.slice(start, end);
+    expect(handler).toContain("advanceCredentialEpoch(profileId)");
+    expect(handler).not.toContain("modelCredentialEpochs.delete(profileId)");
+  });
+
   it("allows model refresh across both runtime message boundaries", () => {
     expect(SIDEBAR_MESSAGE_NAMES).toContain("provider:models");
     expect(GLOBAL_MESSAGE_NAMES).toContain("provider:models");
     expect(SIDEBAR_MESSAGE_NAMES).toContain("provider:models-preview");
     expect(GLOBAL_MESSAGE_NAMES).toContain("provider:models-preview");
+  });
+
+  it("keeps DeepSeek on the existing provider RPC names", () => {
+    expect(GLOBAL_MESSAGE_NAMES).not.toContain("deepseek:models");
+    expect(GLOBAL_MESSAGE_NAMES).not.toContain("deepseek:test");
+    expect(GLOBAL_MESSAGE_NAMES).toEqual(
+      expect.arrayContaining(["provider:models", "provider:test", "provider:attempt"]),
+    );
   });
 
   it("routes draft credentials only through the strict preview handler", () => {

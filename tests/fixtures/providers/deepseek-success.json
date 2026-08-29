@@ -1,0 +1,18 @@
+{
+  "object": "list",
+  "data": [
+    { "id": "deepseek-chat", "object": "model", "owned_by": "deepseek" },
+    { "id": "custom/model:v2", "object": "model", "owned_by": "custom" }
+  ],
+  "chat": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "message": {
+          "content": "{\"translations\":[{\"id\":\"c1\",\"text\":\"translated\"}]}"
+        }
+      }
+    ],
+    "usage": { "prompt_tokens": 8, "completion_tokens": 3 }
+  }
+}

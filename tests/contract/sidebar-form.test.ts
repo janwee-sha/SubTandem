@@ -75,10 +75,20 @@ describe("IINA sidebar bundle contract", () => {
     );
   });
 
-  it("offers both supported providers and always exposes a required model ID", () => {
-    expect(html).toContain('<option value="openai">');
-    expect(html).toContain('<option value="ollama">');
+  it("offers all supported providers in fixed order and always exposes a required model ID", () => {
+    expect(
+      [...html.matchAll(/<option value="(openai|deepseek|ollama)">/g)].map((match) => match[1]),
+    ).toEqual(["openai", "deepseek", "ollama"]);
+    expect(html).toContain('<option value="deepseek">DeepSeek</option>');
     expect(html).toMatch(/id="provider-model"[\s\S]*?required/);
+  });
+
+  it("uses independent DeepSeek defaults without preselecting a model", () => {
+    expect(sidebarSource).toContain(
+      'deepseek: { endpoint: "https://api.deepseek.com", model: "", proxyMode: "system" }',
+    );
+    expect(sidebarSource).toContain('deepseek: "DeepSeek"');
+    expect(sidebarSource).not.toMatch(/deepseek[^\n]+model:\s*"[^"]+"/i);
   });
 
   it("uses an accessible icon-only model refresh control", () => {
