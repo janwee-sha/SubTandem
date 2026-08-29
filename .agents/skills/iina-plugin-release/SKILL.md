@@ -38,7 +38,7 @@ description: 统一 SubTandem IINA 插件的版本变更、基于用户指定版
 
 若规格包含未验收的用户故事，或规格与当前实现、测试结果存在实质不一致，停止并请用户修正版本范围或先完成验收。不得把尚未交付的规格内容写成已发布功能，也不得静默删减用户指定的版本范围。
 
-创建或更新 `docs/releases/vX.Y.Z.md`，其中 `X.Y.Z` 必须与目标版本完全一致。文件的标题与正文必须使用英文并面向最终用户，标题使用 `# SubTandem vX.Y.Z`；只保留有内容的 `New Features`、`Improvements`、`Bug Fixes` 和 `Upgrade and Compatibility Notes` 章节。每条只说明用户场景、可感知功能变化及必要的启用条件或限制，不描述技术变更、内部模块、实现过程或验证方式。没有用户可感知变化时，在标题下明确说明 `This release contains no user-facing behavior changes.`。
+创建或更新 `docs/releases/vX.Y.Z.md`，其中 `X.Y.Z` 必须与目标版本完全一致。文件的标题与正文必须使用英文并面向最终用户，标题使用 `# SubTandem vX.Y.Z`；只保留有内容的 `New Features`、`Improvements`、`Bug Fixes` 和 `Upgrade and Compatibility Notes` 章节。某项功能在本版本首次提供时，其用户场景、可感知能力、启用条件和限制等全部细节必须在 `New Features` 中完整描述，不得把其中任何细节拆分、重复或转移到 `Improvements`；`Improvements` 仅描述本版本对既有功能的增强。每条只说明用户场景、可感知功能变化及必要的启用条件或限制，不描述技术变更、内部模块、实现过程或验证方式。没有用户可感知变化时，在标题下明确说明 `This release contains no user-facing behavior changes.`。
 
 不要把规格原文、commit 标题或 PR 描述直接拼接为 release notes；不要记录架构、重构、内部安全机制、测试、文档、构建、门禁、依赖维护或其他技术变更。技术工作即使产生用户影响，也只能描述最终形成的用户功能变化、使用条件或兼容提醒。不要写入触发 commit、精确大小、SHA-256、归档清单、native helper 验收明细或自动化门禁结果。
 
