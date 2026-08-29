@@ -25,7 +25,7 @@ const providerTestStatusMessage = (
       ok?: boolean;
       category?: string;
       userAction?: string;
-      providerKind?: "openai" | "ollama";
+      providerKind?: "openai" | "deepseek" | "ollama";
     }): string;
   }
 ).subtandemProviderTestStatusMessage;
@@ -75,6 +75,75 @@ describe("Sidebar/Main/Global security messages", () => {
       credentialConfigured: true,
     });
     expect(JSON.stringify(sanitizedProfileView(profile))).not.toContain("secret-value");
+  });
+
+  it("accepts DeepSeek model messages and exposes only a safe Profile view", () => {
+    expect(
+      parseProviderModelsRequest({
+        requestId: "models-deepseek-1",
+        revision: 1,
+        payload: {
+          trigger: "manual",
+          kind: "deepseek",
+          endpoint: "https://api.deepseek.com",
+          proxyMode: "system",
+        },
+      }).payload.kind,
+    ).toBe("deepseek");
+    expect(
+      parseProviderModelsPreviewRequest({
+        requestId: "models-deepseek-preview-1",
+        revision: 1,
+        payload: {
+          trigger: "manual",
+          kind: "deepseek",
+          endpoint: "https://api.deepseek.com",
+          proxyMode: "direct",
+          draftCredentialEpoch: 2,
+          credential: { apiKey: "draft-secret" },
+        },
+      }).payload.kind,
+    ).toBe("deepseek");
+    const view = sanitizedProfileView({
+      profileId: "deepseek-profile",
+      revision: 2,
+      displayName: "DeepSeek",
+      kind: "deepseek",
+      endpoint: "https://api.deepseek.com",
+      endpointFingerprint: "deepseek-fingerprint",
+      credential: { apiKey: "saved-secret" },
+    });
+    expect(view).toMatchObject({ kind: "deepseek", credentialConfigured: true });
+    expect(JSON.stringify(view)).not.toMatch(/saved-secret|apiKey|authorization/i);
+  });
+
+  it("rejects unknown and sensitive fields on DeepSeek model message boundaries", () => {
+    const base = {
+      requestId: "models-deepseek-invalid-1",
+      revision: 1,
+      payload: {
+        trigger: "manual",
+        kind: "deepseek",
+        endpoint: "https://api.deepseek.com",
+        proxyMode: "system",
+      },
+    };
+    expect(() =>
+      parseProviderModelsRequest({
+        ...base,
+        payload: { ...base.payload, apiKey: "must-not-cross" },
+      }),
+    ).toThrow(/INVALID_MESSAGE/);
+    expect(() =>
+      parseProviderModelsPreviewRequest({
+        ...base,
+        payload: {
+          ...base.payload,
+          draftCredentialEpoch: 1,
+          credential: { apiKey: "draft-secret", Authorization: "Bearer draft-secret" },
+        },
+      }),
+    ).toThrow(/INVALID_MESSAGE/);
   });
 
   it("accepts fresh write-only secrets and exact selection authorization only", () => {

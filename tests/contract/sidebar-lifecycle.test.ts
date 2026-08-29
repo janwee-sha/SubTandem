@@ -7,6 +7,10 @@ await import("../../ui/sidebar-state.js");
 
 describe("IINA sidebar lifecycle contract", () => {
   const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
+  const controllerSource = readFileSync(
+    new URL("../../src/app/controller.ts", import.meta.url),
+    "utf8",
+  );
   const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
   const sidebarStateSource = readFileSync(
     new URL("../../ui/sidebar-state.ts", import.meta.url),
@@ -18,6 +22,13 @@ describe("IINA sidebar lifecycle contract", () => {
     new URL("../../src/adapters/iina/overlay-region-runtime.ts", import.meta.url),
     "utf8",
   );
+
+  it("carries the selected DeepSeek kind into Main translation ownership", () => {
+    expect(mainSource).toContain("kind: selection.kind");
+    expect(mainSource).toContain("kind: currentSelection.kind");
+    expect(controllerSource).toContain('providerKind?: "openai" | "deepseek" | "ollama"');
+    expect(controllerSource).toContain('this.options.providerKind !== "deepseek"');
+  });
 
   it("covers startup, open, stable endpoint and manual model refresh triggers", () => {
     expect(globalSource).toContain("prefetchProfileModels");
@@ -34,6 +45,16 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(sidebarSource).toContain("draftCredentialEpoch += 1");
     expect(sidebarSource).toContain('trigger === "manual"');
     expect(sidebarSource).toContain('"provider:models-preview"');
+  });
+
+  it("binds DeepSeek save and credential feedback to the current editor context", () => {
+    expect(sidebarSource).toContain("function editorContextSignature");
+    expect(sidebarSource).toContain("contextSignature: editorContextSignature()");
+    expect(sidebarSource).toContain(
+      "pendingProfileSave.contextSignature !== editorContextSignature()",
+    );
+    expect(sidebarSource).toContain("cancelPendingProfileSaveForContextChange");
+    expect(sidebarSource).toContain("result.profileId !== pendingProfileSave.profileId");
   });
 
   it("does not reinterpret repeated ui:ready as a model refresh", () => {

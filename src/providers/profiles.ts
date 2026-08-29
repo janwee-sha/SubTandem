@@ -2,7 +2,7 @@ import { identityHash } from "../domain/identity.js";
 import type { EndpointFingerprint, ProfileId } from "../domain/types.js";
 import type { ProviderProfileSnapshot } from "./types.js";
 
-type Kind = "openai" | "ollama";
+type Kind = "openai" | "deepseek" | "ollama";
 export interface SaveProfileInput {
   profileId?: string;
   expectedRevision?: number;
@@ -19,6 +19,7 @@ export interface WindowSelection {
   profileId: string;
   revision: number;
   endpointFingerprint: string;
+  kind: Kind;
   authorizedAt: number;
 }
 
@@ -146,7 +147,13 @@ export class ProviderProfiles {
     const profile = this.get(profileId, revision);
     if (!profile || profile.endpointFingerprint !== endpointFingerprint)
       throw new Error("SELECTION_MISMATCH");
-    const selection = { profileId, revision, endpointFingerprint, authorizedAt: Date.now() };
+    const selection = {
+      profileId,
+      revision,
+      endpointFingerprint,
+      kind: profile.kind,
+      authorizedAt: Date.now(),
+    };
     this.selections.set(windowId, selection);
     return selection;
   }

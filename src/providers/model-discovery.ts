@@ -33,11 +33,20 @@ function parseModelResponse(kind: ModelDiscoveryRequest["kind"], bodyText: strin
     parsed = value as Record<string, unknown>;
   } catch {
     throw protocolError(
-      kind === "openai" ? "OPENAI_MODELS_MALFORMED_RESPONSE" : "OLLAMA_TAGS_MALFORMED_RESPONSE",
+      kind === "openai"
+        ? "OPENAI_MODELS_MALFORMED_RESPONSE"
+        : kind === "deepseek"
+          ? "DEEPSEEK_MODELS_MALFORMED_RESPONSE"
+          : "OLLAMA_TAGS_MALFORMED_RESPONSE",
     );
   }
-  if (kind === "openai") {
-    if (!Array.isArray(parsed.data)) throw protocolError("OPENAI_MODELS_MALFORMED_RESPONSE");
+  if (kind === "openai" || kind === "deepseek") {
+    if (!Array.isArray(parsed.data))
+      throw protocolError(
+        kind === "deepseek"
+          ? "DEEPSEEK_MODELS_MALFORMED_RESPONSE"
+          : "OPENAI_MODELS_MALFORMED_RESPONSE",
+      );
     return cleanedUnique(
       parsed.data.map((item) =>
         item && typeof item === "object" && !Array.isArray(item)
@@ -64,7 +73,7 @@ export async function discoverProviderModels(
   const response = await transport.request({
     jobId: request.jobId,
     method: "GET",
-    url: `${endpoint}${request.kind === "openai" ? "/models" : "/api/tags"}`,
+    url: `${endpoint}${request.kind === "ollama" ? "/api/tags" : "/models"}`,
     headers: request.apiKey?.trim()
       ? { Authorization: `Bearer ${request.apiKey.trim()}` }
       : {},

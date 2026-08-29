@@ -31,6 +31,24 @@ describe("US1 playback acceptance", () => {
     "1\n00:00:01,000 --> 00:00:02,000\nHello\n\n2\n00:00:03,000 --> 00:00:04,000\nWorld\n",
   ).cues;
 
+  it("does not send DeepSeek subtitle or translation content to the translation logger", async () => {
+    const logged: string[] = [];
+    const controller = new PlaybackController({
+      playerId: "deepseek-no-log",
+      provider: new DeterministicFakeProvider("PRIVATE_DEEPSEEK_TRANSLATION:"),
+      providerKind: "deepseek",
+      translationLog: (message) => logged.push(message),
+      overlay: new RecordingOverlay(),
+      targetLanguage: "zh-Hans",
+    });
+    controller.setSource({ cues, contentHash: "deepseek-log", language: "en", format: "srt" });
+
+    controller.tick(1_000);
+    await controller.whenIdle();
+
+    expect(logged).toEqual([]);
+  });
+
   it("shows only the current translation without placeholders or track output", async () => {
     const overlay = new RecordingOverlay();
     const controller = new PlaybackController({

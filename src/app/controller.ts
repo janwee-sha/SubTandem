@@ -39,6 +39,7 @@ export interface PlaybackControllerOptions {
   profileId?: string;
   profileRevision?: number;
   endpointFingerprint?: string;
+  providerKind?: "openai" | "deepseek" | "ollama";
   random?: () => number;
   requiresProviderSelection?: boolean;
   translationLog?: (message: string) => void;
@@ -124,11 +125,13 @@ export class PlaybackController {
     profileId: string;
     revision: number;
     endpointFingerprint: string;
+    kind: "openai" | "deepseek" | "ollama";
     providerSemanticFingerprint?: string;
   }): void {
     this.options.profileId = input.profileId;
     this.options.profileRevision = input.revision;
     this.options.endpointFingerprint = input.endpointFingerprint;
+    this.options.providerKind = input.kind;
     this.options.providerSemanticFingerprint =
       input.providerSemanticFingerprint ?? input.endpointFingerprint;
     this.session.onTrackChanged();
@@ -144,6 +147,7 @@ export class PlaybackController {
     delete this.options.profileId;
     delete this.options.profileRevision;
     delete this.options.endpointFingerprint;
+    delete this.options.providerKind;
     delete this.options.providerSemanticFingerprint;
     this.session.onTrackChanged();
     this.translations.clear();
@@ -319,26 +323,27 @@ export class PlaybackController {
       seen.add(item.id);
       valid.push({ cueId: item.id, translation: text });
       this.translations.set(item.id, text);
-      try {
-        const sourceIndex = this.source?.cues.findIndex((cue) => cue.id === target.id) ?? -1;
-        const sourceCue = sourceIndex >= 0 ? this.source?.cues[sourceIndex] : undefined;
-        const contextBefore =
-          sourceIndex > 0 ? this.source?.cues[sourceIndex - 1]?.normalizedText : undefined;
-        const contextAfter =
-          sourceIndex >= 0 && sourceIndex + 1 < (this.source?.cues.length ?? 0)
-            ? this.source?.cues[sourceIndex + 1]?.normalizedText
-            : undefined;
-        this.options.translationLog?.(
-          formatTranslationComparison({
-            source: sourceCue?.normalizedText ?? target.text,
-            ...(contextBefore === undefined ? {} : { contextBefore }),
-            ...(contextAfter === undefined ? {} : { contextAfter }),
-            translation: text,
-          }),
-        );
-      } catch (error) {
-        void error;
-      }
+      if (this.options.providerKind !== "deepseek")
+        try {
+          const sourceIndex = this.source?.cues.findIndex((cue) => cue.id === target.id) ?? -1;
+          const sourceCue = sourceIndex >= 0 ? this.source?.cues[sourceIndex] : undefined;
+          const contextBefore =
+            sourceIndex > 0 ? this.source?.cues[sourceIndex - 1]?.normalizedText : undefined;
+          const contextAfter =
+            sourceIndex >= 0 && sourceIndex + 1 < (this.source?.cues.length ?? 0)
+              ? this.source?.cues[sourceIndex + 1]?.normalizedText
+              : undefined;
+          this.options.translationLog?.(
+            formatTranslationComparison({
+              source: sourceCue?.normalizedText ?? target.text,
+              ...(contextBefore === undefined ? {} : { contextBefore }),
+              ...(contextAfter === undefined ? {} : { contextAfter }),
+              translation: text,
+            }),
+          );
+        } catch (error) {
+          void error;
+        }
     }
     this.cache.insert(identity, valid);
     return seen;

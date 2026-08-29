@@ -314,6 +314,23 @@ describe("Sidebar operation feedback ownership", () => {
 });
 
 describe("Sidebar model catalog state", () => {
+  it("does not reuse a DeepSeek catalog after the service context changes", () => {
+    const state = globalThis.createSubTandemSidebarState();
+    state.setModelContext("deepseek|endpoint-a|system|revision-1|credential-1", "custom-id");
+    state.applyModelCatalog("deepseek|endpoint-a|system|revision-1|credential-1", [
+      "deepseek-model",
+    ]);
+    state.setModelContext("openai|endpoint-a|system|revision-1|credential-1", "openai-model");
+    expect(state.snapshot.modelControl).toMatchObject({
+      value: "openai-model",
+      knownModelIds: [],
+      refreshState: "idle",
+    });
+    expect(
+      state.applyModelCatalog("deepseek|endpoint-a|system|revision-1|credential-1", ["stale"]),
+    ).toBe(false);
+  });
+
   it("classifies known and custom values without changing the model ID", () => {
     const state = createState();
     state.setModelContext("context-a", "custom/model:v1");

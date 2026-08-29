@@ -58,6 +58,49 @@ class DeferredConfiguredProvider implements ConfiguredProvider {
 }
 
 describe("provider connection lifecycle integration", () => {
+  it("invalidates only the edited or deleted DeepSeek Profile selection", () => {
+    let sequence = 0;
+    const profiles = new ProviderProfiles(() => `deepseek-${++sequence}`);
+    const deepseek = profiles.save({
+      displayName: "DeepSeek",
+      kind: "deepseek",
+      endpoint: "https://api.deepseek.com",
+      model: "exact-model",
+    });
+    const retained = profiles.save({
+      displayName: "OpenAI",
+      kind: "openai",
+      endpoint: "https://api.example.test/v1",
+      model: "model",
+    });
+    profiles.select(
+      "window-a",
+      deepseek.profileId,
+      deepseek.revision,
+      deepseek.endpointFingerprint,
+    );
+    profiles.select(
+      "window-b",
+      retained.profileId,
+      retained.revision,
+      retained.endpointFingerprint,
+    );
+    profiles.save({
+      profileId: deepseek.profileId,
+      expectedRevision: deepseek.revision,
+      editingWindowId: "window-a",
+      displayName: "DeepSeek updated",
+      kind: "deepseek",
+      endpoint: deepseek.endpoint,
+      model: deepseek.model,
+    });
+    expect(profiles.selection("window-a")).toBeNull();
+    expect(profiles.selection("window-b")).toMatchObject({ profileId: retained.profileId });
+    profiles.delete(deepseek.profileId);
+    expect(profiles.get(deepseek.profileId)).toBeNull();
+    expect(profiles.get(retained.profileId)).toEqual(retained);
+  });
+
   it("does not let model refresh ownership alter the selected translation profile", () => {
     const profiles = new ProviderProfiles(() => "profile-model-sync");
     const profile = profiles.save({

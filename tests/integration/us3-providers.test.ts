@@ -3,6 +3,7 @@ import { ProviderBroker } from "../../src/providers/broker.js";
 import { ProviderProfiles } from "../../src/providers/profiles.js";
 import { OpenAICompatibleProvider } from "../../src/providers/openai.js";
 import { OllamaProvider } from "../../src/providers/ollama.js";
+import { DeepSeekProvider } from "../../src/providers/deepseek.js";
 import type { TranslationProvider } from "../../src/providers/provider.js";
 import type { ProviderTransport } from "../../src/providers/transport.js";
 import {
@@ -15,8 +16,116 @@ import "../../ui/sidebar-state.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 import { discoverProviderModels } from "../../src/providers/model-discovery.js";
 import { CredentialScopedProviderCache } from "../../src/providers/provider-cache.js";
+import {
+  ModelCatalogSync,
+  modelCatalogContextToken,
+} from "../../src/adapters/iina/model-catalog-sync.js";
 
 describe("US3 provider broker integration", () => {
+  it("rejects late DeepSeek model results across kind, revision and window owners", () => {
+    const sync = new ModelCatalogSync();
+    const deepseekContext = modelCatalogContextToken({
+      trigger: "manual",
+      kind: "deepseek",
+      endpoint: "https://api.deepseek.com",
+      proxyMode: "system",
+      profileId: "deepseek-profile",
+      profileRevision: 1,
+      endpointFingerprint: "deepseek-fingerprint",
+    });
+    sync.begin("window-a", {
+      requestId: "deepseek-old",
+      contextToken: deepseekContext,
+      trigger: "manual",
+    });
+    sync.begin("window-a", {
+      requestId: "openai-current",
+      contextToken: modelCatalogContextToken({
+        trigger: "profile",
+        kind: "openai",
+        endpoint: "https://api.example.test/v1",
+        proxyMode: "direct",
+      }),
+      trigger: "profile",
+    });
+    sync.begin("window-b", {
+      requestId: "deepseek-window-b",
+      contextToken: deepseekContext,
+      trigger: "manual",
+    });
+    expect(
+      sync.commit("window-a", {
+        requestId: "deepseek-old",
+        ok: true,
+        contextKey: "stale",
+        models: ["stale-model"],
+      }),
+    ).toBe(false);
+    expect(sync.snapshot("window-a").catalog).toBeNull();
+    expect(sync.snapshot("window-b").ownerRequestId).toBe("deepseek-window-b");
+  });
+
+  it("runs DeepSeek Refresh, fresh Test, Select and translation without Test selecting it", async () => {
+    const paths: string[] = [];
+    const transport: ProviderTransport = {
+      request: async (request) => {
+        paths.push(new URL(request.url).pathname);
+        if (request.url.endsWith("/models"))
+          return { statusCode: 200, headers: {}, bodyText: '{"data":[{"id":"exact-model"}]}' };
+        const targets = JSON.parse(
+          (request.body as { messages: Array<{ content: string }> }).messages.at(-1)!.content,
+        ).targets as Array<{ id: string; text: string }>;
+        return {
+          statusCode: 200,
+          headers: {},
+          bodyText: JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: {
+                  content: JSON.stringify({
+                    translations: targets.map((target) => ({
+                      id: target.id,
+                      text: `T:${target.text}`,
+                    })),
+                  }),
+                },
+              },
+            ],
+          }),
+        };
+      },
+    };
+    await expect(
+      discoverProviderModels(
+        { jobId: "deepseek-refresh", kind: "deepseek", endpoint: "https://api.deepseek.com" },
+        transport,
+      ),
+    ).resolves.toEqual(["exact-model"]);
+    const profiles = new ProviderProfiles(() => "deepseek-profile");
+    const saved = profiles.save({
+      displayName: "DeepSeek",
+      kind: "deepseek",
+      endpoint: "https://api.deepseek.com",
+      model: "exact-model",
+    });
+    const createProvider = () =>
+      new DeepSeekProvider({ endpoint: saved.endpoint, model: saved.model! }, transport);
+    await expect(createProvider().testConnection("deepseek-test")).resolves.toBeDefined();
+    expect(profiles.selection("window")).toBeNull();
+    const broker = new ProviderBroker(profiles, createProvider);
+    broker.select("window", saved.profileId, saved.revision, saved.endpointFingerprint);
+    await expect(
+      broker.attempt("window", {
+        ...makeProviderRequest(),
+        profileId: saved.profileId,
+        profileRevision: saved.revision,
+        endpointFingerprint: saved.endpointFingerprint,
+      }),
+    ).resolves.toMatchObject({ translations: [{ id: "c1" }, { id: "c2" }] });
+    expect(paths).toEqual(["/models", "/chat/completions", "/chat/completions"]);
+  });
+
   it("uses one Ollama Bearer for Refresh, Test and translation", async () => {
     const paths: string[] = [];
     const transport: ProviderTransport = {

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { freezeTranslationTargets } from "../../src/app/request-builder.js";
 import { OllamaProvider } from "../../src/providers/ollama.js";
 import { OpenAICompatibleProvider } from "../../src/providers/openai.js";
+import { DeepSeekProvider } from "../../src/providers/deepseek.js";
 import type { ProviderTransport, ProviderTransportRequest } from "../../src/providers/transport.js";
 import type { TranslationBatchRequest, TranslationBatchResult } from "../../src/providers/types.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
@@ -25,10 +26,11 @@ class FetchTransport implements ProviderTransport {
 }
 
 const live = process.env.SUBTANDEM_LIVE_PROVIDER_TEST === "1";
+const liveDeepSeek = process.env.SUBTANDEM_LIVE_DEEPSEEK_TEST === "1";
 
-function makeLiveAcceptanceRequest(): TranslationBatchRequest {
+function makeLiveAcceptanceRequest(count = 50): TranslationBatchRequest {
   const { continuousCues } = createTranslationAlignmentFixture();
-  const cues = continuousCues.slice(0, 50);
+  const cues = continuousCues.slice(0, count);
   return {
     ...makeProviderRequest(),
     items: freezeTranslationTargets({ windowCues: cues, targetCues: cues }),
@@ -65,7 +67,10 @@ function expectCleanLiveTranslations(
     if (/(?:^|\n)\s*(?:translation|note|explanation)\s*[:：]/i.test(translation.text))
       counts.explanation += 1;
   }
-  expect(result.translations.map((item) => item.id)).toEqual(request.items.map((item) => item.id));
+  expect(result.translations.length).toBe(request.items.length);
+  expect(result.translations.every((item, index) => item.id === request.items[index]?.id)).toBe(
+    true,
+  );
   expect(counts).toEqual({
     adjacentContext: 0,
     sourceEcho: 0,
@@ -134,6 +139,30 @@ describe.skipIf(!live)("authorized live provider smoke tests", () => {
     await expect(withSafeProviderDiagnostics(provider.probe())).resolves.toMatchObject({ model });
     const request = makeLiveAcceptanceRequest();
     const result = await withSafeProviderDiagnostics(provider.attempt(request));
+    expectCleanLiveTranslations(request, result);
+  }, 600_000);
+});
+
+describe.skipIf(!liveDeepSeek)("authorized DeepSeek live acceptance", () => {
+  it("runs a fresh Test and at least twenty two-item wires", async () => {
+    const model = process.env.SUBTANDEM_DEEPSEEK_MODEL;
+    const apiKey = process.env.SUBTANDEM_DEEPSEEK_KEY;
+    expect(model).toBeTruthy();
+    expect(apiKey).toBeTruthy();
+    const provider = new DeepSeekProvider(
+      {
+        endpoint: "https://api.deepseek.com",
+        model: model!,
+        apiKey: apiKey!,
+      },
+      new FetchTransport(),
+    );
+
+    const tested = await withSafeProviderDiagnostics(provider.testConnection("deepseek-live-test"));
+    expect(tested.model === model).toBe(true);
+    const request = makeLiveAcceptanceRequest(40);
+    const result = await withSafeProviderDiagnostics(provider.attempt(request));
+    expect(request.items).toHaveLength(40);
     expectCleanLiveTranslations(request, result);
   }, 600_000);
 });

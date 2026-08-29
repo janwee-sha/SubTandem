@@ -127,6 +127,18 @@ export class ProviderSimulator {
       return { status: 200, body: { data: [{ id: "model-a" }, { id: "model-b" }] } };
     if (path.endsWith("/api/tags"))
       return { status: 200, body: { models: [{ model: "llama-a" }, { name: "llama-b" }] } };
+    if (path.endsWith("/chat/completions"))
+      return {
+        status: 200,
+        body: {
+          choices: [
+            {
+              finish_reason: "stop",
+              message: { content: '{"translations":[{"id":"probe","text":"hola"}]}' },
+            },
+          ],
+        },
+      };
     return { status: 200, body: {} };
   }
 

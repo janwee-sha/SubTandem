@@ -2,7 +2,7 @@
 
 **Feature Directory**: `specs/001-realtime-subtitle-translation`
 **Created**: 2026-08-09
-**Status**: Implemented; validation pending
+**Status**: 已完成
 **Input**: 为 IINA 提供按播放位置实时翻译外部文本字幕的双语字幕插件。
 
 ## User Scenarios & Testing

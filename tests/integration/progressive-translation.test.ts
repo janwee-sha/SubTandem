@@ -3,6 +3,7 @@ import { PlaybackController, type TranslationOverlaySink } from "../../src/app/c
 import type { TranslationProvider } from "../../src/providers/provider.js";
 import type { TranslationProgressHandler } from "../../src/providers/types.js";
 import type { SubtitleCue } from "../../src/subtitles/types.js";
+import { DeepSeekProvider } from "../../src/providers/deepseek.js";
 
 const denseCues = Array.from({ length: 25 }, (_, index): SubtitleCue => ({
   id: `cue-${index + 1}`,
@@ -70,6 +71,54 @@ afterEach(() => {
 });
 
 describe("progressive translation output", () => {
+  it("keeps a successful DeepSeek wire and commits none of the next invalid wire", async () => {
+    let wire = 0;
+    const provider = new DeepSeekProvider(
+      { endpoint: "https://api.deepseek.com", model: "exact-model" },
+      {
+        request: async (request) => {
+          wire += 1;
+          const messages = (request.body as { messages: Array<{ content: string }> }).messages;
+          const targets = JSON.parse(messages.at(-1)!.content).targets as Array<{
+            id: string;
+            text: string;
+          }>;
+          const translations =
+            wire === 2
+              ? [{ id: targets[0]!.id, text: `T:${targets[0]!.text}` }]
+              : targets.map((target) => ({ id: target.id, text: `T:${target.text}` }));
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              choices: [
+                {
+                  finish_reason: "stop",
+                  message: { content: JSON.stringify({ translations }) },
+                },
+              ],
+            }),
+          };
+        },
+      },
+    );
+    const playback = new PlaybackController({
+      playerId: "deepseek-progress",
+      provider,
+      providerKind: "deepseek",
+      overlay: new RecordingOverlay(),
+      targetLanguage: "zh-Hans",
+    });
+    playback.setSource({ cues: denseCues, contentHash: "deepseek", language: "en", format: "srt" });
+
+    playback.tick(0);
+    await playback.whenIdle();
+
+    expect(wire).toBe(2);
+    expect(playback.cacheSize).toBe(2);
+    expect(playback.status).toBe("partialFailure");
+  });
+
   it("shows the first valid progress immediately before the logical batch completes", async () => {
     let releaseRest!: () => void;
     const restGate = new Promise<void>((resolve) => {

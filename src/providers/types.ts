@@ -7,7 +7,7 @@ import type {
   SessionId,
 } from "../domain/types.js";
 
-export type ProviderKind = "openai" | "ollama" | "fake";
+export type ProviderKind = "openai" | "deepseek" | "ollama" | "fake";
 
 export type ModelRefreshTrigger =
   | "startup"

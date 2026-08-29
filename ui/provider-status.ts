@@ -4,7 +4,7 @@ interface ProviderTestStatus {
   statusCode?: number;
   code?: string;
   userAction?: string;
-  providerKind?: "openai" | "ollama";
+  providerKind?: "openai" | "deepseek" | "ollama";
 }
 
 interface Window {
