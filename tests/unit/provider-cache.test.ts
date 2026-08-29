@@ -59,4 +59,34 @@ describe("credential-scoped Provider cache", () => {
     await cache.get(second);
     expect(build).toHaveBeenCalledTimes(4);
   });
+
+  it("invalidates only the Claude Profile whose credential epoch changes", async () => {
+    const epochs = new Map([
+      ["claude-profile", 0],
+      ["openai-profile", 0],
+    ]);
+    const build = vi.fn(async () => ({}) as ConfiguredProvider);
+    const cache = new CredentialScopedProviderCache(
+      (profileId) => epochs.get(profileId) ?? 0,
+      build,
+    );
+    const claude = {
+      ...profile,
+      profileId: "claude-profile",
+      kind: "claude" as const,
+    };
+    const openai = {
+      ...profile,
+      profileId: "openai-profile",
+      kind: "openai" as const,
+    };
+    const firstClaude = await cache.get(claude);
+    const firstOpenAi = await cache.get(openai);
+    epochs.set("claude-profile", 1);
+    cache.clearProfile("claude-profile");
+
+    expect(await cache.get(claude)).not.toBe(firstClaude);
+    expect(await cache.get(openai)).toBe(firstOpenAi);
+    expect(build).toHaveBeenCalledTimes(3);
+  });
 });

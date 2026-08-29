@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { HelperCredentialStore, CredentialStoreError } from "../../src/credentials/store.js";
 import { SubTandemError } from "../../src/domain/errors.js";
@@ -35,6 +36,26 @@ class MemoryCredentialTransport {
 }
 
 describe("plugin-private credential store", () => {
+  it("replaces, retains and deletes a Claude key through the one-way helper boundary", async () => {
+    const transport = new MemoryCredentialTransport();
+    const store = new HelperCredentialStore(transport as unknown as TransportRpcClient);
+    await store.setSecret(firstProfile, { apiKey: "claude-key-one" });
+    await store.setSecret(firstProfile, { apiKey: "claude-key-two" });
+    await expect(store.getSecret(firstProfile)).resolves.toEqual({ apiKey: "claude-key-two" });
+    expect(transport.values.get(firstProfile)).toEqual({ apiKey: "claude-key-two" });
+    await store.deleteSecret(firstProfile);
+    await expect(store.getSecret(firstProfile)).resolves.toBeNull();
+
+    const nativeSource = readFileSync(
+      new URL(
+        "../../native/transport/Sources/SubTandemTransport/SecureCredentialStore.swift",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(nativeSource).toContain("fchmod(descriptor, 0o600)");
+  });
+
   it("round-trips one write-only API key without returning mutable references", async () => {
     const transport = new MemoryCredentialTransport();
     const store = new HelperCredentialStore(transport as unknown as TransportRpcClient);

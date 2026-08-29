@@ -5,9 +5,86 @@ import { PlaybackController, type TranslationOverlaySink } from "../../src/app/c
 import type { TranslationProvider } from "../../src/providers/provider.js";
 import { parseTargetLanguageSave } from "../../src/domain/messages.js";
 import { DeepSeekProvider } from "../../src/providers/deepseek.js";
+import { ClaudeProvider } from "../../src/providers/claude.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 
 describe("allowlist-only diagnostics", () => {
+  it("drops Claude error, refusal, raw response, headers and subtitle bodies", async () => {
+    const sensitive = "PRIVATE_CLAUDE_UPSTREAM_SUBTITLE";
+    const provider = new ClaudeProvider(
+      {
+        endpoint: "https://api.anthropic.com",
+        model: "exact-model",
+        apiKey: "private-key",
+      },
+      {
+        request: async () => ({
+          statusCode: 529,
+          headers: {
+            "request-id": "bad\nAuthorization: private-key",
+            "x-private": sensitive,
+          },
+          bodyText: JSON.stringify({
+            type: "error",
+            error: { type: "UNKNOWN_PRIVATE_CODE", message: sensitive },
+            refusal: sensitive,
+          }),
+        }),
+      },
+    );
+    const request = makeProviderRequest();
+    request.items[0]!.text = sensitive;
+
+    const failure = await provider.attempt(request).catch((error) => error);
+
+    expect(failure).toMatchObject({
+      category: "http",
+      retryable: true,
+      statusCode: 529,
+      providerCode: "CLAUDE_MESSAGES_HTTP_529",
+    });
+    expect(JSON.stringify(failure)).not.toMatch(/PRIVATE|authorization|x-private|unknown/i);
+  });
+
+  it("never writes Claude subtitle context or translations to the translation log", async () => {
+    const messages: string[] = [];
+    const controller = new PlaybackController({
+      playerId: "claude-log",
+      providerKind: "claude",
+      provider: {
+        attempt: async (request) => ({
+          translations: request.items.map((item) => ({
+            id: item.id,
+            text: "PRIVATE_CLAUDE_TRANSLATION",
+          })),
+        }),
+      },
+      overlay: { show: () => undefined, clear: () => undefined },
+      targetLanguage: "zh-Hans",
+      translationLog: (message) => messages.push(message),
+    });
+    controller.setSource({
+      cues: [
+        {
+          id: "private-cue",
+          index: 0,
+          startMs: 0,
+          endMs: 1_000,
+          sourceText: "PRIVATE_CLAUDE_SOURCE",
+          normalizedText: "PRIVATE_CLAUDE_SOURCE",
+        },
+      ],
+      contentHash: "private-content",
+      language: "en",
+      format: "srt",
+    });
+
+    controller.tick(0);
+    await controller.whenIdle();
+
+    expect(messages).toEqual([]);
+  });
+
   it.each([
     [401, "authentication", false, "CHECK_CREDENTIALS"],
     [403, "authentication", false, "CHECK_CREDENTIALS"],

@@ -371,18 +371,18 @@ function createSubTandemSidebarState(
       : "custom";
   };
 
-  let customModelSelected = false;
+  const modelCatalogs = new Map<string, string[]>();
+  const customModelContexts = new Set<string>();
 
   const setModelContext = (contextKey: string, value: string): void => {
-    if (snapshot.modelControl.value !== value) customModelSelected = false;
     if (snapshot.modelControl.contextKey !== contextKey) {
       snapshot.modelControl.contextKey = contextKey;
-      snapshot.modelControl.knownModelIds = [];
+      snapshot.modelControl.knownModelIds = [...(modelCatalogs.get(contextKey) ?? [])];
       snapshot.modelControl.refreshState = "idle";
       snapshot.modelControl.refreshMessage = "";
     }
     snapshot.modelControl.value = value;
-    if (customModelSelected) snapshot.modelControl.mode = "custom";
+    if (customModelContexts.has(contextKey)) snapshot.modelControl.mode = "custom";
     else classifyModelValue();
   };
 
@@ -394,25 +394,26 @@ function createSubTandemSidebarState(
       seen.add(model);
       return true;
     });
+    modelCatalogs.set(contextKey, [...snapshot.modelControl.knownModelIds]);
     snapshot.modelControl.refreshState = "success";
-    if (customModelSelected) snapshot.modelControl.mode = "custom";
+    if (customModelContexts.has(contextKey)) snapshot.modelControl.mode = "custom";
     else classifyModelValue();
     return true;
   };
 
   const selectKnownModel = (value: string): void => {
-    customModelSelected = false;
+    customModelContexts.delete(snapshot.modelControl.contextKey);
     snapshot.modelControl.value = value;
     classifyModelValue();
   };
 
   const selectCustomModel = (): void => {
-    customModelSelected = true;
+    customModelContexts.add(snapshot.modelControl.contextKey);
     snapshot.modelControl.mode = "custom";
   };
 
   const inputCustomModelValue = (value: string): void => {
-    customModelSelected = true;
+    customModelContexts.add(snapshot.modelControl.contextKey);
     snapshot.modelControl.value = value;
     snapshot.modelControl.mode = "custom";
   };

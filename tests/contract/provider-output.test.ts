@@ -40,6 +40,42 @@ describe("strict provider output", () => {
     expect(() => validateStrictIdOutput(["c1"], output)).toThrow(/MALFORMED_PROVIDER_OUTPUT/);
   });
 
+  it.each([
+    ["wrapper text", 'before {"translations":[{"id":"c1","text":"one"}]}'],
+    ["extra top-level field", { translations: [{ id: "c1", text: "one" }], note: "x" }],
+    [
+      "extra ID",
+      {
+        translations: [
+          { id: "c1", text: "one" },
+          { id: "c2", text: "two" },
+          { id: "c3", text: "three" },
+        ],
+      },
+    ],
+    ["missing ID", { translations: [{ id: "c1", text: "one" }] }],
+    [
+      "duplicate ID",
+      {
+        translations: [
+          { id: "c1", text: "one" },
+          { id: "c1", text: "again" },
+        ],
+      },
+    ],
+    [
+      "blank translation",
+      {
+        translations: [
+          { id: "c1", text: "one" },
+          { id: "c2", text: " " },
+        ],
+      },
+    ],
+  ])("rejects Claude %s without a partial result", (_name, output) => {
+    expect(() => validateStrictIdOutput(["c1", "c2"], output)).toThrow(/MALFORMED_PROVIDER_OUTPUT/);
+  });
+
   it("accepts only unique requested IDs with non-empty text while retaining partial valid results", () => {
     const output = validateIdOutput(["c1", "c2", "c3"], {
       translations: [

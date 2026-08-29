@@ -1,6 +1,6 @@
 # IINA 人工验收矩阵
 
-以下项目必须针对同一个最终 `SubTandem-0.1.0.iinaplgz` 实际执行；其他安装包、开发链接或历史哈希不作为本次正式发布证据。
+以下项目必须针对同一个最终 `SubTandem-0.1.1.iinaplgz` 实际执行；其他安装包、开发链接或历史哈希不作为本次正式发布证据。
 
 | 任务 | 环境                       | 场景                                                             | 状态   |
 | ---- | -------------------------- | ---------------------------------------------------------------- | ------ |
@@ -9,9 +9,13 @@
 | T003 | IINA 1.4.4，Apple Silicon  | 外挂 SRT/ASS 与本地内嵌文本字幕翻译、失败不阻塞播放              | 未运行 |
 | T004 | IINA 1.4.4，Apple Silicon  | OpenAI 与 Ollama Profile、模型刷新、HTTP/HTTPS、system/direct    | 未运行 |
 | T005 | IINA 1.4.4，Apple Silicon  | 双窗口隔离、跳转、缓存、Retry、关闭和强制退出清理                | 未运行 |
-| T006 | IINA 1.4.4，Apple Silicon  | IINA 更新检查读取 v0.1.0 更新身份且不误报升级                    | 未运行 |
+| T006 | IINA 1.4.4，Apple Silicon  | IINA 更新检查读取 v0.1.1 更新身份且不误报升级                    | 未运行 |
 | T007 | IINA 1.4.0，Apple Silicon  | 正式包基线安装、翻译冒烟与卸载                                   | 未运行 |
 | T008 | IINA 1.4.0 与 1.4.4，Intel | 双架构正式包安装、内嵌字幕提取、翻译与卸载                       | 未运行 |
+| T009 | IINA 1.4.4，Apple Silicon  | Claude 默认 root 的 Save→Test→Select、模型刷新与 Custom Model ID | 未运行 |
+| T010 | IINA 1.4.4，Apple Silicon  | Claude-compatible root、错误 Key、分页失败与目录保留             | 未运行 |
+| T011 | IINA 1.4.4，Apple Silicon  | Claude Profile 编辑/删除、竞态、双窗口与迟到结果隔离             | 未运行 |
+| T012 | IINA 1.4.4，Apple Silicon  | Claude 失败不阻塞播放，Key、字幕、译文与原始响应不泄漏           | 未运行 |
 
 每行完成后只记录 macOS、架构、IINA 版本、包 SHA-256、非敏感样本 ID、耗时和通过/失败；不得记录媒体路径、字幕正文、译文、Provider 请求或凭据。自动化、开发链接或其他包的结果不能替代以上宿主验收。
 

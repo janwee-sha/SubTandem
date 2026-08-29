@@ -21,7 +21,7 @@ description: "添加 Claude 翻译服务的可执行任务清单"
 
 **目的**：建立后续契约、集成和 live test 共用的 Claude 响应样本。
 
-- [ ] T001 创建仅含安全虚构数据的成功 Messages 响应 fixture，覆盖多个按序 text block、`end_turn` 与合法 usage，保存到 `tests/fixtures/providers/claude-success.json`
+- [X] T001 创建仅含安全虚构数据的成功 Messages 响应 fixture，覆盖多个按序 text block、`end_turn` 与合法 usage，保存到 `tests/fixtures/providers/claude-success.json`
 
 **检查点**：Claude 测试可复用固定响应，且 fixture 不含真实 Endpoint、Key、字幕或译文。
 
@@ -33,10 +33,10 @@ description: "添加 Claude 翻译服务的可执行任务清单"
 
 **关键要求**：本阶段完成前不得开始用户故事的生产实现。
 
-- [ ] T002 将协议无关的二项目标编排从 `src/providers/chat-completions.ts` 改名为 `src/providers/translation-batches.ts`，同步更新 `src/providers/openai.ts` 与 `src/providers/deepseek.ts` 的导入和符号名，并移除旧入口
-- [ ] T003 [P] 在 `src/providers/types.ts`、`src/providers/profiles.ts` 与 `src/domain/types.ts` 的严格联合类型和 Profile metadata 中加入 `claude`，保持既有 kind 与 OpenAI capability 语义不变
-- [ ] T004 在 `src/domain/messages.ts` 的模型请求、Profile 安全视图和跨运行时严格解析器中接受 `kind: "claude"`，继续拒绝未知 kind、额外敏感字段与非法 owner 组合
-- [ ] T005 [P] 在 `src/app/retry-policy.ts` 与 `src/providers/errors.ts` 增加 Claude 所需的 504/529、配额与安全 allowlist 分类，禁止传播上游 message、body、header 或未知 code
+- [X] T002 将协议无关的二项目标编排从 `src/providers/chat-completions.ts` 改名为 `src/providers/translation-batches.ts`，同步更新 `src/providers/openai.ts` 与 `src/providers/deepseek.ts` 的导入和符号名，并移除旧入口
+- [X] T003 [P] 在 `src/providers/types.ts`、`src/providers/profiles.ts` 与 `src/domain/types.ts` 的严格联合类型和 Profile metadata 中加入 `claude`，保持既有 kind 与 OpenAI capability 语义不变
+- [X] T004 在 `src/domain/messages.ts` 的模型请求、Profile 安全视图和跨运行时严格解析器中接受 `kind: "claude"`，继续拒绝未知 kind、额外敏感字段与非法 owner 组合
+- [X] T005 [P] 在 `src/app/retry-policy.ts` 与 `src/providers/errors.ts` 增加 Claude 所需的 504/529、配额与安全 allowlist 分类，禁止传播上游 message、body、header 或未知 code
 
 **检查点**：共享类型、批次与错误基线可供三个故事使用，OpenAI、DeepSeek、Ollama 的现有契约未改变。
 
@@ -50,18 +50,18 @@ description: "添加 Claude 翻译服务的可执行任务清单"
 
 ### 用户故事 2 测试
 
-- [ ] T006 [P] [US2] 创建 Claude Provider 契约测试，覆盖 URL、请求头、请求体、Test、text block 拼接、结束状态、拒绝、严格 ID、usage、取消与安全错误映射，保存到 `tests/contract/claude.test.ts`
-- [ ] T007 [P] [US2] 扩展严格输出回归，证明包装文本、额外字段、额外/缺失/重复 ID 与空译文均不得部分提交，修改 `tests/contract/provider-output.test.ts`
-- [ ] T008 [P] [US2] 增加 504、529、普通 429 与 spend-limit 分类和重试边界测试，修改 `tests/unit/retry.test.ts`
-- [ ] T009 [P] [US2] 增加 Claude error/refusal/raw response 与字幕正文清洗测试，修改 `tests/security/redaction.test.ts`
-- [ ] T010 [P] [US2] 增加显式 opt-in 的 Claude-compatible fresh Test、40 targets/20 wires 与禁止字段断言，修改 `tests/integration/live-providers.test.ts`
+- [X] T006 [P] [US2] 创建 Claude Provider 契约测试，覆盖 URL、请求头、请求体、Test、text block 拼接、结束状态、拒绝、严格 ID、usage、取消与安全错误映射，保存到 `tests/contract/claude.test.ts`
+- [X] T007 [P] [US2] 扩展严格输出回归，证明包装文本、额外字段、额外/缺失/重复 ID 与空译文均不得部分提交，修改 `tests/contract/provider-output.test.ts`
+- [X] T008 [P] [US2] 增加 504、529、普通 429 与 spend-limit 分类和重试边界测试，修改 `tests/unit/retry.test.ts`
+- [X] T009 [P] [US2] 增加 Claude error/refusal/raw response 与字幕正文清洗测试，修改 `tests/security/redaction.test.ts`
+- [X] T010 [P] [US2] 增加显式 opt-in 的 Claude-compatible fresh Test、40 targets/20 wires 与禁止字段断言，修改 `tests/integration/live-providers.test.ts`
 
 ### 用户故事 2 实现
 
-- [ ] T011 [P] [US2] 实现 Claude API Root 的 `/v1/messages`、`/v1/models` 规范化构造，以及认证/版本 header 和安全 HTTP 错误映射，创建 `src/providers/claude-api.ts`
-- [ ] T012 [P] [US2] 在 `src/providers/translation-task.ts` 增加 Claude 专用严格 system 指令，要求单一 `translations` JSON、精确 wire ID、不可信 user 数据与仅翻译 `text`，且不依赖 Schema
-- [ ] T013 [US2] 实现 `ClaudeProvider` 的真实 Test、非流式 Messages 请求、按序 text block 候选、拒绝优先、精确 `end_turn`、严格 ID 校验、usage、进度与取消，创建 `src/providers/claude.ts`
-- [ ] T014 [US2] 在 `src/app/controller.ts` 接受 Claude 选择身份并禁止 Claude 字幕、上下文与译文进入 Log Viewer，同时保留会话 owner、非阻塞播放与既有 Provider 日志行为
+- [X] T011 [P] [US2] 实现 Claude API Root 的 `/v1/messages`、`/v1/models` 规范化构造，以及认证/版本 header 和安全 HTTP 错误映射，创建 `src/providers/claude-api.ts`
+- [X] T012 [P] [US2] 在 `src/providers/translation-task.ts` 增加 Claude 专用严格 system 指令，要求单一 `translations` JSON、精确 wire ID、不可信 user 数据与仅翻译 `text`，且不依赖 Schema
+- [X] T013 [US2] 实现 `ClaudeProvider` 的真实 Test、非流式 Messages 请求、按序 text block 候选、拒绝优先、精确 `end_turn`、严格 ID 校验、usage、进度与取消，创建 `src/providers/claude.ts`
+- [X] T014 [US2] 在 `src/app/controller.ts` 接受 Claude 选择身份并禁止 Claude 字幕、上下文与译文进入 Log Viewer，同时保留会话 owner、非阻塞播放与既有 Provider 日志行为
 
 **检查点**：US2 可通过直接 Provider 契约独立验收；任一无效 wire 零提交，合法前序 progress 不回滚。
 
@@ -75,28 +75,28 @@ description: "添加 Claude 翻译服务的可执行任务清单"
 
 ### 用户故事 1 测试
 
-- [ ] T015 [P] [US1] 增加 Claude Profile 保存、Root 规范化、revision、kind 转换、选择失效、删除和既有 metadata 恢复测试，修改 `tests/contract/provider-profiles.test.ts`
-- [ ] T016 [P] [US1] 增加 Claude Key 单向写入、替换、保留、删除与 `0600` 存储回归，修改 `tests/contract/credential-store.test.ts`
-- [ ] T017 [P] [US1] 增加 Claude fresh Messages Test、取消和 Test 不自动 Select 的生命周期测试，修改 `tests/contract/provider-connection-tests.test.ts`
-- [ ] T018 [P] [US1] 增加 Global 对 Claude Profile、凭据、Test、Select、翻译、编辑与删除的严格 RPC 测试，修改 `tests/contract/global-rpc.test.ts`
-- [ ] T019 [P] [US1] 增加 Main↔Global↔Sidebar 对 `kind: "claude"` 的允许字段、未知字段拒绝和发送方身份隔离测试，修改 `tests/contract/ui-messages.test.ts`
-- [ ] T020 [P] [US1] 增加 Service type 顺序、Claude 默认值、Messages URL hint、空 Model ID、Custom 模式与必填 Key 表单测试，修改 `tests/contract/sidebar-form.test.ts`
-- [ ] T021 [P] [US1] 增加 Claude 两阶段保存、部分失败、fresh Test、Select、Update、Delete、类型草稿隔离与迟到操作反馈测试，修改 `tests/contract/sidebar-lifecycle.test.ts`
-- [ ] T022 [P] [US1] 增加系统名称 ownership、Claude 草稿、模型控件、保存 owner 与可访问状态的单元测试，修改 `tests/unit/sidebar-state.test.ts`
-- [ ] T023 [P] [US1] 增加 Claude credential epoch 导致 Provider cache 失效且不影响其他 Profile 的测试，修改 `tests/unit/provider-cache.test.ts`
-- [ ] T024 [P] [US1] 增加 Claude Save→fresh Test→Select→翻译→Update/Delete 的跨运行时集成测试，修改 `tests/integration/provider-connection-lifecycle.test.ts`
-- [ ] T025 [P] [US1] 增加四种 Provider 共存、精确 revision 选择和当前窗口 Claude 翻译的集成回归，修改 `tests/integration/us3-providers.test.ts`
-- [ ] T026 [P] [US1] 增加 Claude Key、认证 header、原始 Messages 数据不进入安全视图、preferences、日志、诊断和进程参数的测试，修改 `tests/security/credential-leakage.test.ts`
-- [ ] T027 [P] [US1] 增加 Claude Models URL、必填 headers、有效目录、精确去重、Custom ID 与目录失败保留行为的基础契约测试，修改 `tests/contract/provider-model-discovery.test.ts`
+- [X] T015 [P] [US1] 增加 Claude Profile 保存、Root 规范化、revision、kind 转换、选择失效、删除和既有 metadata 恢复测试，修改 `tests/contract/provider-profiles.test.ts`
+- [X] T016 [P] [US1] 增加 Claude Key 单向写入、替换、保留、删除与 `0600` 存储回归，修改 `tests/contract/credential-store.test.ts`
+- [X] T017 [P] [US1] 增加 Claude fresh Messages Test、取消和 Test 不自动 Select 的生命周期测试，修改 `tests/contract/provider-connection-tests.test.ts`
+- [X] T018 [P] [US1] 增加 Global 对 Claude Profile、凭据、Test、Select、翻译、编辑与删除的严格 RPC 测试，修改 `tests/contract/global-rpc.test.ts`
+- [X] T019 [P] [US1] 增加 Main↔Global↔Sidebar 对 `kind: "claude"` 的允许字段、未知字段拒绝和发送方身份隔离测试，修改 `tests/contract/ui-messages.test.ts`
+- [X] T020 [P] [US1] 增加 Service type 顺序、Claude 默认值、Messages URL hint、空 Model ID、Custom 模式与必填 Key 表单测试，修改 `tests/contract/sidebar-form.test.ts`
+- [X] T021 [P] [US1] 增加 Claude 两阶段保存、部分失败、fresh Test、Select、Update、Delete、类型草稿隔离与迟到操作反馈测试，修改 `tests/contract/sidebar-lifecycle.test.ts`
+- [X] T022 [P] [US1] 增加系统名称 ownership、Claude 草稿、模型控件、保存 owner 与可访问状态的单元测试，修改 `tests/unit/sidebar-state.test.ts`
+- [X] T023 [P] [US1] 增加 Claude credential epoch 导致 Provider cache 失效且不影响其他 Profile 的测试，修改 `tests/unit/provider-cache.test.ts`
+- [X] T024 [P] [US1] 增加 Claude Save→fresh Test→Select→翻译→Update/Delete 的跨运行时集成测试，修改 `tests/integration/provider-connection-lifecycle.test.ts`
+- [X] T025 [P] [US1] 增加四种 Provider 共存、精确 revision 选择和当前窗口 Claude 翻译的集成回归，修改 `tests/integration/us3-providers.test.ts`
+- [X] T026 [P] [US1] 增加 Claude Key、认证 header、原始 Messages 数据不进入安全视图、preferences、日志、诊断和进程参数的测试，修改 `tests/security/credential-leakage.test.ts`
+- [X] T027 [P] [US1] 增加 Claude Models URL、必填 headers、有效目录、精确去重、Custom ID 与目录失败保留行为的基础契约测试，修改 `tests/contract/provider-model-discovery.test.ts`
 
 ### 用户故事 1 实现
 
-- [ ] T028 [US1] 在 `src/providers/model-discovery.ts` 接入 Claude `/v1/models` 游标分页、逐页 headers、ID 清洗去重、原子终态和可注入 `assertActive` guard，不向 OpenAI/Ollama 方言降级
-- [ ] T029 [US1] 在 `src/global.ts` 恢复和持久化 Claude metadata、构造 `ClaudeProvider`、强制保存 Key、维护 credential epoch/cache/选择/lease，并完成模型刷新、Test、Select、翻译、编辑和删除的安全生命周期
-- [ ] T030 [P] [US1] 在 `src/main.ts` 接受并转发 Claude Profile、模型、Test、选择与翻译消息，继续以 IINA Global 发送方 ID 授权并以 Main 生命周期 ID 校验最终提交
-- [ ] T031 [P] [US1] 在 `ui/sidebar-state.ts` 建立 Claude 系统名称、Profile 保存 owner、credential pending 与模型控件状态，保留既有可访问反馈和 latest-only 规则
-- [ ] T032 [US1] 在 `ui/sidebar.html` 与 `ui/sidebar.ts` 加入位于 OpenAI 之后的 Claude 选项、默认 Root、独立草稿、Messages URL/hints、必填 Key、两阶段保存和完整 Profile 操作
-- [ ] T033 [P] [US1] 在 `ui/provider-status.ts` 增加 Claude API Root、`/v1/messages`、版本、Model ID、认证、配额和拒绝的固定安全反馈，不显示上游正文
+- [X] T028 [US1] 在 `src/providers/model-discovery.ts` 接入 Claude `/v1/models` 游标分页、逐页 headers、ID 清洗去重、原子终态和可注入 `assertActive` guard，不向 OpenAI/Ollama 方言降级
+- [X] T029 [US1] 在 `src/global.ts` 恢复和持久化 Claude metadata、构造 `ClaudeProvider`、强制保存 Key、维护 credential epoch/cache/选择/lease，并完成模型刷新、Test、Select、翻译、编辑和删除的安全生命周期
+- [X] T030 [P] [US1] 在 `src/main.ts` 接受并转发 Claude Profile、模型、Test、选择与翻译消息，继续以 IINA Global 发送方 ID 授权并以 Main 生命周期 ID 校验最终提交
+- [X] T031 [P] [US1] 在 `ui/sidebar-state.ts` 建立 Claude 系统名称、Profile 保存 owner、credential pending 与模型控件状态，保留既有可访问反馈和 latest-only 规则
+- [X] T032 [US1] 在 `ui/sidebar.html` 与 `ui/sidebar.ts` 加入位于 OpenAI 之后的 Claude 选项、默认 Root、独立草稿、Messages URL/hints、必填 Key、两阶段保存和完整 Profile 操作
+- [X] T033 [P] [US1] 在 `ui/provider-status.ts` 增加 Claude API Root、`/v1/messages`、版本、Model ID、认证、配额和拒绝的固定安全反馈，不显示上游正文
 
 **检查点**：US2 + US1 构成可交付 MVP；单名开发者可通过 Custom ID 或有效目录完成 Claude 首次翻译，不改变其他 Provider。
 
@@ -110,19 +110,19 @@ description: "添加 Claude 翻译服务的可执行任务清单"
 
 ### 用户故事 3 测试
 
-- [ ] T034 [P] [US3] 增加 Claude 多页 `last_id/after_id`、空页/空 cursor/重复 cursor、后页失败、逐页 guard 与零部分提交测试，修改 `tests/contract/provider-model-discovery.test.ts`
-- [ ] T035 [P] [US3] 增加 kind、Endpoint、route、Profile/revision、credential epoch 与 requestId 变化后的 latest-only 目录提交测试，修改 `tests/unit/model-catalog-sync.test.ts`
-- [ ] T036 [P] [US3] 增加保存态、preview 和 startup 刷新的 Key 要求、逐页 owner、取消与安全结果测试，修改 `tests/contract/global-rpc.test.ts`
-- [ ] T037 [P] [US3] 增加 Claude 不自动发送未保存 Key、手动 preview、busy 状态、Custom ID/成功目录保留及迟到反馈拒绝测试，修改 `tests/contract/sidebar-lifecycle.test.ts`
-- [ ] T038 [P] [US3] 增加目录成功/失败时 Custom ID、上次成功目录与分 Service type context 的状态测试，修改 `tests/unit/sidebar-state.test.ts`
-- [ ] T039 [P] [US3] 增加 preview Key、cursor、Endpoint 和 Provider 原始模型响应不进入结果、日志、preferences 或诊断的测试，修改 `tests/security/credential-leakage.test.ts`
+- [X] T034 [P] [US3] 增加 Claude 多页 `last_id/after_id`、空页/空 cursor/重复 cursor、后页失败、逐页 guard 与零部分提交测试，修改 `tests/contract/provider-model-discovery.test.ts`
+- [X] T035 [P] [US3] 增加 kind、Endpoint、route、Profile/revision、credential epoch 与 requestId 变化后的 latest-only 目录提交测试，修改 `tests/unit/model-catalog-sync.test.ts`
+- [X] T036 [P] [US3] 增加保存态、preview 和 startup 刷新的 Key 要求、逐页 owner、取消与安全结果测试，修改 `tests/contract/global-rpc.test.ts`
+- [X] T037 [P] [US3] 增加 Claude 不自动发送未保存 Key、手动 preview、busy 状态、Custom ID/成功目录保留及迟到反馈拒绝测试，修改 `tests/contract/sidebar-lifecycle.test.ts`
+- [X] T038 [P] [US3] 增加目录成功/失败时 Custom ID、上次成功目录与分 Service type context 的状态测试，修改 `tests/unit/sidebar-state.test.ts`
+- [X] T039 [P] [US3] 增加 preview Key、cursor、Endpoint 和 Provider 原始模型响应不进入结果、日志、preferences 或诊断的测试，修改 `tests/security/credential-leakage.test.ts`
 
 ### 用户故事 3 实现
 
-- [ ] T040 [P] [US3] 在 `src/global.ts` 将保存态、preview 与 startup 的完整非敏感 owner 传入逐页 guard，在每页发送前和响应后复核并取消 superseded helper job，失败时保留既有目录
-- [ ] T041 [P] [US3] 在 `src/adapters/iina/model-catalog-sync.ts` 与 `src/main.ts` 以完整 context token 隔离目录 cache、owner 和迟到结果，确保 manual/credential 请求可替代旧请求
-- [ ] T042 [P] [US3] 在 `ui/sidebar-state.ts` 实现按 context 保存目录、失败保留 Custom ID/上次成功目录及 latest-only refresh 状态，不让旧目录改变当前控件模式
-- [ ] T043 [US3] 在 `ui/sidebar.ts` 实现 Claude 自动刷新 Key 门禁、一次性 preview Key、draft credential epoch、类型/Endpoint/route/Profile 切换失效与安全模型反馈
+- [X] T040 [P] [US3] 在 `src/global.ts` 将保存态、preview 与 startup 的完整非敏感 owner 传入逐页 guard，在每页发送前和响应后复核并取消 superseded helper job，失败时保留既有目录
+- [X] T041 [P] [US3] 在 `src/adapters/iina/model-catalog-sync.ts` 与 `src/main.ts` 以完整 context token 隔离目录 cache、owner 和迟到结果，确保 manual/credential 请求可替代旧请求
+- [X] T042 [P] [US3] 在 `ui/sidebar-state.ts` 实现按 context 保存目录、失败保留 Custom ID/上次成功目录及 latest-only refresh 状态，不让旧目录改变当前控件模式
+- [X] T043 [US3] 在 `ui/sidebar.ts` 实现 Claude 自动刷新 Key 门禁、一次性 preview Key、draft credential epoch、类型/Endpoint/route/Profile 切换失效与安全模型反馈
 
 **检查点**：US3 可独立制造所有目录失败和竞态；旧 Key 不再发下一页，旧结果不覆盖当前上下文，目录失败不影响选择和翻译授权。
 
@@ -132,17 +132,17 @@ description: "添加 Claude 翻译服务的可执行任务清单"
 
 **目的**：完成既有 Provider 回归、用户披露、正式构建、包审计及需授权的真实环境验收。
 
-- [ ] T044 [P] 扩展 manifest 与正式包契约测试，确认默认 Claude 网络目的地披露更新且 `permissions`、`allowedDomains` 和 native 文件集合不扩大，修改 `tests/contract/package-manifest.test.ts`
-- [ ] T045 [P] 更新共享批次改名后的 OpenAI、DeepSeek、Ollama 契约回归并证明其请求、模型和能力行为不变，修改 `tests/contract/openai.test.ts`、`tests/contract/deepseek.test.ts` 与 `tests/contract/ollama.test.ts`
-- [ ] T046 [P] 增加 Claude 失败不阻塞播放、progress owner、会话清理与成本/隐私边界回归，修改 `tests/integration/us1-playback.test.ts`、`tests/integration/progressive-translation.test.ts` 与 `tests/integration/us2-cost-privacy.test.ts`
-- [ ] T047 更新默认 Claude Root、Select 前模型请求与 Select 后最小字幕外发披露，保持权限白名单不变，修改 `Info.json`
-- [ ] T048 [P] 更新 Claude 配置、Key/费用风险、compatible Endpoint、Custom Model ID、Save→Test→Select 与排错说明，修改 `README.md` 与 `docs/readme/README.zh-CN.md`
-- [ ] T049 [P] 同步 Claude 用户说明且保持各语言现有结构，修改 `docs/readme/README.fr.md` 与 `docs/readme/README.ja.md`
-- [ ] T050 [P] 同步 Claude 用户说明且保持各语言现有结构，修改 `docs/readme/README.ko.md`、`docs/readme/README.ru.md` 与 `docs/readme/README.ar.md`
-- [ ] T051 [P] 增加 Claude 架构、安全边界、可选 live test 与排错开发说明，修改 `docs/engineering/development.md`
-- [ ] T052 [P] 添加未验收的 Claude-compatible 与 IINA 1.4.4 场景，不把未执行步骤标为通过，修改 `docs/validation/iina-matrix.md`
-- [ ] T053 按 `specs/020-add-claude-provider/quickstart.md` 运行列出的聚焦 Vitest、`npm run test:native`、`npm run typecheck`、`npm run lint` 与 `npm run format:check`，修复后从头重跑直至全部成功
-- [ ] T054 按 `specs/020-add-claude-provider/quickstart.md` 在最终代码上依次重新运行 `npm run test`、`npm run typecheck`、`npm run lint`、`npm run build:native`、`npm run test:native`、`npm run build`、`npm run verify:package` 与 `npm run pack`，确认全部成功且不沿用任何代码变更前结果
+- [X] T044 [P] 扩展 manifest 与正式包契约测试，确认默认 Claude 网络目的地披露更新且 `permissions`、`allowedDomains` 和 native 文件集合不扩大，修改 `tests/contract/package-manifest.test.ts`
+- [X] T045 [P] 更新共享批次改名后的 OpenAI、DeepSeek、Ollama 契约回归并证明其请求、模型和能力行为不变，修改 `tests/contract/openai.test.ts`、`tests/contract/deepseek.test.ts` 与 `tests/contract/ollama.test.ts`
+- [X] T046 [P] 增加 Claude 失败不阻塞播放、progress owner、会话清理与成本/隐私边界回归，修改 `tests/integration/us1-playback.test.ts`、`tests/integration/progressive-translation.test.ts` 与 `tests/integration/us2-cost-privacy.test.ts`
+- [X] T047 更新默认 Claude Root、Select 前模型请求与 Select 后最小字幕外发披露，保持权限白名单不变，修改 `Info.json`
+- [X] T048 [P] 更新 Claude 配置、Key/费用风险、compatible Endpoint、Custom Model ID、Save→Test→Select 与排错说明，修改 `README.md` 与 `docs/readme/README.zh-CN.md`
+- [X] T049 [P] 同步 Claude 用户说明且保持各语言现有结构，修改 `docs/readme/README.fr.md` 与 `docs/readme/README.ja.md`
+- [X] T050 [P] 同步 Claude 用户说明且保持各语言现有结构，修改 `docs/readme/README.ko.md`、`docs/readme/README.ru.md` 与 `docs/readme/README.ar.md`
+- [X] T051 [P] 增加 Claude 架构、安全边界、可选 live test 与排错开发说明，修改 `docs/engineering/development.md`
+- [X] T052 [P] 添加未验收的 Claude-compatible 与 IINA 1.4.4 场景，不把未执行步骤标为通过，修改 `docs/validation/iina-matrix.md`
+- [X] T053 按 `specs/020-add-claude-provider/quickstart.md` 运行列出的聚焦 Vitest、`npm run test:native`、`npm run typecheck`、`npm run lint` 与 `npm run format:check`，修复后从头重跑直至全部成功
+- [X] T054 按 `specs/020-add-claude-provider/quickstart.md` 在最终代码上依次重新运行 `npm run test`、`npm run typecheck`、`npm run lint`、`npm run build:native`、`npm run test:native`、`npm run build`、`npm run verify:package` 与 `npm run pack`，确认全部成功且不沿用任何代码变更前结果
 - [ ] T055 仅在用户当次明确批准联网和可能费用后，按 `specs/020-add-claude-provider/quickstart.md` 执行 Claude-compatible live test 的 fresh Test 与至少 20 个双项目 wire；未授权或未执行时保持本任务未完成
 - [ ] T056 由单名开发者按 `specs/020-add-claude-provider/quickstart.md` 使用最终 `build/package/SubTandem-0.1.1.iinaplgz` 完成 IINA 1.4.4 安装、权限、Profile 全流程、竞态、多窗口、播放非阻塞、敏感数据和卸载验收，并记录非敏感包 SHA-256 与环境证据
 

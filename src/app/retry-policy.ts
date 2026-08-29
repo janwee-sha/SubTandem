@@ -47,6 +47,14 @@ export function classifyAttemptFailure(input: {
       userAction: "CHECK_CREDENTIALS",
     };
   }
+  if (status === 402) {
+    return {
+      category: "quota",
+      retryable: false,
+      statusCode: status,
+      userAction: "CHECK_QUOTA",
+    };
+  }
   if (input.category === "timeout" || input.category === "network") {
     return {
       category: input.category,
@@ -56,9 +64,16 @@ export function classifyAttemptFailure(input: {
     };
   }
   const retryable =
-    status === 408 || status === 429 || status === 500 || status === 502 || status === 503;
+    status === 408 ||
+    status === 429 ||
+    status === 500 ||
+    status === 502 ||
+    status === 503 ||
+    status === 504 ||
+    status === 529;
   return {
-    category: input.category ?? (status === undefined ? "protocol" : "http"),
+    category:
+      input.category ?? (status === 504 ? "timeout" : status === undefined ? "protocol" : "http"),
     retryable,
     ...(status === undefined ? {} : { statusCode: status }),
     ...(input.providerCode === undefined ? {} : { providerCode: input.providerCode }),

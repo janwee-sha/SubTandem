@@ -49,6 +49,32 @@ describe("US1 playback acceptance", () => {
     expect(logged).toEqual([]);
   });
 
+  it("keeps playback available and Claude content out of logs after a provider failure", async () => {
+    const logged: string[] = [];
+    const overlay = new RecordingOverlay();
+    const controller = new PlaybackController({
+      playerId: "claude-failure",
+      provider: {
+        attempt: async () => {
+          throw { category: "protocol", retryable: false, providerCode: "CLAUDE_REFUSAL" };
+        },
+      },
+      providerKind: "claude",
+      translationLog: (message) => logged.push(message),
+      overlay,
+      targetLanguage: "zh-Hans",
+    });
+    controller.setSource({ cues, contentHash: "claude-failure", language: "en", format: "srt" });
+
+    controller.tick(1_000);
+    await controller.whenIdle();
+    controller.tick(3_000);
+
+    expect(controller.status).toBe("partialFailure");
+    expect(overlay.frames).toEqual([]);
+    expect(logged).toEqual([]);
+  });
+
   it("shows only the current translation without placeholders or track output", async () => {
     const overlay = new RecordingOverlay();
     const controller = new PlaybackController({

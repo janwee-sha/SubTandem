@@ -5,10 +5,82 @@ import { readFileSync } from "node:fs";
 import { SubtitlePreparationCoordinator } from "../../src/app/subtitle-preparation.js";
 import { SubtitleExtractorError } from "../../src/adapters/iina/subtitle-extractor.js";
 import { detectSubtitleLanguage } from "../../src/subtitles/language-detection.js";
-import { buildTranslationTask } from "../../src/providers/translation-task.js";
+import {
+  buildClaudeTranslationTask,
+  buildTranslationTask,
+} from "../../src/providers/translation-task.js";
 import type { SubtitleCue } from "../../src/subtitles/types.js";
+import { discoverProviderModels } from "../../src/providers/model-discovery.js";
 
 describe("credential and content leakage boundaries", () => {
+  it("drops Claude preview keys, cursors, endpoints and raw model responses from failures", async () => {
+    const sensitive = [
+      "PRIVATE_PREVIEW_KEY",
+      "PRIVATE_CURSOR",
+      "https://private.example/base",
+      "PRIVATE_MODEL_RESPONSE",
+    ];
+    const failure = await discoverProviderModels(
+      {
+        jobId: "preview-models",
+        kind: "claude",
+        endpoint: sensitive[2]!,
+        apiKey: sensitive[0]!,
+      },
+      {
+        request: async () => ({
+          statusCode: 401,
+          headers: { "request-id": `bad\n${sensitive[1]}` },
+          bodyText: JSON.stringify({
+            error: { type: "unknown_private", message: sensitive[3] },
+            cursor: sensitive[1],
+          }),
+        }),
+      },
+    ).catch((error) => error);
+    const output = JSON.stringify({ failure, preferences: {}, diagnostic: diagnostic(failure) });
+    for (const value of sensitive) expect(output).not.toContain(value);
+    expect(failure).toMatchObject({ category: "authentication", statusCode: 401 });
+  });
+
+  it("keeps Claude credentials, raw Messages data and subtitles out of every safe surface", () => {
+    const sensitive = [
+      "PRIVATE_CLAUDE_KEY",
+      "Bearer PRIVATE_CLAUDE_KEY",
+      "PRIVATE_CLAUDE_RESPONSE",
+      "PRIVATE_CLAUDE_SUBTITLE",
+    ];
+    const view = sanitizedProfileView({
+      profileId: "claude-profile",
+      revision: 1,
+      displayName: "Claude",
+      kind: "claude",
+      endpoint: "https://api.anthropic.com",
+      endpointFingerprint: "fingerprint",
+      credential: { apiKey: sensitive[0]! },
+    });
+    const task = buildClaudeTranslationTask({
+      sourceLanguage: "en",
+      targetLanguage: "zh-Hans",
+      targets: [{ id: "c1", text: "fictional source" }],
+    });
+    const output = JSON.stringify({
+      view,
+      task,
+      preferences: { providerProfilesJson: JSON.stringify({ kind: "claude" }) },
+      diagnostic: diagnostic({
+        code: "CLAUDE_FAILURE",
+        apiKey: sensitive[0],
+        authorization: sensitive[1],
+        responseBody: sensitive[2],
+        subtitle: sensitive[3],
+      }),
+      argv: [],
+    });
+    for (const value of sensitive) expect(output).not.toContain(value);
+    expect(view).toMatchObject({ credentialConfigured: true });
+  });
+
   it("rejects secret and raw response fields in model refresh results", () => {
     for (const field of ["apiKey", "authorization", "endpoint", "responseBody"]) {
       expect(() =>

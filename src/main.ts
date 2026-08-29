@@ -108,7 +108,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     profileId: string;
     revision: number;
     endpointFingerprint: string;
-    kind: "openai" | "deepseek" | "ollama";
+    kind: "openai" | "claude" | "deepseek" | "ollama";
   } | null = null;
   const boundedWork = "120 s / 40 cues; 25 cues / 5,000 code points per request";
   let sidebarState: Record<string, unknown> = {
@@ -763,7 +763,10 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
       typeof selection.profileId !== "string" ||
       typeof selection.revision !== "number" ||
       typeof selection.endpointFingerprint !== "string" ||
-      (selection.kind !== "openai" && selection.kind !== "deepseek" && selection.kind !== "ollama")
+      (selection.kind !== "openai" &&
+        selection.kind !== "claude" &&
+        selection.kind !== "deepseek" &&
+        selection.kind !== "ollama")
     )
       return;
     if (currentSelection) {

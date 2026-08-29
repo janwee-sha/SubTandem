@@ -314,6 +314,28 @@ describe("Sidebar operation feedback ownership", () => {
 });
 
 describe("Sidebar model catalog state", () => {
+  it("restores the last successful Claude catalog per context and keeps it after failure", () => {
+    const state = createState();
+    state.setModelContext("claude-a", "custom-a");
+    state.applyModelCatalog("claude-a", ["model-a"]);
+    state.setModelContext("claude-b", "custom-b");
+    state.applyModelCatalog("claude-b", ["model-b"]);
+    state.setModelRefreshState("error", "Safe failure");
+    expect(state.snapshot.modelControl).toMatchObject({
+      value: "custom-b",
+      knownModelIds: ["model-b"],
+      refreshState: "error",
+    });
+    state.setModelContext("claude-a", "custom-a");
+    expect(state.snapshot.modelControl).toMatchObject({
+      value: "custom-a",
+      knownModelIds: ["model-a"],
+      contextKey: "claude-a",
+    });
+    state.selectCustomModel();
+    expect(state.snapshot.modelControl.mode).toBe("custom");
+  });
+
   it("does not reuse a DeepSeek catalog after the service context changes", () => {
     const state = globalThis.createSubTandemSidebarState();
     state.setModelContext("deepseek|endpoint-a|system|revision-1|credential-1", "custom-id");
@@ -434,6 +456,40 @@ describe("Sidebar model catalog state", () => {
 });
 
 describe("Sidebar Profile name source", () => {
+  it("tracks Claude system ownership, credential pending and exact model controls", () => {
+    const state = createState();
+    state.resetProfileName("OpenAI");
+    state.changeServiceTypeLabel("Claude");
+    expect(state.snapshot.profileName).toEqual({
+      value: "Claude",
+      mode: "system",
+      serviceTypeLabel: "Claude",
+    });
+    state.beginProfileSave("claude-save", true);
+    expect(state.snapshot.pendingProfileSave).toMatchObject({
+      requestId: "claude-save",
+      credentialPending: true,
+    });
+    state.setModelContext("claude-context", "custom-claude-model");
+    state.applyModelCatalog("claude-context", ["catalog-model"]);
+    expect(state.snapshot.modelControl).toMatchObject({
+      value: "custom-claude-model",
+      mode: "custom",
+      knownModelIds: ["catalog-model"],
+    });
+    state.beginOperation({
+      requestId: "select-claude",
+      regionId: "profile-row:claude",
+      actionId: "select",
+      profileId: "claude",
+      revision: 1,
+    });
+    expect(state.snapshot.requests["select-claude"]).toMatchObject({
+      profileId: "claude",
+      revision: 1,
+    });
+  });
+
   it("follows Service type labels only while the name is system-owned", () => {
     const state = createState();
     state.resetProfileName("OpenAI-compatible");

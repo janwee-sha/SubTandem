@@ -11,7 +11,7 @@ type SessionStatus =
   | "partialFailure"
   | "serviceUnavailable";
 
-type ProviderKind = "openai" | "deepseek" | "ollama";
+type ProviderKind = "openai" | "claude" | "deepseek" | "ollama";
 
 interface SessionProviderError {
   category?: string;
@@ -134,11 +134,13 @@ const providerDrafts: Record<
   { endpoint: string; model: string; proxyMode: "system" | "direct" }
 > = {
   openai: { endpoint: "https://api.openai.com/v1", model: "", proxyMode: "system" },
+  claude: { endpoint: "https://api.anthropic.com", model: "", proxyMode: "system" },
   deepseek: { endpoint: "https://api.deepseek.com", model: "", proxyMode: "system" },
   ollama: { endpoint: "http://127.0.0.1:11434", model: "", proxyMode: "system" },
 };
 const providerLabels: Record<ProviderKind, string> = {
   openai: "OpenAI",
+  claude: "Claude",
   deepseek: "DeepSeek",
   ollama: "Ollama",
 };
@@ -150,6 +152,12 @@ const providerUi: Record<
     endpointHint: "Enter a complete HTTP(S) API root. Every value receives /chat/completions.",
     modelHint: "Enter the exact model identifier exposed by this service.",
     modelPlaceholder: "e.g. gpt-translate-fast",
+  },
+  claude: {
+    endpointHint:
+      "Enter a complete HTTP(S) Claude API root, optionally ending in /v1. Do not enter a full Messages URL.",
+    modelHint: "Refresh the catalog or enter the exact Claude model ID.",
+    modelPlaceholder: "Exact Claude model ID",
   },
   deepseek: {
     endpointHint:
@@ -200,8 +208,12 @@ let draftCredentialEpoch = 1;
 let pendingModelRefresh: {
   requestId: string;
   contextSignature: string;
+  stateContextKey: string;
   trigger: string;
   credentialSource: "saved" | "entered" | "none";
+  kind: ProviderKind;
+  endpoint: string;
+  proxyMode: "system" | "direct";
 } | null = null;
 
 function nextRequestId(): string {
@@ -505,15 +517,30 @@ function requestModels(trigger: "open" | "endpoint" | "profile" | "credential" |
     editingProfile?.kind === providerKind.value &&
     editingProfile.endpoint === providerEndpoint.value.trim() &&
     editingProfile.proxyMode === providerProxyMode.value;
+  if (
+    providerKind.value === "claude" &&
+    !usesDraftCredential &&
+    !(matchesSaved && editingProfile?.credentialConfigured)
+  ) {
+    pendingModelRefresh = null;
+    if (trigger === "manual")
+      setModelRefreshFeedback("error", "Enter an API key before refreshing Claude models.");
+    else setModelRefreshFeedback("idle");
+    return;
+  }
   pendingModelRefresh = {
     requestId,
     contextSignature,
+    stateContextKey: contextSignature,
     trigger,
     credentialSource: usesDraftCredential
       ? "entered"
       : matchesSaved && editingProfile?.credentialConfigured
         ? "saved"
         : "none",
+    kind: providerKind.value as ProviderKind,
+    endpoint: providerEndpoint.value.trim(),
+    proxyMode: providerProxyMode.value === "direct" ? "direct" : "system",
   };
   setModelRefreshFeedback("busy");
   if (usesDraftCredential) {
@@ -536,12 +563,27 @@ function requestModels(trigger: "open" | "endpoint" | "profile" | "credential" |
   window.iina?.postMessage("provider:models", envelope(modelRefreshPayload(trigger), requestId));
 }
 
+function invalidatePendingModelRefresh(): void {
+  const pending = pendingModelRefresh;
+  pendingModelRefresh = null;
+  if (!pending) return;
+  setModelRefreshFeedback("idle");
+  if (pending.kind !== "claude") return;
+  window.iina?.postMessage(
+    "provider:models",
+    envelope({
+      trigger: "credential",
+      kind: "claude",
+      endpoint: pending.endpoint,
+      proxyMode: pending.proxyMode,
+    }),
+  );
+}
+
 function scheduleEndpointModelRefresh(): void {
   if (endpointRefreshTimer !== null) clearTimeout(endpointRefreshTimer);
   if (pendingModelRefresh?.contextSignature !== modelContextKey()) {
-    const requestId = pendingModelRefresh?.requestId;
-    pendingModelRefresh = null;
-    if (requestId) setModelRefreshFeedback("idle");
+    invalidatePendingModelRefresh();
   }
   setModelContext(sidebarState.snapshot.modelControl.value);
   if (!validModelEndpoint()) return;
@@ -584,6 +626,13 @@ function updateRequestUrl(): void {
     requestUrl.textContent = value ? `Ollama API root: ${value}` : "Enter the Ollama server root.";
     return;
   }
+  if (kind === "claude") {
+    const messagesUrl = /\/v1$/i.test(value) ? `${value}/messages` : `${value}/v1/messages`;
+    requestUrl.textContent = value
+      ? `Actual request: ${messagesUrl}`
+      : "Requests append /v1/messages to this Claude API root.";
+    return;
+  }
   requestUrl.textContent = value
     ? `Actual request: ${value}/chat/completions`
     : "Requests append /chat/completions to this API root.";
@@ -591,6 +640,16 @@ function updateRequestUrl(): void {
 
 function selectedServiceTypeLabel(): string {
   return providerLabels[providerKind.value as ProviderKind];
+}
+
+function claudeCredentialRequired(): boolean {
+  if (providerKind.value !== "claude") return false;
+  return !(
+    editingProfile?.kind === "claude" &&
+    editingProfile.credentialConfigured &&
+    editingProfile.endpoint === providerEndpoint.value.trim() &&
+    editingProfile.proxyMode === providerProxyMode.value
+  );
 }
 
 function applyProviderKind(): void {
@@ -605,12 +664,20 @@ function applyProviderKind(): void {
     providerUi[kind].endpointHint;
   document.querySelector<HTMLElement>("#model-hint")!.textContent = providerUi[kind].modelHint;
   providerModel.placeholder = providerUi[kind].modelPlaceholder;
+  providerKey.required = claudeCredentialRequired();
+  document.querySelector<HTMLElement>("#credential-hint")!.textContent =
+    kind === "claude"
+      ? providerKey.required
+        ? "Required and write-only. Enter a key to refresh models and save this Claude Profile."
+        : "Write-only. Leave blank to keep the saved Claude API key."
+      : "Write-only; optional when unauthenticated. Enter a key and refresh models before saving a protected service.";
   setModelContext(providerDrafts[kind].model);
   updateRequestUrl();
 }
 
 providerKind.addEventListener("change", () => {
   cancelPendingProfileSaveForContextChange();
+  invalidatePendingModelRefresh();
   saveActiveDraft();
   draftCredentialEpoch += 1;
   providerKey.value = "";
@@ -619,11 +686,14 @@ providerKind.addEventListener("change", () => {
 });
 providerEndpoint.addEventListener("input", () => {
   cancelPendingProfileSaveForContextChange();
+  providerKey.required = claudeCredentialRequired();
   updateRequestUrl();
   scheduleEndpointModelRefresh();
 });
 providerProxyMode.addEventListener("change", () => {
   cancelPendingProfileSaveForContextChange();
+  invalidatePendingModelRefresh();
+  providerKey.required = claudeCredentialRequired();
   setModelContext(sidebarState.snapshot.modelControl.value);
   requestModels("profile");
 });
@@ -641,8 +711,8 @@ providerModel.addEventListener("input", () => {
 });
 providerKey.addEventListener("input", () => {
   cancelPendingProfileSaveForContextChange();
+  invalidatePendingModelRefresh();
   draftCredentialEpoch += 1;
-  pendingModelRefresh = null;
   setModelContext(sidebarState.snapshot.modelControl.value);
   setModelRefreshFeedback("idle");
 });
@@ -653,6 +723,7 @@ profileName.addEventListener("input", () => {
 
 function loadEditor(profile: ProfileView, preservePendingSave = false): void {
   if (!preservePendingSave) cancelPendingProfileSaveForContextChange();
+  invalidatePendingModelRefresh();
   editingProfile = profile;
   draftCredentialEpoch += 1;
   providerKey.value = "";
@@ -681,6 +752,7 @@ function loadEditor(profile: ProfileView, preservePendingSave = false): void {
 
 function resetEditor(): void {
   cancelPendingProfileSaveForContextChange();
+  invalidatePendingModelRefresh();
   editingProfile = null;
   draftCredentialEpoch += 1;
   providerKey.value = "";
@@ -753,6 +825,12 @@ saveProfileButton.addEventListener("click", () => {
     providerModel.focus();
     return;
   }
+  if (claudeCredentialRequired() && !providerKey.value.trim()) {
+    profileEditorStatus.dataset.state = "error";
+    profileEditorStatus.textContent = "Enter an API key before saving this Claude Profile.";
+    providerKey.focus();
+    return;
+  }
   const requestId = beginOperation(
     "profile-editor",
     "save-profile",
@@ -762,7 +840,7 @@ saveProfileButton.addEventListener("click", () => {
   );
   pendingProfileSave = {
     requestId,
-    secret: providerKey.value || null,
+    secret: providerKey.value.trim() || null,
     contextSignature: editorContextSignature(),
     profileId: editingProfile?.profileId ?? null,
     revision: editingProfile?.revision ?? null,
@@ -987,6 +1065,7 @@ window.iina?.onMessage("provider:models-result", (raw: unknown) => {
   )
     return;
   const credentialSource = pendingModelRefresh.credentialSource;
+  const stateContextKey = pendingModelRefresh.stateContextKey;
   pendingModelRefresh = null;
   if (result.ok) {
     if (!Array.isArray(result.models) || result.models.some((model) => typeof model !== "string")) {
@@ -994,8 +1073,8 @@ window.iina?.onMessage("provider:models-result", (raw: unknown) => {
       return;
     }
     const value = sidebarState.snapshot.modelControl.value;
-    sidebarState.setModelContext(result.contextKey, value);
-    sidebarState.applyModelCatalog(result.contextKey, result.models as string[]);
+    sidebarState.setModelContext(stateContextKey, value);
+    sidebarState.applyModelCatalog(stateContextKey, result.models as string[]);
     renderModelControl();
     setModelRefreshFeedback(
       "success",
@@ -1033,6 +1112,15 @@ window.iina?.onMessage("credential:state", (raw: unknown) => {
   ) {
     if (result.profileId !== undefined && result.profileId !== pendingProfileSave.profileId) return;
     credentialState.textContent = message;
+    if (ready && editingProfile && editingProfile.profileId === pendingProfileSave.profileId) {
+      editingProfile = { ...editingProfile, credentialConfigured: true };
+      profiles.set(editingProfile.profileId, editingProfile);
+      providerKey.required = false;
+      document.querySelector<HTMLElement>("#credential-hint")!.textContent =
+        editingProfile.kind === "claude"
+          ? "Write-only. Leave blank to keep the saved Claude API key."
+          : "Write-only; optional when unauthenticated. Leave blank to keep the saved API key.";
+    }
     const saveMessage = sidebarState.completeProfileSave(
       result.requestId,
       ready ? "Profile and local credential saved." : profileCredentialPartialFailureMessage,

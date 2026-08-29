@@ -4,6 +4,7 @@ import { freezeTranslationTargets } from "../../src/app/request-builder.js";
 import { OllamaProvider } from "../../src/providers/ollama.js";
 import { OpenAICompatibleProvider } from "../../src/providers/openai.js";
 import { DeepSeekProvider } from "../../src/providers/deepseek.js";
+import { ClaudeProvider } from "../../src/providers/claude.js";
 import type { ProviderTransport, ProviderTransportRequest } from "../../src/providers/transport.js";
 import type { TranslationBatchRequest, TranslationBatchResult } from "../../src/providers/types.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
@@ -27,6 +28,7 @@ class FetchTransport implements ProviderTransport {
 
 const live = process.env.SUBTANDEM_LIVE_PROVIDER_TEST === "1";
 const liveDeepSeek = process.env.SUBTANDEM_LIVE_DEEPSEEK_TEST === "1";
+const liveClaude = process.env.SUBTANDEM_LIVE_CLAUDE_TEST === "1";
 
 function makeLiveAcceptanceRequest(count = 50): TranslationBatchRequest {
   const { continuousCues } = createTranslationAlignmentFixture();
@@ -160,6 +162,28 @@ describe.skipIf(!liveDeepSeek)("authorized DeepSeek live acceptance", () => {
 
     const tested = await withSafeProviderDiagnostics(provider.testConnection("deepseek-live-test"));
     expect(tested.model === model).toBe(true);
+    const request = makeLiveAcceptanceRequest(40);
+    const result = await withSafeProviderDiagnostics(provider.attempt(request));
+    expect(request.items).toHaveLength(40);
+    expectCleanLiveTranslations(request, result);
+  }, 600_000);
+});
+
+describe.skipIf(!liveClaude)("authorized Claude-compatible live acceptance", () => {
+  it("runs a fresh Messages Test and at least twenty two-item wires", async () => {
+    const endpoint = process.env.SUBTANDEM_CLAUDE_ENDPOINT;
+    const model = process.env.SUBTANDEM_CLAUDE_MODEL;
+    const apiKey = process.env.SUBTANDEM_CLAUDE_KEY;
+    expect(endpoint).toBeTruthy();
+    expect(model).toBeTruthy();
+    expect(apiKey).toBeTruthy();
+    const provider = new ClaudeProvider(
+      { endpoint: endpoint!, model: model!, apiKey: apiKey! },
+      new FetchTransport(),
+    );
+
+    const tested = await withSafeProviderDiagnostics(provider.testConnection("claude-live-test"));
+    expect(tested).toEqual({ model });
     const request = makeLiveAcceptanceRequest(40);
     const result = await withSafeProviderDiagnostics(provider.attempt(request));
     expect(request.items).toHaveLength(40);

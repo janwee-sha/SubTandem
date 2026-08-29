@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PlaybackController, type TranslationOverlaySink } from "../../src/app/controller.js";
+import { ClaudeProvider } from "../../src/providers/claude.js";
+import type { ProviderTransportRequest } from "../../src/providers/transport.js";
 import { RecordingProvider } from "../helpers/fake-provider.js";
 import type { SubtitleCue } from "../../src/subtitles/types.js";
 
@@ -118,6 +120,75 @@ describe("US2 cost/privacy acceptance", () => {
           ),
         ),
       ).toBe(true);
+    }
+  });
+
+  it("keeps Claude wires bounded and credentials outside Messages bodies", async () => {
+    const requests: ProviderTransportRequest[] = [];
+    const provider = new ClaudeProvider(
+      {
+        endpoint: "https://api.anthropic.com",
+        model: "exact-model-id",
+        apiKey: "fictional-claude-key",
+      },
+      {
+        request: async (request) => {
+          requests.push(request);
+          const body = request.body as { messages: Array<{ content: string }> };
+          const targets = (
+            JSON.parse(body.messages[0]!.content) as { targets: Array<{ id: string }> }
+          ).targets;
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              type: "message",
+              role: "assistant",
+              stop_reason: "end_turn",
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify({
+                    translations: targets.map((target) => ({
+                      id: target.id,
+                      text: `T:${target.id}`,
+                    })),
+                  }),
+                },
+              ],
+            }),
+          };
+        },
+      },
+    );
+    const controller = new PlaybackController({
+      playerId: "claude-cost-privacy",
+      provider,
+      providerKind: "claude",
+      overlay: new Sink(),
+      targetLanguage: "zh-Hans",
+    });
+    controller.setSource({ cues: longCues, contentHash: "claude", language: "en", format: "srt" });
+
+    controller.tick(60_000);
+    await controller.whenIdle();
+
+    expect(requests).toHaveLength(13);
+    for (const request of requests) {
+      const body = request.body as { messages: Array<{ content: string }> };
+      const payload = JSON.parse(body.messages[0]!.content) as {
+        targets: Array<Record<string, unknown>>;
+      };
+      expect(request.url).toBe("https://api.anthropic.com/v1/messages");
+      expect(payload.targets.length).toBeLessThanOrEqual(2);
+      expect(
+        payload.targets.every((target) =>
+          Object.keys(target).every((key) =>
+            ["id", "text", "context_previous", "context_next"].includes(key),
+          ),
+        ),
+      ).toBe(true);
+      expect(JSON.stringify(request.body)).not.toContain("fictional-claude-key");
     }
   });
 

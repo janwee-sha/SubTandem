@@ -63,10 +63,13 @@ describe("IINA package manifest", () => {
       /edited endpoints.*subtitle-free model-list requests/i,
     );
     expect(manifest.permissionDescriptions["network-request"]).toMatch(
-      /selected profile receives subtitle text/i,
+      /explicitly selected profile revision receives nearby subtitle text/i,
     );
     expect(manifest.permissionDescriptions["network-request"]).toMatch(
       /DeepSeek.*api\.deepseek\.com.*before Select/i,
+    );
+    expect(manifest.permissionDescriptions["network-request"]).toMatch(
+      /Claude.*api\.anthropic\.com.*before Select/i,
     );
   });
 

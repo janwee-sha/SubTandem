@@ -2,7 +2,7 @@ import { identityHash } from "../domain/identity.js";
 import type { EndpointFingerprint, ProfileId } from "../domain/types.js";
 import type { ProviderProfileSnapshot } from "./types.js";
 
-type Kind = "openai" | "deepseek" | "ollama";
+type Kind = "openai" | "claude" | "deepseek" | "ollama";
 export interface SaveProfileInput {
   profileId?: string;
   expectedRevision?: number;
@@ -71,6 +71,7 @@ export function normalizeProviderEndpoint(kind: Kind, value: string): string {
   validateAuthority(authority);
   if (kind === "openai") return trimmed;
   const path = (match[3] ?? "").replace(/\/+$/, "");
+  if (kind === "claude" && /\/v1\/(?:messages|models)$/i.test(path)) invalidEndpoint();
   return `${scheme}://${authority.toLowerCase()}${path}`;
 }
 

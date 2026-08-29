@@ -86,6 +86,72 @@ describe("per-window model catalog synchronization", () => {
     expect(sync.snapshot("window-a").ownerRequestId).toBe("after-credential");
   });
 
+  it("invalidates cached Claude state across credential, kind, endpoint, route and revision owners", () => {
+    const sync = new ModelCatalogSync();
+    const claude = modelCatalogContextToken({
+      trigger: "manual",
+      kind: "claude",
+      endpoint: "https://api.anthropic.com",
+      proxyMode: "system",
+      profileId: "claude-profile",
+      profileRevision: 1,
+      endpointFingerprint: "fingerprint-1",
+    });
+    sync.begin("window-a", { requestId: "claude-1", contextToken: claude, trigger: "manual" });
+    sync.commit("window-a", {
+      requestId: "claude-1",
+      ok: true,
+      contextKey: "credential-epoch-1",
+      models: ["model-a"],
+    });
+    expect(sync.snapshot("window-a").catalog?.models).toEqual(["model-a"]);
+    sync.begin("window-a", {
+      requestId: "claude-credential-2",
+      contextToken: claude,
+      trigger: "credential",
+    });
+    expect(sync.snapshot("window-a").catalog).toBeNull();
+    expect(
+      sync.commit("window-a", {
+        requestId: "claude-1",
+        ok: true,
+        contextKey: "stale",
+        models: ["stale"],
+      }),
+    ).toBe(false);
+
+    const variants = [
+      modelCatalogContextToken({
+        trigger: "profile",
+        kind: "openai",
+        endpoint: "https://api.anthropic.com",
+        proxyMode: "system",
+      }),
+      modelCatalogContextToken({
+        trigger: "profile",
+        kind: "claude",
+        endpoint: "https://other.example",
+        proxyMode: "system",
+      }),
+      modelCatalogContextToken({
+        trigger: "profile",
+        kind: "claude",
+        endpoint: "https://api.anthropic.com",
+        proxyMode: "direct",
+      }),
+      modelCatalogContextToken({
+        trigger: "profile",
+        kind: "claude",
+        endpoint: "https://api.anthropic.com",
+        proxyMode: "system",
+        profileId: "claude-profile",
+        profileRevision: 2,
+        endpointFingerprint: "fingerprint-2",
+      }),
+    ];
+    expect(new Set([claude, ...variants]).size).toBe(variants.length + 1);
+  });
+
   it("commits only the latest owner and keeps the last successful catalog on failure", () => {
     const sync = new ModelCatalogSync();
     sync.begin("window-a", {

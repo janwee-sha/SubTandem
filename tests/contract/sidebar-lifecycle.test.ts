@@ -23,11 +23,59 @@ describe("IINA sidebar lifecycle contract", () => {
     "utf8",
   );
 
-  it("carries the selected DeepSeek kind into Main translation ownership", () => {
+  it("carries selected DeepSeek and Claude kinds into Main translation ownership", () => {
     expect(mainSource).toContain("kind: selection.kind");
     expect(mainSource).toContain("kind: currentSelection.kind");
-    expect(controllerSource).toContain('providerKind?: "openai" | "deepseek" | "ollama"');
-    expect(controllerSource).toContain('this.options.providerKind !== "deepseek"');
+    expect(controllerSource).toContain(
+      'providerKind?: "openai" | "claude" | "deepseek" | "ollama"',
+    );
+    expect(controllerSource).toContain('this.options.providerKind !== "claude"');
+  });
+
+  it("keeps Claude drafts isolated and completes Save through credential ownership", () => {
+    expect(sidebarSource).toContain("providerDrafts");
+    expect(sidebarSource).toContain('claude: { endpoint: "https://api.anthropic.com"');
+    expect(sidebarSource).toContain("saveActiveDraft");
+    expect(sidebarSource).toContain("draftCredentialEpoch += 1");
+    expect(sidebarSource).toContain("pendingProfileSave.secret");
+    expect(sidebarSource).toContain('postMessage(\n      "secret:set"');
+    expect(sidebarSource).toContain("profileCredentialPartialFailureMessage");
+    expect(sidebarSource).toContain(
+      "pendingProfileSave.contextSignature !== editorContextSignature()",
+    );
+    expect(sidebarSource).toContain("profileTestStates.delete(result.profile.profileId)");
+  });
+
+  it("keeps the saved-key hint specific to the active provider kind", () => {
+    const start = sidebarSource.indexOf('window.iina?.onMessage("credential:state"');
+    const end = sidebarSource.indexOf('window.iina?.onMessage("operation:result"', start);
+    const credentialHandler = sidebarSource.slice(start, end);
+
+    expect(credentialHandler).toContain('editingProfile.kind === "claude"');
+    expect(credentialHandler).toContain("saved Claude API key");
+    expect(credentialHandler).toContain("optional when unauthenticated");
+  });
+
+  it("does not let a late Claude save, Test or deletion replace a newer editor owner", () => {
+    expect(sidebarSource).toContain("pendingProfileTests");
+    expect(sidebarSource).toContain("testedProfile.revision !== tested.revision");
+    expect(sidebarSource).toContain("result.requestId !== pendingProfileSave.requestId");
+    expect(sidebarSource).toContain("deleteSucceeded");
+    expect(sidebarStateSource).toContain("latestRequestByRegion");
+  });
+
+  it("gates Claude automatic refresh, sends one manual preview and preserves Custom state", () => {
+    const requestStart = sidebarSource.indexOf("function requestModels");
+    const requestEnd = sidebarSource.indexOf("function scheduleEndpointModelRefresh", requestStart);
+    const requestSource = sidebarSource.slice(requestStart, requestEnd);
+    expect(requestSource).toContain('providerKind.value === "claude"');
+    expect(requestSource).toContain("usesDraftCredential");
+    expect(requestSource).toContain("editingProfile?.credentialConfigured");
+    expect(requestSource).toContain('"provider:models-preview"');
+    expect(sidebarSource).toContain('setModelRefreshFeedback("busy")');
+    expect(sidebarSource).toContain("pendingModelRefresh.contextSignature !== modelContextKey()");
+    expect(sidebarSource).toContain("sidebarState.snapshot.modelControl.value");
+    expect(sidebarStateSource).toContain("customModelContexts");
   });
 
   it("covers startup, open, stable endpoint and manual model refresh triggers", () => {
