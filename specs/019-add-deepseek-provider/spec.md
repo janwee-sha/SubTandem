@@ -2,7 +2,7 @@
 
 **功能目录**：`specs/019-add-deepseek-provider`  
 **创建日期**：2026-08-29  
-**状态**：草案
+**状态**：已完成
 
 **输入**：新增 DeepSeek Service type，使用 DeepSeek 支持的 OpenAI-compatible Chat Completions 格式完成字幕翻译，并适配其 JSON 输出与默认 thinking 行为。
 

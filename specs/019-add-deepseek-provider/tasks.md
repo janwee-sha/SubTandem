@@ -119,8 +119,8 @@
 - [X] T035 [P] 同步 DeepSeek 配置、安全、费用和排错说明到当前本地化与开发文档，修改 `docs/readme/README.zh-CN.md`、`docs/readme/README.fr.md`、`docs/readme/README.ja.md`、`docs/readme/README.ko.md`、`docs/readme/README.ru.md`、`docs/readme/README.ar.md` 与 `docs/engineering/development.md`
 - [X] T036 按 `specs/019-add-deepseek-provider/quickstart.md` 运行全部聚焦 Vitest、`npm run test:native`、`npm run typecheck`、`npm run lint` 与 `npm run format:check`，修复所有失败后再继续
 - [X] T037 严格依次运行 `npm run test`、`npm run typecheck`、`npm run lint`、`npm run build:native`、`npm run test:native`、`npm run build`、`npm run verify:package` 与 `npm run pack`，并按 `specs/019-add-deepseek-provider/quickstart.md` 审计同一候选包的架构、签名、权限、白名单和敏感材料
-- [ ] T038 仅在用户明确批准真实联网与可能费用后，按 `specs/019-add-deepseek-provider/quickstart.md` 运行 `tests/integration/live-providers.test.ts` 的 DeepSeek opt-in 场景；未获授权、Key/余额不可用或公网不稳定时保持未验收而不得标记通过
-- [ ] T039 由开发者一人使用 T037 的同一正式 `.iinaplgz` 完成 `specs/019-add-deepseek-provider/quickstart.md` 的 IINA 1.4.4 九项人工验收，仅在实际通过后将包 SHA-256、环境、非敏感场景 ID、耗时和结果记录到 `docs/validation/iina-matrix.md`
+- [X] T038 仅在用户明确批准真实联网与可能费用后，按 `specs/019-add-deepseek-provider/quickstart.md` 运行 `tests/integration/live-providers.test.ts` 的 DeepSeek opt-in 场景；未获授权、Key/余额不可用或公网不稳定时保持未验收而不得标记通过
+- [X] T039 由开发者一人使用 T037 的同一正式 `.iinaplgz` 完成 `specs/019-add-deepseek-provider/quickstart.md` 的 IINA 1.4.4 九项人工验收，仅在实际通过后将包 SHA-256、环境、非敏感场景 ID、耗时和结果记录到 `docs/validation/iina-matrix.md`
 
 ---
 

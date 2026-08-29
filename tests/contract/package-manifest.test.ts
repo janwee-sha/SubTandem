@@ -17,9 +17,9 @@ describe("IINA package manifest", () => {
       "show-alert",
       "video-overlay",
     ]);
-    expect(manifest.version).toBe("0.1.0");
+    expect(manifest.version).toBe("0.1.1");
     expect(manifest.ghRepo).toBe("janwee-sha/SubTandem");
-    expect(manifest.ghVersion).toBe(1000);
+    expect(manifest.ghVersion).toBe(1001);
   });
 
   it("describes self-rendered translations without temporary display files", () => {
