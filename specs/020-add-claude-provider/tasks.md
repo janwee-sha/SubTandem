@@ -144,7 +144,7 @@ description: "添加 Claude 翻译服务的可执行任务清单"
 - [X] T053 按 `specs/020-add-claude-provider/quickstart.md` 运行列出的聚焦 Vitest、`npm run test:native`、`npm run typecheck`、`npm run lint` 与 `npm run format:check`，修复后从头重跑直至全部成功
 - [X] T054 按 `specs/020-add-claude-provider/quickstart.md` 在最终代码上依次重新运行 `npm run test`、`npm run typecheck`、`npm run lint`、`npm run build:native`、`npm run test:native`、`npm run build`、`npm run verify:package` 与 `npm run pack`，确认全部成功且不沿用任何代码变更前结果
 - [X] T055 仅在用户当次明确批准联网和可能费用后，按 `specs/020-add-claude-provider/quickstart.md` 执行 Claude-compatible live test 的 fresh Test 与至少 20 个双项目 wire；未授权或未执行时保持本任务未完成
-- [ ] T056 由单名开发者按 `specs/020-add-claude-provider/quickstart.md` 使用最终 `build/package/SubTandem-0.1.1.iinaplgz` 完成 IINA 1.4.4 安装、权限、Profile 全流程、竞态、多窗口、播放非阻塞、敏感数据和卸载验收，并记录非敏感包 SHA-256 与环境证据
+- [X] T056 由单名开发者按 `specs/020-add-claude-provider/quickstart.md` 使用最终 `build/package/SubTandem-0.1.1.iinaplgz` 完成 IINA 1.4.4 安装、权限、Profile 全流程、竞态、多窗口、播放非阻塞、敏感数据和卸载验收，并记录非敏感包 SHA-256 与环境证据
 - [X] T057 将 Claude Test 与字幕 wire 超时统一调整为适合本地 compatible Endpoint 冷启动和排队的 60 秒，增加请求超时契约并保留 live transport 安全诊断，修改 `src/providers/claude.ts`、`tests/contract/claude.test.ts` 与 `tests/integration/live-providers.test.ts`
 - [X] T059 为 Overlay WebView 增加可重入的初始化握手及 ready 消息竞态回归，使已写入 Session cache 的当前译文在宿主错过页面首次 ready 时仍能显示，修改 `src/adapters/iina/webview-translation-overlay.ts`、`ui/overlay.ts`、`tests/integration/overlay-webview-lifecycle.test.ts` 与 `tests/contract/overlay-webview.test.ts`
 - [X] T058 在 T057 与 T059 的最终代码上重新执行聚焦回归与 T053/T054 的完整测试、编译和打包门禁，不沿用修复前结果

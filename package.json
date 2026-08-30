@@ -1,6 +1,6 @@
 {
   "name": "subtandem",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "license": "GPL-3.0-only",
   "description": "Real-time bilingual subtitle translation for IINA 1.4+",

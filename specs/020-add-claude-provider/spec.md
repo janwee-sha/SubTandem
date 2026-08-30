@@ -2,7 +2,7 @@
 
 **功能目录**：`specs/020-add-claude-provider`  
 **创建日期**：2026-08-29  
-**状态**：草案
+**状态**：已完成
 
 **输入**：新增 Claude Service type，使用 Claude/Anthropic Messages 格式完成字幕翻译，并使 Claude 在 Service type 下拉框中位于 OpenAI 之后。
 
