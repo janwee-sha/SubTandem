@@ -1,3 +1,4 @@
+import { claudeApiError, claudeApiUrl, claudeRequestHeaders } from "./claude-api.js";
 import { providerHttpError, protocolError } from "./errors.js";
 import { normalizeProviderEndpoint } from "./profiles.js";
 import type { ProviderKind } from "./types.js";
@@ -9,6 +10,7 @@ export interface ModelDiscoveryRequest {
   endpoint: string;
   apiKey?: string;
   proxyMode?: "system" | "direct";
+  assertActive?: () => void | Promise<void>;
 }
 
 function cleanedUnique(values: unknown[]): string[] {
@@ -69,6 +71,65 @@ export async function discoverProviderModels(
   request: ModelDiscoveryRequest,
   transport: ProviderTransport,
 ): Promise<string[]> {
+  if (request.kind === "claude") {
+    const apiKey = request.apiKey?.trim();
+    if (!apiKey)
+      throw {
+        category: "authentication",
+        retryable: false,
+        providerCode: "CREDENTIAL_REQUIRED",
+        userAction: "CHECK_CREDENTIALS",
+      };
+    const rootUrl = claudeApiUrl(request.endpoint, "models");
+    const seenModels = new Set<string>();
+    const seenCursors = new Set<string>();
+    const models: string[] = [];
+    let afterId: string | undefined;
+    for (;;) {
+      await request.assertActive?.();
+      const response = await transport.request({
+        jobId: request.jobId,
+        method: "GET",
+        url: afterId === undefined ? rootUrl : `${rootUrl}?after_id=${encodeURIComponent(afterId)}`,
+        headers: claudeRequestHeaders(apiKey, "models"),
+        proxyMode: request.proxyMode ?? "system",
+        timeoutMs: 10_000,
+        maxResponseBytes: 1_048_576,
+      });
+      await request.assertActive?.();
+      if (response.statusCode < 200 || response.statusCode >= 300)
+        throw claudeApiError(response.statusCode, response.headers, response.bodyText, "models");
+      let parsed: Record<string, unknown>;
+      try {
+        const value: unknown = JSON.parse(response.bodyText);
+        if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error();
+        parsed = value as Record<string, unknown>;
+      } catch {
+        throw protocolError("CLAUDE_MODELS_MALFORMED_RESPONSE");
+      }
+      if (!Array.isArray(parsed.data)) throw protocolError("CLAUDE_MODELS_MALFORMED_RESPONSE");
+      for (const model of cleanedUnique(
+        parsed.data.map((item) =>
+          item && typeof item === "object" && !Array.isArray(item)
+            ? (item as Record<string, unknown>).id
+            : undefined,
+        ),
+      )) {
+        if (seenModels.has(model)) continue;
+        seenModels.add(model);
+        models.push(model);
+      }
+      if (parsed.object === "list" && parsed.has_more === undefined) return models;
+      if (typeof parsed.has_more !== "boolean")
+        throw protocolError("CLAUDE_MODELS_MALFORMED_RESPONSE");
+      if (parsed.has_more === false) return models;
+      const cursor = typeof parsed.last_id === "string" ? parsed.last_id.trim() : "";
+      if (parsed.data.length === 0 || !cursor || seenCursors.has(cursor))
+        throw protocolError("CLAUDE_MODELS_INVALID_CURSOR");
+      seenCursors.add(cursor);
+      afterId = cursor;
+    }
+  }
   const endpoint = normalizeProviderEndpoint(request.kind, request.endpoint).replace(/\/+$/, "");
   const response = await transport.request({
     jobId: request.jobId,

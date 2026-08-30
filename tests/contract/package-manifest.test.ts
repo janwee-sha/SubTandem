@@ -17,9 +17,9 @@ describe("IINA package manifest", () => {
       "show-alert",
       "video-overlay",
     ]);
-    expect(manifest.version).toBe("0.1.1");
+    expect(manifest.version).toBe("0.1.2");
     expect(manifest.ghRepo).toBe("janwee-sha/SubTandem");
-    expect(manifest.ghVersion).toBe(1001);
+    expect(manifest.ghVersion).toBe(1002);
   });
 
   it("describes self-rendered translations without temporary display files", () => {
@@ -63,10 +63,13 @@ describe("IINA package manifest", () => {
       /edited endpoints.*subtitle-free model-list requests/i,
     );
     expect(manifest.permissionDescriptions["network-request"]).toMatch(
-      /selected profile receives subtitle text/i,
+      /explicitly selected profile revision receives nearby subtitle text/i,
     );
     expect(manifest.permissionDescriptions["network-request"]).toMatch(
       /DeepSeek.*api\.deepseek\.com.*before Select/i,
+    );
+    expect(manifest.permissionDescriptions["network-request"]).toMatch(
+      /Claude.*api\.anthropic\.com.*before Select/i,
     );
   });
 

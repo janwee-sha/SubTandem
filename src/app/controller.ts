@@ -39,7 +39,7 @@ export interface PlaybackControllerOptions {
   profileId?: string;
   profileRevision?: number;
   endpointFingerprint?: string;
-  providerKind?: "openai" | "deepseek" | "ollama";
+  providerKind?: "openai" | "claude" | "deepseek" | "ollama";
   random?: () => number;
   requiresProviderSelection?: boolean;
   translationLog?: (message: string) => void;
@@ -125,7 +125,7 @@ export class PlaybackController {
     profileId: string;
     revision: number;
     endpointFingerprint: string;
-    kind: "openai" | "deepseek" | "ollama";
+    kind: "openai" | "claude" | "deepseek" | "ollama";
     providerSemanticFingerprint?: string;
   }): void {
     this.options.profileId = input.profileId;
@@ -323,7 +323,7 @@ export class PlaybackController {
       seen.add(item.id);
       valid.push({ cueId: item.id, translation: text });
       this.translations.set(item.id, text);
-      if (this.options.providerKind !== "deepseek")
+      if (this.options.providerKind !== "claude" && this.options.providerKind !== "deepseek")
         try {
           const sourceIndex = this.source?.cues.findIndex((cue) => cue.id === target.id) ?? -1;
           const sourceCue = sourceIndex >= 0 ? this.source?.cues[sourceIndex] : undefined;

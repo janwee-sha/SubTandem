@@ -19,10 +19,11 @@ describe("Overlay WebView lifecycle", () => {
     expect(host.showCount).toBe(0);
     event.trigger("iina.plugin-overlay-loaded");
     expect(host.loadedFiles).toEqual(["dist/ui/overlay.html"]);
+    expect(host.messages).toEqual([{ name: "overlay:initialize", data: {} }]);
     host.trigger("overlay:ready");
     expect(host.showCount).toBe(1);
-    expect(host.messages).toHaveLength(1);
-    expect(host.messages[0]).toMatchObject({
+    expect(host.messages).toHaveLength(2);
+    expect(host.messages[1]).toMatchObject({
       name: "overlay:render",
       data: { lines: ["current"] },
     });
@@ -33,6 +34,22 @@ describe("Overlay WebView lifecycle", () => {
     ]);
   });
 
+  it("recovers when the page's first ready message arrives before the host listener", () => {
+    const { event, host, overlay } = createOverlay();
+    overlay.show(["current"]);
+
+    host.trigger("overlay:ready");
+    event.trigger("iina.plugin-overlay-loaded");
+    expect(host.messages).toEqual([{ name: "overlay:initialize", data: {} }]);
+
+    host.trigger("overlay:ready");
+    expect(host.showCount).toBe(1);
+    expect(host.messages.at(-1)).toMatchObject({
+      name: "overlay:render",
+      data: { lines: ["current"] },
+    });
+  });
+
   it("keeps render, layout and clear revisions latest-only", () => {
     const { event, host, overlay } = createOverlay();
     event.trigger("iina.plugin-overlay-loaded");
@@ -40,13 +57,16 @@ describe("Overlay WebView lifecycle", () => {
     overlay.show(["current"]);
     overlay.setPosition(50);
     overlay.clear();
-    expect(host.messages.map((message) => message.name)).toEqual([
+    const renderingMessages = host.messages.filter(
+      (message) => message.name !== "overlay:initialize",
+    );
+    expect(renderingMessages.map((message) => message.name)).toEqual([
       "overlay:clear",
       "overlay:render",
       "overlay:layout",
       "overlay:clear",
     ]);
-    const revisions = host.messages.map(
+    const revisions = renderingMessages.map(
       (message) => (message.data as { renderRevision: number }).renderRevision,
     );
     expect(revisions).toEqual([...revisions].sort((left, right) => left - right));
@@ -67,7 +87,7 @@ describe("Overlay WebView lifecycle", () => {
     const overlayWithFailedShow = failedShowLifecycle.overlay;
     expect(() => failedShow.trigger("overlay:ready")).not.toThrow();
     overlayWithFailedShow.show(["current"]);
-    expect(failedShow.messages).toEqual([]);
+    expect(failedShow.messages).toEqual([{ name: "overlay:initialize", data: {} }]);
 
     const { event, host, overlay } = createOverlay();
     event.trigger("iina.plugin-overlay-loaded");

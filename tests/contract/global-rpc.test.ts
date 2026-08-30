@@ -4,6 +4,55 @@ import { GlobalRpcRouter } from "../../src/adapters/iina/global-rpc.js";
 import { GLOBAL_MESSAGE_NAMES, SIDEBAR_MESSAGE_NAMES } from "../../src/domain/messages.js";
 
 describe("authoritative global RPC routing", () => {
+  it("routes the complete Claude lifecycle through shared strict RPC names", () => {
+    const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+    expect(source).toContain('import { ClaudeProvider } from "./providers/claude.js"');
+    expect(source).toContain('case "claude"');
+    expect(source).toContain("new ClaudeProvider(");
+    expect(source).toContain('value.kind !== "claude"');
+    expect(source).toContain('value === "claude"');
+    for (const name of [
+      "profile:create-revision",
+      "credential:set",
+      "provider:models",
+      "provider:test",
+      "profile:select",
+      "provider:attempt",
+      "profile:delete",
+    ])
+      expect(source).toContain(`onMessage("${name}"`);
+    expect(source).not.toContain('onMessage("claude:');
+  });
+
+  it("requires saved Claude credentials before Test, Select and translation construction", () => {
+    const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+    const builderStart = source.indexOf("async function buildProvider");
+    const builderEnd = source.indexOf("const providerCache", builderStart);
+    const selectionStart = source.indexOf('onMessage("profile:select"');
+    const selectionEnd = source.indexOf('onMessage("provider:test"', selectionStart);
+    expect(source.slice(builderStart, builderEnd)).toMatch(/claude[\s\S]*credentials\.getSecret/);
+    expect(source.slice(builderStart, builderEnd)).toContain("CREDENTIAL_REQUIRED");
+    expect(source.slice(selectionStart, selectionEnd)).toContain("credentials.getSecret");
+  });
+
+  it("binds saved, preview and startup Claude pagination to a per-page active owner", () => {
+    const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+    const savedStart = source.indexOf('onMessage("provider:models"');
+    const previewStart = source.indexOf('onMessage("provider:models-preview"', savedStart);
+    const saveStart = source.indexOf('onMessage("profile:create-revision"', previewStart);
+    const startupStart = source.indexOf("async function prefetchProfileModels");
+    const saved = source.slice(savedStart, previewStart);
+    const preview = source.slice(previewStart, saveStart);
+    const startup = source.slice(startupStart);
+    expect(saved).toContain("credentialEpoch");
+    expect(saved).toContain("assertActive");
+    expect(saved).toContain("activeModelRequests.get(playerId) !== owner");
+    expect(preview).toContain("draftCredentialEpoch");
+    expect(preview).toContain("assertActive");
+    expect(startup).toContain("assertActive");
+    expect(source).toContain("modelTransport.cancel?.(request.jobId)");
+  });
+
   it("invalidates every cached revision and credential context after replacement", () => {
     const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
     expect(source).toContain("clearProfileProviderCache(secret.profileId)");

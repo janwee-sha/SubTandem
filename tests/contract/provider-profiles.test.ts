@@ -3,6 +3,62 @@ import { normalizeProviderEndpoint, ProviderProfiles } from "../../src/providers
 import { sanitizedProfileView } from "../../src/domain/messages.js";
 
 describe("immutable provider profile revisions", () => {
+  it("normalizes, revises, converts, invalidates and deletes a Claude Profile", () => {
+    const profiles = new ProviderProfiles(() => "claude-profile");
+    const created = profiles.save({
+      displayName: "Claude",
+      kind: "claude",
+      endpoint: "https://API.Anthropic.com/",
+      model: " exact-claude-model ",
+    });
+    expect(created).toMatchObject({
+      kind: "claude",
+      endpoint: "https://api.anthropic.com",
+      model: "exact-claude-model",
+      revision: 1,
+    });
+    expect(created).not.toHaveProperty("capability");
+    profiles.select("window-a", created.profileId, created.revision, created.endpointFingerprint);
+    const updated = profiles.save({
+      profileId: created.profileId,
+      expectedRevision: created.revision,
+      editingWindowId: "window-a",
+      displayName: "Claude updated",
+      kind: "claude",
+      endpoint: "https://compatible.example/base/v1/",
+      model: "custom-model",
+    });
+    expect(updated).toMatchObject({ revision: 2, endpoint: "https://compatible.example/base/v1" });
+    expect(profiles.selection("window-a")).toBeNull();
+    const converted = profiles.save({
+      profileId: created.profileId,
+      expectedRevision: updated.revision,
+      displayName: "OpenAI",
+      kind: "openai",
+      endpoint: "https://api.example/v1",
+      model: "model",
+    });
+    expect(converted.endpointFingerprint).not.toBe(updated.endpointFingerprint);
+    expect(profiles.get(created.profileId, 1)).toEqual(created);
+    expect(profiles.delete(created.profileId)).toEqual([]);
+    expect(profiles.get(created.profileId)).toBeNull();
+  });
+
+  it("publishes Claude metadata without readable credentials or OpenAI capability", () => {
+    const view = sanitizedProfileView({
+      profileId: "claude-profile",
+      revision: 3,
+      displayName: "Claude",
+      kind: "claude",
+      endpoint: "https://api.anthropic.com",
+      endpointFingerprint: "claude-fingerprint",
+      model: "exact-model",
+      credential: { apiKey: "PRIVATE_CLAUDE_KEY" },
+    });
+    expect(view).toMatchObject({ kind: "claude", credentialConfigured: true });
+    expect(JSON.stringify(view)).not.toMatch(/PRIVATE_CLAUDE_KEY|apiKey|capability/i);
+  });
+
   it("stores DeepSeek as an independent normalized Profile identity", () => {
     const profiles = new ProviderProfiles(() => "deepseek-profile");
     const deepseek = profiles.save({

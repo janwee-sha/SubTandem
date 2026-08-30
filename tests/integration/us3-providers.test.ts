@@ -4,6 +4,7 @@ import { ProviderProfiles } from "../../src/providers/profiles.js";
 import { OpenAICompatibleProvider } from "../../src/providers/openai.js";
 import { OllamaProvider } from "../../src/providers/ollama.js";
 import { DeepSeekProvider } from "../../src/providers/deepseek.js";
+import { ClaudeProvider } from "../../src/providers/claude.js";
 import type { TranslationProvider } from "../../src/providers/provider.js";
 import type { ProviderTransport } from "../../src/providers/transport.js";
 import {
@@ -22,6 +23,95 @@ import {
 } from "../../src/adapters/iina/model-catalog-sync.js";
 
 describe("US3 provider broker integration", () => {
+  it("keeps four Provider kinds coexisting with exact revision selection in the current window", async () => {
+    let sequence = 0;
+    const profiles = new ProviderProfiles(() => `profile-${++sequence}`);
+    const saved = [
+      profiles.save({
+        displayName: "OpenAI",
+        kind: "openai",
+        endpoint: "https://openai.example/v1",
+        model: "openai-model",
+      }),
+      profiles.save({
+        displayName: "Claude",
+        kind: "claude",
+        endpoint: "https://api.anthropic.com",
+        model: "claude-model",
+      }),
+      profiles.save({
+        displayName: "DeepSeek",
+        kind: "deepseek",
+        endpoint: "https://api.deepseek.com",
+        model: "deepseek-model",
+      }),
+      profiles.save({
+        displayName: "Ollama",
+        kind: "ollama",
+        endpoint: "http://127.0.0.1:11434",
+        model: "ollama-model",
+      }),
+    ];
+    const provider: TranslationProvider = {
+      attempt: async (request) => ({
+        translations: request.items.map((item) => ({ id: item.id, text: "current-window" })),
+      }),
+    };
+    const broker = new ProviderBroker(profiles, () => provider);
+    const claude = saved[1]!;
+    broker.select("window-claude", claude.profileId, claude.revision, claude.endpointFingerprint);
+    const request = {
+      ...makeProviderRequest(),
+      profileId: claude.profileId,
+      profileRevision: claude.revision,
+      endpointFingerprint: claude.endpointFingerprint,
+    };
+
+    await expect(broker.attempt("window-claude", request)).resolves.toMatchObject({
+      translations: [{ text: "current-window" }, { text: "current-window" }],
+    });
+    expect(profiles.listLatest().map((profile) => profile.kind)).toEqual([
+      "openai",
+      "claude",
+      "deepseek",
+      "ollama",
+    ]);
+    expect(() => broker.select("forged", claude.profileId, claude.revision, "forged")).toThrow(
+      /SELECTION_MISMATCH/,
+    );
+
+    const transport: ProviderTransport = {
+      request: async (wire) => ({
+        statusCode: 200,
+        headers: {},
+        bodyText: JSON.stringify({
+          type: "message",
+          role: "assistant",
+          stop_reason: "end_turn",
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                translations: (
+                  JSON.parse(
+                    (wire.body as { messages: Array<{ content: string }> }).messages[0]!.content,
+                  ) as { targets: Array<{ id: string }> }
+                ).targets.map((target) => ({ id: target.id, text: "claude" })),
+              }),
+            },
+          ],
+        }),
+      }),
+    };
+    const actualClaude = new ClaudeProvider(
+      { endpoint: claude.endpoint, model: claude.model!, apiKey: "fictional-key" },
+      transport,
+    );
+    await expect(actualClaude.attempt(request)).resolves.toMatchObject({
+      translations: [{ text: "claude" }, { text: "claude" }],
+    });
+  });
+
   it("rejects late DeepSeek model results across kind, revision and window owners", () => {
     const sync = new ModelCatalogSync();
     const deepseekContext = modelCatalogContextToken({

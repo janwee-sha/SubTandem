@@ -101,3 +101,64 @@ export function deepSeekHttpError(
     userAction: retryable ? "CHECK_NETWORK" : "CHECK_ENDPOINT",
   };
 }
+
+const CLAUDE_QUOTA_CODES = new Set([
+  "billing_error",
+  "monthly_spend_limit_reached",
+  "spend_limit_reached",
+]);
+
+export function claudeHttpError(
+  statusCode: number,
+  headers: Record<string, string>,
+  resource: "messages" | "models",
+  providerCode?: string,
+): ProviderAttemptError {
+  const prefix = `CLAUDE_${resource.toUpperCase()}_HTTP_${statusCode}`;
+  const retryAfterMs = parseRetryAfter(headers["retry-after"]);
+  const safeRequestId = /^[A-Za-z0-9_.:-]{1,128}$/.test(headers["request-id"] ?? "")
+    ? headers["request-id"]
+    : undefined;
+  if (statusCode === 401 || statusCode === 403)
+    return {
+      category: "authentication",
+      retryable: false,
+      statusCode,
+      providerCode: prefix,
+      userAction: "CHECK_CREDENTIALS",
+    };
+  if (statusCode === 402 || (statusCode === 429 && CLAUDE_QUOTA_CODES.has(providerCode ?? "")))
+    return {
+      category: "quota",
+      retryable: false,
+      statusCode,
+      providerCode: prefix,
+      userAction: "CHECK_QUOTA",
+    };
+  if (resource === "messages" && statusCode === 404)
+    return {
+      category: "model",
+      retryable: false,
+      statusCode,
+      providerCode: prefix,
+      userAction: "CHECK_MODEL",
+    };
+  if ([400, 404, 409, 413, 422].includes(statusCode))
+    return {
+      category: "configuration",
+      retryable: false,
+      statusCode,
+      providerCode: prefix,
+      userAction: "CHECK_ENDPOINT",
+    };
+  const retryable = [408, 429, 500, 502, 503, 504, 529].includes(statusCode);
+  return {
+    category: statusCode === 504 ? "timeout" : "http",
+    retryable,
+    statusCode,
+    providerCode: prefix,
+    ...(retryAfterMs === undefined ? {} : { retryAfterMs }),
+    ...(safeRequestId ? { providerRequestId: safeRequestId } : {}),
+    userAction: retryable ? "CHECK_NETWORK" : "CHECK_ENDPOINT",
+  };
+}

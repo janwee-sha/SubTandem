@@ -22,6 +22,7 @@ import { CredentialScopedProviderCache } from "./providers/provider-cache.js";
 import { OllamaProvider } from "./providers/ollama.js";
 import { OpenAICompatibleProvider } from "./providers/openai.js";
 import { DeepSeekProvider } from "./providers/deepseek.js";
+import { ClaudeProvider } from "./providers/claude.js";
 import { ProviderProfiles } from "./providers/profiles.js";
 import { normalizeProviderEndpoint } from "./providers/profiles.js";
 import { discoverProviderModels } from "./providers/model-discovery.js";
@@ -80,7 +81,10 @@ function restoreProfileMetadata(): void {
         typeof value.profileId !== "string" ||
         !value.profileId ||
         typeof value.displayName !== "string" ||
-        (value.kind !== "openai" && value.kind !== "deepseek" && value.kind !== "ollama") ||
+        (value.kind !== "openai" &&
+          value.kind !== "claude" &&
+          value.kind !== "deepseek" &&
+          value.kind !== "ollama") ||
         typeof value.endpoint !== "string" ||
         typeof value.model !== "string"
       )
@@ -142,10 +146,45 @@ const transport = new TransportSupervisor(async () => {
 
 const credentials = new HelperCredentialStore(transport);
 const modelTransport = new ProviderTransportAdapter(transport, localUuid);
-const activeModelRequests = new Map<
-  string,
-  { requestId: string; jobId: string; profileId?: string }
->();
+interface ActiveModelRequest {
+  requestId: string;
+  jobId: string;
+  contextKey: string;
+  kind: "openai" | "claude" | "deepseek" | "ollama";
+  endpoint: string;
+  proxyMode: "system" | "direct";
+  profileId?: string;
+  profileRevision?: number;
+  endpointFingerprint?: string;
+  credentialEpoch: number;
+  draftCredentialEpoch?: number;
+}
+const activeModelRequests = new Map<string, ActiveModelRequest>();
+
+function cancelledModelRequest(): never {
+  throw {
+    category: "cancelled",
+    retryable: false,
+    providerCode: "MODEL_REQUEST_SUPERSEDED",
+    userAction: "RETRY",
+  };
+}
+
+function assertSavedModelOwner(ownerKey: string, owner: ActiveModelRequest): void {
+  if (activeModelRequests.get(ownerKey) !== owner) cancelledModelRequest();
+  if (!owner.profileId) return;
+  const current = profiles.get(owner.profileId);
+  if (
+    !current ||
+    current.kind !== owner.kind ||
+    current.endpoint !== owner.endpoint ||
+    (current.proxyMode ?? "system") !== owner.proxyMode ||
+    current.revision !== owner.profileRevision ||
+    current.endpointFingerprint !== owner.endpointFingerprint ||
+    (modelCredentialEpochs.get(owner.profileId) ?? 0) !== owner.credentialEpoch
+  )
+    cancelledModelRequest();
+}
 
 function clearProfileProviderCache(profileId: string): void {
   providerCache.clearProfile(profileId);
@@ -172,7 +211,7 @@ function recordProfileModelCatalog(profileId: string, contextKey: string, models
 }
 
 function modelContextKey(input: {
-  kind: "openai" | "deepseek" | "ollama";
+  kind: "openai" | "claude" | "deepseek" | "ollama";
   endpoint: string;
   proxyMode: "system" | "direct";
   profileId?: string;
@@ -234,6 +273,32 @@ async function buildProvider(profile: ProviderProfileSnapshot): Promise<Configur
           endpoint: profile.endpoint,
           model: profile.model,
           ...(secret?.apiKey ? { apiKey: secret.apiKey } : {}),
+          proxyMode: profile.proxyMode ?? "system",
+        },
+        providerTransport,
+      );
+    }
+    case "claude": {
+      if (!profile.model)
+        throw {
+          category: "model",
+          retryable: false,
+          providerCode: "MODEL_REQUIRED",
+          userAction: "CHECK_MODEL",
+        };
+      const secret = await credentials.getSecret(profile.profileId);
+      if (!secret?.apiKey?.trim())
+        throw {
+          category: "authentication",
+          retryable: false,
+          providerCode: "CREDENTIAL_REQUIRED",
+          userAction: "CHECK_CREDENTIALS",
+        };
+      return new ClaudeProvider(
+        {
+          endpoint: profile.endpoint,
+          model: profile.model,
+          apiKey: secret.apiKey,
           proxyMode: profile.proxyMode ?? "system",
         },
         providerTransport,
@@ -318,8 +383,9 @@ function requestId(raw: unknown): string {
   return typeof value === "string" ? value : localUuid();
 }
 
-function supportedProviderKind(value: unknown): "openai" | "deepseek" | "ollama" {
-  if (value === "openai" || value === "deepseek" || value === "ollama") return value;
+function supportedProviderKind(value: unknown): "openai" | "claude" | "deepseek" | "ollama" {
+  if (value === "openai" || value === "claude" || value === "deepseek" || value === "ollama")
+    return value;
   throw new Error("UNSUPPORTED_PROVIDER_KIND");
 }
 
@@ -440,7 +506,7 @@ iina.global.onMessage("provider:models", async (raw: unknown, playerId?: string)
   if (!playerId) return;
   let externalRequestId = requestId(raw);
   let contextKey = "invalid";
-  let owner: { requestId: string; jobId: string; profileId?: string } | null = null;
+  let owner: ActiveModelRequest | null = null;
   try {
     const message = parseProviderModelsRequest(raw);
     externalRequestId = message.requestId;
@@ -472,15 +538,26 @@ iina.global.onMessage("provider:models", async (raw: unknown, playerId?: string)
         : {}),
       credentialEpoch,
     });
-    const previous = activeModelRequests.get(playerId);
-    if (previous) await modelTransport.cancel?.(previous.jobId);
     const jobId = `models-${localUuid()}`;
     owner = {
       requestId: message.requestId,
       jobId,
+      contextKey,
+      kind: values.kind,
+      endpoint,
+      proxyMode: values.proxyMode,
       ...(authorized && profile ? { profileId: profile.profileId } : {}),
+      ...(authorized && profile
+        ? {
+            profileRevision: profile.revision,
+            endpointFingerprint: profile.endpointFingerprint,
+          }
+        : {}),
+      credentialEpoch,
     };
+    const previous = activeModelRequests.get(playerId);
     activeModelRequests.set(playerId, owner);
+    if (previous) await modelTransport.cancel?.(previous.jobId);
     let apiKey: string | undefined;
     if (authorized && profile) {
       const secret = await credentials.getSecret(profile.profileId);
@@ -493,6 +570,7 @@ iina.global.onMessage("provider:models", async (raw: unknown, playerId?: string)
         endpoint,
         ...(apiKey ? { apiKey } : {}),
         proxyMode: values.proxyMode,
+        assertActive: () => assertSavedModelOwner(playerId, owner!),
       },
       modelTransport,
     );
@@ -530,7 +608,7 @@ iina.global.onMessage("provider:models-preview", async (raw: unknown, playerId?:
   if (!playerId) return;
   let externalRequestId = requestId(raw);
   let contextKey = "invalid";
-  let owner: { requestId: string; jobId: string } | null = null;
+  let owner: ActiveModelRequest | null = null;
   try {
     const message = parseProviderModelsPreviewRequest(raw);
     externalRequestId = message.requestId;
@@ -544,11 +622,20 @@ iina.global.onMessage("provider:models-preview", async (raw: unknown, playerId?:
       proxyMode: values.proxyMode,
       draftCredentialEpoch: values.draftCredentialEpoch,
     });
-    const previous = activeModelRequests.get(playerId);
-    if (previous) await modelTransport.cancel?.(previous.jobId);
     const jobId = `models-${localUuid()}`;
-    owner = { requestId: message.requestId, jobId };
+    owner = {
+      requestId: message.requestId,
+      jobId,
+      contextKey,
+      kind: values.kind,
+      endpoint,
+      proxyMode: values.proxyMode,
+      credentialEpoch: 0,
+      draftCredentialEpoch: values.draftCredentialEpoch,
+    };
+    const previous = activeModelRequests.get(playerId);
     activeModelRequests.set(playerId, owner);
+    if (previous) await modelTransport.cancel?.(previous.jobId);
     const models = await discoverProviderModels(
       {
         jobId,
@@ -556,6 +643,9 @@ iina.global.onMessage("provider:models-preview", async (raw: unknown, playerId?:
         endpoint,
         apiKey: values.credential.apiKey,
         proxyMode: values.proxyMode,
+        assertActive: () => {
+          if (activeModelRequests.get(playerId) !== owner) cancelledModelRequest();
+        },
       },
       modelTransport,
     );
@@ -633,9 +723,15 @@ iina.global.onMessage("profile:create-revision", async (raw: unknown, playerId?:
     clearProfileProviderCache(profile.profileId);
     clearProfileModelCatalogs(profile.profileId);
     persistProfileMetadata();
+    const retainedCredential = kindChanged
+      ? null
+      : await credentials.getSecret(profile.profileId).catch(() => null);
     postToPlayer(playerId, "profile:revision-created", {
       requestId: requestId(raw),
-      profile: sanitizedProfileView(profile),
+      profile: sanitizedProfileView({
+        ...profile,
+        ...(retainedCredential ? { credential: retainedCredential } : {}),
+      }),
       selectionInvalidated:
         previousSelection?.profileId === profile.profileId && profile.revision > 1,
     });
@@ -711,10 +807,17 @@ iina.global.onMessage("credential:set", async (raw: unknown, playerId?: string) 
   }
 });
 
-iina.global.onMessage("profile:select", (raw: unknown, playerId?: string) => {
+iina.global.onMessage("profile:select", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     const selection = parseProfileSelection(payload(raw));
+    const profile = profiles.get(selection.profileId, selection.revision);
+    if (!profile || profile.endpointFingerprint !== selection.endpointFingerprint)
+      throw new Error("SELECTION_MISMATCH");
+    if (profile.kind === "claude") {
+      const secret = await credentials.getSecret(profile.profileId);
+      if (!secret?.apiKey?.trim()) throw new Error("CREDENTIAL_REQUIRED");
+    }
     const authorized = broker.select(
       playerId,
       selection.profileId,
@@ -818,37 +921,58 @@ iina.global.onMessage("profile:release", async (raw: unknown, playerId?: string)
   if (!playerId) return;
   const values = payload(raw);
   await providerConnectionTests.cancelPlayer(playerId);
+  const modelRequest = activeModelRequests.get(playerId);
+  if (modelRequest) {
+    activeModelRequests.delete(playerId);
+    await modelTransport.cancel?.(modelRequest.jobId);
+  }
   broker.release(playerId, String(values.profileId), Number(values.revision));
 });
 
 async function prefetchProfileModels(profile: ProviderProfileSnapshot): Promise<void> {
   const credentialEpoch = modelCredentialEpochs.get(profile.profileId) ?? 0;
   const contextKey = profileModelContextKey(profile);
+  const ownerKey = `startup:${profile.profileId}`;
+  const jobId = `models-startup-${localUuid()}`;
+  const owner: ActiveModelRequest = {
+    requestId: jobId,
+    jobId,
+    contextKey,
+    kind: profile.kind,
+    endpoint: profile.endpoint,
+    proxyMode: profile.proxyMode ?? "system",
+    profileId: profile.profileId,
+    profileRevision: profile.revision,
+    endpointFingerprint: profile.endpointFingerprint,
+    credentialEpoch,
+  };
+  const previous = activeModelRequests.get(ownerKey);
+  activeModelRequests.set(ownerKey, owner);
+  if (previous) await modelTransport.cancel?.(previous.jobId);
   let apiKey: string | undefined;
   try {
-    const secret = await credentials.getSecret(profile.profileId);
-    apiKey = secret?.apiKey;
-  } catch {
-    apiKey = undefined;
+    try {
+      const secret = await credentials.getSecret(profile.profileId);
+      apiKey = secret?.apiKey;
+    } catch {
+      apiKey = undefined;
+    }
+    const models = await discoverProviderModels(
+      {
+        jobId,
+        kind: profile.kind,
+        endpoint: profile.endpoint,
+        ...(apiKey ? { apiKey } : {}),
+        proxyMode: profile.proxyMode ?? "system",
+        assertActive: () => assertSavedModelOwner(ownerKey, owner),
+      },
+      modelTransport,
+    );
+    assertSavedModelOwner(ownerKey, owner);
+    recordProfileModelCatalog(profile.profileId, contextKey, models);
+  } finally {
+    if (activeModelRequests.get(ownerKey) === owner) activeModelRequests.delete(ownerKey);
   }
-  const models = await discoverProviderModels(
-    {
-      jobId: `models-startup-${localUuid()}`,
-      kind: profile.kind,
-      endpoint: profile.endpoint,
-      ...(apiKey ? { apiKey } : {}),
-      proxyMode: profile.proxyMode ?? "system",
-    },
-    modelTransport,
-  );
-  const current = profiles.get(profile.profileId);
-  if (
-    !current ||
-    current.revision !== profile.revision ||
-    (modelCredentialEpochs.get(profile.profileId) ?? 0) !== credentialEpoch
-  )
-    return;
-  recordProfileModelCatalog(profile.profileId, contextKey, models);
 }
 
 setTimeout(() => {

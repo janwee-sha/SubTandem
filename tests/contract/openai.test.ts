@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { OpenAICompatibleProvider } from "../../src/providers/openai.js";
 import type { ProviderTransport } from "../../src/providers/transport.js";
@@ -5,6 +6,13 @@ import { buildTranslationTask } from "../../src/providers/translation-task.js";
 import { makeProviderRequest } from "./provider-test-helpers.js";
 
 describe("OpenAI-compatible provider", () => {
+  it("keeps its existing dialect on the renamed shared batch helper", () => {
+    const source = readFileSync(new URL("../../src/providers/openai.ts", import.meta.url), "utf8");
+
+    expect(source).toContain('from "./translation-batches.js"');
+    expect(source).not.toContain("chat-completions");
+  });
+
   it.each(["strict-json-schema", "json-object", "prompt-json"] as const)(
     "uses the shared directional target contract in %s mode",
     async (capability) => {

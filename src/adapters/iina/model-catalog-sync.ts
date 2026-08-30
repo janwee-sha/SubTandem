@@ -68,6 +68,10 @@ export class ModelCatalogSync {
       state.contextToken = input.contextToken;
       state.catalog = state.catalogs.get(input.contextToken) ?? null;
     }
+    if (input.trigger === "credential") {
+      state.catalog = null;
+      state.catalogs.delete(input.contextToken);
+    }
     state.owner = input;
     state.lastResult = null;
     return {

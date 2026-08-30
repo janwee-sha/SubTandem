@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { OllamaProvider } from "../../src/providers/ollama.js";
 import type { ProviderTransport } from "../../src/providers/transport.js";
@@ -5,6 +6,13 @@ import { buildTranslationTask } from "../../src/providers/translation-task.js";
 import { makeProviderRequest } from "./provider-test-helpers.js";
 
 describe("Ollama native provider", () => {
+  it("retains its native two-item chat batching after the shared helper rename", () => {
+    const source = readFileSync(new URL("../../src/providers/ollama.ts", import.meta.url), "utf8");
+
+    expect(source).toContain("MAX_ITEMS_PER_CHAT_REQUEST = 2");
+    expect(source).not.toMatch(/translation-batches|chat-completions/);
+  });
+
   it("uses the same optional Bearer for version, tags and chat", async () => {
     const headers: Array<Record<string, string>> = [];
     const provider = new OllamaProvider(

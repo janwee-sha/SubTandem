@@ -21,6 +21,21 @@ describe("retry policy", () => {
       classifyAttemptFailure({ statusCode: 429, providerCode: "insufficient_quota" }),
     ).toMatchObject({ retryable: false, category: "quota" });
     expect(classifyAttemptFailure({ category: "timeout" })).toMatchObject({ retryable: true });
+    expect(classifyAttemptFailure({ statusCode: 402 })).toMatchObject({
+      category: "quota",
+      retryable: false,
+    });
+    expect(classifyAttemptFailure({ statusCode: 504 })).toMatchObject({
+      category: "timeout",
+      retryable: true,
+    });
+    expect(classifyAttemptFailure({ statusCode: 529 })).toMatchObject({
+      category: "http",
+      retryable: true,
+    });
+    expect(
+      classifyAttemptFailure({ statusCode: 429, providerCode: "spend_limit_reached" }),
+    ).toMatchObject({ category: "quota", retryable: false });
   });
 
   it("parses delta/date Retry-After and ignores invalid or negative values", () => {

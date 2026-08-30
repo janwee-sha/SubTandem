@@ -347,6 +347,41 @@ describe("progressive translation output", () => {
     expect(playback.status).toBe("running");
   });
 
+  it("rejects late Claude progress after the owning session closes", async () => {
+    let progress: TranslationProgressHandler | undefined;
+    const overlay = new RecordingOverlay();
+    const playback = new PlaybackController({
+      playerId: "claude-progress-owner",
+      provider: {
+        attempt: (_request, onProgress) => {
+          progress = onProgress;
+          return new Promise(() => undefined);
+        },
+        cancel: () => undefined,
+      },
+      providerKind: "claude",
+      overlay,
+      targetLanguage: "zh-Hans",
+    });
+    playback.setSource({
+      cues: denseCues,
+      contentHash: "claude-owner",
+      language: "en",
+      format: "srt",
+    });
+
+    playback.tick(0);
+    await Promise.resolve();
+    const clearsBeforeClose = overlay.clears;
+    playback.close();
+    progress?.({ translations: [{ id: "cue-1", text: "late private translation" }] });
+    await playback.whenIdle();
+
+    expect(playback.cacheSize).toBe(0);
+    expect(overlay.frames).toEqual([]);
+    expect(overlay.clears).toBeGreaterThan(clearsBeforeClose);
+  });
+
   it("retries show and clear after synchronous overlay failures on the next tick", async () => {
     const overlay = new FlakyOverlay();
     const provider: TranslationProvider = {

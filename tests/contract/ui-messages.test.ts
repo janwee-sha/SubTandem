@@ -25,7 +25,7 @@ const providerTestStatusMessage = (
       ok?: boolean;
       category?: string;
       userAction?: string;
-      providerKind?: "openai" | "deepseek" | "ollama";
+      providerKind?: "openai" | "claude" | "deepseek" | "ollama";
     }): string;
   }
 ).subtandemProviderTestStatusMessage;
@@ -115,6 +115,48 @@ describe("Sidebar/Main/Global security messages", () => {
     });
     expect(view).toMatchObject({ kind: "deepseek", credentialConfigured: true });
     expect(JSON.stringify(view)).not.toMatch(/saved-secret|apiKey|authorization/i);
+  });
+
+  it("accepts Claude only through the shared strict kind field and safe Profile view", () => {
+    const request = {
+      requestId: "models-claude-1",
+      revision: 1,
+      payload: {
+        trigger: "manual" as const,
+        kind: "claude" as const,
+        endpoint: "https://api.anthropic.com",
+        proxyMode: "system" as const,
+      },
+    };
+    expect(parseProviderModelsRequest(request)).toEqual(request);
+    const preview = {
+      ...request,
+      requestId: "models-claude-preview-1",
+      payload: {
+        ...request.payload,
+        draftCredentialEpoch: 2,
+        credential: { apiKey: "draft-secret" },
+      },
+    };
+    expect(parseProviderModelsPreviewRequest(preview)).toEqual(preview);
+    const view = sanitizedProfileView({
+      profileId: "claude-profile",
+      revision: 1,
+      displayName: "Claude",
+      kind: "claude",
+      endpoint: "https://api.anthropic.com",
+      endpointFingerprint: "fingerprint",
+      credential: { apiKey: "saved-secret" },
+    });
+    expect(view).toMatchObject({ kind: "claude", credentialConfigured: true });
+    expect(JSON.stringify(view)).not.toMatch(/saved-secret|apiKey|authorization/i);
+    for (const field of ["apiKey", "authorization", "subtitle", "responseBody"])
+      expect(() =>
+        parseProviderModelsRequest({
+          ...request,
+          payload: { ...request.payload, [field]: "must-not-cross" },
+        }),
+      ).toThrow(/INVALID_MESSAGE/);
   });
 
   it("rejects unknown and sensitive fields on DeepSeek model message boundaries", () => {
@@ -242,6 +284,13 @@ describe("Sidebar/Main/Global security messages", () => {
         providerKind: "openai",
       }),
     ).toMatch(/OpenAI.*chat-completions/i);
+    expect(
+      providerTestStatusMessage({
+        ok: false,
+        userAction: "CHECK_ENDPOINT",
+        providerKind: "claude",
+      }),
+    ).toMatch(/API root.*\/v1\/messages.*version.*model ID/i);
   });
 
   it("distinguishes entered, saved and absent credentials in model refresh guidance", () => {
@@ -271,6 +320,9 @@ describe("Sidebar/Main/Global security messages", () => {
         credentialSource: "none",
       }),
     ).toMatch(/enter an API key/i);
+    expect(modelCatalogStatusMessage({ ok: false, category: "protocol" })).toMatch(
+      /compatible model catalog.*custom model ID/i,
+    );
   });
 
   it("uses exact translation-selection guidance without authorization wording", () => {

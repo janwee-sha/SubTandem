@@ -6,6 +6,8 @@ import { ProviderProfiles } from "../../src/providers/profiles.js";
 import { ModelCatalogSync } from "../../src/adapters/iina/model-catalog-sync.js";
 import type { TranslationBatchRequest, TranslationBatchResult } from "../../src/providers/types.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
+import { ClaudeProvider } from "../../src/providers/claude.js";
+import type { ProviderTransportRequest } from "../../src/providers/transport.js";
 
 class DeferredConfiguredProvider implements ConfiguredProvider {
   readonly attemptIds: string[] = [];
@@ -58,6 +60,88 @@ class DeferredConfiguredProvider implements ConfiguredProvider {
 }
 
 describe("provider connection lifecycle integration", () => {
+  it("runs Claude Save, fresh Test, Select, translation, Update and Delete across owners", async () => {
+    const requests: ProviderTransportRequest[] = [];
+    const profiles = new ProviderProfiles(() => "claude-profile");
+    const created = profiles.save({
+      displayName: "Claude",
+      kind: "claude",
+      endpoint: "https://api.anthropic.com",
+      model: "exact-model",
+    });
+    const provider = new ClaudeProvider(
+      { endpoint: created.endpoint, model: created.model!, apiKey: "fictional-key" },
+      {
+        request: async (request) => {
+          requests.push(request);
+          const targets = JSON.parse(
+            (request.body as { messages: Array<{ content: string }> }).messages[0]!.content,
+          ).targets as Array<{ id: string }>;
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              type: "message",
+              role: "assistant",
+              stop_reason: "end_turn",
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify({
+                    translations: targets.map((target) => ({ id: target.id, text: "translated" })),
+                  }),
+                },
+              ],
+            }),
+          };
+        },
+      },
+    );
+    const tests = new ProviderConnectionTests(() => "claude-fresh-test");
+    const task = tests.start({
+      playerId: "window-a",
+      requestId: "test-request",
+      profileId: created.profileId,
+      profileRevision: created.revision,
+      provider,
+    });
+    await provider.testConnection(task.testId);
+    tests.complete(task.testId);
+    expect(profiles.selection("window-a")).toBeNull();
+
+    const broker = new ProviderBroker(profiles, () => provider);
+    broker.select("window-a", created.profileId, created.revision, created.endpointFingerprint);
+    const request = {
+      ...makeProviderRequest(),
+      profileId: created.profileId,
+      profileRevision: created.revision,
+      endpointFingerprint: created.endpointFingerprint,
+    };
+    await expect(broker.attempt("window-a", request)).resolves.toMatchObject({
+      translations: [
+        { id: "c1", text: "translated" },
+        { id: "c2", text: "translated" },
+      ],
+    });
+    const updated = profiles.save({
+      profileId: created.profileId,
+      expectedRevision: created.revision,
+      editingWindowId: "window-a",
+      displayName: "Claude updated",
+      kind: "claude",
+      endpoint: created.endpoint,
+      model: "next-model",
+    });
+    expect(updated.revision).toBe(2);
+    expect(profiles.selection("window-a")).toBeNull();
+    profiles.delete(created.profileId);
+    expect(profiles.get(created.profileId)).toBeNull();
+    expect(requests.map((item) => item.url)).toEqual([
+      "https://api.anthropic.com/v1/messages",
+      "https://api.anthropic.com/v1/messages",
+    ]);
+  });
+
   it("invalidates only the edited or deleted DeepSeek Profile selection", () => {
     let sequence = 0;
     const profiles = new ProviderProfiles(() => `deepseek-${++sequence}`);

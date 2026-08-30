@@ -44,6 +44,10 @@ npm run pack
 
 真实 DeepSeek 验证会连接可能收费的服务，仅在用户明确批准联网和费用后，按当前功能的 [quickstart](../../specs/019-add-deepseek-provider/quickstart.md) 显式启用。不得把 Endpoint、Key、Authorization、字幕、译文或原始响应写入命令、日志和证据；结果只记录计数与安全错误分类。验证应覆盖 fresh Test、至少 40 个目标和 20 个双项 wire。失败时检查认证、余额或配额、rate limit、固定 API route、准确 Model ID 与 network route；任何失败均不得暂停播放或原字幕。
 
+### Claude-compatible 可选联网验证
+
+真实 Claude 验证会连接可能收费的服务，仅在用户当次明确批准联网和费用后，按 [Claude quickstart](../../specs/020-add-claude-provider/quickstart.md) 显式启用。命令和证据不得包含 API root、Key、认证 header、字幕、译文或原始 Messages 响应，只记录安全计数和错误分类。使用 fresh Test 与至少 20 个双项目 wire 验证 `/v1/messages`；失败时检查 API root、Messages/Models 兼容性、认证与版本 header、准确 Model ID、spend limit、配额、rate limit、拒绝和 network route。未获授权时保持 live task 未验收。
+
 ## 发布准备
 
 开始稳定版本发布前，用户必须明确目标版本 `X.Y.Z` 及该版本对应的一项或多项已验收规格。维护者据此准备唯一的英文用户正文 `docs/releases/vX.Y.Z.md`；缺少版本、规格或验收依据时停止发布准备。正文结构、内容边界和失败规则见[版本化用户发布说明规格](../../specs/009-versioned-release-notes/spec.md)。
@@ -83,13 +87,14 @@ open build/package/SubTandem-X.Y.Z.iinaplgz
 
 - 插件读取当前选中的外部 SRT/ASS，或当前本地媒体中的内嵌 SubRip/ASS/SSA/`mov_text` 轨；正式包无需系统 `ffmpeg`/`ffprobe`。
 - `subtandem-subtitle-extractor` 逐窗口运行，只绑定 `127.0.0.1`，临时目录使用 `0700`、结果文件使用 `0600`，解析、取消、超时或退出后清理。远程媒体和图形字幕不会提取。
-- OpenAI、DeepSeek 和 Ollama 请求由受限 Swift helper 发出；插件运行时只连接 helper 的 `127.0.0.1` 临时端口。
+- OpenAI、Claude、DeepSeek 和 Ollama 请求由受限 Swift helper 发出；插件运行时只连接 helper 的 `127.0.0.1` 临时端口。
 - `video-overlay` 权限只承载包内本地资源生成的非交互式译文 Overlay；运行时必须调用 `setClickable(false)`，Overlay 不接受输入、不支持画面拖动、不联网且不使用 WebView storage，正文随播放会话清理。
-- OpenAI、DeepSeek 和 Ollama 的凭据由 helper 写入插件私有数据目录的 `credentials.json`；目录权限为 `0700`，文件权限为 `0600`。凭据不得进入 preferences、日志、诊断、进程参数或安装包。
+- OpenAI、Claude、DeepSeek 和 Ollama 的凭据由 helper 写入插件私有数据目录的 `credentials.json`；目录权限为 `0700`，文件权限为 `0600`。凭据不得进入 preferences、日志、诊断、进程参数或安装包。
 - 翻译结果仅缓存在当前视频会话中。换片、播放结束或关窗时清理，不写入持久缓存。
-- OpenAI 与 Ollama 可使用完整 HTTP(S) endpoint，OpenAI 继续支持兼容其 API 契约的自定义服务。DeepSeek 固定默认 root 为 `https://api.deepseek.com`，沿用现有 transport、凭据、代理和消息契约，不新增 native RPC、依赖或权限。每个 Profile 可选择 macOS 系统代理或明确直连。
+- OpenAI 与 Ollama 可使用完整 HTTP(S) endpoint；OpenAI 继续支持兼容其契约的自定义服务。Claude 默认 root 为 `https://api.anthropic.com`，也接受实现 `/v1/messages`、`/v1/models` 及 Claude 认证/版本 header 的 compatible HTTPS root。DeepSeek 固定默认 root 为 `https://api.deepseek.com`。四种服务沿用同一 transport、凭据与代理边界，不新增 native RPC、依赖或权限。
+- Claude 翻译使用顶层 system、单条 user message、`max_tokens: 8192`、`stream: false` 和精确 ID JSON；只接受 `end_turn` 与按序 text block，拒绝、截断、畸形或不完整 wire 均零提交。模型目录按 `last_id/after_id` 分页，每页发送前后复核完整 owner；preview Key 只用于当前手动刷新，不进入状态、日志或诊断。
 - DeepSeek 翻译固定使用 `/chat/completions`、JSON object 输出、关闭 thinking 并严格校验 ID wire；模型目录使用 `/models`。产品不得预选、推荐或猜测 DeepSeek Model ID，也不持久化 Provider capability。
-- 已配置或正在编辑的 endpoint 可在 Select 前接收不含字幕的模型目录请求，其中包括默认 DeepSeek root；需要认证的新 Profile 仅在用户填写 API key 并手动刷新时临时使用该 Key，自动刷新不发送未保存 Key。只有用户明确 Select 的 Profile 修订版才会接收用于翻译的字幕正文。
+- 已配置或正在编辑的 endpoint 可在 Select 前接收不含字幕的模型目录请求，其中包括默认 Claude 与 DeepSeek root；需要认证的新 Profile 仅在用户填写 API key 并手动刷新时临时使用该 Key，自动刷新不发送未保存 Key。只有用户明确 Select 的 Profile 修订版才会接收用于翻译的字幕正文。
 - 原字幕和视频播放不得因翻译延迟或失败而暂停。
 
 ### 跨运行时播放器身份
@@ -117,5 +122,6 @@ Global MUST 以 IINA 回调提供的发送方 ID 作为跨运行时授权依据�
 - [自动 GitHub Release](../../specs/004-automatic-github-release/spec.md)
 - [版本化用户发布说明](../../specs/009-versioned-release-notes/spec.md)
 - [内嵌字幕翻译](../../specs/008-embedded-subtitle-translation/spec.md)
+- [Claude 翻译服务](../../specs/020-add-claude-provider/spec.md)
 
 所有变更必须遵守[项目宪法](constitution.md)和仓库根目录的 `AGENTS.md`。

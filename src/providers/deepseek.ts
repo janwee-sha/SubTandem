@@ -11,7 +11,7 @@ import { deepSeekHttpError, protocolError } from "./errors.js";
 import { normalizeProviderEndpoint } from "./profiles.js";
 import { validateStrictIdOutput } from "./validation.js";
 import { buildDeepSeekTranslationTask } from "./translation-task.js";
-import { runChatCompletionBatches } from "./chat-completions.js";
+import { runTranslationBatches } from "./translation-batches.js";
 
 export class DeepSeekProvider implements ConfiguredProvider {
   private readonly endpoint: string;
@@ -59,7 +59,7 @@ export class DeepSeekProvider implements ConfiguredProvider {
     this.cancelledRequests.delete(request.requestId);
     this.activeRequests.add(request.requestId);
     try {
-      return await runChatCompletionBatches(
+      return await runTranslationBatches(
         request,
         async (jobId, items) => {
           const response = await this.send(

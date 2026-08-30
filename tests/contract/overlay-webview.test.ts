@@ -25,6 +25,8 @@ describe("translation overlay WebView contract", () => {
   it("renders with text nodes and has no network, storage or input APIs", () => {
     const source = rootFile("ui/overlay.ts");
     expect(source).toContain("document.createTextNode");
+    expect(source).toContain('window.iina?.onMessage("overlay:initialize"');
+    expect(source).toContain('window.iina?.postMessage("overlay:ready", {})');
     expect(source).toContain("calculateSubTandemOverlayTypography(window.innerHeight)");
     expect(source).toContain("translation.style.fontSize");
     expect(source).toContain("translation.style.fontWeight");
@@ -46,5 +48,6 @@ describe("translation overlay WebView contract", () => {
     const adapter = rootFile("src/adapters/iina/webview-translation-overlay.ts");
     expect(adapter).toContain("setClickable(false)");
     expect(adapter).toContain('loadFile("dist/ui/overlay.html")');
+    expect(adapter).toContain('this.post("overlay:initialize", {})');
   });
 });

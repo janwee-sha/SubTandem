@@ -107,6 +107,7 @@ export class WebViewTranslationOverlay {
     try {
       this.overlay.loadFile("dist/ui/overlay.html");
       this.overlay.onMessage("overlay:ready", (raw) => this.acceptReady(raw));
+      this.post("overlay:initialize", {});
       this.report("Translation overlay WebView warmup completed.");
     } catch {
       this.fail();

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { ProviderConnectionTests } from "../../src/providers/connection-tests.js";
 import type { ConfiguredProvider } from "../../src/providers/provider.js";
+import { ClaudeProvider } from "../../src/providers/claude.js";
+import type { ProviderTransportRequest } from "../../src/providers/transport.js";
+import { ProviderProfiles } from "../../src/providers/profiles.js";
 
 function configuredProvider(cancelled: string[]): ConfiguredProvider {
   return {
@@ -15,6 +18,59 @@ function configuredProvider(cancelled: string[]): ConfiguredProvider {
 }
 
 describe("provider connection test registry", () => {
+  it("runs a fresh cancellable Claude Messages Test without selecting its Profile", async () => {
+    const requests: ProviderTransportRequest[] = [];
+    const profiles = new ProviderProfiles(() => "claude-profile");
+    const profile = profiles.save({
+      displayName: "Claude",
+      kind: "claude",
+      endpoint: "https://api.anthropic.com",
+      model: "exact-model",
+    });
+    const provider = new ClaudeProvider(
+      { endpoint: profile.endpoint, model: profile.model!, apiKey: "fictional-key" },
+      {
+        request: async (request) => {
+          requests.push(request);
+          const targets = JSON.parse(
+            (request.body as { messages: Array<{ content: string }> }).messages[0]!.content,
+          ).targets as Array<{ id: string }>;
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              type: "message",
+              role: "assistant",
+              stop_reason: "end_turn",
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify({
+                    translations: targets.map((target) => ({ id: target.id, text: "ok" })),
+                  }),
+                },
+              ],
+            }),
+          };
+        },
+      },
+    );
+    const registry = new ProviderConnectionTests(() => "claude-test");
+    const task = registry.start({
+      playerId: "window-a",
+      requestId: "external-test",
+      profileId: profile.profileId,
+      profileRevision: profile.revision,
+      provider,
+    });
+
+    await expect(provider.testConnection(task.testId)).resolves.toEqual({ model: "exact-model" });
+    expect(registry.complete(task.testId)).toEqual(task);
+    expect(profiles.selection("window-a")).toBeNull();
+    expect(requests).toHaveLength(1);
+    expect(requests[0]!.url).toBe("https://api.anthropic.com/v1/messages");
+  });
+
   it("gives colliding external IDs and a shared provider unique internal identities", () => {
     const provider = configuredProvider([]);
     let sequence = 0;

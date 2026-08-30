@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { DeepSeekProvider } from "../../src/providers/deepseek.js";
 import type {
@@ -31,6 +32,16 @@ function successResponse(request: ProviderTransportRequest): ProviderTransportRe
 }
 
 describe("DeepSeek provider", () => {
+  it("keeps its fixed dialect on the renamed shared batch helper", () => {
+    const source = readFileSync(
+      new URL("../../src/providers/deepseek.ts", import.meta.url),
+      "utf8",
+    );
+
+    expect(source).toContain('from "./translation-batches.js"');
+    expect(source).not.toContain("chat-completions");
+  });
+
   it("uses the fixed JSON object dialect, disabled thinking and JSON-only instructions", async () => {
     const requests: ProviderTransportRequest[] = [];
     const provider = new DeepSeekProvider(

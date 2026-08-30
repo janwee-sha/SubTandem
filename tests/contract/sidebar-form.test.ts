@@ -77,10 +77,28 @@ describe("IINA sidebar bundle contract", () => {
 
   it("offers all supported providers in fixed order and always exposes a required model ID", () => {
     expect(
-      [...html.matchAll(/<option value="(openai|deepseek|ollama)">/g)].map((match) => match[1]),
-    ).toEqual(["openai", "deepseek", "ollama"]);
+      [...html.matchAll(/<option value="(openai|claude|deepseek|ollama)">/g)].map(
+        (match) => match[1],
+      ),
+    ).toEqual(["openai", "claude", "deepseek", "ollama"]);
+    expect(html).toContain('<option value="claude">Claude</option>');
     expect(html).toContain('<option value="deepseek">DeepSeek</option>');
     expect(html).toMatch(/id="provider-model"[\s\S]*?required/);
+  });
+
+  it("uses Claude defaults, Messages URL guidance, Custom ID and a required API key", () => {
+    expect(sidebarSource).toContain(
+      'claude: { endpoint: "https://api.anthropic.com", model: "", proxyMode: "system" }',
+    );
+    expect(sidebarSource).toContain('claude: "Claude"');
+    expect(sidebarSource).not.toMatch(/claude[^\n]+model:\s*"[^"]+"/i);
+    expect(sidebarSource).toContain("/v1/messages");
+    expect(sidebarSource).toMatch(/Claude[\s\S]*API root/i);
+    expect(sidebarSource).toMatch(/exact Claude model ID/i);
+    expect(sidebarSource).toContain('custom.textContent = "Custom model ID…"');
+    expect(html).toMatch(/id="provider-key"[\s\S]*?type="password"/);
+    expect(sidebarSource).toContain("claudeCredentialRequired");
+    expect(sidebarSource).toContain("Enter an API key before saving this Claude Profile.");
   });
 
   it("uses independent DeepSeek defaults without preselecting a model", () => {

@@ -56,4 +56,6 @@ window.iina?.onMessage("overlay:clear", (raw: unknown) => {
 });
 
 window.addEventListener("resize", scheduleLayout);
-window.iina?.postMessage("overlay:ready", {});
+const postReady = (): void => window.iina?.postMessage("overlay:ready", {});
+window.iina?.onMessage("overlay:initialize", postReady);
+postReady();

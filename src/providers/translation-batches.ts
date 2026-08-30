@@ -6,9 +6,9 @@ import type {
   WireTranslationTarget,
 } from "./types.js";
 
-const MAX_ITEMS_PER_CHAT_REQUEST = 2;
+const MAX_ITEMS_PER_TRANSLATION_REQUEST = 2;
 
-export async function runChatCompletionBatches(
+export async function runTranslationBatches(
   request: TranslationBatchRequest,
   execute: (jobId: string, items: WireTranslationTarget[]) => Promise<TranslationBatchResult>,
   beforeWire: () => void,
@@ -16,10 +16,10 @@ export async function runChatCompletionBatches(
 ): Promise<TranslationBatchResult> {
   const wire = encodeWireItems(request.items);
   const combined: TranslationBatchResult = { translations: [] };
-  for (let offset = 0; offset < wire.items.length; offset += MAX_ITEMS_PER_CHAT_REQUEST) {
+  for (let offset = 0; offset < wire.items.length; offset += MAX_ITEMS_PER_TRANSLATION_REQUEST) {
     beforeWire();
-    const items = wire.items.slice(offset, offset + MAX_ITEMS_PER_CHAT_REQUEST);
-    const part = Math.floor(offset / MAX_ITEMS_PER_CHAT_REQUEST) + 1;
+    const items = wire.items.slice(offset, offset + MAX_ITEMS_PER_TRANSLATION_REQUEST);
+    const part = Math.floor(offset / MAX_ITEMS_PER_TRANSLATION_REQUEST) + 1;
     const parsed = await execute(`${request.requestId}-part-${part}`, items);
     beforeWire();
     const progress = wire.restore(parsed);

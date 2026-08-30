@@ -11,7 +11,7 @@ import { providerHttpError, protocolError } from "./errors.js";
 import { normalizeProviderEndpoint } from "./profiles.js";
 import { validateIdOutput } from "./validation.js";
 import { buildTranslationTask } from "./translation-task.js";
-import { runChatCompletionBatches } from "./chat-completions.js";
+import { runTranslationBatches } from "./translation-batches.js";
 
 type Capability = "strict-json-schema" | "json-object" | "prompt-json";
 
@@ -111,7 +111,7 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
     try {
       const capability = this.capability ?? (await this.runProbe(request.requestId));
       this.throwIfCancelled(request.requestId);
-      return await runChatCompletionBatches(
+      return await runTranslationBatches(
         request,
         async (jobId, items) => {
           const response = await this.send(
