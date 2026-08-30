@@ -75,6 +75,7 @@ describe("Claude provider", () => {
     await value.attempt(makeProviderRequest());
 
     expect(requests).toHaveLength(2);
+    expect(requests.map((request) => request.timeoutMs)).toEqual([60_000, 60_000]);
     for (const request of requests) {
       expect(request.headers).toEqual({
         "Content-Type": "application/json",

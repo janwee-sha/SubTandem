@@ -6,23 +6,38 @@ import { OpenAICompatibleProvider } from "../../src/providers/openai.js";
 import { DeepSeekProvider } from "../../src/providers/deepseek.js";
 import { ClaudeProvider } from "../../src/providers/claude.js";
 import type { ProviderTransport, ProviderTransportRequest } from "../../src/providers/transport.js";
-import type { TranslationBatchRequest, TranslationBatchResult } from "../../src/providers/types.js";
+import type {
+  ProviderAttemptError,
+  TranslationBatchRequest,
+  TranslationBatchResult,
+} from "../../src/providers/types.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 import { createTranslationAlignmentFixture } from "../helpers/translation-alignment.js";
 
 class FetchTransport implements ProviderTransport {
   async request(request: ProviderTransportRequest) {
-    const response = await fetch(request.url, {
-      method: request.method,
-      headers: request.headers,
-      ...(request.body === undefined ? {} : { body: JSON.stringify(request.body) }),
-      signal: AbortSignal.timeout(request.timeoutMs),
-    });
-    const headers: Record<string, string> = {};
-    response.headers.forEach((value, name) => {
-      headers[name.toLowerCase()] = value;
-    });
-    return { statusCode: response.status, headers, bodyText: await response.text() };
+    try {
+      const response = await fetch(request.url, {
+        method: request.method,
+        headers: request.headers,
+        ...(request.body === undefined ? {} : { body: JSON.stringify(request.body) }),
+        signal: AbortSignal.timeout(request.timeoutMs),
+      });
+      const headers: Record<string, string> = {};
+      response.headers.forEach((value, name) => {
+        headers[name.toLowerCase()] = value;
+      });
+      return { statusCode: response.status, headers, bodyText: await response.text() };
+    } catch (error) {
+      const timeout =
+        error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
+      throw {
+        category: timeout ? "timeout" : "network",
+        retryable: true,
+        providerCode: timeout ? "LIVE_TRANSPORT_TIMEOUT" : "LIVE_TRANSPORT_NETWORK",
+        userAction: "CHECK_NETWORK",
+      } satisfies ProviderAttemptError;
+    }
   }
 }
 
@@ -83,7 +98,10 @@ function expectCleanLiveTranslations(
   });
 }
 
-async function withSafeProviderDiagnostics<T>(operation: Promise<T>): Promise<T> {
+async function withSafeProviderDiagnostics<T>(
+  operation: Promise<T>,
+  safeCounts: () => Record<string, number> = () => ({}),
+): Promise<T> {
   try {
     return await operation;
   } catch (error) {
@@ -98,6 +116,7 @@ async function withSafeProviderDiagnostics<T>(operation: Promise<T>): Promise<T>
         ...(typeof value.statusCode === "number" ? { statusCode: value.statusCode } : {}),
         ...(typeof value.providerCode === "string" ? { providerCode: value.providerCode } : {}),
         ...(typeof value.userAction === "string" ? { userAction: value.userAction } : {}),
+        ...safeCounts(),
       }),
     );
   }
@@ -185,7 +204,13 @@ describe.skipIf(!liveClaude)("authorized Claude-compatible live acceptance", () 
     const tested = await withSafeProviderDiagnostics(provider.testConnection("claude-live-test"));
     expect(tested).toEqual({ model });
     const request = makeLiveAcceptanceRequest(40);
-    const result = await withSafeProviderDiagnostics(provider.attempt(request));
+    let completedTargets = 0;
+    const result = await withSafeProviderDiagnostics(
+      provider.attempt(request, (progress) => {
+        completedTargets += progress.translations.length;
+      }),
+      () => ({ completedTargets }),
+    );
     expect(request.items).toHaveLength(40);
     expectCleanLiveTranslations(request, result);
   }, 600_000);

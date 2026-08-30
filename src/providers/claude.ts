@@ -13,6 +13,8 @@ import { buildClaudeTranslationTask } from "./translation-task.js";
 import { runTranslationBatches } from "./translation-batches.js";
 import { validateStrictIdOutput } from "./validation.js";
 
+const REQUEST_TIMEOUT_MS = 60_000;
+
 export class ClaudeProvider implements ConfiguredProvider {
   private readonly messagesUrl: string;
   private readonly apiKey: string;
@@ -44,7 +46,7 @@ export class ClaudeProvider implements ConfiguredProvider {
         [{ id: "c1", text: "hello" }],
         "en",
         "es",
-        10_000,
+        REQUEST_TIMEOUT_MS,
       );
       this.throwIfCancelled(testId);
       this.parseResponse(["c1"], response);
@@ -70,7 +72,7 @@ export class ClaudeProvider implements ConfiguredProvider {
             items,
             request.sourceLanguage,
             request.targetLanguage,
-            30_000,
+            REQUEST_TIMEOUT_MS,
           );
           this.throwIfCancelled(request.requestId);
           return this.parseResponse(
