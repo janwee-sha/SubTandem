@@ -169,7 +169,7 @@
 - [X] T086 为定位外层与实际文字块边界补偿、Font/Size 同行紧凑布局及透明 Color 色块棋盘底纹补充失败回归测试，文件：`tests/contract/overlay-webview.test.ts` 与 `tests/contract/sidebar-form.test.ts`
 - [X] T087 对齐 Position 0/100 的实际译文绘制边界，按 IINA 间距收紧 Size/Font/Width 并为透明 Color 色块增加棋盘底纹，文件：`ui/overlay.ts` 与 `ui/sidebar.css`
 - [X] T088 重新执行 021 聚焦测试、全量测试、类型检查、lint、native 测试、native/plugin 构建、包验证和正式打包，文件：`specs/021-subtitle-text-style/quickstart.md`
-- [ ] T066 使用正式 `.iinaplgz` 在 IINA 1.4.0 与 1.4.4 完成 quickstart 的单人视觉、键盘、多窗口、字体恢复、时延、失败和卸载验收，并保存不含正文的证据，文件：`docs/validation/subtitle-text-style.md`
+- [X] T066 使用正式 `.iinaplgz` 在 IINA 1.4.0 与 1.4.4 完成 quickstart 的单人视觉、键盘、多窗口、字体恢复、时延、失败和卸载验收，并保存不含正文的证据，文件：`docs/validation/subtitle-text-style.md`
 
 ---
 

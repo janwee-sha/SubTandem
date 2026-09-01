@@ -4,7 +4,7 @@
 
 **创建日期**：2026-09-01
 
-**状态**：草案
+**状态**：已完成
 
 **输入**：在侧栏 `Subtitle` 区域提供参考 IINA 原生字幕设置的译文文本样式配置，支持 Font 的 Color、Size、Font、Bold、Italic，Border 的 Color、Width，Background 的 Color，以及紧凑色盘和完整系统颜色面板。
 
