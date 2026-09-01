@@ -77,24 +77,25 @@ describe("translation overlay WebView contract", () => {
     expect(adapter).toContain("private renderRevision");
     expect(source).toContain("new ResizeObserver");
     expect(source).toContain("requestAnimationFrame");
-    expect(source).toContain("translationText.getBoundingClientRect().height");
+    expect(source).toContain("const textBounds = translationText.getBoundingClientRect()");
+    expect(source).toContain("const positionerBounds = translation.getBoundingClientRect()");
     expect(source).toContain("translationText.scrollHeight");
-    expect(source).toContain("Math.ceil");
     expect(source).toContain("if (blockHeight === 0) return");
     expect(source).toContain("applyHorizontalBounds");
     expect(source).not.toContain("calculateSubTandemOverlayPaintMetrics");
-    expect(source.indexOf("applyHorizontalBounds();")).toBeLessThan(
-      source.indexOf("translationText.getBoundingClientRect().height"),
+    expect(source.indexOf("applyHorizontalBounds(viewportHeight);")).toBeLessThan(
+      source.indexOf("const textBounds = translationText.getBoundingClientRect()"),
     );
     expect(source).not.toContain("placeholder");
   });
 
-  it("anchors the painted block directly by its CSS bottom edge", () => {
+  it("anchors the measured text edge after compensating the positioner line box", () => {
     const source = rootFile("ui/overlay.ts");
     expect(source).toContain('translation.style.top = "auto"');
     expect(source).toContain(
-      "translation.style.bottom = `${viewportHeight - result.layout.bottomAnchor}px`",
+      "const positionerBottomGap = positionerBounds.bottom - textBounds.bottom",
     );
+    expect(source).toContain("viewportHeight - result.layout.bottomAnchor - positionerBottomGap");
     expect(source).not.toContain("translation.style.top = `${result.layout.topOffset}px`");
   });
 

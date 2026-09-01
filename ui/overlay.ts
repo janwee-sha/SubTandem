@@ -59,14 +59,16 @@ function layoutCurrent(): void {
   const typography = applyTypography(viewportHeight);
   if (!typography) return;
   applyHorizontalBounds(viewportHeight);
-  const blockHeight = Math.ceil(
-    Math.max(translationText.getBoundingClientRect().height, translationText.scrollHeight),
-  );
+  const textBounds = translationText.getBoundingClientRect();
+  const positionerBounds = translation.getBoundingClientRect();
+  const blockHeight = Math.max(textBounds.height, translationText.scrollHeight);
   if (blockHeight === 0) return;
   const result = overlayState.layout(viewportHeight, blockHeight);
   if (!result?.changed) return;
+  const positionerBottomGap = positionerBounds.bottom - textBounds.bottom;
+  const bottomOffset = viewportHeight - result.layout.bottomAnchor - positionerBottomGap;
   translation.style.top = "auto";
-  translation.style.bottom = `${viewportHeight - result.layout.bottomAnchor}px`;
+  translation.style.bottom = `${bottomOffset}px`;
   translation.style.left = `${result.layout.horizontalMargin}px`;
   translation.style.right = `${result.layout.horizontalMargin}px`;
 }

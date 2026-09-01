@@ -166,6 +166,9 @@
 - [X] T083 允许用户以新请求替换本地停滞的颜色 picker、在转发前排空终态，并只合并高频样式快照而保留保存与 picker 结果，文件：`ui/sidebar-state.ts`, `ui/sidebar.ts`, `src/main.ts`, 与 `src/adapters/iina/sidebar-message-buffer.ts`
 - [X] T084 按 IINA 参考图的 55×42 Retina 像素边界，将三个 Color 色块一比一实现为 28×21 pt、10.5 pt 圆角矩形，文件：`ui/sidebar.css`
 - [X] T085 重新执行 021 聚焦测试、全量测试、类型检查、lint、native 测试、native/plugin 构建、包验证和正式打包，文件：`specs/021-subtitle-text-style/quickstart.md`
+- [X] T086 为定位外层与实际文字块边界补偿、Font/Size 同行紧凑布局及透明 Color 色块棋盘底纹补充失败回归测试，文件：`tests/contract/overlay-webview.test.ts` 与 `tests/contract/sidebar-form.test.ts`
+- [X] T087 对齐 Position 0/100 的实际译文绘制边界，按 IINA 间距收紧 Size/Font/Width 并为透明 Color 色块增加棋盘底纹，文件：`ui/overlay.ts` 与 `ui/sidebar.css`
+- [X] T088 重新执行 021 聚焦测试、全量测试、类型检查、lint、native 测试、native/plugin 构建、包验证和正式打包，文件：`specs/021-subtitle-text-style/quickstart.md`
 - [ ] T066 使用正式 `.iinaplgz` 在 IINA 1.4.0 与 1.4.4 完成 quickstart 的单人视觉、键盘、多窗口、字体恢复、时延、失败和卸载验收，并保存不含正文的证据，文件：`docs/validation/subtitle-text-style.md`
 
 ---
@@ -179,7 +182,7 @@
 - **US1（阶段 3）**：依赖阶段 2，是 MVP；native font、Sidebar Font 与 Overlay font 三条分支最终在 Main/Global 集成。
 - **US2（阶段 4）**：执行上依赖 US1，因为两者串行修改 `ui/sidebar*` 与 `ui/overlay*`；验收时可只使用 US1 默认值验证描边和背景。
 - **US3（阶段 5）**：依赖 US1 的 native/font session 基础与 US2 的三个 Color 字段；扩展同一 helper、Global/Main 与 Sidebar 热点文件。
-- **完善（阶段 6）**：依赖全部选定用户故事；发布脚本与工作流由同一负责人按 T058 → T060 合并；T067–T072、T074–T075 与 T077–T079 修复正式包人工验收发现的当前规格偏差，T073、T076 与 T080 分别重新执行 T063–T065 的门禁，随后重新开始 T066。
+- **完善（阶段 6）**：依赖全部选定用户故事；发布脚本与工作流由同一负责人按 T058 → T060 合并；T067–T072、T074–T075、T077–T079 与 T081–T087 修复正式包人工验收发现的当前规格偏差，T073、T076、T080、T085 与 T088 分别重新执行 T063–T065 的门禁，随后重新开始 T066。
 
 ### 用户故事完成图
 

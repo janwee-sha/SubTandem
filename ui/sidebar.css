@@ -617,15 +617,15 @@ dd {
   min-width: 0;
   grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: 8px 12px;
+  gap: 8px 16px;
 }
 
 .subtitle-style-font-fields {
-  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  grid-template-columns: max-content max-content minmax(0, 1fr);
 }
 
 .subtitle-style-border-fields {
-  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  grid-template-columns: max-content max-content;
 }
 
 .subtitle-style-field {
@@ -707,10 +707,15 @@ dd {
 }
 
 .subtitle-color-swatch {
+  --subtitle-swatch: transparent;
+
   display: block;
   width: 100%;
   height: 100%;
   border-radius: 10.5px;
+  background:
+    linear-gradient(var(--subtitle-swatch), var(--subtitle-swatch)),
+    repeating-conic-gradient(#aaa 0 25%, #fff 0 50%) 0 / 8px 8px;
 }
 
 .subtitle-font-button {

@@ -354,12 +354,18 @@ describe("Subtitle Font controls contract", () => {
     const heading = html.indexOf('id="subtitle-style-heading"');
     const surface = html.indexOf('class="subtitle-style-surface"');
     const groupRule = css.match(/\.subtitle-style-group\s*\{[\s\S]*?\n}/)?.[0] ?? "";
+    const fontFieldsRule = css.match(/\.subtitle-style-font-fields\s*\{[\s\S]*?\n}/)?.[0] ?? "";
+    const borderFieldsRule = css.match(/\.subtitle-style-border-fields\s*\{[\s\S]*?\n}/)?.[0] ?? "";
     const triggerRule = css.match(/\.subtitle-color-trigger\s*\{[\s\S]*?\n}/)?.[0] ?? "";
     expect(heading).toBeGreaterThan(position);
     expect(surface).toBeGreaterThan(heading);
     expect(html).toContain('class="subtitle-style-fields subtitle-style-font-fields"');
     expect(html).toContain('class="subtitle-style-fields subtitle-style-border-fields"');
     expect(groupRule).toContain("border: 0");
+    expect(fontFieldsRule).toContain(
+      "grid-template-columns: max-content max-content minmax(0, 1fr)",
+    );
+    expect(borderFieldsRule).toContain("grid-template-columns: max-content max-content");
     expect(triggerRule).toContain("background: transparent");
     expect(triggerRule).not.toContain("background: var(--accent)");
   });
@@ -386,6 +392,8 @@ describe("Subtitle Font controls contract", () => {
     expect(swatchRule).toContain("display: block");
     expect(swatchRule).toContain("border-radius: 10.5px");
     expect(swatchRule).toContain("width: 100%");
+    expect(swatchRule).toContain("linear-gradient(var(--subtitle-swatch), var(--subtitle-swatch))");
+    expect(swatchRule).toContain("repeating-conic-gradient");
   });
 });
 
