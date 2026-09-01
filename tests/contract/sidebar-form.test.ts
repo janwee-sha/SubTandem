@@ -360,11 +360,11 @@ describe("Subtitle Font controls contract", () => {
     expect(html).toContain('class="subtitle-style-fields subtitle-style-font-fields"');
     expect(html).toContain('class="subtitle-style-fields subtitle-style-border-fields"');
     expect(groupRule).toContain("border: 0");
-    expect(triggerRule).toContain("background: var(--secondary-control-surface)");
+    expect(triggerRule).toContain("background: transparent");
     expect(triggerRule).not.toContain("background: var(--accent)");
   });
 
-  it("shows rounded rectangular swatches without truncated color text", () => {
+  it("matches the measured 28 by 21 point IINA color wells without truncated text", () => {
     const triggers = [
       ...html.matchAll(/<button[\s\S]*?class="subtitle-color-trigger"[\s\S]*?<\/button>/g),
     ];
@@ -376,9 +376,15 @@ describe("Subtitle Font controls contract", () => {
     );
     expect(triggers.every(([trigger]) => trigger.includes('aria-label="'))).toBe(true);
     expect(html).not.toContain("subtitle-color-value");
-    expect(triggerRule).toContain("width: 38px");
-    expect(triggerRule).toContain("min-width: 38px");
-    expect(swatchRule).toContain("border-radius: 6px");
+    expect(triggerRule).toContain("width: 28px");
+    expect(triggerRule).toContain("min-width: 28px");
+    expect(triggerRule).toContain("height: 21px");
+    expect(triggerRule).toContain("min-height: 21px");
+    expect(triggerRule).toContain("border-radius: 10.5px");
+    expect(triggerRule).toContain("padding: 0");
+    expect(triggerRule).toContain("overflow: hidden");
+    expect(swatchRule).toContain("display: block");
+    expect(swatchRule).toContain("border-radius: 10.5px");
     expect(swatchRule).toContain("width: 100%");
   });
 });

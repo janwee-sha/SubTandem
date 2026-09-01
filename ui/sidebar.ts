@@ -1080,13 +1080,11 @@ window.addEventListener("blur", () => {
 subtitleShowColors.addEventListener("click", () => {
   const colorTarget = sidebarState.snapshot.subtitleStyle.colorTarget;
   if (!colorTarget) return;
-  if (pendingColorPickerRequestId) {
-    closeColorPalette(false);
-    focusActiveSubtitleStylePicker();
-    return;
-  }
   const requestId = nextRequestId();
-  if (!sidebarState.beginSubtitleColorPicker(requestId, colorTarget)) return;
+  const started = pendingColorPickerRequestId
+    ? sidebarState.restartSubtitleColorPicker(requestId, colorTarget)
+    : sidebarState.beginSubtitleColorPicker(requestId, colorTarget);
+  if (!started) return;
   pendingColorPickerRequestId = requestId;
   closeColorPalette(false);
   renderSubtitleStyle();

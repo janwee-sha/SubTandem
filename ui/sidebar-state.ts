@@ -253,6 +253,7 @@ interface SidebarStateCoordinator {
   openSubtitleColorPalette(field: SidebarSubtitleColorField): boolean;
   closeSubtitleColorPalette(): void;
   beginSubtitleColorPicker(requestId: string, field: SidebarSubtitleColorField): boolean;
+  restartSubtitleColorPicker(requestId: string, field: SidebarSubtitleColorField): boolean;
   finishSubtitleColorPicker(
     requestId: string,
     outcome: "confirmed" | "cancelled" | "unchanged" | "focused" | "failed",
@@ -886,6 +887,26 @@ function createSubTandemSidebarState(
     return true;
   };
 
+  const restartSubtitleColorPicker = (
+    requestId: string,
+    field: SidebarSubtitleColorField,
+  ): boolean => {
+    if (
+      !/^[A-Za-z0-9_.:-]{1,128}$/.test(requestId) ||
+      !["fontColor", "borderColor", "backgroundColor"].includes(field)
+    )
+      return false;
+    const session = snapshot.subtitleStyle.nativeColorSession;
+    if (session)
+      snapshot.subtitleStyle.feedbackByField[session.field] = snapshot.subtitleStyle.pendingByField[
+        session.field
+      ]
+        ? "saving"
+        : "idle";
+    snapshot.subtitleStyle.nativeColorSession = null;
+    return beginSubtitleColorPicker(requestId, field);
+  };
+
   const finishSubtitleColorPicker = (
     requestId: string,
     outcome: "confirmed" | "cancelled" | "unchanged" | "focused" | "failed",
@@ -942,6 +963,7 @@ function createSubTandemSidebarState(
     openSubtitleColorPalette,
     closeSubtitleColorPalette,
     beginSubtitleColorPicker,
+    restartSubtitleColorPicker,
     finishSubtitleColorPicker,
   };
 }

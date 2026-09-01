@@ -27,9 +27,8 @@ describe("translation overlay WebView contract", () => {
     expect(source).toContain("document.createTextNode");
     expect(source).toContain('window.iina?.onMessage("overlay:initialize"');
     expect(source).toContain('window.iina?.postMessage("overlay:ready", {})');
-    expect(source).toContain(
-      "calculateSubTandemOverlayTypography(window.innerHeight, frame.style)",
-    );
+    expect(source).toContain("document.documentElement.clientHeight || window.innerHeight");
+    expect(source).toContain("calculateSubTandemOverlayTypography(viewportHeight, frame.style)");
     expect(source).toContain("translationText.style.fontSize");
     expect(source).toContain("translationText.style.fontWeight");
     expect(source).toContain("translationText.style.webkitTextStrokeWidth");
@@ -88,6 +87,15 @@ describe("translation overlay WebView contract", () => {
       source.indexOf("translationText.getBoundingClientRect().height"),
     );
     expect(source).not.toContain("placeholder");
+  });
+
+  it("anchors the painted block directly by its CSS bottom edge", () => {
+    const source = rootFile("ui/overlay.ts");
+    expect(source).toContain('translation.style.top = "auto"');
+    expect(source).toContain(
+      "translation.style.bottom = `${viewportHeight - result.layout.bottomAnchor}px`",
+    );
+    expect(source).not.toContain("translation.style.top = `${result.layout.topOffset}px`");
   });
 
   it("forces the host overlay to remain non-interactive", () => {

@@ -161,6 +161,11 @@
 - [X] T078 允许当前 picker 的合法旧终态清理本地会话且不覆盖更新权威状态，文件：`ui/sidebar-state.ts`
 - [X] T079 让 Overlay 以包含描边空间的实际 DOM 盒约束 Position 100，并将三个 Color trigger 收敛为带可访问名称的原生式圆角色块，文件：`ui/overlay-state.ts`, `ui/overlay.ts`, `ui/sidebar.html`, `ui/sidebar.css`, 与 `ui/sidebar.ts`
 - [X] T080 重新执行 021 聚焦测试、全量测试、类型检查、lint、native 测试、native/plugin 构建、包验证和正式打包，文件：`specs/021-subtitle-text-style/quickstart.md`
+- [X] T081 为 Position 100 直接底边锚定、节流后 Show Colors 重试、预览快照合并和 IINA 色块实测尺寸补充失败回归测试，文件：`tests/contract/overlay-webview.test.ts`, `tests/unit/sidebar-state.test.ts`, `tests/contract/sidebar-lifecycle.test.ts`, `tests/unit/sidebar-message-buffer.test.ts`, 与 `tests/contract/sidebar-form.test.ts`
+- [X] T082 让 Overlay 使用实际 CSS viewport 与 `bottomAnchor` 直接约束绘制块底边，避免内外 DOM 盒高度差再次造成 Position 100 溢出，文件：`ui/overlay.ts`
+- [X] T083 允许用户以新请求替换本地停滞的颜色 picker、在转发前排空终态，并只合并高频样式快照而保留保存与 picker 结果，文件：`ui/sidebar-state.ts`, `ui/sidebar.ts`, `src/main.ts`, 与 `src/adapters/iina/sidebar-message-buffer.ts`
+- [X] T084 按 IINA 参考图的 55×42 Retina 像素边界，将三个 Color 色块一比一实现为 28×21 pt、10.5 pt 圆角矩形，文件：`ui/sidebar.css`
+- [X] T085 重新执行 021 聚焦测试、全量测试、类型检查、lint、native 测试、native/plugin 构建、包验证和正式打包，文件：`specs/021-subtitle-text-style/quickstart.md`
 - [ ] T066 使用正式 `.iinaplgz` 在 IINA 1.4.0 与 1.4.4 完成 quickstart 的单人视觉、键盘、多窗口、字体恢复、时延、失败和卸载验收，并保存不含正文的证据，文件：`docs/validation/subtitle-text-style.md`
 
 ---

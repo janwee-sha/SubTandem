@@ -497,6 +497,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   });
   runtime.sidebar.onMessage("subtitle-style:picker-open", (raw: unknown) => {
     try {
+      flushSidebar();
       runtime.global.postMessage("subtitle-style:picker-open", parseSubtitleStylePickerOpen(raw));
     } catch {
       return;
@@ -504,6 +505,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   });
   runtime.sidebar.onMessage("subtitle-style:picker-focus", (raw: unknown) => {
     try {
+      flushSidebar();
       runtime.global.postMessage("subtitle-style:picker-focus", parseSubtitleStyleGet(raw));
     } catch {
       return;

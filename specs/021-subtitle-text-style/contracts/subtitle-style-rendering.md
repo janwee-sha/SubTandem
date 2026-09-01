@@ -49,7 +49,7 @@ fontStyle = italic ? italic : normal
 1. 应用 font family、size、weight、style、stroke、三种颜色。
 2. 写入当前文本并显示内层。
 3. 用合并后的单个 `requestAnimationFrame` 读取内层 `getBoundingClientRect().height`。
-4. 使用既有 Position、有效区域、margin 和顶部钳制公式计算外层 top/left/right。
+4. 使用 `document.documentElement.clientHeight` 对齐实际 CSS viewport，沿用既有 Position、有效区域、margin 和顶部钳制公式计算 `bottomAnchor`，再以 `viewportHeight-bottomAnchor` 直接设置外层 CSS bottom；不得用内层块高换算外层 CSS top。
 
 `ResizeObserver` 观察内层；字体解析、Bold/Italic、自动换行、background 不同 alpha 或 viewport 宽度变化导致尺寸变化时调度同一 latest-only rAF。每帧最多一次测量，不得按字符数、输入行数或固定行高估算。
 

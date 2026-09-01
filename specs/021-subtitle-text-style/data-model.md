@@ -86,7 +86,7 @@ font catalog change -> availability(style unchanged, effective font may change)
 - `eventRevision`：已接受的 helper 最大事件序号。
 - `state`：`opening | active | focusing | closing | completed | cancelled | failed`。
 
-全局同一时刻最多一个 active native picker。已有 session 时的新请求只把该 session 的窗口置于顶端并静默结束，不创建第二个 session。未变化关闭或字体取消不产生 intent；颜色关闭提交最后 preview 的既有 intent；helper 失败使该 session 失效并按保存状态安全回退。
+全局同一时刻最多一个 active native picker。已有 session 时的新请求只把该 session 的窗口置于顶端并静默结束，不创建第二个 session。Sidebar 的颜色 picker 终态延迟时，用户再次点击 Show Colors 以新 requestId 原子替换本地 session；Global 仍按单一 active session 前置或打开窗口。未变化关闭或字体取消不产生 intent；颜色关闭提交最后 preview 的既有 intent；helper 失败使该 session 失效并按保存状态安全回退。
 
 ## SidebarStyleState
 

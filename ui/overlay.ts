@@ -3,14 +3,18 @@ const translationText = document.querySelector<HTMLElement>("#translation-text")
 const overlayState = window.createSubTandemOverlayState();
 let scheduledFrame: number | null = null;
 
+function currentViewportHeight(): number {
+  return document.documentElement.clientHeight || window.innerHeight;
+}
+
 function safeFontFamily(family: string): string {
   return `"${family.replace(/["\\]/g, "\\$&")}", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`;
 }
 
-function applyTypography(): SubTandemOverlayTypography | null {
+function applyTypography(viewportHeight: number): SubTandemOverlayTypography | null {
   const frame = overlayState.snapshot.frame;
   if (!frame) return null;
-  const typography = window.calculateSubTandemOverlayTypography(window.innerHeight, frame.style);
+  const typography = window.calculateSubTandemOverlayTypography(viewportHeight, frame.style);
   translationText.style.fontSize = `${typography.fontSize}px`;
   translationText.style.fontWeight = String(typography.fontWeight);
   translationText.style.fontStyle = typography.fontStyle;
@@ -26,10 +30,10 @@ function applyTypography(): SubTandemOverlayTypography | null {
   return typography;
 }
 
-function applyHorizontalBounds(): void {
+function applyHorizontalBounds(viewportHeight: number): void {
   const frame = overlayState.snapshot.frame;
   if (!frame) return;
-  const horizontalMargin = (frame.region.marginX / 720) * window.innerHeight;
+  const horizontalMargin = (frame.region.marginX / 720) * viewportHeight;
   translation.style.left = `${horizontalMargin}px`;
   translation.style.right = `${horizontalMargin}px`;
 }
@@ -51,16 +55,18 @@ function clearText(): void {
 function layoutCurrent(): void {
   scheduledFrame = null;
   if (!overlayState.snapshot.frame || translation.hidden) return;
-  const typography = applyTypography();
+  const viewportHeight = currentViewportHeight();
+  const typography = applyTypography(viewportHeight);
   if (!typography) return;
-  applyHorizontalBounds();
+  applyHorizontalBounds(viewportHeight);
   const blockHeight = Math.ceil(
     Math.max(translationText.getBoundingClientRect().height, translationText.scrollHeight),
   );
   if (blockHeight === 0) return;
-  const result = overlayState.layout(window.innerHeight, blockHeight);
+  const result = overlayState.layout(viewportHeight, blockHeight);
   if (!result?.changed) return;
-  translation.style.top = `${result.layout.topOffset}px`;
+  translation.style.top = "auto";
+  translation.style.bottom = `${viewportHeight - result.layout.bottomAnchor}px`;
   translation.style.left = `${result.layout.horizontalMargin}px`;
   translation.style.right = `${result.layout.horizontalMargin}px`;
 }
@@ -73,14 +79,14 @@ function scheduleLayout(): void {
 window.iina?.onMessage("overlay:render", (raw: unknown) => {
   if (!overlayState.applyRender(raw)) return;
   const frame = overlayState.snapshot.frame!;
-  applyTypography();
+  applyTypography(currentViewportHeight());
   writeLines(frame.lines);
   scheduleLayout();
 });
 
 window.iina?.onMessage("overlay:layout", (raw: unknown) => {
   if (!overlayState.applyLayout(raw)) return;
-  applyTypography();
+  applyTypography(currentViewportHeight());
   scheduleLayout();
 });
 

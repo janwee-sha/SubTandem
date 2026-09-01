@@ -496,6 +496,27 @@ describe("System color picker lifecycle contract", () => {
     expect(sidebarSource).toContain("pendingColorPickerRequestId");
   });
 
+  it("retries Show Colors with a fresh open request and flushes queued terminal state first", () => {
+    const showStart = sidebarSource.indexOf('subtitleShowColors.addEventListener("click"');
+    const showEnd = sidebarSource.indexOf('fontSizeSelect.addEventListener("change"', showStart);
+    const showHandler = sidebarSource.slice(showStart, showEnd);
+    const mainOpenStart = mainSource.indexOf(
+      'runtime.sidebar.onMessage("subtitle-style:picker-open"',
+    );
+    const mainOpenEnd = mainSource.indexOf(
+      'runtime.sidebar.onMessage("subtitle-style:picker-focus"',
+      mainOpenStart,
+    );
+    const mainOpenHandler = mainSource.slice(mainOpenStart, mainOpenEnd);
+
+    expect(showHandler).toContain("restartSubtitleColorPicker");
+    expect(showHandler).toMatch(/postMessage\(\s*"subtitle-style:picker-open"/);
+    expect(showHandler).not.toContain("focusActiveSubtitleStylePicker");
+    expect(mainOpenHandler.indexOf("flushSidebar()")).toBeLessThan(
+      mainOpenHandler.indexOf('runtime.global.postMessage("subtitle-style:picker-open"'),
+    );
+  });
+
   it("returns focus on preset, Escape and unchanged close without leaking raw errors", () => {
     expect(sidebarSource).toContain("closeColorPalette(true)");
     expect(sidebarSource).toContain('event.key !== "Escape"');

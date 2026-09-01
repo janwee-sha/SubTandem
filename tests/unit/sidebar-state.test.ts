@@ -560,6 +560,20 @@ describe("Sidebar native color picker state", () => {
     expect(state.snapshot.subtitleStyle.groupError).toBeNull();
   });
 
+  it("replaces a locally pending picker when the user explicitly retries Show Colors", () => {
+    const state = createState();
+    state.applySubtitleStyleState(subtitleAuthority());
+    state.beginSubtitleColorPicker("picker-stalled", "fontColor");
+
+    expect(state.restartSubtitleColorPicker("picker-retry", "borderColor")).toBe(true);
+    expect(state.snapshot.subtitleStyle.nativeColorSession).toEqual({
+      requestId: "picker-retry",
+      field: "borderColor",
+    });
+    expect(state.snapshot.subtitleStyle.feedbackByField.fontColor).toBe("idle");
+    expect(state.snapshot.subtitleStyle.feedbackByField.borderColor).toBe("saving");
+  });
+
   it("settles the current picker after a newer authority snapshot arrives first", () => {
     const state = createState();
     state.applySubtitleStyleState(subtitleAuthority());
