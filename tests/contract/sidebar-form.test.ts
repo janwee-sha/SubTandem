@@ -348,6 +348,21 @@ describe("Subtitle Font controls contract", () => {
     expect(css).toContain("@media (forced-colors: active)");
     expect(css).toContain("@media (prefers-contrast: more)");
   });
+
+  it("matches the compact IINA text-style hierarchy without outlined fieldset cards", () => {
+    const position = html.indexOf('id="translation-position"');
+    const heading = html.indexOf('id="subtitle-style-heading"');
+    const surface = html.indexOf('class="subtitle-style-surface"');
+    const groupRule = css.match(/\.subtitle-style-group\s*\{[\s\S]*?\n}/)?.[0] ?? "";
+    const triggerRule = css.match(/\.subtitle-color-trigger\s*\{[\s\S]*?\n}/)?.[0] ?? "";
+    expect(heading).toBeGreaterThan(position);
+    expect(surface).toBeGreaterThan(heading);
+    expect(html).toContain('class="subtitle-style-fields subtitle-style-font-fields"');
+    expect(html).toContain('class="subtitle-style-fields subtitle-style-border-fields"');
+    expect(groupRule).toContain("border: 0");
+    expect(triggerRule).toContain("background: var(--secondary-control-surface)");
+    expect(triggerRule).not.toContain("background: var(--accent)");
+  });
 });
 
 describe("Subtitle Border and Background controls contract", () => {
@@ -384,7 +399,9 @@ describe("Shared subtitle color palette contract", () => {
   const css = readFileSync(new URL("../../ui/sidebar.css", import.meta.url), "utf8");
 
   it("offers named RGBA presets, selected semantics and one Show Colors entry", () => {
-    const palette = html.match(/id="subtitle-color-palette"[\s\S]*?<\/div>/)?.[0] ?? "";
+    const paletteStart = html.indexOf('id="subtitle-color-palette"');
+    const paletteEnd = html.indexOf('id="subtitle-style-error"', paletteStart);
+    const palette = html.slice(paletteStart, paletteEnd);
     expect(palette).toContain('data-color-name="White"');
     expect(palette).toContain('data-color-name="Black"');
     expect(palette).toContain('data-color-name="Transparent"');
@@ -397,6 +414,8 @@ describe("Shared subtitle color palette contract", () => {
   it("styles alpha swatches, selected state, keyboard focus and high contrast", () => {
     expect(css).toContain(".palette-swatch");
     expect(css).toContain('.subtitle-color-palette button[aria-checked="true"]');
+    expect(html).toContain('class="subtitle-color-grid"');
+    expect(css).toMatch(/\.subtitle-color-grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(10,/);
     expect(css).toContain(":focus-visible");
     expect(css).toContain("@media (forced-colors: active)");
     expect(css).toContain("@media (prefers-contrast: more)");

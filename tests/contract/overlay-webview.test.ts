@@ -78,6 +78,11 @@ describe("translation overlay WebView contract", () => {
     expect(source).toContain("new ResizeObserver");
     expect(source).toContain("requestAnimationFrame");
     expect(source).toContain("translationText.getBoundingClientRect().height");
+    expect(source).toContain("applyHorizontalBounds");
+    expect(source).toContain("calculateSubTandemOverlayPaintMetrics");
+    expect(source.indexOf("applyHorizontalBounds();")).toBeLessThan(
+      source.indexOf("translationText.getBoundingClientRect().height"),
+    );
     expect(source).not.toContain("placeholder");
   });
 

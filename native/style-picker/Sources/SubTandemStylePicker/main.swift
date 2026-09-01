@@ -47,18 +47,18 @@ private func run() throws {
     output.append(0x0a)
     FileHandle.standardOutput.write(output)
 
-    let timer = DispatchSource.makeTimerSource(queue: .global(qos: .utility))
-    timer.schedule(deadline: .now() + 1, repeating: 1)
-    timer.setEventHandler {
-        guard ParentExitRule.shouldExit(parentPID: observedParent, isRunning: processRunning) else {
-            return
+    let timer = makeParentProcessMonitor(
+        parentPID: observedParent,
+        deadline: .now() + 1,
+        repeating: .seconds(1),
+        isRunning: processRunning,
+        onExit: {
+            server.stop()
+            Task { @MainActor in
+                NSApplication.shared.terminate(nil)
+            }
         }
-        server.stop()
-        DispatchQueue.main.async {
-            application.terminate(nil)
-        }
-    }
-    timer.resume()
+    )
     application.run()
     timer.cancel()
     server.stop()

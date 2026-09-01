@@ -41,6 +41,11 @@ interface SubTandemOverlayTypography {
   backgroundColor: string;
 }
 
+interface SubTandemOverlayPaintMetrics {
+  layoutHeight: number;
+  contentOffset: number;
+}
+
 interface SubTandemOverlayLayout {
   safeTop: number;
   safeBottom: number;
@@ -77,6 +82,10 @@ interface Window {
     viewportHeight: number,
     style: SubTandemOverlayTextStyle,
   ): SubTandemOverlayTypography;
+  calculateSubTandemOverlayPaintMetrics(
+    blockHeight: number,
+    strokeWidth: number,
+  ): SubTandemOverlayPaintMetrics;
   calculateSubTandemOverlayLayout(input: SubTandemOverlayLayoutInput): SubTandemOverlayLayout;
   createSubTandemOverlayState(): SubTandemOverlayStateCoordinator;
 }
@@ -180,6 +189,23 @@ function calculateSubTandemOverlayTypography(
     fontColor: rgba(style.fontColor),
     borderColor: strokeWidth === 0 ? "transparent" : rgba(style.borderColor),
     backgroundColor: rgba(style.backgroundColor),
+  };
+}
+
+function calculateSubTandemOverlayPaintMetrics(
+  blockHeight: number,
+  strokeWidth: number,
+): SubTandemOverlayPaintMetrics {
+  if (
+    !Number.isFinite(blockHeight) ||
+    blockHeight < 0 ||
+    !Number.isFinite(strokeWidth) ||
+    strokeWidth < 0
+  )
+    throw new Error("INVALID_OVERLAY_PAINT_METRICS");
+  return {
+    layoutHeight: blockHeight + strokeWidth * 2,
+    contentOffset: strokeWidth,
   };
 }
 
@@ -331,5 +357,6 @@ function createSubTandemOverlayState(): SubTandemOverlayStateCoordinator {
 
 const overlayGlobals = globalThis as typeof globalThis & Window;
 overlayGlobals.calculateSubTandemOverlayTypography = calculateSubTandemOverlayTypography;
+overlayGlobals.calculateSubTandemOverlayPaintMetrics = calculateSubTandemOverlayPaintMetrics;
 overlayGlobals.calculateSubTandemOverlayLayout = calculateSubTandemOverlayLayout;
 overlayGlobals.createSubTandemOverlayState = createSubTandemOverlayState;

@@ -487,4 +487,11 @@ describe("System color picker lifecycle contract", () => {
     expect(sidebarSource).toContain('outcome === "unchanged"');
     expect(sidebarSource).not.toMatch(/rawError|stderr|helperToken|Authorization/);
   });
+
+  it("builds the IINA-like shade grid as named RGBA controls using the shared target path", () => {
+    expect(sidebarSource).toContain("populateSubtitleColorGrid");
+    expect(sidebarSource).toContain("subtitleColorFamilies");
+    expect(sidebarSource).toContain("button.dataset.rgba");
+    expect(sidebarSource).toContain('closest<HTMLButtonElement>("button[data-rgba]")');
+  });
 });

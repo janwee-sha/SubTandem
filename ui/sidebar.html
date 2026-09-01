@@ -50,113 +50,128 @@
             aria-live="polite"
           ></p>
         </div>
-        <div id="subtitle-style-controls" class="subtitle-style-controls">
-          <fieldset id="subtitle-font-group" class="subtitle-style-group">
-            <legend>Font</legend>
-            <div class="subtitle-style-row">
-              <label for="subtitle-font-color">Color</label>
-              <button
-                id="subtitle-font-color"
-                class="subtitle-color-trigger"
-                type="button"
-                aria-haspopup="dialog"
-                aria-expanded="false"
-                aria-controls="subtitle-color-palette"
-              >
-                <span class="subtitle-color-swatch" aria-hidden="true"></span>
-                <span class="subtitle-color-value">White · 100%</span>
-              </button>
-            </div>
-            <label class="subtitle-style-row" for="subtitle-font-size">
-              <span>Size</span>
-              <select id="subtitle-font-size">
-                <option value="30">30</option>
-                <option value="35">35</option>
-                <option value="40" selected>40</option>
-                <option value="45">45</option>
-                <option value="50">50</option>
-                <option value="55">55</option>
-                <option value="60">60</option>
-                <option value="65">65</option>
-                <option value="70">70</option>
-              </select>
-            </label>
-            <div class="subtitle-style-row">
-              <label for="subtitle-font-family">Font</label>
-              <button
-                id="subtitle-font-family"
-                class="subtitle-font-button secondary"
-                type="button"
-                aria-describedby="subtitle-font-status"
-                aria-busy="false"
-              >
-                System Default
-              </button>
-            </div>
-            <label class="subtitle-style-check" for="subtitle-font-bold">
-              <input id="subtitle-font-bold" type="checkbox" />
-              <span>Bold</span>
-            </label>
-            <label class="subtitle-style-check" for="subtitle-font-italic">
-              <input id="subtitle-font-italic" type="checkbox" />
-              <span>Italic</span>
-            </label>
-            <p
-              id="subtitle-font-status"
-              class="operation-status"
-              role="status"
-              aria-live="polite"
-            ></p>
-          </fieldset>
-          <fieldset id="subtitle-border-group" class="subtitle-style-group">
-            <legend>Border</legend>
-            <div class="subtitle-style-row">
-              <label for="subtitle-border-color">Color</label>
-              <button
-                id="subtitle-border-color"
-                class="subtitle-color-trigger"
-                type="button"
-                aria-haspopup="dialog"
-                aria-expanded="false"
-                aria-controls="subtitle-color-palette"
-              >
-                <span class="subtitle-color-swatch" aria-hidden="true"></span>
-                <span class="subtitle-color-value">Black · 100%</span>
-              </button>
-            </div>
-            <label class="subtitle-style-row" for="subtitle-border-width">
-              <span>Width</span>
-              <select id="subtitle-border-width">
-                <option value="0">0</option>
-                <option value="0.25">0.25</option>
-                <option value="0.5">0.5</option>
-                <option value="1">1</option>
-                <option value="1.5">1.5</option>
-                <option value="2">2</option>
-                <option value="2.5">2.5</option>
-                <option value="3" selected>3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-              </select>
-            </label>
-          </fieldset>
-          <fieldset id="subtitle-background-group" class="subtitle-style-group">
-            <legend>Background</legend>
-            <div class="subtitle-style-row">
-              <label for="subtitle-background-color">Color</label>
-              <button
-                id="subtitle-background-color"
-                class="subtitle-color-trigger"
-                type="button"
-                aria-haspopup="dialog"
-                aria-expanded="false"
-                aria-controls="subtitle-color-palette"
-              >
-                <span class="subtitle-color-swatch" aria-hidden="true"></span>
-                <span class="subtitle-color-value">Transparent · 0%</span>
-              </button>
-            </div>
-          </fieldset>
+        <div
+          id="subtitle-style-controls"
+          class="subtitle-style-controls"
+          aria-labelledby="subtitle-style-heading"
+        >
+          <h3 id="subtitle-style-heading">Text Style</h3>
+          <div class="subtitle-style-surface">
+            <fieldset id="subtitle-font-group" class="subtitle-style-group">
+              <legend>Font</legend>
+              <div class="subtitle-style-fields subtitle-style-font-fields">
+                <div class="subtitle-style-field subtitle-style-color-field">
+                  <label for="subtitle-font-color">Color</label>
+                  <button
+                    id="subtitle-font-color"
+                    class="subtitle-color-trigger"
+                    type="button"
+                    aria-haspopup="dialog"
+                    aria-expanded="false"
+                    aria-controls="subtitle-color-palette"
+                  >
+                    <span class="subtitle-color-swatch" aria-hidden="true"></span>
+                    <span class="subtitle-color-value">White · 100%</span>
+                  </button>
+                </div>
+                <label class="subtitle-style-field" for="subtitle-font-size">
+                  <span>Size</span>
+                  <select id="subtitle-font-size">
+                    <option value="30">30</option>
+                    <option value="35">35</option>
+                    <option value="40" selected>40</option>
+                    <option value="45">45</option>
+                    <option value="50">50</option>
+                    <option value="55">55</option>
+                    <option value="60">60</option>
+                    <option value="65">65</option>
+                    <option value="70">70</option>
+                  </select>
+                </label>
+                <div class="subtitle-style-field subtitle-font-picker-field">
+                  <label for="subtitle-font-family">Font</label>
+                  <button
+                    id="subtitle-font-family"
+                    class="subtitle-font-button secondary"
+                    type="button"
+                    aria-describedby="subtitle-font-status"
+                    aria-busy="false"
+                  >
+                    System Default
+                  </button>
+                </div>
+              </div>
+              <div class="subtitle-style-options">
+                <label class="subtitle-style-check" for="subtitle-font-bold">
+                  <input id="subtitle-font-bold" type="checkbox" />
+                  <span>Bold</span>
+                </label>
+                <label class="subtitle-style-check" for="subtitle-font-italic">
+                  <input id="subtitle-font-italic" type="checkbox" />
+                  <span>Italic</span>
+                </label>
+              </div>
+              <p
+                id="subtitle-font-status"
+                class="operation-status"
+                role="status"
+                aria-live="polite"
+              ></p>
+            </fieldset>
+            <fieldset id="subtitle-border-group" class="subtitle-style-group">
+              <legend>Border</legend>
+              <div class="subtitle-style-fields subtitle-style-border-fields">
+                <div class="subtitle-style-field subtitle-style-color-field">
+                  <label for="subtitle-border-color">Color</label>
+                  <button
+                    id="subtitle-border-color"
+                    class="subtitle-color-trigger"
+                    type="button"
+                    aria-haspopup="dialog"
+                    aria-expanded="false"
+                    aria-controls="subtitle-color-palette"
+                  >
+                    <span class="subtitle-color-swatch" aria-hidden="true"></span>
+                    <span class="subtitle-color-value">Black · 100%</span>
+                  </button>
+                </div>
+                <label class="subtitle-style-field" for="subtitle-border-width">
+                  <span>Width</span>
+                  <select id="subtitle-border-width">
+                    <option value="0">0</option>
+                    <option value="0.25">0.25</option>
+                    <option value="0.5">0.5</option>
+                    <option value="1">1</option>
+                    <option value="1.5">1.5</option>
+                    <option value="2">2</option>
+                    <option value="2.5">2.5</option>
+                    <option value="3" selected>3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                  </select>
+                </label>
+              </div>
+            </fieldset>
+            <fieldset id="subtitle-background-group" class="subtitle-style-group">
+              <legend>Background</legend>
+              <div class="subtitle-style-fields">
+                <div class="subtitle-style-field subtitle-style-color-field">
+                  <label for="subtitle-background-color">Color</label>
+                  <button
+                    id="subtitle-background-color"
+                    class="subtitle-color-trigger"
+                    type="button"
+                    aria-haspopup="dialog"
+                    aria-expanded="false"
+                    aria-controls="subtitle-color-palette"
+                  >
+                    <span class="subtitle-color-swatch" aria-hidden="true"></span>
+                    <span class="subtitle-color-value">Transparent · 0%</span>
+                  </button>
+                </div>
+              </div>
+            </fieldset>
+          </div>
           <div
             id="subtitle-color-palette"
             class="subtitle-color-palette"
@@ -164,36 +179,109 @@
             aria-label="Translation subtitle color presets"
             hidden
           >
-            <button
-              type="button"
-              role="radio"
-              aria-checked="false"
-              data-color-name="White"
-              data-rgba="255,255,255,255"
-            >
-              <span class="palette-swatch palette-white" aria-hidden="true"></span>
-              White
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked="false"
-              data-color-name="Black"
-              data-rgba="0,0,0,255"
-            >
-              <span class="palette-swatch palette-black" aria-hidden="true"></span>
-              Black
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked="false"
-              data-color-name="Transparent"
-              data-rgba="0,0,0,0"
-            >
-              <span class="palette-swatch palette-transparent" aria-hidden="true"></span>
-              Transparent
-            </button>
+            <div class="subtitle-color-favorites" role="radiogroup" aria-label="Common colors">
+              <button
+                type="button"
+                role="radio"
+                aria-checked="false"
+                aria-label="Transparent"
+                data-color-name="Transparent"
+                data-rgba="0,0,0,0"
+              >
+                <span class="palette-swatch palette-transparent" aria-hidden="true"></span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked="false"
+                aria-label="White"
+                data-color-name="White"
+                data-rgba="255,255,255,255"
+              >
+                <span class="palette-swatch palette-white" aria-hidden="true"></span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked="false"
+                aria-label="Red"
+                data-color-name="Red"
+                data-rgba="255,59,48,255"
+              >
+                <span class="palette-swatch palette-red" aria-hidden="true"></span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked="false"
+                aria-label="Orange"
+                data-color-name="Orange"
+                data-rgba="255,149,0,255"
+              >
+                <span class="palette-swatch palette-orange" aria-hidden="true"></span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked="false"
+                aria-label="Yellow"
+                data-color-name="Yellow"
+                data-rgba="255,204,0,255"
+              >
+                <span class="palette-swatch palette-yellow" aria-hidden="true"></span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked="false"
+                aria-label="Green"
+                data-color-name="Green"
+                data-rgba="52,199,89,255"
+              >
+                <span class="palette-swatch palette-green" aria-hidden="true"></span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked="false"
+                aria-label="Cyan"
+                data-color-name="Cyan"
+                data-rgba="50,173,230,255"
+              >
+                <span class="palette-swatch palette-cyan" aria-hidden="true"></span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked="false"
+                aria-label="Blue"
+                data-color-name="Blue"
+                data-rgba="0,122,255,255"
+              >
+                <span class="palette-swatch palette-blue" aria-hidden="true"></span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked="false"
+                aria-label="Purple"
+                data-color-name="Purple"
+                data-rgba="175,82,222,255"
+              >
+                <span class="palette-swatch palette-purple" aria-hidden="true"></span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked="false"
+                aria-label="Black"
+                data-color-name="Black"
+                data-rgba="0,0,0,255"
+              >
+                <span class="palette-swatch palette-black" aria-hidden="true"></span>
+              </button>
+            </div>
+            <div class="subtitle-color-grid" role="radiogroup" aria-label="Color shades"></div>
             <button id="subtitle-show-colors" class="secondary" type="button">Show Colors…</button>
           </div>
           <p

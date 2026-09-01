@@ -147,6 +147,9 @@
 - [X] T063 按聚焦命令重跑全部字幕样式 Vitest 与 Swift 测试并修复失败，文件：`specs/021-subtitle-text-style/quickstart.md`
 - [X] T064 重跑 `npm test`、`npm run typecheck`、`npm run lint` 和 `npm run test:native` 全量门禁，文件：`package.json`
 - [X] T065 重跑 `npm run build:native`、`npm run build`、`npm run verify:package` 和 `npm run pack` 并审计正式归档，文件：`scripts/build-native.sh`, `scripts/build-plugin.sh`, `scripts/verify-package.sh`, 与 `scripts/pack.sh`
+- [X] T067 修复 style-picker 父进程监视器的 Swift 并发队列隔离崩溃，并以真实后台定时回调回归颜色与字体共用生命周期，文件：`native/style-picker/Sources/SubTandemStylePicker/Protocol.swift`, `native/style-picker/Sources/SubTandemStylePicker/main.swift`, 与 `native/style-picker/Tests/SubTandemStylePickerTests/FontPickerTests.swift`
+- [X] T068 依据 IINA 参考截图把 Text Style 收敛为单一低对比表面、紧凑行内字段、中性色样控件与网格色盘，并保留键盘、高对比度和字段可读值，文件：`ui/sidebar.html`, `ui/sidebar.css`, `tests/contract/sidebar-form.test.ts`, 与 `tests/contract/sidebar-lifecycle.test.ts`
+- [X] T069 修复 Overlay 在 Position 100 的首次换行测量与描边可见边界，使实际绘制块底部不超出有效区域，文件：`ui/overlay-state.ts`, `ui/overlay.ts`, `tests/unit/overlay-state.test.ts`, 与 `tests/contract/overlay-webview.test.ts`
 - [ ] T066 使用正式 `.iinaplgz` 在 IINA 1.4.0 与 1.4.4 完成 quickstart 的单人视觉、键盘、多窗口、字体恢复、时延、失败和卸载验收，并保存不含正文的证据，文件：`docs/validation/subtitle-text-style.md`
 
 ---
@@ -160,7 +163,7 @@
 - **US1（阶段 3）**：依赖阶段 2，是 MVP；native font、Sidebar Font 与 Overlay font 三条分支最终在 Main/Global 集成。
 - **US2（阶段 4）**：执行上依赖 US1，因为两者串行修改 `ui/sidebar*` 与 `ui/overlay*`；验收时可只使用 US1 默认值验证描边和背景。
 - **US3（阶段 5）**：依赖 US1 的 native/font session 基础与 US2 的三个 Color 字段；扩展同一 helper、Global/Main 与 Sidebar 热点文件。
-- **完善（阶段 6）**：依赖全部选定用户故事；发布脚本与工作流由同一负责人按 T058 → T060 合并。
+- **完善（阶段 6）**：依赖全部选定用户故事；发布脚本与工作流由同一负责人按 T058 → T060 合并；T067–T069 修复正式包人工验收发现的当前规格偏差，完成后必须重新执行 T063–T065 的门禁并重新开始 T066。
 
 ### 用户故事完成图
 

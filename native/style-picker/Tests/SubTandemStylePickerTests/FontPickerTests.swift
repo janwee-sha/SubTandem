@@ -22,4 +22,15 @@ func runFontPickerTests() throws {
     try check(!ParentExitRule.shouldExit(parentPID: nil, isRunning: { _ in false }), "missing parent")
     try check(!ParentExitRule.shouldExit(parentPID: 123, isRunning: { $0 == 123 }), "running parent")
     try check(ParentExitRule.shouldExit(parentPID: 123, isRunning: { _ in false }), "exited parent")
+
+    let parentExit = DispatchSemaphore(value: 0)
+    let monitor = makeParentProcessMonitor(
+        parentPID: 123,
+        deadline: .now(),
+        repeating: .milliseconds(10),
+        isRunning: { _ in false },
+        onExit: { parentExit.signal() }
+    )
+    try check(parentExit.wait(timeout: .now() + 1) == .success, "background parent monitor")
+    monitor.cancel()
 }

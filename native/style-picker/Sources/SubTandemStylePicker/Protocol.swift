@@ -1,4 +1,5 @@
 import Foundation
+import Dispatch
 
 struct ReadyFrame: Codable, Equatable, Sendable {
     let protocolVersion: Int
@@ -267,4 +268,23 @@ enum ParentExitRule {
         guard let parentPID else { return false }
         return !isRunning(parentPID)
     }
+}
+
+func makeParentProcessMonitor(
+    parentPID: Int32?,
+    deadline: DispatchTime,
+    repeating: DispatchTimeInterval,
+    isRunning: @escaping @Sendable (Int32) -> Bool,
+    onExit: @escaping @Sendable () -> Void
+) -> DispatchSourceTimer {
+    let timer = DispatchSource.makeTimerSource(queue: .global(qos: .utility))
+    timer.schedule(deadline: deadline, repeating: repeating)
+    timer.setEventHandler(handler: { @Sendable in
+        guard ParentExitRule.shouldExit(parentPID: parentPID, isRunning: isRunning) else {
+            return
+        }
+        onExit()
+    })
+    timer.resume()
+    return timer
 }

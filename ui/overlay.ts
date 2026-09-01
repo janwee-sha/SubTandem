@@ -7,9 +7,9 @@ function safeFontFamily(family: string): string {
   return `"${family.replace(/["\\]/g, "\\$&")}", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif`;
 }
 
-function applyTypography(): void {
+function applyTypography(): SubTandemOverlayTypography | null {
   const frame = overlayState.snapshot.frame;
-  if (!frame) return;
+  if (!frame) return null;
   const typography = window.calculateSubTandemOverlayTypography(window.innerHeight, frame.style);
   translationText.style.fontSize = `${typography.fontSize}px`;
   translationText.style.fontWeight = String(typography.fontWeight);
@@ -22,6 +22,15 @@ function applyTypography(): void {
   translationText.style.webkitTextStrokeColor = typography.borderColor;
   translationText.style.backgroundColor = typography.backgroundColor;
   translationText.style.textShadow = "none";
+  return typography;
+}
+
+function applyHorizontalBounds(): void {
+  const frame = overlayState.snapshot.frame;
+  if (!frame) return;
+  const horizontalMargin = (frame.region.marginX / 720) * window.innerHeight;
+  translation.style.left = `${horizontalMargin}px`;
+  translation.style.right = `${horizontalMargin}px`;
 }
 
 function writeLines(lines: string[]): void {
@@ -41,11 +50,14 @@ function clearText(): void {
 function layoutCurrent(): void {
   scheduledFrame = null;
   if (!overlayState.snapshot.frame || translation.hidden) return;
-  applyTypography();
-  const measured = translationText.getBoundingClientRect().height;
-  const result = overlayState.layout(window.innerHeight, measured);
+  const typography = applyTypography();
+  if (!typography) return;
+  applyHorizontalBounds();
+  const blockHeight = translationText.getBoundingClientRect().height;
+  const paint = window.calculateSubTandemOverlayPaintMetrics(blockHeight, typography.strokeWidth);
+  const result = overlayState.layout(window.innerHeight, paint.layoutHeight);
   if (!result?.changed) return;
-  translation.style.top = `${result.layout.topOffset}px`;
+  translation.style.top = `${result.layout.topOffset + paint.contentOffset}px`;
   translation.style.left = `${result.layout.horizontalMargin}px`;
   translation.style.right = `${result.layout.horizontalMargin}px`;
 }

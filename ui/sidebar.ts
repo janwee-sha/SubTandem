@@ -147,9 +147,75 @@ const backgroundColorSwatch =
 const backgroundColorValue =
   backgroundColorButton.querySelector<HTMLElement>(".subtitle-color-value")!;
 const colorPalette = document.querySelector<HTMLElement>("#subtitle-color-palette")!;
+const subtitleColorGrid = colorPalette.querySelector<HTMLElement>(".subtitle-color-grid")!;
 const subtitleShowColors = document.querySelector<HTMLButtonElement>("#subtitle-show-colors")!;
 const subtitleStyleError = document.querySelector<HTMLParagraphElement>("#subtitle-style-error")!;
 const operationAnnouncer = document.querySelector<HTMLParagraphElement>("#operation-announcer")!;
+
+const subtitleColorFamilies = [
+  ["Red", 0],
+  ["Orange", 28],
+  ["Yellow", 54],
+  ["Green", 112],
+  ["Teal", 166],
+  ["Cyan", 190],
+  ["Blue", 218],
+  ["Indigo", 246],
+  ["Purple", 278],
+  ["Pink", 326],
+] as const;
+const subtitleColorTones = [
+  ["Darkest", 18],
+  ["Dark", 30],
+  ["Deep", 42],
+  ["Medium", 54],
+  ["Light", 68],
+  ["Lightest", 82],
+] as const;
+
+function subtitlePaletteRgb(hue: number, saturation: number, lightness: number): number[] {
+  const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+  const segment = hue / 60;
+  const secondary = chroma * (1 - Math.abs((segment % 2) - 1));
+  const [red, green, blue] =
+    segment < 1
+      ? [chroma, secondary, 0]
+      : segment < 2
+        ? [secondary, chroma, 0]
+        : segment < 3
+          ? [0, chroma, secondary]
+          : segment < 4
+            ? [0, secondary, chroma]
+            : segment < 5
+              ? [secondary, 0, chroma]
+              : [chroma, 0, secondary];
+  const match = lightness - chroma / 2;
+  return [red, green, blue].map((channel) => Math.round((channel + match) * 255));
+}
+
+function populateSubtitleColorGrid(): void {
+  for (const [toneName, lightnessPercent] of subtitleColorTones) {
+    for (const [familyName, hue] of subtitleColorFamilies) {
+      const [r, g, b] = subtitlePaletteRgb(hue, 0.82, lightnessPercent / 100);
+      const name = `${toneName} ${familyName}`;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.setAttribute("role", "radio");
+      button.setAttribute("aria-checked", "false");
+      button.setAttribute("aria-label", name);
+      button.dataset.colorName = name;
+      button.dataset.rgba = `${r},${g},${b},255`;
+      const swatch = document.createElement("span");
+      swatch.className = "palette-swatch";
+      swatch.setAttribute("aria-hidden", "true");
+      swatch.style.setProperty("--subtitle-swatch", `rgb(${r} ${g} ${b})`);
+      button.append(swatch);
+      subtitleColorGrid.append(button);
+    }
+  }
+}
+
+populateSubtitleColorGrid();
 
 const providerDrafts: Record<
   ProviderKind,
