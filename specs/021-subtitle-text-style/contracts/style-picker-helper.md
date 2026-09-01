@@ -32,7 +32,7 @@ Global 通过 `iina.utils.exec` 启动 `subtandem-style-picker serve`。stdout �
 }
 ```
 
-打开 `NSColorPanel.shared`，启用 alpha 与 continuous action。返回 `opened` 或 `busy`；target field/player 不得发送给 helper。
+打开 `NSColorPanel.shared`，启用 alpha 与 continuous action。返回 `opened`；已有 picker 时前置当前窗口并返回 `focused`。target field/player 不得发送给 helper。
 
 ### `POST /v1/font/open`
 
@@ -46,7 +46,7 @@ Global 通过 `iina.utils.exec` 启动 `subtandem-style-picker serve`。stdout �
 }
 ```
 
-打开 family-only AppKit panel。固定本地 preview 文本由 helper 自身提供；请求不得含字幕/译文。返回 `opened` 或 `busy`。
+打开 family-only AppKit panel。固定本地 preview 文本由 helper 自身提供；请求不得含字幕/译文。返回 `opened`；已有 picker 时前置当前窗口并返回 `focused`。
 
 ### `POST /v1/font/status`
 
@@ -59,6 +59,10 @@ Global 通过 `iina.utils.exec` 启动 `subtandem-style-picker serve`。stdout �
 ### `GET /v1/events?after=<revision>`
 
 认证 long-poll；返回严格大于 after 的有序事件，或在有界超时后返回空数组。服务端只保留有界事件窗口，客户端遇到 gap 必须重新查询当前 picker/font 状态，不得猜测。
+
+### `POST /v1/activate`
+
+只接受当前 `requestId`。活动 picker 存在时将其窗口置于顶端并返回 `activated`，否则返回 `unchanged`；不得创建 session、发送事件或改变样式。
 
 ### `POST /v1/cancel` 与 `POST /v1/shutdown`
 
@@ -75,13 +79,14 @@ cancel 只接受当前 requestId；关闭 panel 并发 cancelled。shutdown 关�
 - `font-catalog-changed`：只含 `catalogRevision`；Global 用当前 preferred family 查询 status 后广播 availability。
 - `picker-failed`：固定安全 code；不得包含 AppKit/字体路径/内部错误。
 
-事件不得包含 target field、player ID、媒体、字幕、译文、preference、token 或路径。Global 只接受当前 session requestId 且 revision 更新的事件；busy、迟到、重复和取消后的事件不得改样式。
+事件不得包含 target field、player ID、媒体、字幕、译文、preference、token 或路径。Global 只接受当前 session requestId 且 revision 更新的事件；focused、迟到、重复和取消后的事件不得改样式。
 
 ## 颜色面板
 
 - 使用 `NSColorPanel.shared`、`showsAlpha=true` 与 continuous target/action。
 - 输入/输出在 native 边界转换为 sRGB；通道量化为 0 至 255 整数，转换失败不发 preview。
 - panel 关闭保留最后选择；未变化关闭发 `changed=false`。
+- 点击 panel 外部使其失焦时按正常关闭处理；重复打开请求只将现有 panel 置于顶端。
 - helper 只在用户请求后激活 accessory app；关闭时不得在用户已切换应用的情况下强抢焦点。
 
 ## 字体面板与目录

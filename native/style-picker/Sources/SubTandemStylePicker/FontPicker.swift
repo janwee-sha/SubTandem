@@ -83,6 +83,13 @@ final class FontPickerController: NSObject, NSTableViewDataSource, NSTableViewDe
         finish(confirmed: false)
     }
 
+    func activate(requestId: String) -> Bool {
+        guard self.requestId == requestId else { return false }
+        NSApp.activate(ignoringOtherApps: true)
+        panel.makeKeyAndOrderFront(nil)
+        return true
+    }
+
     func closeForShutdown() {
         requestId = nil
         complete = nil

@@ -484,7 +484,7 @@ async function refreshFontAvailability(client: StylePickerClient): Promise<void>
 
 function sendStylePickerResult(
   session: ActiveStylePickerSession,
-  outcome: "confirmed" | "cancelled" | "unchanged" | "busy" | "failed",
+  outcome: "confirmed" | "cancelled" | "unchanged" | "focused" | "failed",
 ): void {
   postToPlayer(session.playerId, "subtitle-style:picker-result", {
     requestId: session.requestId,
@@ -824,7 +824,9 @@ iina.global.onMessage("subtitle-style:picker-open", async (raw: unknown, playerI
       lastPreviewColor: null,
     };
     if (activeStylePicker) {
-      sendStylePickerResult(request, "busy");
+      const activeRequestId = activeStylePicker.requestId;
+      if (stylePickerClient) await stylePickerClient.activate(activeRequestId);
+      sendStylePickerResult(request, "focused");
       return;
     }
     activeStylePicker = request;
@@ -844,13 +846,25 @@ iina.global.onMessage("subtitle-style:picker-open", async (raw: unknown, playerI
             requestId: request.requestId,
             color: style[request.field as ColorStyleField],
           });
-    if (status === "busy") {
+    if (status === "focused") {
       activeStylePicker = null;
-      sendStylePickerResult(request, "busy");
+      sendStylePickerResult(request, "focused");
     }
   } catch {
     if (activeStylePicker === request) activeStylePicker = null;
     if (request) sendStylePickerResult(request, "failed");
+  }
+});
+
+iina.global.onMessage("subtitle-style:picker-focus", async (raw: unknown, playerId?: string) => {
+  if (!playerId) return;
+  try {
+    parseSubtitleStyleGet(raw);
+    const session = activeStylePicker;
+    const client = stylePickerClient;
+    if (session && client) await client.activate(session.requestId);
+  } catch {
+    return;
   }
 });
 

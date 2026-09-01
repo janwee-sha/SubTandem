@@ -131,7 +131,7 @@ describe("subtitle style message contracts", () => {
   });
 
   it("validates source-correlated picker outcomes", () => {
-    for (const outcome of ["confirmed", "cancelled", "unchanged", "busy", "failed"] as const) {
+    for (const outcome of ["confirmed", "cancelled", "unchanged", "focused", "failed"] as const) {
       const result = {
         requestId: "subtitle-style.picker.window-1.1",
         outcome,
@@ -139,6 +139,13 @@ describe("subtitle style message contracts", () => {
       };
       expect(parseSubtitleStylePickerResult(result)).toEqual(result);
     }
+    expect(() =>
+      parseSubtitleStylePickerResult({
+        requestId: "subtitle-style.picker.window-1.1",
+        outcome: "busy",
+        authority,
+      }),
+    ).toThrow("INVALID_MESSAGE");
     expect(() =>
       parseSubtitleStylePickerResult({
         requestId: "subtitle-style.picker.window-1.1",

@@ -425,7 +425,7 @@ describe("Subtitle Font lifecycle contract", () => {
     expect(globalSource).toContain('iina.global.onMessage("subtitle-style:edit"');
   });
 
-  it("requests the font picker, expresses busy and handles latest-only safe results", () => {
+  it("requests the font picker, expresses control activity and handles latest-only safe results", () => {
     expect(sidebarSource).toMatch(/postMessage\(\s*"subtitle-style:picker-open"/);
     expect(sidebarSource).toContain('kind: "font"');
     expect(sidebarSource).toContain('fontButton.setAttribute("aria-busy"');
@@ -471,6 +471,22 @@ describe("Subtitle Border and Background lifecycle contract", () => {
 
 describe("System color picker lifecycle contract", () => {
   const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
+  const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+  const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
+  const colorPickerSource = readFileSync(
+    new URL(
+      "../../native/style-picker/Sources/SubTandemStylePicker/ColorPicker.swift",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const serverSource = readFileSync(
+    new URL(
+      "../../native/style-picker/Sources/SubTandemStylePicker/Server.swift",
+      import.meta.url,
+    ),
+    "utf8",
+  );
 
   it("opens the native panel for the current target and retains field isolation", () => {
     expect(sidebarSource).toContain('subtitleShowColors.addEventListener("click"');
@@ -486,6 +502,24 @@ describe("System color picker lifecycle contract", () => {
     expect(sidebarSource).toContain("finishSubtitleColorPicker");
     expect(sidebarSource).toContain('outcome === "unchanged"');
     expect(sidebarSource).not.toMatch(/rawError|stderr|helperToken|Authorization/);
+  });
+
+  it("closes palettes outside their window and silently fronts an active native picker", () => {
+    expect(sidebarSource).toContain('document.addEventListener("pointerdown"');
+    expect(sidebarSource).toContain('window.addEventListener("blur"');
+    expect(colorPickerSource).toContain("func windowDidResignKey");
+    expect(sidebarSource).toContain('postMessage("subtitle-style:picker-focus"');
+    expect(mainSource).toContain('runtime.sidebar.onMessage("subtitle-style:picker-focus"');
+    expect(globalSource).toContain('iina.global.onMessage("subtitle-style:picker-focus"');
+    expect(globalSource).toContain("client.activate");
+    expect(serverSource).toContain('case "/v1/activate"');
+    expect(sidebarSource).not.toContain("Another subtitle style picker is already open.");
+  });
+
+  it("keeps routine style saves silent while preserving control busy semantics", () => {
+    expect(sidebarSource).not.toMatch(/Saving \$\{fontSaving\}/);
+    expect(sidebarSource).not.toMatch(/Saving (fontColor|bold|italic)/);
+    expect(sidebarSource).toContain('setAttribute("aria-busy"');
   });
 
   it("builds the IINA-like shade grid as named RGBA controls using the shared target path", () => {

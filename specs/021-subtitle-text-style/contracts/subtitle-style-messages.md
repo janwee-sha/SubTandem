@@ -74,7 +74,9 @@ Global 只向源 Main 返回当前完整权威状态。Main 在快照到达前�
 }
 ```
 
-Global 从权威 liveStyle 取得初始值并创建 session；Sidebar 不上传整组样式。全局已有 native picker 时返回安全 busy，不改状态。
+Global 从权威 liveStyle 取得初始值并创建 session；Sidebar 不上传整组样式。全局已有 native picker 时将其窗口置于顶端，并以 `focused` 静默结束新请求，不改状态。
+
+Sidebar 可在已有本地 picker pending 时发送空 payload 的 `subtitle-style:picker-focus`；Main 严格解析后转发 Global，Global 只前置当前活动窗口且不产生结果消息或样式变化。
 
 ## Global → Main：完整权威状态
 
@@ -132,7 +134,7 @@ Global 从权威 liveStyle 取得初始值并创建 session；Sidebar 不上传�
 
 失败结果必须精确包含 `requestId`、`field`、`ok:false`、固定 `code:SUBTITLE_STYLE_SAVE_FAILED`、`userAction:EDIT_AGAIN`、`intentSequence` 与完整 `authority`。不得包含原始 preference 或内部错误。
 
-picker 结果使用 `subtitle-style:picker-result`，只向源 Main 发送 `confirmed | cancelled | unchanged | busy | failed` 及完整 authority；不发送 helper 原始错误或字体目录。源 Sidebar 可结束匹配 request 的 busy，但只有 result authority 不旧于当前 state 时才能改值或反馈。不同字段 pending 可并存；旧结果不得清除同字段较新的 pending。
+picker 结果使用 `subtitle-style:picker-result`，只向源 Main 发送 `confirmed | cancelled | unchanged | focused | failed` 及完整 authority；不发送 helper 原始错误或字体目录。`focused` 只清理新请求的 pending 且不显示反馈；只有 result authority 不旧于当前 state 时才能改值或反馈。不同字段 pending 可并存；旧结果不得清除同字段较新的 pending。
 
 ## Main → Overlay WebView
 

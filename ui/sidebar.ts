@@ -400,15 +400,10 @@ function renderSubtitleStyle(): void {
   fontButton.textContent = style.fontFamily ?? "System Default";
   fontBold.checked = style.bold;
   fontItalic.checked = style.italic;
-  const fontSaving = ["fontColor", "fontSize", "fontFamily", "bold", "italic"].find(
-    (field) => state.feedbackByField[field as SidebarSubtitleStyleField] === "saving",
-  );
   fontStatus.textContent = state.fontResolution.fallbackActive
     ? `${state.fontResolution.preferredFamily} is unavailable; using System Font.`
-    : fontSaving
-      ? `Saving ${fontSaving}…`
-      : "";
-  fontStatus.dataset.state = state.fontResolution.fallbackActive ? "error" : "busy";
+    : "";
+  fontStatus.dataset.state = state.fontResolution.fallbackActive ? "error" : "";
   for (const field of ["fontColor", "borderColor", "backgroundColor"] as const) {
     const control = colorControls[field];
     control.button.setAttribute("aria-busy", String(state.feedbackByField[field] === "saving"));
@@ -418,6 +413,13 @@ function renderSubtitleStyle(): void {
     "aria-busy",
     String(state.feedbackByField.borderWidth === "saving"),
   );
+  for (const [field, control] of [
+    ["fontSize", fontSizeSelect],
+    ["bold", fontBold],
+    ["italic", fontItalic],
+  ] as const) {
+    control.setAttribute("aria-busy", String(state.feedbackByField[field] === "saving"));
+  }
   const selectedColor = state.colorTarget ? style[state.colorTarget] : null;
   for (const preset of Array.from(
     colorPalette.querySelectorAll<HTMLButtonElement>("button[data-rgba]"),
@@ -1040,6 +1042,10 @@ function closeColorPalette(restoreFocus: boolean): void {
   if (restoreFocus && colorTarget) colorControls[colorTarget].button.focus();
 }
 
+function focusActiveSubtitleStylePicker(): void {
+  window.iina?.postMessage("subtitle-style:picker-focus", envelope({}));
+}
+
 fontColorButton.addEventListener("click", () => openColorPalette("fontColor"));
 borderColorButton.addEventListener("click", () => openColorPalette("borderColor"));
 backgroundColorButton.addEventListener("click", () => openColorPalette("backgroundColor"));
@@ -1065,9 +1071,28 @@ colorPalette.addEventListener("keydown", (event) => {
   closeColorPalette(true);
 });
 
+document.addEventListener("pointerdown", (event) => {
+  if (colorPalette.hidden || !(event.target instanceof Element)) return;
+  if (
+    colorPalette.contains(event.target) ||
+    event.target.closest<HTMLButtonElement>(".subtitle-color-trigger")
+  )
+    return;
+  closeColorPalette(false);
+});
+
+window.addEventListener("blur", () => {
+  if (!colorPalette.hidden) closeColorPalette(false);
+});
+
 subtitleShowColors.addEventListener("click", () => {
   const colorTarget = sidebarState.snapshot.subtitleStyle.colorTarget;
-  if (!colorTarget || pendingColorPickerRequestId) return;
+  if (!colorTarget) return;
+  if (pendingColorPickerRequestId) {
+    closeColorPalette(false);
+    focusActiveSubtitleStylePicker();
+    return;
+  }
   const requestId = nextRequestId();
   if (!sidebarState.beginSubtitleColorPicker(requestId, colorTarget)) return;
   pendingColorPickerRequestId = requestId;
@@ -1096,7 +1121,10 @@ fontItalic.addEventListener("change", () => {
 });
 
 fontButton.addEventListener("click", () => {
-  if (pendingFontPickerRequestId) return;
+  if (pendingFontPickerRequestId) {
+    focusActiveSubtitleStylePicker();
+    return;
+  }
   const requestId = nextRequestId();
   pendingFontPickerRequestId = requestId;
   fontButton.setAttribute("aria-busy", "true");
@@ -1616,7 +1644,7 @@ window.iina?.onMessage("subtitle-style:save-result", (raw: unknown) => {
 window.iina?.onMessage("subtitle-style:picker-result", (raw: unknown) => {
   const result = raw as {
     requestId?: string;
-    outcome?: "confirmed" | "cancelled" | "unchanged" | "busy" | "failed";
+    outcome?: "confirmed" | "cancelled" | "unchanged" | "focused" | "failed";
     authority?: SidebarSubtitleStyleAuthorityState;
   };
   if (result.requestId === pendingColorPickerRequestId && result.authority && result.outcome) {
@@ -1634,10 +1662,7 @@ window.iina?.onMessage("subtitle-style:picker-result", (raw: unknown) => {
   fontButton.setAttribute("aria-busy", "false");
   sidebarState.applySubtitleStyleState(result.authority);
   renderSubtitleStyle();
-  if (result.outcome === "busy") {
-    subtitleStyleError.textContent = "Another subtitle style picker is already open.";
-    subtitleStyleError.dataset.state = "error";
-  } else if (result.outcome === "failed") {
+  if (result.outcome === "failed") {
     subtitleStyleError.textContent = "The subtitle font picker is unavailable.";
     subtitleStyleError.dataset.state = "error";
   }

@@ -255,7 +255,7 @@ interface SidebarStateCoordinator {
   beginSubtitleColorPicker(requestId: string, field: SidebarSubtitleColorField): boolean;
   finishSubtitleColorPicker(
     requestId: string,
-    outcome: "confirmed" | "cancelled" | "unchanged" | "busy" | "failed",
+    outcome: "confirmed" | "cancelled" | "unchanged" | "focused" | "failed",
     authority: SidebarSubtitleStyleAuthorityState,
   ): boolean;
 }
@@ -888,7 +888,7 @@ function createSubTandemSidebarState(
 
   const finishSubtitleColorPicker = (
     requestId: string,
-    outcome: "confirmed" | "cancelled" | "unchanged" | "busy" | "failed",
+    outcome: "confirmed" | "cancelled" | "unchanged" | "focused" | "failed",
     authority: SidebarSubtitleStyleAuthorityState,
   ): boolean => {
     const session = snapshot.subtitleStyle.nativeColorSession;
@@ -900,8 +900,6 @@ function createSubTandemSidebarState(
     if (outcome === "failed")
       snapshot.subtitleStyle.groupError =
         "The system color picker is unavailable. The previous style remains active.";
-    else if (outcome === "busy")
-      snapshot.subtitleStyle.groupError = "Another subtitle style picker is already open.";
     return true;
   };
 

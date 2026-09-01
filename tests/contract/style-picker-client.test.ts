@@ -104,6 +104,20 @@ describe("style picker client", () => {
     ]);
   });
 
+  it("silently fronts the active picker instead of reporting a conflict", async () => {
+    const bridge = new FakeBridge();
+    bridge.responses.push({ status: "focused" }, { status: "activated" });
+    const client = new StylePickerClient({ port: 49152, token: "opaque-token" }, bridge);
+    await expect(
+      client.openColor({ requestId: "color.duplicate", color: { r: 1, g: 2, b: 3, a: 4 } }),
+    ).resolves.toBe("focused");
+    await expect(client.activate("color.active")).resolves.toBe("activated");
+    expect(bridge.requests.map((request) => request.url)).toEqual([
+      "http://127.0.0.1:49152/v1/color/open",
+      "http://127.0.0.1:49152/v1/activate",
+    ]);
+  });
+
   it("opens the system color panel with exact sRGB RGBA and preserves alpha", async () => {
     const bridge = new FakeBridge();
     bridge.responses.push({ status: "opened" });

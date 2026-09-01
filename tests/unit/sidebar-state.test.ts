@@ -547,6 +547,18 @@ describe("Sidebar native color picker state", () => {
       "The system color picker is unavailable. The previous style remains active.",
     );
   });
+
+  it("settles a focused duplicate picker without presenting an error", () => {
+    const state = createState();
+    state.applySubtitleStyleState(subtitleAuthority());
+    state.beginSubtitleColorPicker("picker-duplicate", "fontColor");
+    expect(
+      state.finishSubtitleColorPicker("picker-duplicate", "focused", subtitleAuthority()),
+    ).toBe(true);
+    expect(state.snapshot.subtitleStyle.nativeColorSession).toBeNull();
+    expect(state.snapshot.subtitleStyle.feedbackByField.fontColor).toBe("idle");
+    expect(state.snapshot.subtitleStyle.groupError).toBeNull();
+  });
 });
 
 describe("Sidebar model catalog state", () => {

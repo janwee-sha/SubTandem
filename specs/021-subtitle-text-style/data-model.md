@@ -84,9 +84,9 @@ font catalog change -> availability(style unchanged, effective font may change)
 - `originalValue`、`lastPreviewValue`、`lastIntentSequence`。
 - `changed`：系统颜色面板是否产生有效变化。
 - `eventRevision`：已接受的 helper 最大事件序号。
-- `state`：`opening | active | closing | completed | cancelled | failed`。
+- `state`：`opening | active | focusing | closing | completed | cancelled | failed`。
 
-全局同一时刻最多一个 active native picker。未变化关闭或字体取消不产生 intent；颜色关闭提交最后 preview 的既有 intent；helper 失败使该 session 失效并按保存状态安全回退。
+全局同一时刻最多一个 active native picker。已有 session 时的新请求只把该 session 的窗口置于顶端并静默结束，不创建第二个 session。未变化关闭或字体取消不产生 intent；颜色关闭提交最后 preview 的既有 intent；helper 失败使该 session 失效并按保存状态安全回退。
 
 ## SidebarStyleState
 
@@ -98,7 +98,7 @@ font catalog change -> availability(style unchanged, effective font may change)
 - `fontResolution`：用于显示请求字体和 fallback 状态。
 - `colorTarget`：当前 popover 的颜色字段或 null。
 
-远端 preview/commit 可更新 display，但不得冒充本地 saving/saved。失败接受后八字段 display 一次恢复 committed、清除被回退的 interaction/pending 并设置 groupError；用户再次编辑前不自动重试。
+远端 preview/commit 可更新 display，但不得冒充本地 saving/saved；本地 saving 只通过所属控件的 busy 语义表达，不生成可见的例行操作消息。失败接受后八字段 display 一次恢复 committed、清除被回退的 interaction/pending 并设置 groupError；用户再次编辑前不自动重试。
 
 ## 关系与所有权
 

@@ -52,7 +52,7 @@
 
 - [X] T013 [P] [US1] 为 Font 五字段、per-field pending、fallback 状态和失败整组恢复编写 Sidebar 状态测试，文件：`tests/unit/sidebar-state.test.ts`
 - [X] T014 [P] [US1] 为 Font 分组位置、Font Color trigger/基础预设、有限 Size、checkbox、Font button、label 与高对比度语义编写 DOM 契约测试，文件：`tests/contract/sidebar-form.test.ts`
-- [X] T015 [P] [US1] 为 Font 编辑、确认/取消、busy、latest-only state 与安全错误编写 Sidebar 生命周期测试，文件：`tests/contract/sidebar-lifecycle.test.ts`
+- [X] T015 [P] [US1] 为 Font 编辑、确认/取消、控件 pending、latest-only state 与安全错误编写 Sidebar 生命周期测试，文件：`tests/contract/sidebar-lifecycle.test.ts`
 - [X] T016 [P] [US1] 为完整 style payload、九个 Size、360/720/1080 映射、字体 fallback 与重测编写 Overlay 状态测试，文件：`tests/unit/overlay-state.test.ts`
 - [X] T017 [P] [US1] 为双层 DOM、字体 CSS、renderRevision、clear、无正文占位与 Position 回归编写 WebView 契约测试，文件：`tests/contract/overlay-webview.test.ts`
 - [X] T018 [P] [US1] 为 helper ready frame、bearer 认证、font open/status、事件 revision、cancel/shutdown 与错误净化编写客户端契约测试，文件：`tests/contract/style-picker-client.test.ts`
@@ -68,7 +68,7 @@
 - [X] T025 [US1] 在 Main 派生 effective family、即时更新当前真实译文并将 fallback/结果状态转发 Sidebar，文件：`src/main.ts`
 - [X] T026 [US1] 实现 Font 五字段 display/committed/pending/feedback、stateRevision 和 groupError 状态机，文件：`ui/sidebar-state.ts`
 - [X] T027 [US1] 在 Subtitle/Position 后添加 Font 分组、Font Color trigger 与可复用紧凑预设骨架、有限 Size、Font button 及 Bold/Italic 控件，文件：`ui/sidebar.html`
-- [X] T028 [US1] 实现 Font Color 预设直接提交及其他 Font 控件的单字段 preview/commit、字体 picker 确认/取消、busy 与权威收敛，文件：`ui/sidebar.ts`
+- [X] T028 [US1] 实现 Font Color 预设直接提交及其他 Font 控件的单字段 preview/commit、字体 picker 确认/取消、控件 pending 与权威收敛，文件：`ui/sidebar.ts`
 - [X] T029 [US1] 实现 Font 控件与紧凑预设的窄栏布局、focus-visible、亮暗色、forced-colors 与 prefers-contrast 外观，文件：`ui/sidebar.css`
 - [X] T030 [US1] 将 Overlay 改为透明定位外层与收缩文字内层，并移除固定 shadow，文件：`ui/overlay.html` 与 `ui/overlay.css`
 - [X] T031 [US1] 实现完整 style 严格解析、字号/字体/字重/斜体应用、latest-only rAF 与 ResizeObserver 重测，文件：`ui/overlay-state.ts` 与 `ui/overlay.ts`
@@ -110,8 +110,8 @@
 
 ### 测试（先写并确认失败）
 
-- [X] T041 [P] [US3] 为 color open、连续 preview、changed/unchanged close、busy、gap、cancel 与崩溃恢复扩展客户端契约测试，文件：`tests/contract/style-picker-client.test.ts`
-- [X] T042 [P] [US3] 为 NSColorPanel 协议、sRGB RGBA 量化、alpha、连续事件、未变化关闭和单实例 busy 编写 Swift 测试，文件：`native/style-picker/Tests/SubTandemStylePickerTests/ColorPickerTests.swift`
+- [X] T041 [P] [US3] 为 color open、连续 preview、changed/unchanged close、活动窗口前置、gap、cancel 与崩溃恢复扩展客户端契约测试，文件：`tests/contract/style-picker-client.test.ts`
+- [X] T042 [P] [US3] 为 NSColorPanel 协议、sRGB RGBA 量化、alpha、连续事件、未变化关闭和单实例窗口前置编写 Swift 测试，文件：`native/style-picker/Tests/SubTandemStylePickerTests/ColorPickerTests.swift`
 - [X] T043 [P] [US3] 为 native palette session、per-field pending、远端收敛、superseded 和组级错误扩展状态测试，文件：`tests/unit/sidebar-state.test.ts`
 - [X] T044 [P] [US3] 为三个色样、可读颜色值、共享 palette、Show Colors、Escape/焦点归还与高对比度扩展 Sidebar 契约测试，文件：`tests/contract/sidebar-form.test.ts` 与 `tests/contract/sidebar-lifecycle.test.ts`
 - [X] T045 [P] [US3] 为多窗口不同字段合并、同字段最后 intent、旧 panel 晚关闭、重开/换片/新窗口/重启和失败整组回退扩展集成测试，文件：`tests/integration/subtitle-style-lifecycle.test.ts`
@@ -122,7 +122,7 @@
 
 - [X] T048 [US3] 实现共享 NSColorPanel、showsAlpha、continuous target/action、sRGB 量化与 changed/unchanged close，文件：`native/style-picker/Sources/SubTandemStylePicker/ColorPicker.swift`
 - [X] T049 [US3] 实现 color open 与连续事件解析、gap/current-state 恢复和安全故障分类，文件：`src/adapters/iina/style-picker-client.ts`
-- [X] T050 [US3] 实现全局唯一 Color picker session、target 本地映射、最后 preview intent 提交、busy/迟到拒绝和崩溃整组恢复，文件：`src/global.ts`
+- [X] T050 [US3] 实现全局唯一 Color picker session、target 本地映射、最后 preview intent 提交、重复请求前置、迟到拒绝和崩溃整组恢复，文件：`src/global.ts`
 - [X] T051 [US3] 将 picker-result、全量权威 state、同字段 pending 清理和多窗口 Overlay 收敛接入 Main，文件：`src/main.ts`
 - [X] T052 [US3] 完善 native color session、每字段 saving、superseded 清理、groupError 与八字段回退，文件：`ui/sidebar-state.ts`
 - [X] T053 [US3] 为既有三个 Color trigger 补齐统一命名预设、透明项、选中标记和 Show Colors 入口，文件：`ui/sidebar.html`
@@ -150,6 +150,10 @@
 - [X] T067 修复 style-picker 父进程监视器的 Swift 并发队列隔离崩溃，并以真实后台定时回调回归颜色与字体共用生命周期，文件：`native/style-picker/Sources/SubTandemStylePicker/Protocol.swift`, `native/style-picker/Sources/SubTandemStylePicker/main.swift`, 与 `native/style-picker/Tests/SubTandemStylePickerTests/FontPickerTests.swift`
 - [X] T068 依据 IINA 参考截图把 Text Style 收敛为单一低对比表面、紧凑行内字段、中性色样控件与网格色盘，并保留键盘、高对比度和字段可读值，文件：`ui/sidebar.html`, `ui/sidebar.css`, `tests/contract/sidebar-form.test.ts`, 与 `tests/contract/sidebar-lifecycle.test.ts`
 - [X] T069 修复 Overlay 在 Position 100 的首次换行测量与描边可见边界，使实际绘制块底部不超出有效区域，文件：`ui/overlay-state.ts`, `ui/overlay.ts`, `tests/unit/overlay-state.test.ts`, 与 `tests/contract/overlay-webview.test.ts`
+- [X] T070 为紧凑色盘外部关闭、系统颜色面板失焦关闭、活动 picker 静默前置、Show Colors/Font 重入和无例行 saving 消息编写失败回归测试，文件：`tests/contract/sidebar-lifecycle.test.ts`, `tests/unit/sidebar-state.test.ts`, `tests/contract/subtitle-style-messages.test.ts`, `tests/contract/style-picker-client.test.ts`, 与 `native/style-picker/Tests/SubTandemStylePickerTests/ProtocolTests.swift`
+- [X] T071 实现 helper 活动窗口前置、系统颜色面板失焦关闭与 `activate` 严格协议，并将 focused 结果接入 client、Global 和 Main，文件：`native/style-picker/Sources/SubTandemStylePicker/Protocol.swift`, `native/style-picker/Sources/SubTandemStylePicker/Server.swift`, `native/style-picker/Sources/SubTandemStylePicker/ColorPicker.swift`, `native/style-picker/Sources/SubTandemStylePicker/FontPicker.swift`, `src/adapters/iina/style-picker-client.ts`, `src/domain/messages.ts`, `src/global.ts`, 与 `src/main.ts`
+- [X] T072 实现紧凑色盘外部点击/失焦关闭、pending picker 重入前置、focused 静默收敛并移除 Font 字段例行 saving 消息，文件：`ui/sidebar.ts` 与 `ui/sidebar-state.ts`
+- [X] T073 重新执行 021 聚焦测试、全量测试、类型检查、lint、native 测试、native/plugin 构建、包验证和正式打包，文件：`specs/021-subtitle-text-style/quickstart.md`
 - [ ] T066 使用正式 `.iinaplgz` 在 IINA 1.4.0 与 1.4.4 完成 quickstart 的单人视觉、键盘、多窗口、字体恢复、时延、失败和卸载验收，并保存不含正文的证据，文件：`docs/validation/subtitle-text-style.md`
 
 ---
@@ -163,7 +167,7 @@
 - **US1（阶段 3）**：依赖阶段 2，是 MVP；native font、Sidebar Font 与 Overlay font 三条分支最终在 Main/Global 集成。
 - **US2（阶段 4）**：执行上依赖 US1，因为两者串行修改 `ui/sidebar*` 与 `ui/overlay*`；验收时可只使用 US1 默认值验证描边和背景。
 - **US3（阶段 5）**：依赖 US1 的 native/font session 基础与 US2 的三个 Color 字段；扩展同一 helper、Global/Main 与 Sidebar 热点文件。
-- **完善（阶段 6）**：依赖全部选定用户故事；发布脚本与工作流由同一负责人按 T058 → T060 合并；T067–T069 修复正式包人工验收发现的当前规格偏差，完成后必须重新执行 T063–T065 的门禁并重新开始 T066。
+- **完善（阶段 6）**：依赖全部选定用户故事；发布脚本与工作流由同一负责人按 T058 → T060 合并；T067–T072 修复正式包人工验收发现的当前规格偏差，T073 重新执行 T063–T065 的门禁，随后重新开始 T066。
 
 ### 用户故事完成图
 

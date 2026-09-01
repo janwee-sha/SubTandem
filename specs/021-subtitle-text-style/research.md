@@ -44,7 +44,7 @@ helper 使用 accessory activation policy，只在用户打开 picker 时激活�
 - **理由**：Apple 的 [`NSColorPanel.showsAlpha`](https://developer.apple.com/documentation/appkit/nscolorpanel/showsalpha) 与连续 action 能同时提供完整系统面板、透明度和实时预览；[`usingColorSpace(.sRGB)`](https://developer.apple.com/documentation/appkit/nscolor/usingcolorspace(_:)) 给 WebView 建立稳定颜色边界。提交既有 intent 可防止旧面板晚关闭覆盖另一窗口更晚的同字段编辑。
 - **备选方案**：只存 RGB 会丢 alpha；持久化 archived `NSColor` 与 CSS 不互通且跨系统不稳定；每次连续变化都 sync 会扩大 I/O 与失败面。
 
-一次只能有一个全局 native picker；第二个请求得到安全 busy 结果，不改变任何字段。helper event 不携带 Font/Border/Background target，Global 以本地 session 映射目标，防止跨窗口串改。
+一次只能有一个全局 native picker；重复或并发请求只将当前活动窗口置于顶端并静默结束新请求，不改变任何字段。helper event 不携带 Font/Border/Background target，Global 以本地 session 映射目标，防止跨窗口串改。紧凑色盘监听 WebView 外部指针与失焦，系统颜色面板监听窗口失焦，两者都在点击外部时按 changed/unchanged 语义关闭，避免不可见 session 阻塞后续 picker。
 
 ## 字体选择、回退与恢复
 
@@ -72,7 +72,7 @@ Width 0 同时设置描边宽度 0、描边色透明、`text-shadow:none`；删�
 
 ## 无障碍与外观
 
-- **决策**：Sidebar 色样与 palette item 使用原生 button、文字名称/当前 RGBA、选中标记、`aria-haspopup/expanded`、Escape 关闭并归还焦点；所有下拉、复选框和 Font 按钮具有关联 label、值、busy 与错误。CSS 同时覆盖 `:focus-visible`、`forced-colors` 和 `prefers-contrast: more`。native panel 使用标准 AppKit 控件和 accessibility label/value/help。
+- **决策**：Sidebar 色样与 palette item 使用原生 button、文字名称/当前 RGBA、选中标记、`aria-haspopup/expanded`、Escape 或外部点击关闭并按需归还焦点；所有下拉、复选框和 Font 按钮具有关联 label、值、busy 与错误，但不显示例行 saving/saved 操作消息。CSS 同时覆盖 `:focus-visible`、`forced-colors` 和 `prefers-contrast: more`。native panel 使用标准 AppKit 控件和 accessibility label/value/help。
 - **理由**：颜色不可只靠填充辨认；原生 Web/AppKit 控件提供稳定键盘和辅助技术语义。字体 preview 同时显示 family 文本，系统 `NSColorPanel` 保留平台无障碍行为。
 - **备选方案**：自绘色盘/列表会增加 roving focus 和系统外观兼容成本；整组 disabled/busy 会阻塞无关字段并掩盖并发状态。
 
@@ -88,7 +88,7 @@ Width 0 同时设置描边宽度 0、描边色透明、`text-shadow:none`；删�
 
 - preference：缺失、坏 JSON、逐字段无效、alpha、全部枚举、不可用字体保留、raw 回滚和安全错误。
 - authority：不同字段合并、同字段最后 intent、旧 picker 晚关闭、成功不提交他字段 preview、失败整组回退、三类 revision 与延迟乱序。
-- helper：token/port、认证、严格 JSON、事件 revision、颜色 sRGB/RGBA、字体目录通知、busy/cancel/shutdown、父进程退出和无正文日志。
+- helper：token/port、认证、严格 JSON、事件 revision、颜色 sRGB/RGBA、字体目录通知、外部点击关闭、活动窗口前置、cancel/shutdown、父进程退出和无正文日志。
 - Sidebar：八字段结构、palette 目标隔离、确认/取消、per-field pending、组级错误、键盘、focus 与高对比度。
 - Overlay：全部 Size/Width 和 360/720/1080 映射、Width 0、RGBA、双层背景、latest-only、无正文、clear、ResizeObserver 与 Position 回归。
 - 集成：50 次快速编辑、多个窗口交错、重开 Sidebar、换片、新窗口、重启 IINA、字体失效/恢复和播放不受影响。

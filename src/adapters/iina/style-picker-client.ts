@@ -123,7 +123,7 @@ export class StylePickerClient {
     fontSize: number;
     bold: boolean;
     italic: boolean;
-  }): Promise<"opened" | "busy"> {
+  }): Promise<"opened" | "focused"> {
     if (
       !validId(input.requestId) ||
       !isFontFamily(input.fontFamily) ||
@@ -134,16 +134,29 @@ export class StylePickerClient {
       throw new Error("STYLE_PICKER_PROTOCOL");
     return this.statusResponse(
       await this.bridge.request("POST", `${this.baseUrl}/v1/font/open`, this.session.token, input),
-      ["opened", "busy"],
+      ["opened", "focused"],
     );
   }
 
-  async openColor(input: { requestId: string; color: RgbaColor }): Promise<"opened" | "busy"> {
+  async openColor(input: {
+    requestId: string;
+    color: RgbaColor;
+  }): Promise<"opened" | "focused"> {
     if (!validId(input.requestId) || !isRgbaColor(input.color))
       throw new Error("STYLE_PICKER_PROTOCOL");
     return this.statusResponse(
       await this.bridge.request("POST", `${this.baseUrl}/v1/color/open`, this.session.token, input),
-      ["opened", "busy"],
+      ["opened", "focused"],
+    );
+  }
+
+  async activate(requestId: string): Promise<"activated" | "unchanged"> {
+    if (!validId(requestId)) throw new Error("STYLE_PICKER_PROTOCOL");
+    return this.statusResponse(
+      await this.bridge.request("POST", `${this.baseUrl}/v1/activate`, this.session.token, {
+        requestId,
+      }),
+      ["activated", "unchanged"],
     );
   }
 

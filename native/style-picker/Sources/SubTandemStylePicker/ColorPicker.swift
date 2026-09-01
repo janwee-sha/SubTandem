@@ -93,6 +93,13 @@ final class ColorPickerController: NSObject, NSWindowDelegate {
         return original
     }
 
+    func activate(requestId: String) -> Bool {
+        guard self.requestId == requestId else { return false }
+        NSApp.activate(ignoringOtherApps: true)
+        panel.makeKeyAndOrderFront(nil)
+        return true
+    }
+
     func closeForShutdown() {
         reset()
         panel.orderOut(nil)
@@ -101,6 +108,10 @@ final class ColorPickerController: NSObject, NSWindowDelegate {
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         finish()
         return false
+    }
+
+    func windowDidResignKey(_ notification: Notification) {
+        finish()
     }
 
     @objc private func colorChanged() {

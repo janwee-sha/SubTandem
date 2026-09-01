@@ -100,7 +100,7 @@ export type SubtitleStyleSaveResult =
 
 export interface SubtitleStylePickerResult {
   requestId: string;
-  outcome: "confirmed" | "cancelled" | "unchanged" | "busy" | "failed";
+  outcome: "confirmed" | "cancelled" | "unchanged" | "focused" | "failed";
   authority: SubtitleStyleStateMessage;
 }
 
@@ -365,7 +365,9 @@ export function parseSubtitleStylePickerResult(value: unknown): SubtitleStylePic
     !exactKeys(record, ["requestId", "outcome", "authority"]) ||
     typeof record.requestId !== "string" ||
     !/^[A-Za-z0-9_.:-]{1,128}$/.test(record.requestId) ||
-    !["confirmed", "cancelled", "unchanged", "busy", "failed"].includes(String(record.outcome))
+    !["confirmed", "cancelled", "unchanged", "focused", "failed"].includes(
+      String(record.outcome),
+    )
   )
     throw new Error("INVALID_MESSAGE");
   parseSubtitleStyleState(record.authority);

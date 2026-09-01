@@ -50,9 +50,9 @@ Sidebar controls
             -> NSColorPanel / family-only font panel / font catalog notifications
 ```
 
-- Global 独占持久样式、全局 intent 顺序、每字段最后 intent、整组 commit revision、picker session 和 helper 生命周期。
+- Global 独占持久样式、全局 intent 顺序、每字段最后 intent、整组 commit revision、picker session 和 helper 生命周期；重复 picker 请求只前置当前活动窗口，不创建冲突会话或错误反馈。
 - Main 只拥有当前播放器的 follower、Sidebar 快照和 Overlay effective style；本地有效编辑先作用于当前真实译文，再转发 Global。
-- Sidebar 只提交单字段值，不发送整组快照；每字段独立维护交互、等待和反馈，组级错误承载整组回退。
+- Sidebar 只提交单字段值，不发送整组快照；每字段独立维护交互、等待和反馈，组级错误承载整组回退；紧凑色盘在外部点击或 WebView 失焦时关闭，例行保存只由控件 busy/final 状态表达。
 - Overlay 只接收完整规范化样式、Position/区域和当前真实译文；字体可用性由 Main 映射为 effective family，WebView 不读 preference 或系统字体目录。
 - native helper 只处理 picker UI、字体目录和安全协议，不写 preference、不读取媒体或字幕、不接触 Provider/凭据。
 

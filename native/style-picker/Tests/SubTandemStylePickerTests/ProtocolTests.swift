@@ -47,6 +47,8 @@ func runProtocolTests() throws {
     let lifecycle = PickerLifecycle()
     try check(lifecycle.open(requestId: "picker.1"), "picker open")
     try check(!lifecycle.open(requestId: "picker.2"), "picker busy")
+    try check(lifecycle.activate(requestId: "picker.1"), "active picker activation")
+    try check(!lifecycle.activate(requestId: "picker.2"), "foreign picker activation")
     try check(!lifecycle.cancel(requestId: "picker.2"), "foreign cancel")
     try check(lifecycle.cancel(requestId: "picker.1"), "active cancel")
     try check(!lifecycle.cancel(requestId: "picker.1"), "duplicate cancel")

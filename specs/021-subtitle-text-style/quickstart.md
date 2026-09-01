@@ -52,8 +52,8 @@ npm run pack
 2. 打开 Sidebar，确认八项只位于 Subtitle/Position 后，默认依次为白色、40、System Default、非粗体、非斜体、黑色、3、透明。
 3. 显示真实译文，逐项切换全部 Size/Width；确认 40/3 与升级前 29/2 视觉一致，Width 0 无固定阴影或轮廓。
 4. 对 Font/Border/Background 分别选择不透明、半透明和透明预设；确认只改变发起字段，背景只覆盖单行/多行文本块。
-5. 分别从三个 Color 进入 `Show Colors…`，拖动系统颜色与 alpha；确认当前译文实时预览，关闭保留最后选择，未变化关闭不保存。
-6. 打开 Font picker，搜索并预览字体；Cancel 保持原值，Choose 后当前译文立即改变。测试无独立 Bold/Italic face 的字体，确认译文仍可见。
+5. 分别从三个 Color 进入 `Show Colors…`，拖动系统颜色与 alpha；确认当前译文实时预览，关闭保留最后选择，未变化关闭不保存；紧凑色盘和系统颜色面板都可点击外部关闭。
+6. 打开 Font picker，搜索并预览字体；Cancel 保持原值，Choose 后当前译文立即改变。将活动 picker 遮挡后再次点击 Font 或 `Show Colors…`，确认只静默前置活动窗口且无冲突错误或无响应。测试无独立 Bold/Italic face 的字体，确认译文仍可见。
 7. 通过系统字体管理停用当前请求字体，确认 Sidebar 显示 fallback 且 Overlay 使用系统字体；重新启用后无需重新保存即自动恢复。
 8. 在单行、显式多行、自动换行、超长文本与 Position 0/100 下调整 size/font/bold/italic；resize/fullscreen 后确认横向居中、背景边界、顶部钳制和已保存 Position 不变。
 9. 清空当前译文后继续调整并保存，确认 Overlay 不生成示例、源字幕或占位文字；下一条真实译文使用最新样式。

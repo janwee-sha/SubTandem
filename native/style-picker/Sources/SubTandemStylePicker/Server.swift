@@ -114,6 +114,13 @@ final class StylePickerServer: @unchecked Sendable {
         }
     }
 
+    private func activatePicker(requestId: String) {
+        Task { @MainActor [fontPicker, colorPicker] in
+            if colorPicker.activate(requestId: requestId) { return }
+            _ = fontPicker.activate(requestId: requestId)
+        }
+    }
+
     private func receive(_ connection: NWConnection, data: Data) {
         connection.start(queue: queue)
         connection.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { [weak self] chunk, _, complete, error in
@@ -183,7 +190,10 @@ final class StylePickerServer: @unchecked Sendable {
             case "/v1/color/open":
                 let input = try ProtocolValidator.decodeColorOpen(request.body)
                 guard lifecycle.open(requestId: input.requestId) else {
-                    return json(value: ["status": "busy"])
+                    if let requestId = lifecycle.currentRequestId() {
+                        activatePicker(requestId: requestId)
+                    }
+                    return json(value: ["status": "focused"])
                 }
                 Task { @MainActor [colorPicker, lifecycle, events] in
                     colorPicker.open(
@@ -205,7 +215,10 @@ final class StylePickerServer: @unchecked Sendable {
             case "/v1/font/open":
                 let input = try ProtocolValidator.decodeFontOpen(request.body)
                 guard lifecycle.open(requestId: input.requestId) else {
-                    return json(value: ["status": "busy"])
+                    if let requestId = lifecycle.currentRequestId() {
+                        activatePicker(requestId: requestId)
+                    }
+                    return json(value: ["status": "focused"])
                 }
                 Task { @MainActor [fontPicker, lifecycle, events] in
                     fontPicker.open(request: input) { family, confirmed in
@@ -220,6 +233,13 @@ final class StylePickerServer: @unchecked Sendable {
             case "/v1/font/status":
                 let input = try ProtocolValidator.decodeFontStatus(request.body)
                 return encoded(catalog.status(for: input.fontFamily))
+            case "/v1/activate":
+                let input = try ProtocolValidator.decodeRequestId(request.body)
+                guard lifecycle.activate(requestId: input.requestId) else {
+                    return json(value: ["status": "unchanged"])
+                }
+                activatePicker(requestId: input.requestId)
+                return json(value: ["status": "activated"])
             case "/v1/cancel":
                 let input = try ProtocolValidator.decodeRequestId(request.body)
                 guard lifecycle.cancel(requestId: input.requestId) else {

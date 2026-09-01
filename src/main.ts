@@ -502,6 +502,13 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
       return;
     }
   });
+  runtime.sidebar.onMessage("subtitle-style:picker-focus", (raw: unknown) => {
+    try {
+      runtime.global.postMessage("subtitle-style:picker-focus", parseSubtitleStyleGet(raw));
+    } catch {
+      return;
+    }
+  });
   runtime.sidebar.onMessage("translation:set-enabled", (raw: unknown) => {
     const enabled = Boolean((raw as { payload?: { enabled?: unknown } }).payload?.enabled);
     controller.setEnabled(enabled);

@@ -23,7 +23,7 @@ Background
 
 - 三个 trigger 共用同一 popover 组件和同一组静态预设，至少包含保持默认值所需的白、黑与透明，并提供 `Show Colors…`。
 - Global/Sidebar 以 `colorTarget` 关联发起字段；选择一个预设只产生该字段的一次 commit，随后关闭 popover并归还焦点。
-- 打开后未选择、Escape、焦点关闭或 Show Colors 面板未变化关闭不得改变或保存任何字段。
+- 打开后未选择、Escape、点击色盘外部、WebView 失焦或 Show Colors 面板未变化关闭不得改变或保存任何字段。
 - 每个预设必须有文本/aria-label、RGBA/透明度和选中标记，不得只靠色样区分。
 
 ## 字体选择
@@ -31,6 +31,7 @@ Background
 - 激活 Font button 请求 native family-only picker；打开期间 button 表达 busy，但不得禁用其他样式字段。
 - helper 内筛选、列表和固定 preview 不进入 Overlay；只有 Choose 返回的 family 形成一次 commit。
 - Cancel 保持打开前样式和 preference。picker 失败保留 committed，显示安全非阻塞错误。
+- 已有颜色或字体 picker 时再次激活 Font 或 `Show Colors…`，只将活动 picker 置于顶端；不得显示冲突错误、创建第二个 session 或留下不可见 busy。
 - 当前请求字体不可用时控件明确显示 fallback；重新可用后状态自动消失，控件仍显示同一请求 family。
 
 ## 编辑、保存与同步
@@ -44,7 +45,7 @@ Background
 | font Choose | 只 patch fontFamily 并提交；Cancel 不产生 edit。 |
 | 无当前译文 | 控件和保存照常，不生成 preview 文本。 |
 
-- 每字段独立表达 saving；不得用整组 disabled 阻止其他字段编辑。
+- 每字段独立通过控件 busy 语义表达 saving；不得用整组 disabled 阻止其他字段编辑，也不得显示字段名拼接的例行 saving/saved 消息。
 - 本地保存成功由最终值和清除 busy 表达；远端 commit 不显示本地 saved。
 - 远端完整 state 按 stateRevision 更新所有字段；本地 pending 不得无条件遮蔽更晚权威值。
 - 不同字段 pending 可并存；同字段以 Global 最后有效 intent 胜出。superseded 结果只清理对应旧 busy，不回跳或报错。

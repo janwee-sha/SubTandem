@@ -175,6 +175,12 @@ final class PickerLifecycle: @unchecked Sendable {
         return true
     }
 
+    func activate(requestId: String) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return !shuttingDown && activeRequestId == requestId
+    }
+
     func complete(requestId: String) -> Bool {
         cancel(requestId: requestId)
     }
