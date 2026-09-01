@@ -16,8 +16,8 @@
 
 **目的**：建立第三个 native helper 的最小可构建边界，并补齐插件运行时类型。
 
-- [ ] T001 定义 macOS 12、Swift 6 的 `SubTandemStylePicker` executable 与 test targets，文件：`native/style-picker/Package.swift`
-- [ ] T002 [P] 补齐 style-picker 启动、认证 loopback 与退出管理所需的 IINA runtime 类型，文件：`src/types/iina-runtime.d.ts`
+- [X] T001 定义 macOS 12、Swift 6 的 `SubTandemStylePicker` executable 与 test targets，文件：`native/style-picker/Package.swift`
+- [X] T002 [P] 补齐 style-picker 启动、认证 loopback 与退出管理所需的 IINA runtime 类型，文件：`src/types/iina-runtime.d.ts`
 
 ---
 
@@ -27,16 +27,16 @@
 
 **关键要求**：T003–T006 必须先写测试并确认失败；T007–T012 完成前不得进入任何用户故事实现。
 
-- [ ] T003 [P] 为八字段默认值、RGBA、Size/Width 枚举、字体 family 与逐字段回退编写失败单元测试，文件：`tests/unit/subtitle-style.test.ts`
-- [ ] T004 [P] 为单一 JSON preference、损坏根对象、raw 值恢复、set/sync 失败和安全错误编写失败契约测试，文件：`tests/contract/subtitle-style-preferences.test.ts`
-- [ ] T005 [P] 为 get/edit/state/save-result/picker 消息的精确 shape、单字段白名单、序号与正文拒绝编写失败契约测试，文件：`tests/contract/subtitle-style-messages.test.ts`
-- [ ] T006 [P] 为不同字段合并、同字段最后 intent、superseded、未提交 preview 隔离、三类 revision 与失败整组回退编写失败单元测试，文件：`tests/unit/subtitle-style-sync.test.ts`
-- [ ] T007 实现 `RgbaColor`、`SubtitleTextStyle`、默认值、严格校验、渲染比例与字体解析类型，文件：`src/domain/subtitle-style.ts`
-- [ ] T008 实现 `translationSubtitleTextStyle` 的逐字段读取、单 key set+sync、raw 回滚与固定错误分类，文件：`src/adapters/iina/subtitle-style-preferences.ts`
-- [ ] T009 实现全部字幕样式请求、权威状态和结果消息的严格 parser/serializer，文件：`src/domain/messages.ts`
-- [ ] T010 实现单字段 intent、live/committed 状态、保存临界段、revision、superseded 与整组回退，文件：`src/adapters/iina/subtitle-style-sync.ts`
-- [ ] T011 将 preference 恢复、唯一写入者、样式 get/edit 广播和安全 save-result 接入 Global，文件：`src/global.ts`
-- [ ] T012 将权威快照 follower、单字段请求转发和 Sidebar 状态队列接入 Main，文件：`src/main.ts`
+- [X] T003 [P] 为八字段默认值、RGBA、Size/Width 枚举、字体 family 与逐字段回退编写失败单元测试，文件：`tests/unit/subtitle-style.test.ts`
+- [X] T004 [P] 为单一 JSON preference、损坏根对象、raw 值恢复、set/sync 失败和安全错误编写失败契约测试，文件：`tests/contract/subtitle-style-preferences.test.ts`
+- [X] T005 [P] 为 get/edit/state/save-result/picker 消息的精确 shape、单字段白名单、序号与正文拒绝编写失败契约测试，文件：`tests/contract/subtitle-style-messages.test.ts`
+- [X] T006 [P] 为不同字段合并、同字段最后 intent、superseded、未提交 preview 隔离、三类 revision 与失败整组回退编写失败单元测试，文件：`tests/unit/subtitle-style-sync.test.ts`
+- [X] T007 实现 `RgbaColor`、`SubtitleTextStyle`、默认值、严格校验、渲染比例与字体解析类型，文件：`src/domain/subtitle-style.ts`
+- [X] T008 实现 `translationSubtitleTextStyle` 的逐字段读取、单 key set+sync、raw 回滚与固定错误分类，文件：`src/adapters/iina/subtitle-style-preferences.ts`
+- [X] T009 实现全部字幕样式请求、权威状态和结果消息的严格 parser/serializer，文件：`src/domain/messages.ts`
+- [X] T010 实现单字段 intent、live/committed 状态、保存临界段、revision、superseded 与整组回退，文件：`src/adapters/iina/subtitle-style-sync.ts`
+- [X] T011 将 preference 恢复、唯一写入者、样式 get/edit 广播和安全 save-result 接入 Global，文件：`src/global.ts`
+- [X] T012 将权威快照 follower、单字段请求转发和 Sidebar 状态队列接入 Main，文件：`src/main.ts`
 
 **检查点**：样式权威可在无 Sidebar、Overlay 或 native picker 的测试环境中独立恢复、合并、保存和回退完整八字段状态。
 
@@ -50,29 +50,29 @@
 
 ### 测试（先写并确认失败）
 
-- [ ] T013 [P] [US1] 为 Font 五字段、per-field pending、fallback 状态和失败整组恢复编写 Sidebar 状态测试，文件：`tests/unit/sidebar-state.test.ts`
-- [ ] T014 [P] [US1] 为 Font 分组位置、Font Color trigger/基础预设、有限 Size、checkbox、Font button、label 与高对比度语义编写 DOM 契约测试，文件：`tests/contract/sidebar-form.test.ts`
-- [ ] T015 [P] [US1] 为 Font 编辑、确认/取消、busy、latest-only state 与安全错误编写 Sidebar 生命周期测试，文件：`tests/contract/sidebar-lifecycle.test.ts`
-- [ ] T016 [P] [US1] 为完整 style payload、九个 Size、360/720/1080 映射、字体 fallback 与重测编写 Overlay 状态测试，文件：`tests/unit/overlay-state.test.ts`
-- [ ] T017 [P] [US1] 为双层 DOM、字体 CSS、renderRevision、clear、无正文占位与 Position 回归编写 WebView 契约测试，文件：`tests/contract/overlay-webview.test.ts`
-- [ ] T018 [P] [US1] 为 helper ready frame、bearer 认证、font open/status、事件 revision、cancel/shutdown 与错误净化编写客户端契约测试，文件：`tests/contract/style-picker-client.test.ts`
-- [ ] T019 [P] [US1] 为严格协议、认证、字体筛选、family-only 确认/取消、目录 revision 和父进程退出编写 Swift 测试，文件：`native/style-picker/Tests/SubTandemStylePickerTests/ProtocolTests.swift` 与 `native/style-picker/Tests/SubTandemStylePickerTests/FontPickerTests.swift`
-- [ ] T020 [P] [US1] 为 Font 五字段即时预览、保存恢复、无当前译文与字体失效/恢复编写集成测试，文件：`tests/integration/subtitle-style-lifecycle.test.ts`
+- [X] T013 [P] [US1] 为 Font 五字段、per-field pending、fallback 状态和失败整组恢复编写 Sidebar 状态测试，文件：`tests/unit/sidebar-state.test.ts`
+- [X] T014 [P] [US1] 为 Font 分组位置、Font Color trigger/基础预设、有限 Size、checkbox、Font button、label 与高对比度语义编写 DOM 契约测试，文件：`tests/contract/sidebar-form.test.ts`
+- [X] T015 [P] [US1] 为 Font 编辑、确认/取消、busy、latest-only state 与安全错误编写 Sidebar 生命周期测试，文件：`tests/contract/sidebar-lifecycle.test.ts`
+- [X] T016 [P] [US1] 为完整 style payload、九个 Size、360/720/1080 映射、字体 fallback 与重测编写 Overlay 状态测试，文件：`tests/unit/overlay-state.test.ts`
+- [X] T017 [P] [US1] 为双层 DOM、字体 CSS、renderRevision、clear、无正文占位与 Position 回归编写 WebView 契约测试，文件：`tests/contract/overlay-webview.test.ts`
+- [X] T018 [P] [US1] 为 helper ready frame、bearer 认证、font open/status、事件 revision、cancel/shutdown 与错误净化编写客户端契约测试，文件：`tests/contract/style-picker-client.test.ts`
+- [X] T019 [P] [US1] 为严格协议、认证、字体筛选、family-only 确认/取消、目录 revision 和父进程退出编写 Swift 测试，文件：`native/style-picker/Tests/SubTandemStylePickerTests/ProtocolTests.swift` 与 `native/style-picker/Tests/SubTandemStylePickerTests/FontPickerTests.swift`
+- [X] T020 [P] [US1] 为 Font 五字段即时预览、保存恢复、无当前译文与字体失效/恢复编写集成测试，文件：`tests/integration/subtitle-style-lifecycle.test.ts`
 
 ### 实现
 
-- [ ] T021 [US1] 实现单实例 authenticated HTTP server、严格 JSON、事件队列、parent PID、cancel 与 shutdown，文件：`native/style-picker/Sources/SubTandemStylePicker/Protocol.swift`, `native/style-picker/Sources/SubTandemStylePicker/Server.swift`, 与 `native/style-picker/Sources/SubTandemStylePicker/main.swift`
-- [ ] T022 [US1] 实现 family-only AppKit picker、固定本地 preview、键盘/无障碍语义、字体目录监听与 availability 查询，文件：`native/style-picker/Sources/SubTandemStylePicker/FontPicker.swift` 与 `native/style-picker/Sources/SubTandemStylePicker/FontCatalog.swift`
-- [ ] T023 [US1] 实现 helper 发现与启动、认证请求、long-poll、event gap 恢复、font open/status 和安全关闭，文件：`src/adapters/iina/style-picker-client.ts`
-- [ ] T024 [US1] 将 helper 单实例生命周期、Font picker session、确认/取消、availability 广播与安全失败接入 Global，文件：`src/global.ts`
-- [ ] T025 [US1] 在 Main 派生 effective family、即时更新当前真实译文并将 fallback/结果状态转发 Sidebar，文件：`src/main.ts`
-- [ ] T026 [US1] 实现 Font 五字段 display/committed/pending/feedback、stateRevision 和 groupError 状态机，文件：`ui/sidebar-state.ts`
-- [ ] T027 [US1] 在 Subtitle/Position 后添加 Font 分组、Font Color trigger 与可复用紧凑预设骨架、有限 Size、Font button 及 Bold/Italic 控件，文件：`ui/sidebar.html`
-- [ ] T028 [US1] 实现 Font Color 预设直接提交及其他 Font 控件的单字段 preview/commit、字体 picker 确认/取消、busy 与权威收敛，文件：`ui/sidebar.ts`
-- [ ] T029 [US1] 实现 Font 控件与紧凑预设的窄栏布局、focus-visible、亮暗色、forced-colors 与 prefers-contrast 外观，文件：`ui/sidebar.css`
-- [ ] T030 [US1] 将 Overlay 改为透明定位外层与收缩文字内层，并移除固定 shadow，文件：`ui/overlay.html` 与 `ui/overlay.css`
-- [ ] T031 [US1] 实现完整 style 严格解析、字号/字体/字重/斜体应用、latest-only rAF 与 ResizeObserver 重测，文件：`ui/overlay-state.ts` 与 `ui/overlay.ts`
-- [ ] T032 [US1] 让 Overlay adapter 缓存完整 style、共享 renderRevision、无正文只更新缓存并在 ready 后发送自包含 render，文件：`src/adapters/iina/webview-translation-overlay.ts`
+- [X] T021 [US1] 实现单实例 authenticated HTTP server、严格 JSON、事件队列、parent PID、cancel 与 shutdown，文件：`native/style-picker/Sources/SubTandemStylePicker/Protocol.swift`, `native/style-picker/Sources/SubTandemStylePicker/Server.swift`, 与 `native/style-picker/Sources/SubTandemStylePicker/main.swift`
+- [X] T022 [US1] 实现 family-only AppKit picker、固定本地 preview、键盘/无障碍语义、字体目录监听与 availability 查询，文件：`native/style-picker/Sources/SubTandemStylePicker/FontPicker.swift` 与 `native/style-picker/Sources/SubTandemStylePicker/FontCatalog.swift`
+- [X] T023 [US1] 实现 helper 发现与启动、认证请求、long-poll、event gap 恢复、font open/status 和安全关闭，文件：`src/adapters/iina/style-picker-client.ts`
+- [X] T024 [US1] 将 helper 单实例生命周期、Font picker session、确认/取消、availability 广播与安全失败接入 Global，文件：`src/global.ts`
+- [X] T025 [US1] 在 Main 派生 effective family、即时更新当前真实译文并将 fallback/结果状态转发 Sidebar，文件：`src/main.ts`
+- [X] T026 [US1] 实现 Font 五字段 display/committed/pending/feedback、stateRevision 和 groupError 状态机，文件：`ui/sidebar-state.ts`
+- [X] T027 [US1] 在 Subtitle/Position 后添加 Font 分组、Font Color trigger 与可复用紧凑预设骨架、有限 Size、Font button 及 Bold/Italic 控件，文件：`ui/sidebar.html`
+- [X] T028 [US1] 实现 Font Color 预设直接提交及其他 Font 控件的单字段 preview/commit、字体 picker 确认/取消、busy 与权威收敛，文件：`ui/sidebar.ts`
+- [X] T029 [US1] 实现 Font 控件与紧凑预设的窄栏布局、focus-visible、亮暗色、forced-colors 与 prefers-contrast 外观，文件：`ui/sidebar.css`
+- [X] T030 [US1] 将 Overlay 改为透明定位外层与收缩文字内层，并移除固定 shadow，文件：`ui/overlay.html` 与 `ui/overlay.css`
+- [X] T031 [US1] 实现完整 style 严格解析、字号/字体/字重/斜体应用、latest-only rAF 与 ResizeObserver 重测，文件：`ui/overlay-state.ts` 与 `ui/overlay.ts`
+- [X] T032 [US1] 让 Overlay adapter 缓存完整 style、共享 renderRevision、无正文只更新缓存并在 ready 后发送自包含 render，文件：`src/adapters/iina/webview-translation-overlay.ts`
 
 **检查点**：US1 的 Font 五项可独立完成、保存、恢复和渲染；不需要 Border、Background 或系统颜色面板即可交付 MVP。
 
@@ -86,17 +86,17 @@
 
 ### 测试（先写并确认失败）
 
-- [ ] T033 [P] [US2] 为 Border/Background 三字段、有限 Width、并行 pending 与失败恢复扩展 Sidebar 状态测试，文件：`tests/unit/sidebar-state.test.ts`
-- [ ] T034 [P] [US2] 为 Border/Background 分组、两个 Color trigger、Width 枚举、palette 目标隔离和生命周期扩展契约测试，文件：`tests/contract/sidebar-form.test.ts` 与 `tests/contract/sidebar-lifecycle.test.ts`
-- [ ] T035 [P] [US2] 为全部十个 Width、三种 RGBA、Width 0、文字块背景和 Position 回归扩展 Overlay 测试，文件：`tests/unit/overlay-state.test.ts` 与 `tests/contract/overlay-webview.test.ts`
-- [ ] T036 [P] [US2] 为描边/背景即时预览、默认升级视觉、透明组合与无当前译文扩展集成测试，文件：`tests/integration/subtitle-style-lifecycle.test.ts`
+- [X] T033 [P] [US2] 为 Border/Background 三字段、有限 Width、并行 pending 与失败恢复扩展 Sidebar 状态测试，文件：`tests/unit/sidebar-state.test.ts`
+- [X] T034 [P] [US2] 为 Border/Background 分组、两个 Color trigger、Width 枚举、palette 目标隔离和生命周期扩展契约测试，文件：`tests/contract/sidebar-form.test.ts` 与 `tests/contract/sidebar-lifecycle.test.ts`
+- [X] T035 [P] [US2] 为全部十个 Width、三种 RGBA、Width 0、文字块背景和 Position 回归扩展 Overlay 测试，文件：`tests/unit/overlay-state.test.ts` 与 `tests/contract/overlay-webview.test.ts`
+- [X] T036 [P] [US2] 为描边/背景即时预览、默认升级视觉、透明组合与无当前译文扩展集成测试，文件：`tests/integration/subtitle-style-lifecycle.test.ts`
 
 ### 实现
 
-- [ ] T037 [US2] 将 Border/Background display、committed、pending、colorTarget 与错误恢复加入 Sidebar 状态机，文件：`ui/sidebar-state.ts`
-- [ ] T038 [US2] 在 Font 后添加 Border Color/Width 与 Background Color trigger 及有限 Width 选项，文件：`ui/sidebar.html`
-- [ ] T039 [US2] 将紧凑预设复用于三个 Color target，并实现 Border/Background 的单字段 preview/commit、状态呈现和键盘可达样式，文件：`ui/sidebar.ts` 与 `ui/sidebar.css`
-- [ ] T040 [US2] 实现描边颜色/宽度、Width 0 关闭、文本块背景、alpha 与样式后重测，文件：`ui/overlay-state.ts`, `ui/overlay.ts`, 与 `ui/overlay.css`
+- [X] T037 [US2] 将 Border/Background display、committed、pending、colorTarget 与错误恢复加入 Sidebar 状态机，文件：`ui/sidebar-state.ts`
+- [X] T038 [US2] 在 Font 后添加 Border Color/Width 与 Background Color trigger 及有限 Width 选项，文件：`ui/sidebar.html`
+- [X] T039 [US2] 将紧凑预设复用于三个 Color target，并实现 Border/Background 的单字段 preview/commit、状态呈现和键盘可达样式，文件：`ui/sidebar.ts` 与 `ui/sidebar.css`
+- [X] T040 [US2] 实现描边颜色/宽度、Width 0 关闭、文本块背景、alpha 与样式后重测，文件：`ui/overlay-state.ts`, `ui/overlay.ts`, 与 `ui/overlay.css`
 
 **检查点**：US2 可在 US1 默认字体设置上独立验收，复杂画面中的描边与背景不改变内容、时序、Position 或 Overlay 非交互边界。
 
@@ -110,24 +110,24 @@
 
 ### 测试（先写并确认失败）
 
-- [ ] T041 [P] [US3] 为 color open、连续 preview、changed/unchanged close、busy、gap、cancel 与崩溃恢复扩展客户端契约测试，文件：`tests/contract/style-picker-client.test.ts`
-- [ ] T042 [P] [US3] 为 NSColorPanel 协议、sRGB RGBA 量化、alpha、连续事件、未变化关闭和单实例 busy 编写 Swift 测试，文件：`native/style-picker/Tests/SubTandemStylePickerTests/ColorPickerTests.swift`
-- [ ] T043 [P] [US3] 为 native palette session、per-field pending、远端收敛、superseded 和组级错误扩展状态测试，文件：`tests/unit/sidebar-state.test.ts`
-- [ ] T044 [P] [US3] 为三个色样、可读颜色值、共享 palette、Show Colors、Escape/焦点归还与高对比度扩展 Sidebar 契约测试，文件：`tests/contract/sidebar-form.test.ts` 与 `tests/contract/sidebar-lifecycle.test.ts`
-- [ ] T045 [P] [US3] 为多窗口不同字段合并、同字段最后 intent、旧 panel 晚关闭、重开/换片/新窗口/重启和失败整组回退扩展集成测试，文件：`tests/integration/subtitle-style-lifecycle.test.ts`
-- [ ] T046 [P] [US3] 为 50 次全字段快速编辑、latest-only 预览、零回跳和零播放中断扩展性能测试，文件：`tests/integration/performance.test.ts`
-- [ ] T047 [P] [US3] 为 preference、消息、helper、错误和日志的正文隔离及无新增外网目的地编写安全测试，文件：`tests/security/subtitle-style-privacy.test.ts`, `tests/security/credential-leakage.test.ts`, 与 `tests/security/redaction.test.ts`
+- [X] T041 [P] [US3] 为 color open、连续 preview、changed/unchanged close、busy、gap、cancel 与崩溃恢复扩展客户端契约测试，文件：`tests/contract/style-picker-client.test.ts`
+- [X] T042 [P] [US3] 为 NSColorPanel 协议、sRGB RGBA 量化、alpha、连续事件、未变化关闭和单实例 busy 编写 Swift 测试，文件：`native/style-picker/Tests/SubTandemStylePickerTests/ColorPickerTests.swift`
+- [X] T043 [P] [US3] 为 native palette session、per-field pending、远端收敛、superseded 和组级错误扩展状态测试，文件：`tests/unit/sidebar-state.test.ts`
+- [X] T044 [P] [US3] 为三个色样、可读颜色值、共享 palette、Show Colors、Escape/焦点归还与高对比度扩展 Sidebar 契约测试，文件：`tests/contract/sidebar-form.test.ts` 与 `tests/contract/sidebar-lifecycle.test.ts`
+- [X] T045 [P] [US3] 为多窗口不同字段合并、同字段最后 intent、旧 panel 晚关闭、重开/换片/新窗口/重启和失败整组回退扩展集成测试，文件：`tests/integration/subtitle-style-lifecycle.test.ts`
+- [X] T046 [P] [US3] 为 50 次全字段快速编辑、latest-only 预览、零回跳和零播放中断扩展性能测试，文件：`tests/integration/performance.test.ts`
+- [X] T047 [P] [US3] 为 preference、消息、helper、错误和日志的正文隔离及无新增外网目的地编写安全测试，文件：`tests/security/subtitle-style-privacy.test.ts`, `tests/security/credential-leakage.test.ts`, 与 `tests/security/redaction.test.ts`
 
 ### 实现
 
-- [ ] T048 [US3] 实现共享 NSColorPanel、showsAlpha、continuous target/action、sRGB 量化与 changed/unchanged close，文件：`native/style-picker/Sources/SubTandemStylePicker/ColorPicker.swift`
-- [ ] T049 [US3] 实现 color open 与连续事件解析、gap/current-state 恢复和安全故障分类，文件：`src/adapters/iina/style-picker-client.ts`
-- [ ] T050 [US3] 实现全局唯一 Color picker session、target 本地映射、最后 preview intent 提交、busy/迟到拒绝和崩溃整组恢复，文件：`src/global.ts`
-- [ ] T051 [US3] 将 picker-result、全量权威 state、同字段 pending 清理和多窗口 Overlay 收敛接入 Main，文件：`src/main.ts`
-- [ ] T052 [US3] 完善 native color session、每字段 saving、superseded 清理、groupError 与八字段回退，文件：`ui/sidebar-state.ts`
-- [ ] T053 [US3] 为既有三个 Color trigger 补齐统一命名预设、透明项、选中标记和 Show Colors 入口，文件：`ui/sidebar.html`
-- [ ] T054 [US3] 实现 palette 定位与焦点管理、目标字段隔离、预设直接提交、系统面板连续预览和未变化关闭，文件：`ui/sidebar.ts`
-- [ ] T055 [US3] 实现色样的文本/alpha 状态、palette 键盘焦点、选中态、亮暗色与高对比度外观，文件：`ui/sidebar.css`
+- [X] T048 [US3] 实现共享 NSColorPanel、showsAlpha、continuous target/action、sRGB 量化与 changed/unchanged close，文件：`native/style-picker/Sources/SubTandemStylePicker/ColorPicker.swift`
+- [X] T049 [US3] 实现 color open 与连续事件解析、gap/current-state 恢复和安全故障分类，文件：`src/adapters/iina/style-picker-client.ts`
+- [X] T050 [US3] 实现全局唯一 Color picker session、target 本地映射、最后 preview intent 提交、busy/迟到拒绝和崩溃整组恢复，文件：`src/global.ts`
+- [X] T051 [US3] 将 picker-result、全量权威 state、同字段 pending 清理和多窗口 Overlay 收敛接入 Main，文件：`src/main.ts`
+- [X] T052 [US3] 完善 native color session、每字段 saving、superseded 清理、groupError 与八字段回退，文件：`ui/sidebar-state.ts`
+- [X] T053 [US3] 为既有三个 Color trigger 补齐统一命名预设、透明项、选中标记和 Show Colors 入口，文件：`ui/sidebar.html`
+- [X] T054 [US3] 实现 palette 定位与焦点管理、目标字段隔离、预设直接提交、系统面板连续预览和未变化关闭，文件：`ui/sidebar.ts`
+- [X] T055 [US3] 实现色样的文本/alpha 状态、palette 键盘焦点、选中态、亮暗色与高对比度外观，文件：`ui/sidebar.css`
 
 **检查点**：三个用户故事均可验收，所有窗口最终收敛到同一已确认样式，失败不会阻塞播放或泄漏正文。
 
@@ -137,16 +137,16 @@
 
 **目的**：把第三 helper 纳入精确发布边界，更新用户/开发文档，并重新执行全部测试、编译、打包和正式包实机验收。
 
-- [ ] T056 [P] 为第三 helper 的 manifest 权限、精确包清单、universal/755/签名/系统依赖与源码排除编写失败契约测试，文件：`tests/contract/package-manifest.test.ts`
-- [ ] T057 [P] 为第三 helper 的 release audit、哈希与工作流门禁编写失败契约测试，文件：`tests/contract/release-audit.test.ts` 与 `tests/contract/release-workflow.test.ts`
-- [ ] T058 将 style-picker 的 Swift 测试、arm64/x86_64 构建、lipo、755、ad-hoc 签名与哈希纳入 native 脚本，文件：`scripts/test-native.sh` 与 `scripts/build-native.sh`
-- [ ] T059 更新第三 loopback helper 与 file-system 执行用途且不新增外网域或正文权限，文件：`Info.json`
-- [ ] T060 将 `dist/native/subtandem-style-picker` 纳入精确 verify/pack/release audit 与 CI 清单，文件：`scripts/verify-package.sh`, `scripts/pack.sh`, `scripts/audit-release.mjs`, 与 `.github/workflows/release.yml`
-- [ ] T061 更新样式设置、默认值、选色和字体 fallback 的用户说明，文件：`README.md`, `docs/readme/README.zh-CN.md`, `docs/readme/README.ar.md`, `docs/readme/README.fr.md`, `docs/readme/README.ja.md`, `docs/readme/README.ko.md`, 与 `docs/readme/README.ru.md`
-- [ ] T062 更新 helper 开发/重建说明和自动化、包、IINA 验收边界，文件：`docs/engineering/development.md`, `docs/validation/automated.md`, `docs/validation/package.md`, 与 `docs/validation/iina-matrix.md`
-- [ ] T063 按聚焦命令重跑全部字幕样式 Vitest 与 Swift 测试并修复失败，文件：`specs/021-subtitle-text-style/quickstart.md`
-- [ ] T064 重跑 `npm test`、`npm run typecheck`、`npm run lint` 和 `npm run test:native` 全量门禁，文件：`package.json`
-- [ ] T065 重跑 `npm run build:native`、`npm run build`、`npm run verify:package` 和 `npm run pack` 并审计正式归档，文件：`scripts/build-native.sh`, `scripts/build-plugin.sh`, `scripts/verify-package.sh`, 与 `scripts/pack.sh`
+- [X] T056 [P] 为第三 helper 的 manifest 权限、精确包清单、universal/755/签名/系统依赖与源码排除编写失败契约测试，文件：`tests/contract/package-manifest.test.ts`
+- [X] T057 [P] 为第三 helper 的 release audit、哈希与工作流门禁编写失败契约测试，文件：`tests/contract/release-audit.test.ts` 与 `tests/contract/release-workflow.test.ts`
+- [X] T058 将 style-picker 的 Swift 测试、arm64/x86_64 构建、lipo、755、ad-hoc 签名与哈希纳入 native 脚本，文件：`scripts/test-native.sh` 与 `scripts/build-native.sh`
+- [X] T059 更新第三 loopback helper 与 file-system 执行用途且不新增外网域或正文权限，文件：`Info.json`
+- [X] T060 将 `dist/native/subtandem-style-picker` 纳入精确 verify/pack/release audit 与 CI 清单，文件：`scripts/verify-package.sh`, `scripts/pack.sh`, `scripts/audit-release.mjs`, 与 `.github/workflows/release.yml`
+- [X] T061 更新样式设置、默认值、选色和字体 fallback 的用户说明，文件：`README.md`, `docs/readme/README.zh-CN.md`, `docs/readme/README.ar.md`, `docs/readme/README.fr.md`, `docs/readme/README.ja.md`, `docs/readme/README.ko.md`, 与 `docs/readme/README.ru.md`
+- [X] T062 更新 helper 开发/重建说明和自动化、包、IINA 验收边界，文件：`docs/engineering/development.md`, `docs/validation/automated.md`, `docs/validation/package.md`, 与 `docs/validation/iina-matrix.md`
+- [X] T063 按聚焦命令重跑全部字幕样式 Vitest 与 Swift 测试并修复失败，文件：`specs/021-subtitle-text-style/quickstart.md`
+- [X] T064 重跑 `npm test`、`npm run typecheck`、`npm run lint` 和 `npm run test:native` 全量门禁，文件：`package.json`
+- [X] T065 重跑 `npm run build:native`、`npm run build`、`npm run verify:package` 和 `npm run pack` 并审计正式归档，文件：`scripts/build-native.sh`, `scripts/build-plugin.sh`, `scripts/verify-package.sh`, 与 `scripts/pack.sh`
 - [ ] T066 使用正式 `.iinaplgz` 在 IINA 1.4.0 与 1.4.4 完成 quickstart 的单人视觉、键盘、多窗口、字体恢复、时延、失败和卸载验收，并保存不含正文的证据，文件：`docs/validation/subtitle-text-style.md`
 
 ---

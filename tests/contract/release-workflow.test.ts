@@ -78,6 +78,7 @@ describe("automatic release workflow", () => {
   it("audits both native executables and publishes the locked FFmpeg source only from the audited payload", () => {
     expect(workflow).toContain("--build-helper dist/native/subtandem-transport");
     expect(workflow).toContain("--build-extractor dist/native/subtandem-subtitle-extractor");
+    expect(workflow).toContain("--build-style-picker dist/native/subtandem-style-picker");
     expect(workflow).toContain(
       "--ffmpeg-source native/.build/ffmpeg/downloads/ffmpeg-8.1.2.tar.xz",
     );

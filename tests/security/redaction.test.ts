@@ -9,6 +9,18 @@ import { ClaudeProvider } from "../../src/providers/claude.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 
 describe("allowlist-only diagnostics", () => {
+  it("does not add style values or helper internals to diagnostic allowlists", () => {
+    const output = diagnostic({
+      code: "PICKER_UNAVAILABLE",
+      token: "PRIVATE_PICKER_TOKEN",
+      color: { r: 1, g: 2, b: 3, a: 4 },
+      fontFamily: "PRIVATE_FONT_FAMILY",
+      subtitle: "PRIVATE_SUBTITLE",
+      mediaPath: "/private/media.mkv",
+    });
+    expect(output).toEqual({ code: "PICKER_UNAVAILABLE" });
+    expect(JSON.stringify(output)).not.toMatch(/PRIVATE|media\.mkv|fontFamily|color|token/);
+  });
   it("drops Claude error, refusal, raw response, headers and subtitle bodies", async () => {
     const sensitive = "PRIVATE_CLAUDE_UPSTREAM_SUBTITLE";
     const provider = new ClaudeProvider(

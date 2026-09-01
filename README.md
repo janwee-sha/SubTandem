@@ -30,6 +30,7 @@ SubTandem keeps the original subtitle visible while independently displaying the
 ## ✨ Features
 
 - **Live bilingual subtitles:** Keep the original subtitle selected in IINA while SubTandem renders translations centered horizontally at your chosen vertical position without occupying another subtitle track.
+- **Persistent translation styling:** Adjust Font color, Size, family, Bold/Italic, Border color/Width, and Background color under **Subtitle**. Defaults are white Size 40 system text, black Width 3 border, and transparent background. All three colors share presets and **Show Colors…** with alpha; an unavailable saved font temporarily uses the system font and restores automatically when available.
 - **Embedded and external text subtitles:** Works with local Matroska SubRip/ASS/SSA, local MOV/MP4 `mov_text`, and readable external SRT/ASS tracks selected in IINA. The release includes the required extractor; no external `ffmpeg` or `ffprobe` is needed.
 - **Your choice of translation service:** Use an OpenAI Chat Completions-compatible endpoint, Claude Messages-compatible endpoint, DeepSeek, or a local/remote Ollama server.
 - **Playback-first behavior:** Translation work never pauses the video or hides the original subtitle.
@@ -102,7 +103,8 @@ After any installation method, approve the requested plugin permissions if promp
 2. Under **Languages**, select your mother language. Confirm the subtitle language if IINA cannot identify it, then save the language settings.
 3. Under **Translation service**, create an OpenAI, Claude, DeepSeek, or Ollama profile. If the service requires authentication, enter its API key before manually refreshing the model list. Select a returned model, or enter an exact custom Model ID.
 4. Save and test the profile, then click **Select**. Selecting a profile explicitly authorizes SubTandem to send nearby subtitle text to the displayed endpoint.
-5. Turn on **Translate**. The original subtitle remains selected in IINA; translated cues appear in SubTandem's overlay. Use **Translation position** in **Languages** to move the overlay from top (`0`) to bottom (`100`).
+5. Turn on **Translate**. The original subtitle remains selected in IINA; translated cues appear in SubTandem's overlay. Under **Subtitle**, use **Position** to move the overlay from top (`0`) to bottom (`100`).
+6. In the **Font**, **Border**, and **Background** groups, choose the eight text style values. Select a color preset for a direct save, or choose **Show Colors…** for the macOS color panel; closing it without a change keeps the previous value.
 
 If the endpoint, model, key, or network route changes, save the updated profile and select it again before translating.
 

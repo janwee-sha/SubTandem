@@ -25,6 +25,12 @@ import {
   parseOverlayPositionSave,
   parseOverlayPositionSaveResult,
   parseOverlayPositionState,
+  parseSubtitleStyleEdit,
+  parseSubtitleStyleGet,
+  parseSubtitleStylePickerOpen,
+  parseSubtitleStylePickerResult,
+  parseSubtitleStyleSaveResult,
+  parseSubtitleStyleState,
   parseTargetLanguageSave,
   parseTargetLanguageSaved,
 } from "./domain/messages.js";
@@ -37,6 +43,12 @@ import { TARGET_LANGUAGES } from "./domain/target-languages.js";
 import { TargetLanguagePreferences } from "./adapters/iina/target-language-preferences.js";
 import { TargetLanguageSession } from "./app/target-language-session.js";
 import { OverlayPositionFollower } from "./adapters/iina/overlay-position-sync.js";
+import { SubtitleStyleFollower } from "./adapters/iina/subtitle-style-sync.js";
+import {
+  DEFAULT_SUBTITLE_TEXT_STYLE,
+  withSubtitleStyleField,
+  type SubtitleTextStyle,
+} from "./domain/subtitle-style.js";
 import { OverlayRegionRuntime } from "./adapters/iina/overlay-region-runtime.js";
 import {
   acceptProfileListResult,
@@ -84,6 +96,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   );
   const overlayRegion = new OverlayRegionRuntime(runtime.mpv, runtime.core.window.fullscreen);
   const overlayPosition = new OverlayPositionFollower();
+  const subtitleStyle = new SubtitleStyleFollower();
   const restoredTarget = new TargetLanguagePreferences(runtime.preferences).read();
   const targetLanguageSession = new TargetLanguageSession(restoredTarget.targetLanguage);
   const languageDetection = new LanguageDetectionCoordinator();
@@ -123,6 +136,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     targetLanguageRevision: targetLanguageSession.snapshot.revision,
     targetLanguages: TARGET_LANGUAGES,
     overlayPosition: overlayPosition.snapshot,
+    subtitleStyle: subtitleStyle.snapshot,
   };
   const sidebarMessages: Array<{ name: string; data: unknown }> = [];
   let profileListState = createProfileListSyncState<{
@@ -131,6 +145,15 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     [key: string]: unknown;
   }>();
   const modelCatalogSync = new ModelCatalogSync();
+
+  const effectiveSubtitleStyle = (): SubtitleTextStyle => {
+    const state = subtitleStyle.snapshot;
+    if (!state) return { ...DEFAULT_SUBTITLE_TEXT_STYLE };
+    return {
+      ...state.liveStyle,
+      fontFamily: state.fontResolution.effectiveFamily,
+    };
+  };
 
   const updateSidebarState = (patch: Record<string, unknown> = {}): void => {
     sidebarState = {
@@ -144,6 +167,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
       targetLanguageRevision: targetLanguageSession.snapshot.revision,
       targetLanguages: TARGET_LANGUAGES,
       overlayPosition: overlayPosition.snapshot,
+      subtitleStyle: subtitleStyle.snapshot,
       ...patch,
     };
   };
@@ -166,6 +190,14 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   const requestOverlayPosition = (): void => {
     runtime.global.postMessage("overlay-position:get", {
       requestId: `overlay-position.init.${playerId}`,
+      revision: 1,
+      payload: {},
+    });
+  };
+
+  const requestSubtitleStyle = (): void => {
+    runtime.global.postMessage("subtitle-style:get", {
+      requestId: `subtitle-style.init.${playerId}`,
       revision: 1,
       payload: {},
     });
@@ -417,6 +449,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     if (!loadSource(false)) scheduleSourceReload();
     requestProfiles();
     requestOverlayPosition();
+    requestSubtitleStyle();
     flushSidebar();
   });
   runtime.sidebar.onMessage("ui:poll", () => {
@@ -437,6 +470,34 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
       const message = parseOverlayPositionSave(raw);
       translationOverlay.setPosition(message.payload.position);
       runtime.global.postMessage("overlay-position:save", message);
+    } catch {
+      return;
+    }
+  });
+  runtime.sidebar.onMessage("subtitle-style:get", (raw: unknown) => {
+    try {
+      runtime.global.postMessage("subtitle-style:get", parseSubtitleStyleGet(raw));
+    } catch {
+      return;
+    }
+  });
+  runtime.sidebar.onMessage("subtitle-style:edit", (raw: unknown) => {
+    try {
+      const message = parseSubtitleStyleEdit(raw);
+      const localStyle = withSubtitleStyleField(
+        effectiveSubtitleStyle(),
+        message.payload.field,
+        message.payload.value,
+      );
+      translationOverlay.setStyle(localStyle);
+      runtime.global.postMessage("subtitle-style:edit", message);
+    } catch {
+      return;
+    }
+  });
+  runtime.sidebar.onMessage("subtitle-style:picker-open", (raw: unknown) => {
+    try {
+      runtime.global.postMessage("subtitle-style:picker-open", parseSubtitleStylePickerOpen(raw));
     } catch {
       return;
     }
@@ -654,6 +715,39 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
         ...result,
         action: "overlay-position",
       });
+    } catch {
+      return;
+    }
+  });
+  runtime.global.onMessage("subtitle-style:state", (raw: unknown) => {
+    try {
+      const state = parseSubtitleStyleState(raw);
+      if (!subtitleStyle.apply(state)) return;
+      translationOverlay.setStyle(effectiveSubtitleStyle());
+      updateSidebarState({ subtitleStyle: subtitleStyle.snapshot });
+      queueSidebarMessage("subtitle-style:state", state);
+    } catch {
+      return;
+    }
+  });
+  runtime.global.onMessage("subtitle-style:save-result", (raw: unknown) => {
+    try {
+      const result = parseSubtitleStyleSaveResult(raw);
+      subtitleStyle.apply(result.authority);
+      translationOverlay.setStyle(effectiveSubtitleStyle());
+      updateSidebarState({ subtitleStyle: subtitleStyle.snapshot });
+      queueSidebarMessage("subtitle-style:save-result", result);
+    } catch {
+      return;
+    }
+  });
+  runtime.global.onMessage("subtitle-style:picker-result", (raw: unknown) => {
+    try {
+      const result = parseSubtitleStylePickerResult(raw);
+      subtitleStyle.apply(result.authority);
+      translationOverlay.setStyle(effectiveSubtitleStyle());
+      updateSidebarState({ subtitleStyle: subtitleStyle.snapshot });
+      queueSidebarMessage("subtitle-style:picker-result", result);
     } catch {
       return;
     }
@@ -888,6 +982,11 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   runtime.event.on("iina.window-will-close", () => {
     closeOverlayRegion();
     translationOverlay.close();
+    runtime.global.postMessage("subtitle-style:picker-cancel", {
+      requestId: `subtitle-style.close.${playerId}`,
+      revision: 1,
+      payload: {},
+    });
     modelCatalogSync.remove(playerId);
     if (sourceSelectionTimer !== null) clearTimeout(sourceSelectionTimer);
     if (currentSelection)
@@ -913,6 +1012,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   if (!loadSource(false)) scheduleSourceReload();
   translationOverlay.setRegion(overlayRegion.snapshot);
   requestOverlayPosition();
+  requestSubtitleStyle();
   return controller;
 }
 

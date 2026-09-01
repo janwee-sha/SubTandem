@@ -29,6 +29,7 @@ SubTandem는 원본 자막을 그대로 유지하면서 선택한 위치에 번�
 ## ✨ 주요 기능
 
 - **실시간 이중 언어 자막:** 원본 자막은 IINA에서 그대로 유지하고 SubTandem가 다른 자막 트랙을 차지하지 않은 채 선택한 세로 위치에 번역문을 가로 중앙 정렬로 표시합니다.
+- **지속되는 번역문 스타일:** **Subtitle**에서 Font 색상, Size, 글꼴, Bold/Italic, Border 색상과 Width, Background 색상을 조정할 수 있습니다. 기본값은 흰색 Size 40 시스템 글꼴, 검은색 Width 3 테두리, 투명 배경입니다. 세 색상은 프리셋과 알파를 지원하는 **Show Colors…**를 공유합니다. 저장한 글꼴을 사용할 수 없으면 시스템 글꼴을 임시 사용하고, 다시 사용할 수 있게 되면 자동 복원합니다.
 - **내장 및 외부 텍스트 자막:** 로컬 Matroska SubRip/ASS/SSA, MOV/MP4 `mov_text`, 외부 SRT/ASS를 지원합니다. extractor가 포함되어 외부 `ffmpeg`나 `ffprobe`가 필요하지 않습니다.
 - **번역 서비스 선택:** OpenAI Chat Completions 또는 Claude Messages와 호환되는 endpoint, DeepSeek, 로컬/원격 Ollama 서버를 사용할 수 있습니다.
 - **재생 우선 동작:** 번역 작업 때문에 영상이 일시 정지되거나 원본 자막이 숨겨지지 않습니다.
@@ -101,7 +102,8 @@ IINA 개발 버전에서는 사용 가능한 플러그인 목록에서 SubTandem
 2. **Languages**에서 모국어를 선택합니다. IINA가 자막 언어를 식별하지 못하면 직접 확인한 뒤 언어 설정을 저장합니다.
 3. **Translation service**에서 OpenAI, Claude, DeepSeek 또는 Ollama Profile을 만듭니다. 인증이 필요하면 API key를 입력한 뒤 모델 목록을 수동으로 새로 고칩니다. 반환된 모델을 선택하거나 정확한 사용자 지정 Model ID를 입력합니다.
 4. Profile을 저장하고 테스트한 다음 **Select**를 클릭합니다. Profile 선택은 화면에 표시된 endpoint로 재생 위치 주변의 자막 텍스트를 전송하도록 SubTandem에 명시적으로 허용하는 동작입니다.
-5. **Translate**를 켭니다. 원본 자막은 IINA에서 계속 표시되고 번역된 cue는 SubTandem 오버레이에 나타납니다. **Languages**의 **Translation position**으로 오버레이를 위쪽(`0`)에서 아래쪽(`100`)까지 옮길 수 있습니다.
+5. **Translate**를 켭니다. 원본 자막은 IINA에서 계속 표시되고 번역된 cue는 SubTandem 오버레이에 나타납니다. **Subtitle**의 **Position**으로 오버레이를 위쪽(`0`)에서 아래쪽(`100`)까지 옮길 수 있습니다.
+6. **Font**, **Border**, **Background** 그룹에서 8개 텍스트 스타일 값을 선택합니다. 색상 프리셋은 즉시 저장되며, **Show Colors…**는 macOS 색상 패널을 엽니다. 변경하지 않고 닫으면 이전 값을 유지합니다.
 
 Endpoint, 모델, API key 또는 네트워크 경로가 바뀌면 Profile을 다시 저장하고 번역 전에 다시 선택해야 합니다.
 

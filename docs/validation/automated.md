@@ -18,7 +18,9 @@ npm run pack
 - 外挂、内嵌、远程、图形与未知轨道的失败关闭分类；
 - SubRip、ASS、SSA、`mov_text` 的真实小样本提取与 UTF-8 SRT 规范化；
 - 15 秒超时、显式 Retry、迟到结果释放、换轨/换片/seek/禁用/关窗和双窗口隔离；
-- 两个 native 可执行文件的 macOS 12 双架构、签名、系统动态依赖、权限与固定错误码；
+- 三个 native 可执行文件的 macOS 12 双架构、签名、系统动态依赖、权限与固定错误码；
 - 至少 30 个不透明样本 ID、20,000 cue/4 小时流式边界和每类 20 次生命周期模拟。
 
 native transport 测试需要绑定本机回环端口；受限沙箱若返回 `Operation not permitted`，应在获批的本地权限下原样重跑，不得把环境限制记为产品通过或失败。
+
+字幕样式聚焦命令见 [`specs/021-subtitle-text-style/quickstart.md`](../../specs/021-subtitle-text-style/quickstart.md)，覆盖八字段 preference 与消息、Sidebar 状态、Overlay 映射、三种颜色、全部 Size/Width、native picker、50 次快速编辑及正文隔离。Node 与 Swift 结果不替代 WKWebView 实际绘制、系统面板、键盘、字体外观和多窗口 IINA 实机证据。

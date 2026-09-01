@@ -409,3 +409,82 @@ describe("IINA sidebar lifecycle contract", () => {
     );
   });
 });
+
+describe("Subtitle Font lifecycle contract", () => {
+  const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
+  const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+  const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
+
+  it("previews and commits each Font field through strict single-field edits", () => {
+    expect(sidebarSource).toMatch(/postMessage\(\s*"subtitle-style:edit"/);
+    expect(sidebarSource).toContain('phase: "preview"');
+    expect(sidebarSource).toContain('phase: "commit"');
+    for (const field of ["fontColor", "fontSize", "fontFamily", "bold", "italic"])
+      expect(sidebarSource).toContain(`"${field}"`);
+    expect(mainSource).toContain('runtime.sidebar.onMessage("subtitle-style:edit"');
+    expect(globalSource).toContain('iina.global.onMessage("subtitle-style:edit"');
+  });
+
+  it("requests the font picker, expresses busy and handles latest-only safe results", () => {
+    expect(sidebarSource).toMatch(/postMessage\(\s*"subtitle-style:picker-open"/);
+    expect(sidebarSource).toContain('kind: "font"');
+    expect(sidebarSource).toContain('fontButton.setAttribute("aria-busy"');
+    expect(sidebarSource).toContain('onMessage("subtitle-style:state"');
+    expect(sidebarSource).toContain('onMessage("subtitle-style:save-result"');
+    expect(sidebarSource).toContain('onMessage("subtitle-style:picker-result"');
+    expect(sidebarSource).not.toMatch(/rawError|stderr|helperToken/);
+  });
+
+  it("requests authoritative style at startup and when Sidebar becomes live", () => {
+    expect(mainSource).toContain('runtime.global.postMessage("subtitle-style:get"');
+    expect(globalSource).toContain('iina.global.onMessage("subtitle-style:get"');
+    const readyStart = mainSource.indexOf('runtime.sidebar.onMessage("ui:ready"');
+    const pollStart = mainSource.indexOf('runtime.sidebar.onMessage("ui:poll"', readyStart);
+    expect(mainSource.slice(readyStart, pollStart)).toContain("requestSubtitleStyle()");
+  });
+});
+
+describe("Subtitle Border and Background lifecycle contract", () => {
+  const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
+  const sidebarStateSource = readFileSync(
+    new URL("../../ui/sidebar-state.ts", import.meta.url),
+    "utf8",
+  );
+
+  it("routes the shared palette only to its explicit color target", () => {
+    expect(sidebarStateSource).toContain("openSubtitleColorPalette");
+    expect(sidebarStateSource).toContain("closeSubtitleColorPalette");
+    expect(sidebarSource).toContain('openColorPalette("fontColor"');
+    expect(sidebarSource).toContain('openColorPalette("borderColor"');
+    expect(sidebarSource).toContain('openColorPalette("backgroundColor"');
+    expect(sidebarSource).toContain("snapshot.subtitleStyle.colorTarget");
+    expect(sidebarSource).toContain("commitSubtitleStyle(colorTarget");
+  });
+
+  it("previews and commits Border and Background fields without disabling Font", () => {
+    for (const field of ["borderColor", "borderWidth", "backgroundColor"])
+      expect(sidebarSource).toContain(`"${field}"`);
+    expect(sidebarSource).toContain('commitSubtitleStyle("borderWidth"');
+    expect(sidebarSource).not.toContain("subtitleStyleControls.disabled");
+  });
+});
+
+describe("System color picker lifecycle contract", () => {
+  const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
+
+  it("opens the native panel for the current target and retains field isolation", () => {
+    expect(sidebarSource).toContain('subtitleShowColors.addEventListener("click"');
+    expect(sidebarSource).toContain('kind: "color"');
+    expect(sidebarSource).toContain("beginSubtitleColorPicker");
+    expect(sidebarSource).toContain("colorTarget");
+    expect(sidebarSource).toContain("pendingColorPickerRequestId");
+  });
+
+  it("returns focus on preset, Escape and unchanged close without leaking raw errors", () => {
+    expect(sidebarSource).toContain("closeColorPalette(true)");
+    expect(sidebarSource).toContain('event.key !== "Escape"');
+    expect(sidebarSource).toContain("finishSubtitleColorPicker");
+    expect(sidebarSource).toContain('outcome === "unchanged"');
+    expect(sidebarSource).not.toMatch(/rawError|stderr|helperToken|Authorization/);
+  });
+});

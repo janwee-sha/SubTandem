@@ -50,6 +50,159 @@
             aria-live="polite"
           ></p>
         </div>
+        <div id="subtitle-style-controls" class="subtitle-style-controls">
+          <fieldset id="subtitle-font-group" class="subtitle-style-group">
+            <legend>Font</legend>
+            <div class="subtitle-style-row">
+              <label for="subtitle-font-color">Color</label>
+              <button
+                id="subtitle-font-color"
+                class="subtitle-color-trigger"
+                type="button"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                aria-controls="subtitle-color-palette"
+              >
+                <span class="subtitle-color-swatch" aria-hidden="true"></span>
+                <span class="subtitle-color-value">White · 100%</span>
+              </button>
+            </div>
+            <label class="subtitle-style-row" for="subtitle-font-size">
+              <span>Size</span>
+              <select id="subtitle-font-size">
+                <option value="30">30</option>
+                <option value="35">35</option>
+                <option value="40" selected>40</option>
+                <option value="45">45</option>
+                <option value="50">50</option>
+                <option value="55">55</option>
+                <option value="60">60</option>
+                <option value="65">65</option>
+                <option value="70">70</option>
+              </select>
+            </label>
+            <div class="subtitle-style-row">
+              <label for="subtitle-font-family">Font</label>
+              <button
+                id="subtitle-font-family"
+                class="subtitle-font-button secondary"
+                type="button"
+                aria-describedby="subtitle-font-status"
+                aria-busy="false"
+              >
+                System Default
+              </button>
+            </div>
+            <label class="subtitle-style-check" for="subtitle-font-bold">
+              <input id="subtitle-font-bold" type="checkbox" />
+              <span>Bold</span>
+            </label>
+            <label class="subtitle-style-check" for="subtitle-font-italic">
+              <input id="subtitle-font-italic" type="checkbox" />
+              <span>Italic</span>
+            </label>
+            <p
+              id="subtitle-font-status"
+              class="operation-status"
+              role="status"
+              aria-live="polite"
+            ></p>
+          </fieldset>
+          <fieldset id="subtitle-border-group" class="subtitle-style-group">
+            <legend>Border</legend>
+            <div class="subtitle-style-row">
+              <label for="subtitle-border-color">Color</label>
+              <button
+                id="subtitle-border-color"
+                class="subtitle-color-trigger"
+                type="button"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                aria-controls="subtitle-color-palette"
+              >
+                <span class="subtitle-color-swatch" aria-hidden="true"></span>
+                <span class="subtitle-color-value">Black · 100%</span>
+              </button>
+            </div>
+            <label class="subtitle-style-row" for="subtitle-border-width">
+              <span>Width</span>
+              <select id="subtitle-border-width">
+                <option value="0">0</option>
+                <option value="0.25">0.25</option>
+                <option value="0.5">0.5</option>
+                <option value="1">1</option>
+                <option value="1.5">1.5</option>
+                <option value="2">2</option>
+                <option value="2.5">2.5</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </label>
+          </fieldset>
+          <fieldset id="subtitle-background-group" class="subtitle-style-group">
+            <legend>Background</legend>
+            <div class="subtitle-style-row">
+              <label for="subtitle-background-color">Color</label>
+              <button
+                id="subtitle-background-color"
+                class="subtitle-color-trigger"
+                type="button"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                aria-controls="subtitle-color-palette"
+              >
+                <span class="subtitle-color-swatch" aria-hidden="true"></span>
+                <span class="subtitle-color-value">Transparent · 0%</span>
+              </button>
+            </div>
+          </fieldset>
+          <div
+            id="subtitle-color-palette"
+            class="subtitle-color-palette"
+            role="dialog"
+            aria-label="Translation subtitle color presets"
+            hidden
+          >
+            <button
+              type="button"
+              role="radio"
+              aria-checked="false"
+              data-color-name="White"
+              data-rgba="255,255,255,255"
+            >
+              <span class="palette-swatch palette-white" aria-hidden="true"></span>
+              White
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked="false"
+              data-color-name="Black"
+              data-rgba="0,0,0,255"
+            >
+              <span class="palette-swatch palette-black" aria-hidden="true"></span>
+              Black
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked="false"
+              data-color-name="Transparent"
+              data-rgba="0,0,0,0"
+            >
+              <span class="palette-swatch palette-transparent" aria-hidden="true"></span>
+              Transparent
+            </button>
+            <button id="subtitle-show-colors" class="secondary" type="button">Show Colors…</button>
+          </div>
+          <p
+            id="subtitle-style-error"
+            class="operation-status subtitle-style-error"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </div>
       </section>
 
       <section class="sidebar-section" aria-labelledby="provider-heading">

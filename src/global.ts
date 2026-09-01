@@ -5,6 +5,9 @@ import {
   parseOverlayPositionGet,
   parseOverlayPositionPreview,
   parseOverlayPositionSave,
+  parseSubtitleStyleEdit,
+  parseSubtitleStyleGet,
+  parseSubtitleStylePickerOpen,
   parseProviderModelsPreviewRequest,
   parseProviderModelsRequest,
   parseSecretSet,
@@ -37,6 +40,20 @@ import {
 } from "./adapters/iina/target-language-preferences.js";
 import { OverlayPositionPreferences } from "./adapters/iina/overlay-position-preferences.js";
 import { OverlayPositionAuthority } from "./adapters/iina/overlay-position-sync.js";
+import { SubtitleStylePreferences } from "./adapters/iina/subtitle-style-preferences.js";
+import { SubtitleStyleAuthority } from "./adapters/iina/subtitle-style-sync.js";
+import {
+  discoverStylePickerExecutable,
+  IinaStylePickerHttpBridge,
+  StylePickerClient,
+  StylePickerProcess,
+  type StylePickerEvent,
+} from "./adapters/iina/style-picker-client.js";
+import {
+  createFontResolution,
+  type ColorStyleField,
+  type RgbaColor,
+} from "./domain/subtitle-style.js";
 
 let idSequence = 0;
 function localUuid(): string {
@@ -55,6 +72,8 @@ const overlayPositionPreferences = new OverlayPositionPreferences(iina.preferenc
 const overlayPositionAuthority = new OverlayPositionAuthority(
   overlayPositionPreferences.read().position,
 );
+const subtitleStylePreferences = new SubtitleStylePreferences(iina.preferences);
+const subtitleStyleAuthority = new SubtitleStyleAuthority(subtitleStylePreferences.read().style);
 
 function advanceCredentialEpoch(profileId: string): number {
   const next = (modelCredentialEpochs.get(profileId) ?? 0) + 1;
@@ -397,6 +416,241 @@ const postToPlayer = createDeferredPlayerPost(
   setTimeout,
 );
 
+interface ActiveStylePickerSession {
+  requestId: string;
+  playerId: string;
+  interactionId: string;
+  kind: "font" | "color";
+  field: "fontFamily" | ColorStyleField;
+  lastPreviewColor: RgbaColor | null;
+}
+
+let activeStylePicker: ActiveStylePickerSession | null = null;
+let stylePickerClient: StylePickerClient | null = null;
+let stylePickerStartup: Promise<StylePickerClient> | null = null;
+let stylePickerPolling = false;
+let stylePickerEventRevision = 0;
+
+function stylePickerLocator() {
+  return {
+    exists: (path: string) => iina.file.exists(path),
+    resolvePath: (path: string) => iina.utils.resolvePath(path),
+    list: (path: string) => iina.file.list(path, { includeSubDir: false }),
+    read: (path: string) => iina.file.read(path) ?? null,
+  };
+}
+
+function currentParentPid(): number | undefined {
+  try {
+    const value = iina.mpv.getNumber("pid");
+    return Number.isInteger(value) && value > 1 ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function ensureStylePickerClient(): Promise<StylePickerClient> {
+  if (stylePickerClient) return stylePickerClient;
+  if (stylePickerStartup) return stylePickerStartup;
+  stylePickerStartup = (async () => {
+    const executable = discoverStylePickerExecutable(stylePickerLocator());
+    const parentPid = currentParentPid();
+    const session = await StylePickerProcess.bootstrap(
+      new IinaProcessLauncher(iina.utils),
+      parentPid === undefined ? {} : { parentPid },
+      executable,
+    );
+    const client = new StylePickerClient(session, new IinaStylePickerHttpBridge(iina.http));
+    stylePickerClient = client;
+    startStylePickerPolling(client);
+    await refreshFontAvailability(client);
+    return client;
+  })();
+  try {
+    return await stylePickerStartup;
+  } finally {
+    stylePickerStartup = null;
+  }
+}
+
+async function refreshFontAvailability(client: StylePickerClient): Promise<void> {
+  const preferredFamily = subtitleStyleAuthority.snapshot().committedStyle.fontFamily;
+  const status = await client.fontStatus(preferredFamily);
+  const state = subtitleStyleAuthority.updateFontResolution(
+    createFontResolution(preferredFamily, status.availability, status.catalogRevision),
+  );
+  postToPlayer(null, "subtitle-style:state", state);
+}
+
+function sendStylePickerResult(
+  session: ActiveStylePickerSession,
+  outcome: "confirmed" | "cancelled" | "unchanged" | "busy" | "failed",
+): void {
+  postToPlayer(session.playerId, "subtitle-style:picker-result", {
+    requestId: session.requestId,
+    outcome,
+    authority: subtitleStyleAuthority.snapshot(),
+  });
+}
+
+function failActiveStylePicker(): void {
+  const session = activeStylePicker;
+  activeStylePicker = null;
+  if (!session) return;
+  if (session.kind === "color" && session.lastPreviewColor) {
+    const pending = subtitleStyleAuthority.beginCommit(
+      session.interactionId,
+      session.field as ColorStyleField,
+      session.lastPreviewColor,
+    );
+    if (pending.outcome === "pending") {
+      const failed = subtitleStyleAuthority.fail(pending.intent);
+      postToPlayer(null, "subtitle-style:state", failed.state);
+    }
+  }
+  sendStylePickerResult(session, "failed");
+}
+
+async function acceptFontPickerFamily(
+  session: ActiveStylePickerSession,
+  fontFamily: string | null,
+): Promise<void> {
+  const pending = subtitleStyleAuthority.beginCommit(
+    session.interactionId,
+    "fontFamily",
+    fontFamily,
+  );
+  if (pending.outcome === "superseded") {
+    sendStylePickerResult(session, "confirmed");
+    return;
+  }
+  try {
+    subtitleStylePreferences.save(pending.candidateStyle);
+    const completed = subtitleStyleAuthority.commit(pending.intent);
+    postToPlayer(null, "subtitle-style:state", completed.state);
+    sendStylePickerResult(session, "confirmed");
+  } catch {
+    const failed = subtitleStyleAuthority.fail(pending.intent);
+    postToPlayer(null, "subtitle-style:state", failed.state);
+    sendStylePickerResult(session, "failed");
+  }
+}
+
+async function acceptColorPickerClose(
+  session: ActiveStylePickerSession,
+  changed: boolean,
+  color: RgbaColor,
+): Promise<void> {
+  const field = session.field as ColorStyleField;
+  if (!changed) {
+    if (session.lastPreviewColor) {
+      const pending = subtitleStyleAuthority.beginCommit(
+        session.interactionId,
+        field,
+        session.lastPreviewColor,
+      );
+      if (pending.outcome === "pending") {
+        const reverted = subtitleStyleAuthority.fail(pending.intent);
+        postToPlayer(null, "subtitle-style:state", reverted.state);
+      }
+      sendStylePickerResult(session, "cancelled");
+    } else {
+      sendStylePickerResult(session, "unchanged");
+    }
+    return;
+  }
+  if (
+    !session.lastPreviewColor ||
+    JSON.stringify(session.lastPreviewColor) !== JSON.stringify(color)
+  ) {
+    const preview = subtitleStyleAuthority.preview(session.interactionId, field, color);
+    session.lastPreviewColor = color;
+    postToPlayer(null, "subtitle-style:state", preview.state);
+  }
+  const pending = subtitleStyleAuthority.beginCommit(session.interactionId, field, color);
+  if (pending.outcome === "superseded") {
+    sendStylePickerResult(session, "confirmed");
+    return;
+  }
+  try {
+    subtitleStylePreferences.save(pending.candidateStyle);
+    const completed = subtitleStyleAuthority.commit(pending.intent);
+    postToPlayer(null, "subtitle-style:state", completed.state);
+    sendStylePickerResult(session, "confirmed");
+  } catch {
+    const failed = subtitleStyleAuthority.fail(pending.intent);
+    postToPlayer(null, "subtitle-style:state", failed.state);
+    sendStylePickerResult(session, "failed");
+  }
+}
+
+async function handleStylePickerEvent(
+  client: StylePickerClient,
+  event: StylePickerEvent,
+): Promise<void> {
+  if (event.type === "font-catalog-changed") {
+    await refreshFontAvailability(client);
+    return;
+  }
+  const session = activeStylePicker;
+  if (!session || event.requestId !== session.requestId) return;
+  if (event.type === "color-preview" && session.kind === "color") {
+    const preview = subtitleStyleAuthority.preview(
+      session.interactionId,
+      session.field as ColorStyleField,
+      event.color,
+    );
+    session.lastPreviewColor = event.color;
+    postToPlayer(null, "subtitle-style:state", preview.state);
+  } else if (event.type === "color-closed" && session.kind === "color") {
+    activeStylePicker = null;
+    await acceptColorPickerClose(session, event.changed, event.color);
+  } else if (event.type === "font-confirmed" && session.kind === "font") {
+    activeStylePicker = null;
+    await acceptFontPickerFamily(session, event.fontFamily);
+  } else if (event.type === "font-cancelled" && session.kind === "font") {
+    activeStylePicker = null;
+    sendStylePickerResult(session, "cancelled");
+  } else if (event.type === "picker-failed") {
+    failActiveStylePicker();
+  }
+}
+
+function startStylePickerPolling(client: StylePickerClient): void {
+  if (stylePickerPolling) return;
+  stylePickerPolling = true;
+  const poll = async (): Promise<void> => {
+    if (stylePickerClient !== client) {
+      stylePickerPolling = false;
+      return;
+    }
+    try {
+      const batch = await client.events(stylePickerEventRevision);
+      if (batch.gap) {
+        stylePickerEventRevision = batch.latestRevision;
+        failActiveStylePicker();
+        await refreshFontAvailability(client);
+      } else {
+        for (const event of batch.events) {
+          stylePickerEventRevision = event.revision;
+          await handleStylePickerEvent(client, event);
+        }
+      }
+      setTimeout(() => void poll(), 100);
+    } catch {
+      stylePickerClient = null;
+      stylePickerPolling = false;
+      failActiveStylePicker();
+      const preferredFamily = subtitleStyleAuthority.snapshot().committedStyle.fontFamily;
+      const state = subtitleStyleAuthority.updateFontResolution(
+        createFontResolution(preferredFamily, "unknown", 0),
+      );
+      postToPlayer(null, "subtitle-style:state", state);
+    }
+  };
+  void poll();
+}
+
 async function profileViews(): Promise<unknown[]> {
   return Promise.all(
     profiles.listLatest().map(async (profile) => {
@@ -491,6 +745,130 @@ iina.global.onMessage("overlay-position:save", (raw: unknown, playerId?: string)
     }
   } catch {
     return;
+  }
+});
+
+iina.global.onMessage("subtitle-style:get", (raw: unknown, playerId?: string) => {
+  if (!playerId) return;
+  try {
+    parseSubtitleStyleGet(raw);
+    postToPlayer(playerId, "subtitle-style:state", subtitleStyleAuthority.snapshot());
+  } catch {
+    return;
+  }
+});
+
+iina.global.onMessage("subtitle-style:edit", (raw: unknown, playerId?: string) => {
+  if (!playerId) return;
+  try {
+    const message = parseSubtitleStyleEdit(raw);
+    const edit = message.payload;
+    if (edit.phase === "preview") {
+      const preview = subtitleStyleAuthority.preview(edit.interactionId, edit.field, edit.value);
+      postToPlayer(null, "subtitle-style:state", preview.state);
+      return;
+    }
+    const pending = subtitleStyleAuthority.beginCommit(edit.interactionId, edit.field, edit.value);
+    if (pending.outcome === "superseded") {
+      postToPlayer(playerId, "subtitle-style:save-result", {
+        requestId: message.requestId,
+        field: edit.field,
+        ok: true,
+        outcome: "superseded",
+        intentSequence: pending.intent.intentSequence,
+        authority: pending.state,
+      });
+      return;
+    }
+    try {
+      subtitleStylePreferences.save(pending.candidateStyle);
+      const completed = subtitleStyleAuthority.commit(pending.intent);
+      postToPlayer(null, "subtitle-style:state", completed.state);
+      postToPlayer(playerId, "subtitle-style:save-result", {
+        requestId: message.requestId,
+        field: edit.field,
+        ok: true,
+        outcome: completed.outcome,
+        intentSequence: pending.intent.intentSequence,
+        authority: completed.state,
+      });
+    } catch {
+      const failed = subtitleStyleAuthority.fail(pending.intent);
+      postToPlayer(null, "subtitle-style:state", failed.state);
+      postToPlayer(playerId, "subtitle-style:save-result", {
+        requestId: message.requestId,
+        field: edit.field,
+        ok: false,
+        code: "SUBTITLE_STYLE_SAVE_FAILED",
+        userAction: "EDIT_AGAIN",
+        intentSequence: pending.intent.intentSequence,
+        authority: failed.state,
+      });
+    }
+  } catch {
+    return;
+  }
+});
+
+iina.global.onMessage("subtitle-style:picker-open", async (raw: unknown, playerId?: string) => {
+  if (!playerId) return;
+  let request: ActiveStylePickerSession | null = null;
+  try {
+    const message = parseSubtitleStylePickerOpen(raw);
+    request = {
+      requestId: message.requestId,
+      playerId,
+      interactionId: `picker:${message.requestId}`,
+      kind: message.payload.kind,
+      field: message.payload.field,
+      lastPreviewColor: null,
+    };
+    if (activeStylePicker) {
+      sendStylePickerResult(request, "busy");
+      return;
+    }
+    activeStylePicker = request;
+    const client = await ensureStylePickerClient();
+    if (activeStylePicker !== request) return;
+    const style = subtitleStyleAuthority.snapshot().liveStyle;
+    const status =
+      request.kind === "font"
+        ? await client.openFont({
+            requestId: request.requestId,
+            fontFamily: style.fontFamily,
+            fontSize: style.fontSize,
+            bold: style.bold,
+            italic: style.italic,
+          })
+        : await client.openColor({
+            requestId: request.requestId,
+            color: style[request.field as ColorStyleField],
+          });
+    if (status === "busy") {
+      activeStylePicker = null;
+      sendStylePickerResult(request, "busy");
+    }
+  } catch {
+    if (activeStylePicker === request) activeStylePicker = null;
+    if (request) sendStylePickerResult(request, "failed");
+  }
+});
+
+iina.global.onMessage("subtitle-style:picker-cancel", async (raw: unknown, playerId?: string) => {
+  if (!playerId || !activeStylePicker || activeStylePicker.playerId !== playerId) return;
+  try {
+    const message = parseSubtitleStyleGet(raw);
+    void message;
+    const session = activeStylePicker;
+    const client = stylePickerClient;
+    if (!client) {
+      activeStylePicker = null;
+      sendStylePickerResult(session, "cancelled");
+      return;
+    }
+    await client.cancel(session.requestId);
+  } catch {
+    failActiveStylePicker();
   }
 });
 

@@ -17,8 +17,8 @@
   "permissions": ["network-request", "file-system", "show-alert", "video-overlay"],
   "allowedDomains": ["127.0.0.1"],
   "permissionDescriptions": {
-    "network-request": "Connect to the bundled loopback helper. Configured or edited endpoints may receive subtitle-free model-list requests; the default DeepSeek root at api.deepseek.com and default Claude root at api.anthropic.com may each receive such a request before Select. Only the explicitly selected profile revision receives nearby subtitle text for translation.",
-    "file-system": "Read only the selected text subtitle from the current local media or external subtitle, store optional provider keys in a plugin-private local file, and remove temporary extracted source subtitle data when the session ends. Remote and graphic embedded subtitles are not read.",
+    "network-request": "Connect to the authenticated loopback transport and style picker helpers. Configured or edited endpoints may receive subtitle-free model-list requests; the default DeepSeek root at api.deepseek.com and default Claude root at api.anthropic.com may each receive such a request before Select. Only the explicitly selected profile revision receives nearby subtitle text for translation.",
+    "file-system": "Read only the selected text subtitle from the current local media or external subtitle, execute the bundled transport, subtitle extractor, and style picker helpers, store optional provider keys in a plugin-private local file, and remove temporary extracted source subtitle data when the session ends. Remote and graphic embedded subtitles are not read.",
     "show-alert": "Confirm permanent deletion of a translation profile and its saved credential.",
     "video-overlay": "Display the current translated subtitle in a local non-interactive translation overlay."
   },

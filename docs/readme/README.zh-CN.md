@@ -29,6 +29,7 @@ SubTandem 保留原字幕，同时在你选择的位置独立显示译文。
 ## ✨ 功能
 
 - **实时双语字幕：** 原字幕继续由 IINA 显示，SubTandem 在你选择的垂直位置横向居中渲染译文，不占用其他字幕轨。
+- **持久译文样式：** 可在 **Subtitle** 中调整 Font 颜色、Size、字体、Bold/Italic、Border 颜色与 Width，以及 Background 颜色。默认值为白色 Size 40 系统字体、黑色 Width 3 描边和透明背景。三个颜色共用预设与带透明度的 **Show Colors…**；已保存字体不可用时会暂用系统字体，并在字体恢复后自动还原。
 - **支持内嵌与外部文本字幕：** 支持本地 Matroska SubRip/ASS/SSA、本地 MOV/MP4 `mov_text`，以及外部 SRT/ASS；正式包自带提取能力，无需安装 `ffmpeg` 或 `ffprobe`。
 - **自选翻译服务：** 支持兼容 OpenAI Chat Completions 的 endpoint、兼容 Claude Messages 的 endpoint、DeepSeek，以及本地或远程 Ollama 服务。
 - **播放优先：** 翻译工作不会暂停视频，也不会隐藏原字幕。
@@ -101,7 +102,8 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 2. 在 **Languages** 中选择母语。如果 IINA 无法识别字幕语言，请手动确认，然后保存语言设置。
 3. 在 **Translation service** 中创建 OpenAI、Claude、DeepSeek 或 Ollama Profile。服务需要认证时，先填写 API key，再手动刷新模型列表；选择返回的模型，或填写准确的自定义 Model ID。
 4. 保存并测试 Profile，然后点击 **Select**。选择 Profile 即明确授权 SubTandem 向界面显示的 endpoint 发送播放位置附近的字幕文字。
-5. 打开 **Translate**。原字幕仍由 IINA 正常显示，译文会出现在 SubTandem 覆盖层中。可在 **Languages** 中用 **Translation position** 将覆盖层从顶部（`0`）调整到底部（`100`）。
+5. 打开 **Translate**。原字幕仍由 IINA 正常显示，译文会出现在 SubTandem 覆盖层中。可在 **Subtitle** 中用 **Position** 将覆盖层从顶部（`0`）调整到底部（`100`）。
+6. 在 **Font**、**Border** 与 **Background** 分组中设置八项文本样式。选择颜色预设会直接保存；选择 **Show Colors…** 可打开 macOS 系统颜色面板，未修改便关闭时会保留原值。
 
 如果 endpoint、模型、API key 或网络路由发生变化，请保存更新后的 Profile，并在翻译前重新选择。
 

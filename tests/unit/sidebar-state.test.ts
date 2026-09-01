@@ -313,6 +313,242 @@ describe("Sidebar operation feedback ownership", () => {
   });
 });
 
+const defaultSubtitleStyle = {
+  fontColor: { r: 255, g: 255, b: 255, a: 255 },
+  fontSize: 40,
+  fontFamily: null,
+  bold: false,
+  italic: false,
+  borderColor: { r: 0, g: 0, b: 0, a: 255 },
+  borderWidth: 3,
+  backgroundColor: { r: 0, g: 0, b: 0, a: 0 },
+};
+
+const subtitleAuthority = (overrides: Record<string, unknown> = {}) => ({
+  phase: "snapshot",
+  liveStyle: defaultSubtitleStyle,
+  committedStyle: defaultSubtitleStyle,
+  changedField: null,
+  stateRevision: 1,
+  latestIntentSequence: 0,
+  committedRevision: 0,
+  fontResolution: {
+    preferredFamily: null,
+    availability: "available",
+    effectiveFamily: null,
+    fallbackActive: false,
+    catalogRevision: 0,
+  },
+  ...overrides,
+});
+
+describe("Sidebar Font style state", () => {
+  it("tracks Font display, committed and pending state per field", () => {
+    const state = createState();
+    expect(state.applySubtitleStyleState(subtitleAuthority())).toBe(true);
+    expect(state.previewSubtitleStyle("font-size-1", "fontSize", 50)).toBe(true);
+    expect(state.beginSubtitleStyleSave("save-size-1", "font-size-1", "fontSize")).toBe(true);
+    expect(state.previewSubtitleStyle("bold-1", "bold", true)).toBe(true);
+    expect(state.beginSubtitleStyleSave("save-bold-1", "bold-1", "bold")).toBe(true);
+    expect(state.snapshot.subtitleStyle.displayStyle).toMatchObject({ fontSize: 50, bold: true });
+    expect(state.snapshot.subtitleStyle.committedStyle).toEqual(defaultSubtitleStyle);
+    expect(state.snapshot.subtitleStyle.pendingByField.fontSize).toMatchObject({
+      requestId: "save-size-1",
+      interactionId: "font-size-1",
+    });
+    expect(state.snapshot.subtitleStyle.pendingByField.bold).toMatchObject({
+      requestId: "save-bold-1",
+      interactionId: "bold-1",
+    });
+    expect(state.snapshot.subtitleStyle.feedbackByField).toMatchObject({
+      fontSize: "saving",
+      bold: "saving",
+    });
+  });
+
+  it("applies latest authority state and exposes requested-family fallback", () => {
+    const state = createState();
+    state.applySubtitleStyleState(subtitleAuthority());
+    const fallbackStyle = { ...defaultSubtitleStyle, fontFamily: "Example Family" };
+    expect(
+      state.applySubtitleStyleState(
+        subtitleAuthority({
+          phase: "availability",
+          liveStyle: fallbackStyle,
+          committedStyle: fallbackStyle,
+          stateRevision: 2,
+          fontResolution: {
+            preferredFamily: "Example Family",
+            availability: "unavailable",
+            effectiveFamily: null,
+            fallbackActive: true,
+            catalogRevision: 2,
+          },
+        }),
+      ),
+    ).toBe(true);
+    expect(state.snapshot.subtitleStyle.fontResolution).toMatchObject({
+      preferredFamily: "Example Family",
+      effectiveFamily: null,
+      fallbackActive: true,
+    });
+    expect(state.applySubtitleStyleState(subtitleAuthority())).toBe(false);
+  });
+
+  it("restores all eight fields and clears all pending state on save failure", () => {
+    const state = createState();
+    state.applySubtitleStyleState(subtitleAuthority());
+    state.previewSubtitleStyle("size-1", "fontSize", 60);
+    state.beginSubtitleStyleSave("save-size-1", "size-1", "fontSize");
+    state.previewSubtitleStyle("italic-1", "italic", true);
+    const reverted = subtitleAuthority({
+      phase: "reverted",
+      stateRevision: 4,
+      latestIntentSequence: 2,
+    });
+    expect(
+      state.finishSubtitleStyleSave({
+        requestId: "save-size-1",
+        field: "fontSize",
+        ok: false,
+        code: "SUBTITLE_STYLE_SAVE_FAILED",
+        userAction: "EDIT_AGAIN",
+        intentSequence: 1,
+        authority: reverted,
+      }),
+    ).toBe(true);
+    expect(state.snapshot.subtitleStyle.displayStyle).toEqual(defaultSubtitleStyle);
+    expect(
+      Object.values(state.snapshot.subtitleStyle.pendingByField).every((value) => !value),
+    ).toBe(true);
+    expect(state.snapshot.subtitleStyle.groupError).toBe(
+      "Subtitle style could not be saved. The previous style remains active.",
+    );
+  });
+});
+
+describe("Sidebar Border and Background style state", () => {
+  it("tracks all three fields with independent parallel pending state", () => {
+    const state = createState();
+    state.applySubtitleStyleState(subtitleAuthority());
+    expect(
+      state.previewSubtitleStyle("border-color-1", "borderColor", { r: 1, g: 2, b: 3, a: 4 }),
+    ).toBe(true);
+    expect(state.beginSubtitleStyleSave("save-border-color", "border-color-1", "borderColor")).toBe(
+      true,
+    );
+    expect(
+      state.previewSubtitleStyle("background-1", "backgroundColor", { r: 5, g: 6, b: 7, a: 8 }),
+    ).toBe(true);
+    expect(state.beginSubtitleStyleSave("save-background", "background-1", "backgroundColor")).toBe(
+      true,
+    );
+    expect(state.previewSubtitleStyle("width-1", "borderWidth", 4)).toBe(true);
+    expect(state.beginSubtitleStyleSave("save-width", "width-1", "borderWidth")).toBe(true);
+    expect(state.snapshot.subtitleStyle.displayStyle).toMatchObject({
+      borderColor: { r: 1, g: 2, b: 3, a: 4 },
+      backgroundColor: { r: 5, g: 6, b: 7, a: 8 },
+      borderWidth: 4,
+    });
+    expect(state.snapshot.subtitleStyle.pendingByField.borderColor?.requestId).toBe(
+      "save-border-color",
+    );
+    expect(state.snapshot.subtitleStyle.pendingByField.backgroundColor?.requestId).toBe(
+      "save-background",
+    );
+    expect(state.snapshot.subtitleStyle.pendingByField.borderWidth?.requestId).toBe("save-width");
+  });
+
+  it("accepts only the finite Width choices and restores the group on failure", () => {
+    const state = createState();
+    state.applySubtitleStyleState(subtitleAuthority());
+    for (const width of [0, 0.25, 0.5, 1, 1.5, 2, 2.5, 3, 4, 5]) {
+      expect(state.previewSubtitleStyle(`width-${width}`, "borderWidth", width)).toBe(true);
+    }
+    expect(state.previewSubtitleStyle("width-invalid", "borderWidth", 0.75)).toBe(false);
+    state.previewSubtitleStyle("background-fail", "backgroundColor", { r: 1, g: 1, b: 1, a: 128 });
+    state.beginSubtitleStyleSave("background-fail-save", "background-fail", "backgroundColor");
+    expect(
+      state.finishSubtitleStyleSave({
+        requestId: "background-fail-save",
+        field: "backgroundColor",
+        ok: false,
+        code: "SUBTITLE_STYLE_SAVE_FAILED",
+        userAction: "EDIT_AGAIN",
+        intentSequence: 11,
+        authority: subtitleAuthority({ phase: "reverted", stateRevision: 12 }),
+      }),
+    ).toBe(true);
+    expect(state.snapshot.subtitleStyle.displayStyle).toEqual(defaultSubtitleStyle);
+  });
+
+  it("keeps one explicit color target and clears it without changing style", () => {
+    const state = createState();
+    state.applySubtitleStyleState(subtitleAuthority());
+    expect(state.openSubtitleColorPalette("borderColor")).toBe(true);
+    expect(state.snapshot.subtitleStyle.colorTarget).toBe("borderColor");
+    expect(state.openSubtitleColorPalette("backgroundColor")).toBe(true);
+    expect(state.snapshot.subtitleStyle.colorTarget).toBe("backgroundColor");
+    expect(state.openSubtitleColorPalette("fontSize" as "fontColor")).toBe(false);
+    state.closeSubtitleColorPalette();
+    expect(state.snapshot.subtitleStyle.colorTarget).toBeNull();
+    expect(state.snapshot.subtitleStyle.displayStyle).toEqual(defaultSubtitleStyle);
+  });
+});
+
+describe("Sidebar native color picker state", () => {
+  it("owns one target session while accepting continuous remote authority", () => {
+    const state = createState();
+    state.applySubtitleStyleState(subtitleAuthority());
+    expect(state.beginSubtitleColorPicker("picker-1", "fontColor")).toBe(true);
+    expect(state.beginSubtitleColorPicker("picker-2", "borderColor")).toBe(false);
+    expect(state.snapshot.subtitleStyle.nativeColorSession).toEqual({
+      requestId: "picker-1",
+      field: "fontColor",
+    });
+    expect(
+      state.applySubtitleStyleState(
+        subtitleAuthority({
+          phase: "preview",
+          stateRevision: 2,
+          latestIntentSequence: 1,
+          changedField: "fontColor",
+          liveStyle: {
+            ...defaultSubtitleStyle,
+            fontColor: { r: 10, g: 20, b: 30, a: 40 },
+          },
+        }),
+      ),
+    ).toBe(true);
+    expect(state.snapshot.subtitleStyle.displayStyle.fontColor).toEqual({
+      r: 10,
+      g: 20,
+      b: 30,
+      a: 40,
+    });
+  });
+
+  it("settles only the current picker and reports safe group failure", () => {
+    const state = createState();
+    state.applySubtitleStyleState(subtitleAuthority());
+    state.beginSubtitleColorPicker("picker-current", "backgroundColor");
+    expect(state.finishSubtitleColorPicker("picker-old", "confirmed", subtitleAuthority())).toBe(
+      false,
+    );
+    expect(
+      state.finishSubtitleColorPicker(
+        "picker-current",
+        "failed",
+        subtitleAuthority({ phase: "reverted", stateRevision: 2 }),
+      ),
+    ).toBe(true);
+    expect(state.snapshot.subtitleStyle.nativeColorSession).toBeNull();
+    expect(state.snapshot.subtitleStyle.groupError).toBe(
+      "The system color picker is unavailable. The previous style remains active.",
+    );
+  });
+});
+
 describe("Sidebar model catalog state", () => {
   it("restores the last successful Claude catalog per context and keeps it after failure", () => {
     const state = createState();

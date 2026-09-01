@@ -44,6 +44,11 @@ const validEntries = [
     unixMode: executableMode,
     encrypted: false,
   },
+  {
+    name: "dist/native/subtandem-style-picker",
+    unixMode: executableMode,
+    encrypted: false,
+  },
 ];
 
 describe("release archive audit", () => {
@@ -71,10 +76,15 @@ describe("release archive audit", () => {
     ).toThrow(/required archive entry/i);
   });
 
-  it("requires both exact native executables", () => {
+  it("requires all three exact native executables", () => {
     expect(() =>
       validateArchiveEntries(
         validEntries.filter((entry) => entry.name !== "dist/native/subtandem-subtitle-extractor"),
+      ),
+    ).toThrow(/required archive entry/i);
+    expect(() =>
+      validateArchiveEntries(
+        validEntries.filter((entry) => entry.name !== "dist/native/subtandem-style-picker"),
       ),
     ).toThrow(/required archive entry/i);
   });
@@ -314,10 +324,12 @@ describe("release archive audit", () => {
       buildHelpers: {
         "subtandem-transport": helperFacts("c"),
         "subtandem-subtitle-extractor": helperFacts("d"),
+        "subtandem-style-picker": helperFacts("e"),
       },
       packageHelpers: {
         "subtandem-transport": helperFacts("c"),
         "subtandem-subtitle-extractor": helperFacts("d"),
+        "subtandem-style-picker": helperFacts("e"),
       },
       ffmpeg: {
         version: "8.1.2",
@@ -354,8 +366,8 @@ describe("release archive audit", () => {
         playback: "not-covered",
       },
     });
-    expect(Object.keys(audit.buildHelpers)).toHaveLength(2);
-    expect(Object.keys(audit.packageHelpers)).toHaveLength(2);
+    expect(Object.keys(audit.buildHelpers)).toHaveLength(3);
+    expect(Object.keys(audit.packageHelpers)).toHaveLength(3);
     expect(audit.ffmpeg.assetName).toBe("ffmpeg-8.1.2.tar.xz");
 
     const summary = formatReleaseAuditSummary(audit);
@@ -363,6 +375,7 @@ describe("release archive audit", () => {
     expect(summary).toContain("SubTandem-0.2.0.iinaplgz");
     expect(summary).toContain("subtandem-transport");
     expect(summary).toContain("subtandem-subtitle-extractor");
+    expect(summary).toContain("subtandem-style-picker");
     expect(summary).toContain("ffmpeg-8.1.2.tar.xz");
     expect(summary.match(/not-covered/g)).toHaveLength(3);
     expect(summary).not.toContain("用户获得新功能");

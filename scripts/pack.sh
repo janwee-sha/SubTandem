@@ -34,7 +34,7 @@ rm -f "$ARTIFACT"
   "$PLUGIN_CLI" pack SubTandem
 )
 
-for required in Info.json README.md LICENSE THIRD_PARTY_NOTICES.txt dist/main.js dist/global.js dist/ui/sidebar.html dist/ui/overlay.html dist/native/subtandem-transport dist/native/subtandem-subtitle-extractor; do
+for required in Info.json README.md LICENSE THIRD_PARTY_NOTICES.txt dist/main.js dist/global.js dist/ui/sidebar.html dist/ui/overlay.html dist/native/subtandem-transport dist/native/subtandem-subtitle-extractor dist/native/subtandem-style-picker; do
   if ! unzip -Z1 "$ARTIFACT" | grep -Fqx "$required"; then
     echo "Packed artifact is missing $required" >&2
     exit 1

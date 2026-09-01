@@ -110,6 +110,7 @@ jobs:
           --expected-commit "$GITHUB_SHA"
           --build-helper dist/native/subtandem-transport
           --build-extractor dist/native/subtandem-subtitle-extractor
+          --build-style-picker dist/native/subtandem-style-picker
           --ffmpeg-source native/.build/ffmpeg/downloads/ffmpeg-8.1.2.tar.xz
           --ffmpeg-lock native/ffmpeg.lock.json
           --gates build/release-gates.json

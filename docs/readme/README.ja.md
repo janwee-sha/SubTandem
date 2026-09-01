@@ -29,6 +29,7 @@ SubTandemは元の字幕を表示したまま、選択した位置に翻訳字�
 ## ✨ 機能
 
 - **リアルタイム二言語字幕：** 元の字幕はIINAで選択したまま、SubTandemが別の字幕トラックを使わず、選択した垂直位置に翻訳を横方向中央揃えで表示します。
+- **翻訳スタイルを保持：** **Subtitle**でFontの色、Size、フォント、Bold/Italic、Borderの色とWidth、Backgroundの色を調整できます。初期値は白色、Size 40、システムフォント、黒色Width 3の縁取り、透明背景です。3つの色はプリセットとアルファ対応の**Show Colors…**を共有します。保存したフォントが利用できない場合は一時的にシステムフォントを使い、再び利用可能になると自動復元します。
 - **埋め込み・外部テキスト字幕：** ローカルMatroska SubRip/ASS/SSA、MOV/MP4 `mov_text`、外部SRT/ASSに対応します。extractorは同梱され、外部の`ffmpeg`や`ffprobe`は不要です。
 - **翻訳サービスを選択可能：** OpenAI Chat CompletionsまたはClaude Messagesと互換性のあるendpoint、DeepSeek、ローカル/リモートのOllamaサーバーを利用できます。
 - **再生を優先：** 翻訳処理によって動画が停止したり、元の字幕が非表示になったりすることはありません。
@@ -101,7 +102,8 @@ IINAの開発版では、利用可能なプラグイン一覧からSubTandemを�
 2. **Languages**で母語を選択します。IINAが字幕言語を識別できない場合は手動で確認し、言語設定を保存します。
 3. **Translation service**でOpenAI、Claude、DeepSeek、またはOllamaのProfileを作成します。認証が必要な場合は、API keyを入力してからモデル一覧を手動で更新します。返されたモデルを選ぶか、正確なカスタムModel IDを入力します。
 4. Profileを保存してテストし、**Select**をクリックします。Profileを選択すると、表示されたendpointへ再生位置付近の字幕テキストを送信することをSubTandemに明示的に許可します。
-5. **Translate**をオンにします。元の字幕はIINAでそのまま表示され、翻訳されたcueはSubTandemのオーバーレイに表示されます。**Languages**の**Translation position**で、オーバーレイを上（`0`）から下（`100`）まで移動できます。
+5. **Translate**をオンにします。元の字幕はIINAでそのまま表示され、翻訳されたcueはSubTandemのオーバーレイに表示されます。**Subtitle**の**Position**で、オーバーレイを上（`0`）から下（`100`）まで移動できます。
+6. **Font**、**Border**、**Background**の各グループで8項目のテキストスタイルを選びます。色のプリセットは直接保存され、**Show Colors…**はmacOSのカラーパネルを開きます。変更せずに閉じた場合は以前の値を保持します。
 
 Endpoint、モデル、API key、またはネットワーク経路を変更した場合は、更新したProfileを保存し、翻訳前に再選択してください。
 

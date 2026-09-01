@@ -26,6 +26,21 @@ swiftc -parse-as-library \
 "$BUILD_DIR/subtandem-transport-contract-tests"
 LIBDISPATCH_COOPERATIVE_POOL_STRICT=1 "$BUILD_DIR/subtandem-transport-contract-tests"
 
+STYLE_PICKER_SOURCE="$ROOT_DIR/native/style-picker/Sources/SubTandemStylePicker"
+STYLE_PICKER_TESTS="$ROOT_DIR/native/style-picker/Tests/SubTandemStylePickerTests"
+STYLE_PICKER_BUILD="$ROOT_DIR/native/style-picker/.build/contract-tests"
+mkdir -p "$STYLE_PICKER_BUILD"
+swiftc -parse-as-library \
+  "$STYLE_PICKER_SOURCE/Protocol.swift" \
+  "$STYLE_PICKER_SOURCE/FontCatalog.swift" \
+  "$STYLE_PICKER_SOURCE/FontPicker.swift" \
+  "$STYLE_PICKER_SOURCE/ColorPicker.swift" \
+  "$STYLE_PICKER_TESTS/ProtocolTests.swift" \
+  "$STYLE_PICKER_TESTS/FontPickerTests.swift" \
+  "$STYLE_PICKER_TESTS/ColorPickerTests.swift" \
+  -o "$STYLE_PICKER_BUILD/subtandem-style-picker-tests"
+"$STYLE_PICKER_BUILD/subtandem-style-picker-tests"
+
 "$ROOT_DIR/scripts/build-ffmpeg.sh" "${SUBTANDEM_FFMPEG_SOURCE:-$ROOT_DIR/native/.build/ffmpeg/downloads/ffmpeg-8.1.2.tar.xz}"
 EXTRACTOR_PREFIX="$ROOT_DIR/native/.build/ffmpeg/arm64"
 EXTRACTOR_SOURCE="$ROOT_DIR/native/subtitle-extractor/Sources/SubTandemSubtitleExtractor"

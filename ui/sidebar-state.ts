@@ -87,6 +87,94 @@ type SidebarOverlayPositionSaveResult =
       committedRevision: number;
     };
 
+type SidebarSubtitleStyleField =
+  | "fontColor"
+  | "fontSize"
+  | "fontFamily"
+  | "bold"
+  | "italic"
+  | "borderColor"
+  | "borderWidth"
+  | "backgroundColor";
+
+type SidebarSubtitleColorField = "fontColor" | "borderColor" | "backgroundColor";
+
+interface SidebarRgbaColor {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+}
+
+interface SidebarSubtitleTextStyle {
+  fontColor: SidebarRgbaColor;
+  fontSize: number;
+  fontFamily: string | null;
+  bold: boolean;
+  italic: boolean;
+  borderColor: SidebarRgbaColor;
+  borderWidth: number;
+  backgroundColor: SidebarRgbaColor;
+}
+
+interface SidebarFontResolution {
+  preferredFamily: string | null;
+  availability: "available" | "unavailable" | "unknown";
+  effectiveFamily: string | null;
+  fallbackActive: boolean;
+  catalogRevision: number;
+}
+
+interface SidebarSubtitleStyleAuthorityState {
+  phase: "snapshot" | "preview" | "committed" | "reverted" | "availability";
+  liveStyle: SidebarSubtitleTextStyle;
+  committedStyle: SidebarSubtitleTextStyle;
+  changedField: SidebarSubtitleStyleField | null;
+  stateRevision: number;
+  latestIntentSequence: number;
+  committedRevision: number;
+  fontResolution: SidebarFontResolution;
+}
+
+interface SidebarSubtitleStyleState {
+  displayStyle: SidebarSubtitleTextStyle;
+  committedStyle: SidebarSubtitleTextStyle;
+  stateRevision: number;
+  committedRevision: number;
+  interactionByField: Record<SidebarSubtitleStyleField, string | null>;
+  pendingByField: Record<
+    SidebarSubtitleStyleField,
+    { requestId: string; interactionId: string } | null
+  >;
+  feedbackByField: Record<SidebarSubtitleStyleField, "idle" | "saving" | "saved">;
+  groupError: string | null;
+  fontResolution: SidebarFontResolution;
+  colorTarget: "fontColor" | "borderColor" | "backgroundColor" | null;
+  nativeColorSession: {
+    requestId: string;
+    field: SidebarSubtitleColorField;
+  } | null;
+}
+
+type SidebarSubtitleStyleSaveResult =
+  | {
+      requestId: string;
+      field: SidebarSubtitleStyleField;
+      ok: true;
+      outcome: "committed" | "superseded";
+      intentSequence: number;
+      authority: SidebarSubtitleStyleAuthorityState;
+    }
+  | {
+      requestId: string;
+      field: SidebarSubtitleStyleField;
+      ok: false;
+      code: "SUBTITLE_STYLE_SAVE_FAILED";
+      userAction: "EDIT_AGAIN";
+      intentSequence: number;
+      authority: SidebarSubtitleStyleAuthorityState;
+    };
+
 interface SidebarStateSnapshot {
   profiles: SidebarStateProfile[];
   deletedProfileIds: string[];
@@ -101,6 +189,7 @@ interface SidebarStateSnapshot {
   pendingProfileSave: PendingProfileSaveState | null;
   modelControl: ModelControlState;
   overlayPosition: SidebarOverlayPositionState;
+  subtitleStyle: SidebarSubtitleStyleState;
 }
 
 interface SidebarStateCoordinator {
@@ -149,6 +238,26 @@ interface SidebarStateCoordinator {
   completeOverlayPositionInteraction(requestId: string): boolean;
   applyOverlayPositionState(state: SidebarOverlayPositionAuthorityState): boolean;
   finishOverlayPositionSave(result: SidebarOverlayPositionSaveResult): boolean;
+  previewSubtitleStyle(
+    interactionId: string,
+    field: SidebarSubtitleStyleField,
+    value: unknown,
+  ): boolean;
+  beginSubtitleStyleSave(
+    requestId: string,
+    interactionId: string,
+    field: SidebarSubtitleStyleField,
+  ): boolean;
+  applySubtitleStyleState(state: SidebarSubtitleStyleAuthorityState): boolean;
+  finishSubtitleStyleSave(result: SidebarSubtitleStyleSaveResult): boolean;
+  openSubtitleColorPalette(field: SidebarSubtitleColorField): boolean;
+  closeSubtitleColorPalette(): void;
+  beginSubtitleColorPicker(requestId: string, field: SidebarSubtitleColorField): boolean;
+  finishSubtitleColorPicker(
+    requestId: string,
+    outcome: "confirmed" | "cancelled" | "unchanged" | "busy" | "failed",
+    authority: SidebarSubtitleStyleAuthorityState,
+  ): boolean;
 }
 
 interface Window {
@@ -158,6 +267,37 @@ interface Window {
 function createSubTandemSidebarState(
   initialProfiles: SidebarStateProfile[] = [],
 ): SidebarStateCoordinator {
+  const defaultSubtitleStyle: SidebarSubtitleTextStyle = {
+    fontColor: { r: 255, g: 255, b: 255, a: 255 },
+    fontSize: 40,
+    fontFamily: null,
+    bold: false,
+    italic: false,
+    borderColor: { r: 0, g: 0, b: 0, a: 255 },
+    borderWidth: 3,
+    backgroundColor: { r: 0, g: 0, b: 0, a: 0 },
+  };
+  const subtitleStyleFields: SidebarSubtitleStyleField[] = [
+    "fontColor",
+    "fontSize",
+    "fontFamily",
+    "bold",
+    "italic",
+    "borderColor",
+    "borderWidth",
+    "backgroundColor",
+  ];
+  const fieldRecord = <T>(value: T): Record<SidebarSubtitleStyleField, T> =>
+    Object.fromEntries(subtitleStyleFields.map((field) => [field, value])) as Record<
+      SidebarSubtitleStyleField,
+      T
+    >;
+  const cloneStyle = (style: SidebarSubtitleTextStyle): SidebarSubtitleTextStyle => ({
+    ...style,
+    fontColor: { ...style.fontColor },
+    borderColor: { ...style.borderColor },
+    backgroundColor: { ...style.backgroundColor },
+  });
   const snapshot: SidebarStateSnapshot = {
     profiles: [...initialProfiles],
     deletedProfileIds: [],
@@ -190,6 +330,25 @@ function createSubTandemSidebarState(
       interaction: "idle",
       pendingSaveRequestId: null,
       feedback: "idle",
+    },
+    subtitleStyle: {
+      displayStyle: cloneStyle(defaultSubtitleStyle),
+      committedStyle: cloneStyle(defaultSubtitleStyle),
+      stateRevision: -1,
+      committedRevision: 0,
+      interactionByField: fieldRecord<string | null>(null),
+      pendingByField: fieldRecord<{ requestId: string; interactionId: string } | null>(null),
+      feedbackByField: fieldRecord<"idle" | "saving" | "saved">("idle"),
+      groupError: null,
+      fontResolution: {
+        preferredFamily: null,
+        availability: "available",
+        effectiveFamily: null,
+        fallbackActive: false,
+        catalogRevision: 0,
+      },
+      colorTarget: null,
+      nativeColorSession: null,
     },
   };
   const writeFeedback = (
@@ -508,6 +667,244 @@ function createSubTandemSidebarState(
     return true;
   };
 
+  const validRgba = (value: unknown): value is SidebarRgbaColor => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+    const color = value as Record<string, unknown>;
+    return (
+      Object.keys(color).sort().join(",") === "a,b,g,r" &&
+      [color.r, color.g, color.b, color.a].every(
+        (channel) =>
+          Number.isInteger(channel) && (channel as number) >= 0 && (channel as number) <= 255,
+      )
+    );
+  };
+
+  const printableFontFamily = (value: string): boolean =>
+    Array.from(value).every((character) => {
+      const code = character.charCodeAt(0);
+      return code > 31 && code !== 127;
+    });
+
+  const validSubtitleStyleValue = (field: SidebarSubtitleStyleField, value: unknown): boolean => {
+    if (field === "fontColor" || field === "borderColor" || field === "backgroundColor")
+      return validRgba(value);
+    if (field === "fontSize") return [30, 35, 40, 45, 50, 55, 60, 65, 70].includes(value as number);
+    if (field === "borderWidth")
+      return [0, 0.25, 0.5, 1, 1.5, 2, 2.5, 3, 4, 5].includes(value as number);
+    if (field === "fontFamily")
+      return (
+        value === null ||
+        (typeof value === "string" &&
+          value.length >= 1 &&
+          value.length <= 256 &&
+          printableFontFamily(value))
+      );
+    return typeof value === "boolean";
+  };
+
+  const validSubtitleStyle = (value: unknown): value is SidebarSubtitleTextStyle => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+    const style = value as Record<string, unknown>;
+    return (
+      Object.keys(style).sort().join(",") === [...subtitleStyleFields].sort().join(",") &&
+      subtitleStyleFields.every((field) => validSubtitleStyleValue(field, style[field]))
+    );
+  };
+
+  const validFontResolution = (value: unknown): value is SidebarFontResolution => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+    const resolution = value as Record<string, unknown>;
+    if (
+      Object.keys(resolution).sort().join(",") !==
+        "availability,catalogRevision,effectiveFamily,fallbackActive,preferredFamily" ||
+      !validSubtitleStyleValue("fontFamily", resolution.preferredFamily) ||
+      !validSubtitleStyleValue("fontFamily", resolution.effectiveFamily) ||
+      !["available", "unavailable", "unknown"].includes(String(resolution.availability)) ||
+      typeof resolution.fallbackActive !== "boolean" ||
+      !Number.isInteger(resolution.catalogRevision) ||
+      (resolution.catalogRevision as number) < 0
+    )
+      return false;
+    const preferred = resolution.preferredFamily as string | null;
+    const expectedEffective =
+      preferred !== null && resolution.availability === "available" ? preferred : null;
+    return (
+      resolution.effectiveFamily === expectedEffective &&
+      resolution.fallbackActive ===
+        (preferred !== null && resolution.availability === "unavailable")
+    );
+  };
+
+  const validAuthorityState = (state: SidebarSubtitleStyleAuthorityState): boolean =>
+    Boolean(
+      state &&
+      ["snapshot", "preview", "committed", "reverted", "availability"].includes(state.phase) &&
+      validSubtitleStyle(state.liveStyle) &&
+      validSubtitleStyle(state.committedStyle) &&
+      (state.changedField === null || subtitleStyleFields.includes(state.changedField)) &&
+      Number.isInteger(state.stateRevision) &&
+      state.stateRevision >= 0 &&
+      Number.isInteger(state.latestIntentSequence) &&
+      state.latestIntentSequence >= 0 &&
+      Number.isInteger(state.committedRevision) &&
+      state.committedRevision >= 0 &&
+      validFontResolution(state.fontResolution),
+    );
+
+  const previewSubtitleStyle = (
+    interactionId: string,
+    field: SidebarSubtitleStyleField,
+    value: unknown,
+  ): boolean => {
+    if (
+      !interactionId ||
+      !subtitleStyleFields.includes(field) ||
+      !validSubtitleStyleValue(field, value)
+    )
+      return false;
+    snapshot.subtitleStyle.displayStyle = {
+      ...cloneStyle(snapshot.subtitleStyle.displayStyle),
+      [field]:
+        field === "fontColor" || field === "borderColor" || field === "backgroundColor"
+          ? { ...(value as SidebarRgbaColor) }
+          : value,
+    };
+    snapshot.subtitleStyle.interactionByField[field] = interactionId;
+    snapshot.subtitleStyle.feedbackByField[field] = "idle";
+    snapshot.subtitleStyle.groupError = null;
+    return true;
+  };
+
+  const beginSubtitleStyleSave = (
+    requestId: string,
+    interactionId: string,
+    field: SidebarSubtitleStyleField,
+  ): boolean => {
+    if (
+      !requestId ||
+      !interactionId ||
+      snapshot.subtitleStyle.interactionByField[field] !== interactionId
+    )
+      return false;
+    snapshot.subtitleStyle.pendingByField[field] = { requestId, interactionId };
+    snapshot.subtitleStyle.feedbackByField[field] = "saving";
+    return true;
+  };
+
+  const applySubtitleStyleState = (state: SidebarSubtitleStyleAuthorityState): boolean => {
+    if (!validAuthorityState(state)) return false;
+    if (state.stateRevision < snapshot.subtitleStyle.stateRevision) return false;
+    if (state.stateRevision === snapshot.subtitleStyle.stateRevision) {
+      return (
+        JSON.stringify({
+          liveStyle: snapshot.subtitleStyle.displayStyle,
+          committedStyle: snapshot.subtitleStyle.committedStyle,
+          committedRevision: snapshot.subtitleStyle.committedRevision,
+          fontResolution: snapshot.subtitleStyle.fontResolution,
+        }) ===
+        JSON.stringify({
+          liveStyle: state.liveStyle,
+          committedStyle: state.committedStyle,
+          committedRevision: state.committedRevision,
+          fontResolution: state.fontResolution,
+        })
+      );
+    }
+    snapshot.subtitleStyle.displayStyle = cloneStyle(state.liveStyle);
+    snapshot.subtitleStyle.committedStyle = cloneStyle(state.committedStyle);
+    snapshot.subtitleStyle.stateRevision = state.stateRevision;
+    snapshot.subtitleStyle.committedRevision = state.committedRevision;
+    snapshot.subtitleStyle.fontResolution = { ...state.fontResolution };
+    if (state.phase === "reverted") {
+      snapshot.subtitleStyle.interactionByField = fieldRecord<string | null>(null);
+      snapshot.subtitleStyle.pendingByField = fieldRecord<{
+        requestId: string;
+        interactionId: string;
+      } | null>(null);
+      snapshot.subtitleStyle.feedbackByField = fieldRecord<"idle" | "saving" | "saved">("idle");
+    }
+    return true;
+  };
+
+  const finishSubtitleStyleSave = (result: SidebarSubtitleStyleSaveResult): boolean => {
+    const pending = snapshot.subtitleStyle.pendingByField[result.field];
+    if (
+      !pending ||
+      pending.requestId !== result.requestId ||
+      !validAuthorityState(result.authority)
+    )
+      return false;
+    if (!result.ok) {
+      applySubtitleStyleState(result.authority);
+      snapshot.subtitleStyle.displayStyle = cloneStyle(result.authority.committedStyle);
+      snapshot.subtitleStyle.committedStyle = cloneStyle(result.authority.committedStyle);
+      snapshot.subtitleStyle.interactionByField = fieldRecord<string | null>(null);
+      snapshot.subtitleStyle.pendingByField = fieldRecord<{
+        requestId: string;
+        interactionId: string;
+      } | null>(null);
+      snapshot.subtitleStyle.feedbackByField = fieldRecord<"idle" | "saving" | "saved">("idle");
+      snapshot.subtitleStyle.groupError =
+        "Subtitle style could not be saved. The previous style remains active.";
+      snapshot.subtitleStyle.colorTarget = null;
+      snapshot.subtitleStyle.nativeColorSession = null;
+      return true;
+    }
+    applySubtitleStyleState(result.authority);
+    if (snapshot.subtitleStyle.pendingByField[result.field]?.requestId !== result.requestId)
+      return true;
+    snapshot.subtitleStyle.pendingByField[result.field] = null;
+    snapshot.subtitleStyle.interactionByField[result.field] = null;
+    snapshot.subtitleStyle.feedbackByField[result.field] =
+      result.outcome === "committed" ? "saved" : "idle";
+    return true;
+  };
+
+  const openSubtitleColorPalette = (field: SidebarSubtitleColorField): boolean => {
+    if (!["fontColor", "borderColor", "backgroundColor"].includes(field)) return false;
+    snapshot.subtitleStyle.colorTarget = field;
+    return true;
+  };
+
+  const closeSubtitleColorPalette = (): void => {
+    snapshot.subtitleStyle.colorTarget = null;
+  };
+
+  const beginSubtitleColorPicker = (
+    requestId: string,
+    field: SidebarSubtitleColorField,
+  ): boolean => {
+    if (
+      !/^[A-Za-z0-9_.:-]{1,128}$/.test(requestId) ||
+      !["fontColor", "borderColor", "backgroundColor"].includes(field) ||
+      snapshot.subtitleStyle.nativeColorSession
+    )
+      return false;
+    snapshot.subtitleStyle.nativeColorSession = { requestId, field };
+    snapshot.subtitleStyle.feedbackByField[field] = "saving";
+    snapshot.subtitleStyle.groupError = null;
+    return true;
+  };
+
+  const finishSubtitleColorPicker = (
+    requestId: string,
+    outcome: "confirmed" | "cancelled" | "unchanged" | "busy" | "failed",
+    authority: SidebarSubtitleStyleAuthorityState,
+  ): boolean => {
+    const session = snapshot.subtitleStyle.nativeColorSession;
+    if (!session || session.requestId !== requestId || !validAuthorityState(authority))
+      return false;
+    if (!applySubtitleStyleState(authority)) return false;
+    snapshot.subtitleStyle.nativeColorSession = null;
+    snapshot.subtitleStyle.feedbackByField[session.field] = "idle";
+    if (outcome === "failed")
+      snapshot.subtitleStyle.groupError =
+        "The system color picker is unavailable. The previous style remains active.";
+    else if (outcome === "busy")
+      snapshot.subtitleStyle.groupError = "Another subtitle style picker is already open.";
+    return true;
+  };
+
   return {
     snapshot,
     applyProfiles,
@@ -536,6 +933,14 @@ function createSubTandemSidebarState(
     completeOverlayPositionInteraction,
     applyOverlayPositionState,
     finishOverlayPositionSave,
+    previewSubtitleStyle,
+    beginSubtitleStyleSave,
+    applySubtitleStyleState,
+    finishSubtitleStyleSave,
+    openSubtitleColorPalette,
+    closeSubtitleColorPalette,
+    beginSubtitleColorPicker,
+    finishSubtitleColorPicker,
   };
 }
 

@@ -29,6 +29,7 @@ SubTandem conserve les sous-titres d'origine et affiche séparément leur traduc
 ## ✨ Fonctionnalités
 
 - **Sous-titres bilingues en temps réel :** le texte d'origine reste sélectionné dans IINA, tandis que SubTandem centre horizontalement la traduction à la position verticale choisie sans occuper une autre piste.
+- **Style de traduction persistant :** réglez sous **Subtitle** la couleur, la Size, la famille et Bold/Italic de Font, la couleur et la Width de Border, ainsi que la couleur de Background. Les valeurs par défaut sont un texte blanc Size 40 en police système, une bordure noire Width 3 et un fond transparent. Les trois couleurs partagent les préréglages et **Show Colors…** avec alpha ; une police enregistrée indisponible utilise temporairement la police système et revient automatiquement lorsqu'elle redevient disponible.
 - **Sous-titres texte intégrés et externes :** prend en charge Matroska SubRip/ASS/SSA et MOV/MP4 `mov_text` locaux, ainsi que les SRT/ASS externes. L'extracteur est inclus ; aucun `ffmpeg` ou `ffprobe` externe n'est requis.
 - **Service de traduction au choix :** utilisez un endpoint compatible avec OpenAI Chat Completions ou Claude Messages, DeepSeek ou un serveur Ollama local/distant.
 - **Priorité à la lecture :** la traduction ne met jamais la vidéo en pause et ne masque pas les sous-titres d'origine.
@@ -101,7 +102,8 @@ Quelle que soit la méthode choisie, approuvez les autorisations demandées si I
 2. Dans **Languages**, sélectionnez votre langue maternelle. Si IINA ne peut pas identifier la langue du sous-titre, confirmez-la manuellement, puis enregistrez les réglages.
 3. Dans **Translation service**, créez un Profile OpenAI, Claude, DeepSeek ou Ollama. Si le service exige une authentification, saisissez son API key avant d'actualiser manuellement la liste des modèles. Choisissez ensuite un modèle retourné ou saisissez un Model ID personnalisé exact.
 4. Enregistrez et testez le Profile, puis cliquez sur **Select**. La sélection autorise explicitement SubTandem à envoyer le texte des sous-titres proches à l'endpoint affiché.
-5. Activez **Translate**. Le sous-titre d'origine reste affiché par IINA et les cue traduits apparaissent dans la surcouche de SubTandem. Utilisez **Translation position** dans **Languages** pour déplacer la surcouche du haut (`0`) vers le bas (`100`).
+5. Activez **Translate**. Le sous-titre d'origine reste affiché par IINA et les cue traduits apparaissent dans la surcouche de SubTandem. Sous **Subtitle**, utilisez **Position** pour déplacer la surcouche du haut (`0`) vers le bas (`100`).
+6. Choisissez les huit valeurs dans les groupes **Font**, **Border** et **Background**. Un préréglage de couleur est enregistré directement ; **Show Colors…** ouvre le panneau de couleurs macOS et sa fermeture sans modification conserve la valeur précédente.
 
 Si l'endpoint, le modèle, l'API key ou la route réseau change, enregistrez le Profile modifié et sélectionnez-le à nouveau avant de traduire.
 
