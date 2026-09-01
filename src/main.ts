@@ -50,6 +50,7 @@ import {
   type SubtitleTextStyle,
 } from "./domain/subtitle-style.js";
 import { OverlayRegionRuntime } from "./adapters/iina/overlay-region-runtime.js";
+import { SidebarMessageBuffer } from "./adapters/iina/sidebar-message-buffer.js";
 import {
   acceptProfileListResult,
   beginProfileListRequest,
@@ -138,7 +139,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     overlayPosition: overlayPosition.snapshot,
     subtitleStyle: subtitleStyle.snapshot,
   };
-  const sidebarMessages: Array<{ name: string; data: unknown }> = [];
+  const sidebarMessages = new SidebarMessageBuffer();
   let profileListState = createProfileListSyncState<{
     profileId: string;
     credentialConfigured?: boolean;
@@ -173,8 +174,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   };
 
   const queueSidebarMessage = (name: string, data: unknown): void => {
-    sidebarMessages.push({ name, data });
-    if (sidebarMessages.length > 32) sidebarMessages.shift();
+    sidebarMessages.enqueue(name, data);
   };
 
   const requestProfiles = (): void => {
@@ -208,7 +208,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   // been torn down during a plugin reload.
   const flushSidebar = (): void => {
     runtime.sidebar.postMessage("state:update", sidebarState);
-    for (const message of sidebarMessages.splice(0)) {
+    for (const message of sidebarMessages.drain()) {
       runtime.sidebar.postMessage(message.name, message.data);
     }
   };

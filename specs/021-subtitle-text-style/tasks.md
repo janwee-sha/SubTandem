@@ -154,6 +154,9 @@
 - [X] T071 实现 helper 活动窗口前置、系统颜色面板失焦关闭与 `activate` 严格协议，并将 focused 结果接入 client、Global 和 Main，文件：`native/style-picker/Sources/SubTandemStylePicker/Protocol.swift`, `native/style-picker/Sources/SubTandemStylePicker/Server.swift`, `native/style-picker/Sources/SubTandemStylePicker/ColorPicker.swift`, `native/style-picker/Sources/SubTandemStylePicker/FontPicker.swift`, `src/adapters/iina/style-picker-client.ts`, `src/domain/messages.ts`, `src/global.ts`, 与 `src/main.ts`
 - [X] T072 实现紧凑色盘外部点击/失焦关闭、pending picker 重入前置、focused 静默收敛并移除 Font 字段例行 saving 消息，文件：`ui/sidebar.ts` 与 `ui/sidebar-state.ts`
 - [X] T073 重新执行 021 聚焦测试、全量测试、类型检查、lint、native 测试、native/plugin 构建、包验证和正式打包，文件：`specs/021-subtitle-text-style/quickstart.md`
+- [X] T074 为 50 次快速样式交互期间的 Main→Sidebar 消息积压编写失败回归，确认 picker 与保存终态不会被缓冲上限丢弃，文件：`tests/unit/sidebar-message-buffer.test.ts`
+- [X] T075 移除 Main→Sidebar 消息缓冲的有损截断，并以按轮询周期无损排空保证终态清理 busy/pending，文件：`src/adapters/iina/sidebar-message-buffer.ts` 与 `src/main.ts`
+- [X] T076 重新执行 021 聚焦测试、全量测试、类型检查、lint、native 测试、native/plugin 构建、包验证和正式打包，文件：`specs/021-subtitle-text-style/quickstart.md`
 - [ ] T066 使用正式 `.iinaplgz` 在 IINA 1.4.0 与 1.4.4 完成 quickstart 的单人视觉、键盘、多窗口、字体恢复、时延、失败和卸载验收，并保存不含正文的证据，文件：`docs/validation/subtitle-text-style.md`
 
 ---
@@ -167,7 +170,7 @@
 - **US1（阶段 3）**：依赖阶段 2，是 MVP；native font、Sidebar Font 与 Overlay font 三条分支最终在 Main/Global 集成。
 - **US2（阶段 4）**：执行上依赖 US1，因为两者串行修改 `ui/sidebar*` 与 `ui/overlay*`；验收时可只使用 US1 默认值验证描边和背景。
 - **US3（阶段 5）**：依赖 US1 的 native/font session 基础与 US2 的三个 Color 字段；扩展同一 helper、Global/Main 与 Sidebar 热点文件。
-- **完善（阶段 6）**：依赖全部选定用户故事；发布脚本与工作流由同一负责人按 T058 → T060 合并；T067–T072 修复正式包人工验收发现的当前规格偏差，T073 重新执行 T063–T065 的门禁，随后重新开始 T066。
+- **完善（阶段 6）**：依赖全部选定用户故事；发布脚本与工作流由同一负责人按 T058 → T060 合并；T067–T072 与 T074–T075 修复正式包人工验收发现的当前规格偏差，T073 与 T076 分别重新执行 T063–T065 的门禁，随后重新开始 T066。
 
 ### 用户故事完成图
 
