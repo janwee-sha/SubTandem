@@ -409,3 +409,144 @@ describe("IINA sidebar lifecycle contract", () => {
     );
   });
 });
+
+describe("Subtitle Font lifecycle contract", () => {
+  const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
+  const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+  const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
+
+  it("previews and commits each Font field through strict single-field edits", () => {
+    expect(sidebarSource).toMatch(/postMessage\(\s*"subtitle-style:edit"/);
+    expect(sidebarSource).toContain('phase: "preview"');
+    expect(sidebarSource).toContain('phase: "commit"');
+    for (const field of ["fontColor", "fontSize", "fontFamily", "bold", "italic"])
+      expect(sidebarSource).toContain(`"${field}"`);
+    expect(mainSource).toContain('runtime.sidebar.onMessage("subtitle-style:edit"');
+    expect(globalSource).toContain('iina.global.onMessage("subtitle-style:edit"');
+  });
+
+  it("requests the font picker, expresses control activity and handles latest-only safe results", () => {
+    expect(sidebarSource).toMatch(/postMessage\(\s*"subtitle-style:picker-open"/);
+    expect(sidebarSource).toContain('kind: "font"');
+    expect(sidebarSource).toContain('fontButton.setAttribute("aria-busy"');
+    expect(sidebarSource).toContain('onMessage("subtitle-style:state"');
+    expect(sidebarSource).toContain('onMessage("subtitle-style:save-result"');
+    expect(sidebarSource).toContain('onMessage("subtitle-style:picker-result"');
+    expect(sidebarSource).not.toMatch(/rawError|stderr|helperToken/);
+  });
+
+  it("requests authoritative style at startup and when Sidebar becomes live", () => {
+    expect(mainSource).toContain('runtime.global.postMessage("subtitle-style:get"');
+    expect(globalSource).toContain('iina.global.onMessage("subtitle-style:get"');
+    const readyStart = mainSource.indexOf('runtime.sidebar.onMessage("ui:ready"');
+    const pollStart = mainSource.indexOf('runtime.sidebar.onMessage("ui:poll"', readyStart);
+    expect(mainSource.slice(readyStart, pollStart)).toContain("requestSubtitleStyle()");
+  });
+});
+
+describe("Subtitle Border and Background lifecycle contract", () => {
+  const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
+  const sidebarStateSource = readFileSync(
+    new URL("../../ui/sidebar-state.ts", import.meta.url),
+    "utf8",
+  );
+
+  it("routes the shared palette only to its explicit color target", () => {
+    expect(sidebarStateSource).toContain("openSubtitleColorPalette");
+    expect(sidebarStateSource).toContain("closeSubtitleColorPalette");
+    expect(sidebarSource).toContain('openColorPalette("fontColor"');
+    expect(sidebarSource).toContain('openColorPalette("borderColor"');
+    expect(sidebarSource).toContain('openColorPalette("backgroundColor"');
+    expect(sidebarSource).toContain("snapshot.subtitleStyle.colorTarget");
+    expect(sidebarSource).toContain("commitSubtitleStyle(colorTarget");
+  });
+
+  it("previews and commits Border and Background fields without disabling Font", () => {
+    for (const field of ["borderColor", "borderWidth", "backgroundColor"])
+      expect(sidebarSource).toContain(`"${field}"`);
+    expect(sidebarSource).toContain('commitSubtitleStyle("borderWidth"');
+    expect(sidebarSource).not.toContain("subtitleStyleControls.disabled");
+  });
+});
+
+describe("System color picker lifecycle contract", () => {
+  const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
+  const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+  const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
+  const colorPickerSource = readFileSync(
+    new URL(
+      "../../native/style-picker/Sources/SubTandemStylePicker/ColorPicker.swift",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const serverSource = readFileSync(
+    new URL(
+      "../../native/style-picker/Sources/SubTandemStylePicker/Server.swift",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  it("opens the native panel for the current target and retains field isolation", () => {
+    expect(sidebarSource).toContain('subtitleShowColors.addEventListener("click"');
+    expect(sidebarSource).toContain('kind: "color"');
+    expect(sidebarSource).toContain("beginSubtitleColorPicker");
+    expect(sidebarSource).toContain("colorTarget");
+    expect(sidebarSource).toContain("pendingColorPickerRequestId");
+  });
+
+  it("retries Show Colors with a fresh open request and flushes queued terminal state first", () => {
+    const showStart = sidebarSource.indexOf('subtitleShowColors.addEventListener("click"');
+    const showEnd = sidebarSource.indexOf('fontSizeSelect.addEventListener("change"', showStart);
+    const showHandler = sidebarSource.slice(showStart, showEnd);
+    const mainOpenStart = mainSource.indexOf(
+      'runtime.sidebar.onMessage("subtitle-style:picker-open"',
+    );
+    const mainOpenEnd = mainSource.indexOf(
+      'runtime.sidebar.onMessage("subtitle-style:picker-focus"',
+      mainOpenStart,
+    );
+    const mainOpenHandler = mainSource.slice(mainOpenStart, mainOpenEnd);
+
+    expect(showHandler).toContain("restartSubtitleColorPicker");
+    expect(showHandler).toMatch(/postMessage\(\s*"subtitle-style:picker-open"/);
+    expect(showHandler).not.toContain("focusActiveSubtitleStylePicker");
+    expect(mainOpenHandler.indexOf("flushSidebar()")).toBeLessThan(
+      mainOpenHandler.indexOf('runtime.global.postMessage("subtitle-style:picker-open"'),
+    );
+  });
+
+  it("returns focus on preset, Escape and unchanged close without leaking raw errors", () => {
+    expect(sidebarSource).toContain("closeColorPalette(true)");
+    expect(sidebarSource).toContain('event.key !== "Escape"');
+    expect(sidebarSource).toContain("finishSubtitleColorPicker");
+    expect(sidebarSource).toContain('outcome === "unchanged"');
+    expect(sidebarSource).not.toMatch(/rawError|stderr|helperToken|Authorization/);
+  });
+
+  it("closes palettes outside their window and silently fronts an active native picker", () => {
+    expect(sidebarSource).toContain('document.addEventListener("pointerdown"');
+    expect(sidebarSource).toContain('window.addEventListener("blur"');
+    expect(colorPickerSource).toContain("func windowDidResignKey");
+    expect(sidebarSource).toContain('postMessage("subtitle-style:picker-focus"');
+    expect(mainSource).toContain('runtime.sidebar.onMessage("subtitle-style:picker-focus"');
+    expect(globalSource).toContain('iina.global.onMessage("subtitle-style:picker-focus"');
+    expect(globalSource).toContain("client.activate");
+    expect(serverSource).toContain('case "/v1/activate"');
+    expect(sidebarSource).not.toContain("Another subtitle style picker is already open.");
+  });
+
+  it("keeps routine style saves silent while preserving control busy semantics", () => {
+    expect(sidebarSource).not.toMatch(/Saving \$\{fontSaving\}/);
+    expect(sidebarSource).not.toMatch(/Saving (fontColor|bold|italic)/);
+    expect(sidebarSource).toContain('setAttribute("aria-busy"');
+  });
+
+  it("builds the IINA-like shade grid as named RGBA controls using the shared target path", () => {
+    expect(sidebarSource).toContain("populateSubtitleColorGrid");
+    expect(sidebarSource).toContain("subtitleColorFamilies");
+    expect(sidebarSource).toContain("button.dataset.rgba");
+    expect(sidebarSource).toContain('closest<HTMLButtonElement>("button[data-rgba]")');
+  });
+});

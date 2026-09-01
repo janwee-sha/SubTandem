@@ -306,3 +306,150 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarSource).not.toContain("setTimeout(completeOverlayPositionInteraction");
   });
 });
+
+describe("Subtitle Font controls contract", () => {
+  const html = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
+  const css = readFileSync(new URL("../../ui/sidebar.css", import.meta.url), "utf8");
+
+  it("places the Font group immediately after Position with all five fields", () => {
+    const position = html.indexOf('id="translation-position"');
+    const font = html.indexOf('id="subtitle-font-group"');
+    const service = html.indexOf('id="provider-heading"');
+    expect(position).toBeGreaterThan(-1);
+    expect(font).toBeGreaterThan(position);
+    expect(font).toBeLessThan(service);
+    expect(html).toContain('id="subtitle-font-color"');
+    expect(html).toContain('id="subtitle-font-size"');
+    expect(html).toContain('id="subtitle-font-family"');
+    expect(html).toMatch(/id="subtitle-font-bold"[^>]*type="checkbox"/);
+    expect(html).toMatch(/id="subtitle-font-italic"[^>]*type="checkbox"/);
+  });
+
+  it("uses the finite Size choices, an accessible font button and named color trigger", () => {
+    const size = html.match(/<select id="subtitle-font-size"[\s\S]*?<\/select>/)?.[0] ?? "";
+    expect([...size.matchAll(/<option value="([^"]+)"/g)].map((match) => Number(match[1]))).toEqual(
+      [30, 35, 40, 45, 50, 55, 60, 65, 70],
+    );
+    expect(html).toMatch(
+      /<button[^>]*id="subtitle-font-family"[^>]*aria-describedby="subtitle-font-status"/,
+    );
+    expect(html).toMatch(
+      /<button[^>]*id="subtitle-font-color"[^>]*aria-haspopup="dialog"[^>]*aria-expanded="false"/,
+    );
+    expect(html).toContain('id="subtitle-color-palette"');
+    expect(html).toMatch(/data-color-name="White"/);
+    expect(html).toMatch(/data-color-name="Black"/);
+  });
+
+  it("provides narrow-column, focus and high-contrast styling", () => {
+    expect(css).toContain(".subtitle-style-group");
+    expect(css).toContain(".subtitle-color-trigger");
+    expect(css).toContain(":focus-visible");
+    expect(css).toContain("@media (forced-colors: active)");
+    expect(css).toContain("@media (prefers-contrast: more)");
+  });
+
+  it("matches the compact IINA text-style hierarchy without outlined fieldset cards", () => {
+    const position = html.indexOf('id="translation-position"');
+    const heading = html.indexOf('id="subtitle-style-heading"');
+    const surface = html.indexOf('class="subtitle-style-surface"');
+    const groupRule = css.match(/\.subtitle-style-group\s*\{[\s\S]*?\n}/)?.[0] ?? "";
+    const fontFieldsRule = css.match(/\.subtitle-style-font-fields\s*\{[\s\S]*?\n}/)?.[0] ?? "";
+    const borderFieldsRule = css.match(/\.subtitle-style-border-fields\s*\{[\s\S]*?\n}/)?.[0] ?? "";
+    const triggerRule = css.match(/\.subtitle-color-trigger\s*\{[\s\S]*?\n}/)?.[0] ?? "";
+    expect(heading).toBeGreaterThan(position);
+    expect(surface).toBeGreaterThan(heading);
+    expect(html).toContain('class="subtitle-style-fields subtitle-style-font-fields"');
+    expect(html).toContain('class="subtitle-style-fields subtitle-style-border-fields"');
+    expect(groupRule).toContain("border: 0");
+    expect(fontFieldsRule).toContain(
+      "grid-template-columns: max-content max-content minmax(0, 1fr)",
+    );
+    expect(borderFieldsRule).toContain("grid-template-columns: max-content max-content");
+    expect(triggerRule).toContain("background: transparent");
+    expect(triggerRule).not.toContain("background: var(--accent)");
+  });
+
+  it("matches the measured 28 by 21 point IINA color wells without truncated text", () => {
+    const triggers = [
+      ...html.matchAll(/<button[\s\S]*?class="subtitle-color-trigger"[\s\S]*?<\/button>/g),
+    ];
+    const triggerRule = css.match(/\.subtitle-color-trigger\s*\{[\s\S]*?\n}/)?.[0] ?? "";
+    const swatchRule = css.match(/\.subtitle-color-swatch\s*\{[\s\S]*?\n}/)?.[0] ?? "";
+    expect(triggers).toHaveLength(3);
+    expect(triggers.every(([trigger]) => trigger.includes('class="subtitle-color-swatch"'))).toBe(
+      true,
+    );
+    expect(triggers.every(([trigger]) => trigger.includes('aria-label="'))).toBe(true);
+    expect(html).not.toContain("subtitle-color-value");
+    expect(triggerRule).toContain("width: 28px");
+    expect(triggerRule).toContain("min-width: 28px");
+    expect(triggerRule).toContain("height: 21px");
+    expect(triggerRule).toContain("min-height: 21px");
+    expect(triggerRule).toContain("border-radius: 10.5px");
+    expect(triggerRule).toContain("padding: 0");
+    expect(triggerRule).toContain("overflow: hidden");
+    expect(swatchRule).toContain("display: block");
+    expect(swatchRule).toContain("border-radius: 10.5px");
+    expect(swatchRule).toContain("width: 100%");
+    expect(swatchRule).toContain("linear-gradient(var(--subtitle-swatch), var(--subtitle-swatch))");
+    expect(swatchRule).toContain("repeating-conic-gradient");
+  });
+});
+
+describe("Subtitle Border and Background controls contract", () => {
+  const html = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
+
+  it("places Border and Background after Font and before the service section", () => {
+    const font = html.indexOf('id="subtitle-font-group"');
+    const border = html.indexOf('id="subtitle-border-group"');
+    const background = html.indexOf('id="subtitle-background-group"');
+    const service = html.indexOf('id="provider-heading"');
+    expect(font).toBeGreaterThan(-1);
+    expect(border).toBeGreaterThan(font);
+    expect(background).toBeGreaterThan(border);
+    expect(service).toBeGreaterThan(background);
+  });
+
+  it("exposes two named color triggers and the exact finite Width choices", () => {
+    expect(html).toMatch(
+      /<button[^>]*id="subtitle-border-color"[^>]*aria-haspopup="dialog"[^>]*aria-controls="subtitle-color-palette"/,
+    );
+    expect(html).toMatch(
+      /<button[^>]*id="subtitle-background-color"[^>]*aria-haspopup="dialog"[^>]*aria-controls="subtitle-color-palette"/,
+    );
+    const width = html.match(/<select id="subtitle-border-width"[\s\S]*?<\/select>/)?.[0] ?? "";
+    expect(
+      [...width.matchAll(/<option value="([^"]+)"/g)].map((match) => Number(match[1])),
+    ).toEqual([0, 0.25, 0.5, 1, 1.5, 2, 2.5, 3, 4, 5]);
+    expect(html.match(/id="subtitle-color-palette"/g)).toHaveLength(1);
+  });
+});
+
+describe("Shared subtitle color palette contract", () => {
+  const html = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
+  const css = readFileSync(new URL("../../ui/sidebar.css", import.meta.url), "utf8");
+
+  it("offers named RGBA presets, selected semantics and one Show Colors entry", () => {
+    const paletteStart = html.indexOf('id="subtitle-color-palette"');
+    const paletteEnd = html.indexOf('id="subtitle-style-error"', paletteStart);
+    const palette = html.slice(paletteStart, paletteEnd);
+    expect(palette).toContain('data-color-name="White"');
+    expect(palette).toContain('data-color-name="Black"');
+    expect(palette).toContain('data-color-name="Transparent"');
+    expect(palette).toContain('aria-checked="false"');
+    expect(palette).toContain('id="subtitle-show-colors"');
+    expect(palette).toContain("Show Colors…");
+    expect(html.match(/id="subtitle-show-colors"/g)).toHaveLength(1);
+  });
+
+  it("styles alpha swatches, selected state, keyboard focus and high contrast", () => {
+    expect(css).toContain(".palette-swatch");
+    expect(css).toContain('.subtitle-color-palette button[aria-checked="true"]');
+    expect(html).toContain('class="subtitle-color-grid"');
+    expect(css).toMatch(/\.subtitle-color-grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(10,/);
+    expect(css).toContain(":focus-visible");
+    expect(css).toContain("@media (forced-colors: active)");
+    expect(css).toContain("@media (prefers-contrast: more)");
+  });
+});

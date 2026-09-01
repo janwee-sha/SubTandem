@@ -5,11 +5,12 @@ PROJECT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 PACKAGE_DIR=${1:-$PROJECT_DIR}
 TRANSPORT="$PACKAGE_DIR/dist/native/subtandem-transport"
 EXTRACTOR="$PACKAGE_DIR/dist/native/subtandem-subtitle-extractor"
+STYLE_PICKER="$PACKAGE_DIR/dist/native/subtandem-style-picker"
 HASH_FILE="$PROJECT_DIR/build/native-hashes.json"
 MINIMUM_MACOS=12.0
 EXTRACTION_PATH='@tmp/subtandem-extraction'
 
-for required in "$PACKAGE_DIR/Info.json" "$PACKAGE_DIR/README.md" "$PACKAGE_DIR/LICENSE" "$PACKAGE_DIR/THIRD_PARTY_NOTICES.txt" "$PACKAGE_DIR/dist/main.js" "$PACKAGE_DIR/dist/global.js" "$PACKAGE_DIR/dist/ui/sidebar.html" "$PACKAGE_DIR/dist/ui/overlay.html" "$TRANSPORT" "$EXTRACTOR"; do
+for required in "$PACKAGE_DIR/Info.json" "$PACKAGE_DIR/README.md" "$PACKAGE_DIR/LICENSE" "$PACKAGE_DIR/THIRD_PARTY_NOTICES.txt" "$PACKAGE_DIR/dist/main.js" "$PACKAGE_DIR/dist/global.js" "$PACKAGE_DIR/dist/ui/sidebar.html" "$PACKAGE_DIR/dist/ui/overlay.html" "$TRANSPORT" "$EXTRACTOR" "$STYLE_PICKER"; do
   if [ ! -f "$required" ]; then
     echo "Missing packaged file: $required" >&2
     exit 1
@@ -26,13 +27,13 @@ for compliance_file in LICENSE THIRD_PARTY_NOTICES.txt; do
 done
 
 NATIVE_FILES=$(find "$PACKAGE_DIR/dist/native" -mindepth 1 -maxdepth 1 -type f -print | sed "s|$PACKAGE_DIR/||" | LC_ALL=C sort)
-EXPECTED_NATIVE=$(printf '%s\n' dist/native/subtandem-subtitle-extractor dist/native/subtandem-transport | LC_ALL=C sort)
+EXPECTED_NATIVE=$(printf '%s\n' dist/native/subtandem-style-picker dist/native/subtandem-subtitle-extractor dist/native/subtandem-transport | LC_ALL=C sort)
 if [ "$NATIVE_FILES" != "$EXPECTED_NATIVE" ]; then
   echo "dist/native contains files outside the exact runtime allowlist" >&2
   exit 1
 fi
 
-for HELPER in "$TRANSPORT" "$EXTRACTOR"; do
+for HELPER in "$TRANSPORT" "$EXTRACTOR" "$STYLE_PICKER"; do
   if [ ! -x "$HELPER" ]; then
     echo "Native helper is not executable: $HELPER" >&2
     exit 1
@@ -54,7 +55,7 @@ if [ ! -f "$HASH_FILE" ]; then
   echo "Missing native build hash manifest" >&2
   exit 1
 fi
-node -e 'const fs=require("node:fs"),c=require("node:crypto");const [manifest,transport,extractor]=process.argv.slice(1);const expected=JSON.parse(fs.readFileSync(manifest,"utf8"));const hash=p=>c.createHash("sha256").update(fs.readFileSync(p)).digest("hex");if(expected["subtandem-transport"]!==hash(transport)||expected["subtandem-subtitle-extractor"]!==hash(extractor))process.exit(1)' "$HASH_FILE" "$TRANSPORT" "$EXTRACTOR" || {
+node -e 'const fs=require("node:fs"),c=require("node:crypto"),p=require("node:path");const [manifest,...files]=process.argv.slice(1);const expected=JSON.parse(fs.readFileSync(manifest,"utf8"));const hash=file=>c.createHash("sha256").update(fs.readFileSync(file)).digest("hex");if(files.some(file=>expected[p.basename(file)]!==hash(file)))process.exit(1)' "$HASH_FILE" "$TRANSPORT" "$EXTRACTOR" "$STYLE_PICKER" || {
   echo "Packaged native helper differs from the audited repository build" >&2
   exit 1
 }

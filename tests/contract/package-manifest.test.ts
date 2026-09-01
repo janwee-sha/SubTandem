@@ -17,9 +17,9 @@ describe("IINA package manifest", () => {
       "show-alert",
       "video-overlay",
     ]);
-    expect(manifest.version).toBe("0.1.2");
+    expect(manifest.version).toBe("0.1.3");
     expect(manifest.ghRepo).toBe("janwee-sha/SubTandem");
-    expect(manifest.ghVersion).toBe(1002);
+    expect(manifest.ghVersion).toBe(1003);
   });
 
   it("describes self-rendered translations without temporary display files", () => {
@@ -135,7 +135,7 @@ describe("IINA package manifest", () => {
     expect(lock.codecWhitelist).toEqual(["subrip", "ass", "ssa", "mov_text"]);
   });
 
-  it("builds and packages exactly two named native executables", () => {
+  it("builds and packages exactly three named native executables", () => {
     const scripts = [
       rootFile("scripts/build-ffmpeg.sh"),
       rootFile("scripts/build-native.sh"),
@@ -146,10 +146,11 @@ describe("IINA package manifest", () => {
 
     expect(scripts).toContain("subtandem-transport");
     expect(scripts).toContain("subtandem-subtitle-extractor");
+    expect(scripts).toContain("subtandem-style-picker");
     expect(scripts).toContain("native/ffmpeg.lock.json");
   });
 
-  it("requires compliance files and exactly two universal packaged native executables", () => {
+  it("requires compliance files and exactly three universal packaged native executables", () => {
     const verify = rootFile("scripts/verify-package.sh");
     const pack = rootFile("scripts/pack.sh");
     for (const required of [
@@ -157,6 +158,7 @@ describe("IINA package manifest", () => {
       "THIRD_PARTY_NOTICES.txt",
       "dist/native/subtandem-transport",
       "dist/native/subtandem-subtitle-extractor",
+      "dist/native/subtandem-style-picker",
     ]) {
       expect(`${verify}\n${pack}`).toContain(required);
     }
@@ -165,6 +167,34 @@ describe("IINA package manifest", () => {
     expect(verify).toContain("otool -L");
     expect(verify).toContain("12.0");
     expect(verify).toContain("plugin-update-metadata.mjs");
+  });
+
+  it("describes the authenticated style picker without widening network destinations", () => {
+    const manifest = JSON.parse(rootFile("Info.json")) as {
+      allowedDomains: string[];
+      permissionDescriptions: Record<string, string>;
+    };
+    expect(manifest.allowedDomains).toEqual(["127.0.0.1"]);
+    expect(manifest.permissionDescriptions["network-request"]).toMatch(
+      /authenticated loopback.*style picker/i,
+    );
+    expect(manifest.permissionDescriptions["file-system"]).toMatch(
+      /execute.*bundled.*style picker/i,
+    );
+  });
+
+  it("runs style-picker Swift tests and excludes its sources from the formal package", () => {
+    const nativeTests = rootFile("scripts/test-native.sh");
+    const nativeBuild = rootFile("scripts/build-native.sh");
+    const verify = rootFile("scripts/verify-package.sh");
+    const pack = rootFile("scripts/pack.sh");
+    expect(nativeTests).toContain("native/style-picker/Tests/SubTandemStylePickerTests");
+    expect(nativeTests).toContain("ColorPickerTests.swift");
+    expect(nativeBuild).toContain('STYLE_PICKER_PACKAGE="$ROOT_DIR/native/style-picker"');
+    expect(nativeBuild).toContain("subtandem-style-picker");
+    expect(verify).toContain("dist/native/subtandem-style-picker");
+    expect(pack).toContain("dist/native/subtandem-style-picker");
+    expect(pack).toMatch(/\^native\//);
   });
 
   it("limits source and object scans to the runtime distribution tree", () => {

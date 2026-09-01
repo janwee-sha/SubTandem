@@ -6,6 +6,16 @@ export interface RpcEnvelope<T = unknown> {
 
 import { isTargetLanguageId } from "./target-languages.js";
 import { isOverlayPosition, isOverlayRegion, type OverlayRegion } from "./overlay-position.js";
+import {
+  createFontResolution,
+  isColorStyleField,
+  isSubtitleStyleField,
+  isSubtitleStyleValue,
+  isSubtitleTextStyle,
+  type FontResolution,
+  type SubtitleStyleField,
+  type SubtitleTextStyle,
+} from "./subtitle-style.js";
 
 export type OverlayPositionRequest = RpcEnvelope<{ position: number }>;
 
@@ -39,10 +49,59 @@ export interface OverlayLayoutMessage {
   renderRevision: number;
   position: number;
   region: OverlayRegion;
+  style: SubtitleTextStyle;
 }
 
 export interface OverlayRenderMessage extends OverlayLayoutMessage {
   lines: string[];
+}
+
+export type SubtitleStyleEditMessage = RpcEnvelope<{
+  interactionId: string;
+  phase: "preview" | "commit";
+  field: SubtitleStyleField;
+  value: SubtitleTextStyle[SubtitleStyleField];
+}>;
+
+export type SubtitleStylePickerOpenMessage = RpcEnvelope<
+  | { kind: "color"; field: "fontColor" | "borderColor" | "backgroundColor" }
+  | { kind: "font"; field: "fontFamily" }
+>;
+
+export interface SubtitleStyleStateMessage {
+  phase: "snapshot" | "preview" | "committed" | "reverted" | "availability";
+  liveStyle: SubtitleTextStyle;
+  committedStyle: SubtitleTextStyle;
+  changedField: SubtitleStyleField | null;
+  stateRevision: number;
+  latestIntentSequence: number;
+  committedRevision: number;
+  fontResolution: FontResolution;
+}
+
+export type SubtitleStyleSaveResult =
+  | {
+      requestId: string;
+      field: SubtitleStyleField;
+      ok: true;
+      outcome: "committed" | "superseded";
+      intentSequence: number;
+      authority: SubtitleStyleStateMessage;
+    }
+  | {
+      requestId: string;
+      field: SubtitleStyleField;
+      ok: false;
+      code: "SUBTITLE_STYLE_SAVE_FAILED";
+      userAction: "EDIT_AGAIN";
+      intentSequence: number;
+      authority: SubtitleStyleStateMessage;
+    };
+
+export interface SubtitleStylePickerResult {
+  requestId: string;
+  outcome: "confirmed" | "cancelled" | "unchanged" | "focused" | "failed";
+  authority: SubtitleStyleStateMessage;
 }
 
 function exactKeys(record: Record<string, unknown>, keys: readonly string[]): boolean {
@@ -146,7 +205,8 @@ function parseOverlayLayoutBase(value: unknown): OverlayLayoutMessage {
   if (
     !nonNegativeInteger(record.renderRevision) ||
     !isOverlayPosition(record.position) ||
-    !isOverlayRegion(record.region)
+    !isOverlayRegion(record.region) ||
+    !isSubtitleTextStyle(record.style)
   )
     throw new Error("INVALID_MESSAGE");
   return record as unknown as OverlayLayoutMessage;
@@ -155,7 +215,9 @@ function parseOverlayLayoutBase(value: unknown): OverlayLayoutMessage {
 export function parseOverlayLayout(value: unknown): OverlayLayoutMessage {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("INVALID_MESSAGE");
-  if (!exactKeys(value as Record<string, unknown>, ["renderRevision", "position", "region"]))
+  if (
+    !exactKeys(value as Record<string, unknown>, ["renderRevision", "position", "region", "style"])
+  )
     throw new Error("INVALID_MESSAGE");
   return parseOverlayLayoutBase(value);
 }
@@ -164,7 +226,7 @@ export function parseOverlayRender(value: unknown): OverlayRenderMessage {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("INVALID_MESSAGE");
   const record = value as Record<string, unknown>;
-  if (!exactKeys(record, ["renderRevision", "lines", "position", "region"]))
+  if (!exactKeys(record, ["renderRevision", "lines", "position", "region", "style"]))
     throw new Error("INVALID_MESSAGE");
   const layout = parseOverlayLayoutBase(record);
   if (
@@ -183,6 +245,166 @@ export function parseOverlayClear(value: unknown): { renderRevision: number } {
   if (!exactKeys(record, ["renderRevision"]) || !nonNegativeInteger(record.renderRevision))
     throw new Error("INVALID_MESSAGE");
   return { renderRevision: record.renderRevision };
+}
+
+export function parseSubtitleStyleGet(value: unknown): RpcEnvelope<Record<string, never>> {
+  const envelope = parseEnvelope(value);
+  if (!exactKeys(envelope.payload as Record<string, unknown>, []))
+    throw new Error("INVALID_MESSAGE");
+  return envelope as RpcEnvelope<Record<string, never>>;
+}
+
+export function parseSubtitleStyleEdit(value: unknown): SubtitleStyleEditMessage {
+  const envelope = parseEnvelope(value);
+  const payload = envelope.payload as Record<string, unknown>;
+  if (
+    !exactKeys(payload, ["interactionId", "phase", "field", "value"]) ||
+    typeof payload.interactionId !== "string" ||
+    !/^[A-Za-z0-9_.:-]{1,128}$/.test(payload.interactionId) ||
+    (payload.phase !== "preview" && payload.phase !== "commit") ||
+    !isSubtitleStyleField(payload.field) ||
+    !isSubtitleStyleValue(payload.field, payload.value)
+  )
+    throw new Error("INVALID_MESSAGE");
+  return envelope as SubtitleStyleEditMessage;
+}
+
+export function parseSubtitleStylePickerOpen(value: unknown): SubtitleStylePickerOpenMessage {
+  const envelope = parseEnvelope(value);
+  const payload = envelope.payload as Record<string, unknown>;
+  if (!exactKeys(payload, ["kind", "field"])) throw new Error("INVALID_MESSAGE");
+  if (
+    (payload.kind === "color" && isColorStyleField(payload.field)) ||
+    (payload.kind === "font" && payload.field === "fontFamily")
+  )
+    return envelope as SubtitleStylePickerOpenMessage;
+  throw new Error("INVALID_MESSAGE");
+}
+
+export function parseSubtitleStyleState(value: unknown): SubtitleStyleStateMessage {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new Error("INVALID_MESSAGE");
+  const record = value as Record<string, unknown>;
+  if (
+    !exactKeys(record, [
+      "phase",
+      "liveStyle",
+      "committedStyle",
+      "changedField",
+      "stateRevision",
+      "latestIntentSequence",
+      "committedRevision",
+      "fontResolution",
+    ]) ||
+    !["snapshot", "preview", "committed", "reverted", "availability"].includes(
+      String(record.phase),
+    ) ||
+    !isSubtitleTextStyle(record.liveStyle) ||
+    !isSubtitleTextStyle(record.committedStyle) ||
+    (record.changedField !== null && !isSubtitleStyleField(record.changedField)) ||
+    !nonNegativeInteger(record.stateRevision) ||
+    !nonNegativeInteger(record.latestIntentSequence) ||
+    !nonNegativeInteger(record.committedRevision) ||
+    !isFontResolution(record.fontResolution)
+  )
+    throw new Error("INVALID_MESSAGE");
+  return record as unknown as SubtitleStyleStateMessage;
+}
+
+export function serializeSubtitleStyleState(
+  state: SubtitleStyleStateMessage,
+): SubtitleStyleStateMessage {
+  const parsed = parseSubtitleStyleState(state);
+  return JSON.parse(JSON.stringify(parsed)) as SubtitleStyleStateMessage;
+}
+
+export function parseSubtitleStyleSaveResult(value: unknown): SubtitleStyleSaveResult {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new Error("INVALID_MESSAGE");
+  const record = value as Record<string, unknown>;
+  const validBase =
+    typeof record.requestId === "string" &&
+    /^[A-Za-z0-9_.:-]{1,128}$/.test(record.requestId) &&
+    isSubtitleStyleField(record.field) &&
+    typeof record.ok === "boolean" &&
+    nonNegativeInteger(record.intentSequence);
+  if (!validBase) throw new Error("INVALID_MESSAGE");
+  if (
+    record.ok === true &&
+    exactKeys(record, ["requestId", "field", "ok", "outcome", "intentSequence", "authority"]) &&
+    (record.outcome === "committed" || record.outcome === "superseded")
+  ) {
+    parseSubtitleStyleState(record.authority);
+    return record as unknown as SubtitleStyleSaveResult;
+  }
+  if (
+    record.ok === false &&
+    exactKeys(record, [
+      "requestId",
+      "field",
+      "ok",
+      "code",
+      "userAction",
+      "intentSequence",
+      "authority",
+    ]) &&
+    record.code === "SUBTITLE_STYLE_SAVE_FAILED" &&
+    record.userAction === "EDIT_AGAIN"
+  ) {
+    parseSubtitleStyleState(record.authority);
+    return record as unknown as SubtitleStyleSaveResult;
+  }
+  throw new Error("INVALID_MESSAGE");
+}
+
+export function parseSubtitleStylePickerResult(value: unknown): SubtitleStylePickerResult {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new Error("INVALID_MESSAGE");
+  const record = value as Record<string, unknown>;
+  if (
+    !exactKeys(record, ["requestId", "outcome", "authority"]) ||
+    typeof record.requestId !== "string" ||
+    !/^[A-Za-z0-9_.:-]{1,128}$/.test(record.requestId) ||
+    !["confirmed", "cancelled", "unchanged", "focused", "failed"].includes(
+      String(record.outcome),
+    )
+  )
+    throw new Error("INVALID_MESSAGE");
+  parseSubtitleStyleState(record.authority);
+  return record as unknown as SubtitleStylePickerResult;
+}
+
+function isFontResolution(value: unknown): value is FontResolution {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const resolution = value as Record<string, unknown>;
+  if (
+    !exactKeys(resolution, [
+      "preferredFamily",
+      "availability",
+      "effectiveFamily",
+      "fallbackActive",
+      "catalogRevision",
+    ]) ||
+    (resolution.availability !== "available" &&
+      resolution.availability !== "unavailable" &&
+      resolution.availability !== "unknown") ||
+    typeof resolution.fallbackActive !== "boolean" ||
+    !nonNegativeInteger(resolution.catalogRevision)
+  )
+    return false;
+  try {
+    const expected = createFontResolution(
+      resolution.preferredFamily as string | null,
+      resolution.availability,
+      resolution.catalogRevision,
+    );
+    return (
+      resolution.effectiveFamily === expected.effectiveFamily &&
+      resolution.fallbackActive === expected.fallbackActive
+    );
+  } catch {
+    return false;
+  }
 }
 
 export type TargetLanguageSaveMessage = RpcEnvelope<{ targetLanguage: string }>;

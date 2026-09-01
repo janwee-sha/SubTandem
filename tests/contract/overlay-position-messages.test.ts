@@ -18,6 +18,16 @@ const envelope = (payload: Record<string, unknown>) => ({
 });
 
 describe("overlay position messages", () => {
+  const style = {
+    fontColor: { r: 255, g: 255, b: 255, a: 255 },
+    fontSize: 40,
+    fontFamily: null,
+    bold: false,
+    italic: false,
+    borderColor: { r: 0, g: 0, b: 0, a: 255 },
+    borderWidth: 3,
+    backgroundColor: { r: 0, g: 0, b: 0, a: 0 },
+  };
   it.each([parseOverlayPositionPreview, parseOverlayPositionSave])(
     "accepts one integer position and rejects unknown or sensitive fields",
     (parse) => {
@@ -98,17 +108,17 @@ describe("overlay position messages", () => {
   it("strictly parses ready, layout, render and clear WebView messages", () => {
     const region = { top: 0.125, bottom: 0.875, marginX: 16, marginY: 16 };
     expect(parseOverlayReady({})).toEqual({});
-    expect(parseOverlayLayout({ renderRevision: 1, position: 42, region })).toMatchObject({
+    expect(parseOverlayLayout({ renderRevision: 1, position: 42, region, style })).toMatchObject({
       renderRevision: 1,
       position: 42,
     });
     expect(
-      parseOverlayRender({ renderRevision: 2, lines: ["current"], position: 42, region }),
+      parseOverlayRender({ renderRevision: 2, lines: ["current"], position: 42, region, style }),
     ).toMatchObject({ lines: ["current"] });
     expect(parseOverlayClear({ renderRevision: 3 })).toEqual({ renderRevision: 3 });
     expect(() => parseOverlayReady({ text: "subtitle" })).toThrow("INVALID_MESSAGE");
     expect(() =>
-      parseOverlayRender({ renderRevision: 2, lines: [""], position: 42, region }),
+      parseOverlayRender({ renderRevision: 2, lines: [""], position: 42, region, style }),
     ).toThrow("INVALID_MESSAGE");
   });
 });

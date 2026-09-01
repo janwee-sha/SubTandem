@@ -127,7 +127,91 @@ const translationPositionValue = document.querySelector<HTMLOutputElement>(
 const translationPositionStatus = document.querySelector<HTMLParagraphElement>(
   "#translation-position-status",
 )!;
+const fontColorButton = document.querySelector<HTMLButtonElement>("#subtitle-font-color")!;
+const fontColorSwatch = fontColorButton.querySelector<HTMLElement>(".subtitle-color-swatch")!;
+const fontSizeSelect = document.querySelector<HTMLSelectElement>("#subtitle-font-size")!;
+const fontButton = document.querySelector<HTMLButtonElement>("#subtitle-font-family")!;
+const fontBold = document.querySelector<HTMLInputElement>("#subtitle-font-bold")!;
+const fontItalic = document.querySelector<HTMLInputElement>("#subtitle-font-italic")!;
+const fontStatus = document.querySelector<HTMLParagraphElement>("#subtitle-font-status")!;
+const borderColorButton = document.querySelector<HTMLButtonElement>("#subtitle-border-color")!;
+const borderColorSwatch = borderColorButton.querySelector<HTMLElement>(".subtitle-color-swatch")!;
+const borderWidthSelect = document.querySelector<HTMLSelectElement>("#subtitle-border-width")!;
+const backgroundColorButton = document.querySelector<HTMLButtonElement>(
+  "#subtitle-background-color",
+)!;
+const backgroundColorSwatch =
+  backgroundColorButton.querySelector<HTMLElement>(".subtitle-color-swatch")!;
+const colorPalette = document.querySelector<HTMLElement>("#subtitle-color-palette")!;
+const subtitleColorGrid = colorPalette.querySelector<HTMLElement>(".subtitle-color-grid")!;
+const subtitleShowColors = document.querySelector<HTMLButtonElement>("#subtitle-show-colors")!;
+const subtitleStyleError = document.querySelector<HTMLParagraphElement>("#subtitle-style-error")!;
 const operationAnnouncer = document.querySelector<HTMLParagraphElement>("#operation-announcer")!;
+
+const subtitleColorFamilies = [
+  ["Red", 0],
+  ["Orange", 28],
+  ["Yellow", 54],
+  ["Green", 112],
+  ["Teal", 166],
+  ["Cyan", 190],
+  ["Blue", 218],
+  ["Indigo", 246],
+  ["Purple", 278],
+  ["Pink", 326],
+] as const;
+const subtitleColorTones = [
+  ["Darkest", 18],
+  ["Dark", 30],
+  ["Deep", 42],
+  ["Medium", 54],
+  ["Light", 68],
+  ["Lightest", 82],
+] as const;
+
+function subtitlePaletteRgb(hue: number, saturation: number, lightness: number): number[] {
+  const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+  const segment = hue / 60;
+  const secondary = chroma * (1 - Math.abs((segment % 2) - 1));
+  const [red, green, blue] =
+    segment < 1
+      ? [chroma, secondary, 0]
+      : segment < 2
+        ? [secondary, chroma, 0]
+        : segment < 3
+          ? [0, chroma, secondary]
+          : segment < 4
+            ? [0, secondary, chroma]
+            : segment < 5
+              ? [secondary, 0, chroma]
+              : [chroma, 0, secondary];
+  const match = lightness - chroma / 2;
+  return [red, green, blue].map((channel) => Math.round((channel + match) * 255));
+}
+
+function populateSubtitleColorGrid(): void {
+  for (const [toneName, lightnessPercent] of subtitleColorTones) {
+    for (const [familyName, hue] of subtitleColorFamilies) {
+      const [r, g, b] = subtitlePaletteRgb(hue, 0.82, lightnessPercent / 100);
+      const name = `${toneName} ${familyName}`;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.setAttribute("role", "radio");
+      button.setAttribute("aria-checked", "false");
+      button.setAttribute("aria-label", name);
+      button.dataset.colorName = name;
+      button.dataset.rgba = `${r},${g},${b},255`;
+      const swatch = document.createElement("span");
+      swatch.className = "palette-swatch";
+      swatch.setAttribute("aria-hidden", "true");
+      swatch.style.setProperty("--subtitle-swatch", `rgb(${r} ${g} ${b})`);
+      button.append(swatch);
+      subtitleColorGrid.append(button);
+    }
+  }
+}
+
+populateSubtitleColorGrid();
 
 const providerDrafts: Record<
   ProviderKind,
@@ -215,6 +299,9 @@ let pendingModelRefresh: {
   endpoint: string;
   proxyMode: "system" | "direct";
 } | null = null;
+let subtitleStyleInteractionSequence = 0;
+let pendingFontPickerRequestId: string | null = null;
+let pendingColorPickerRequestId: string | null = null;
 
 function nextRequestId(): string {
   requestSequence += 1;
@@ -248,6 +335,120 @@ function renderOverlayPosition(): void {
         : state.feedback === "error"
           ? "Translation position could not be saved. The previous position remains active."
           : "";
+}
+
+function subtitleStyleInteractionId(field: SidebarSubtitleStyleField): string {
+  subtitleStyleInteractionSequence += 1;
+  return `style-edit:${field}:${Date.now()}:${subtitleStyleInteractionSequence}`;
+}
+
+function rgbaLabel(color: SidebarRgbaColor): string {
+  const alpha = Math.round((color.a / 255) * 100);
+  if (color.a === 0) return `Transparent · 0%`;
+  if (color.r === 255 && color.g === 255 && color.b === 255) return `White · ${alpha}%`;
+  if (color.r === 0 && color.g === 0 && color.b === 0) return `Black · ${alpha}%`;
+  return `RGBA ${color.r}, ${color.g}, ${color.b}, ${alpha}%`;
+}
+
+function rgbaCss(color: SidebarRgbaColor): string {
+  return `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a / 255})`;
+}
+
+const colorControls: Record<
+  SidebarSubtitleColorField,
+  { button: HTMLButtonElement; swatch: HTMLElement; label: string }
+> = {
+  fontColor: {
+    button: fontColorButton,
+    swatch: fontColorSwatch,
+    label: "Font Color",
+  },
+  borderColor: {
+    button: borderColorButton,
+    swatch: borderColorSwatch,
+    label: "Border Color",
+  },
+  backgroundColor: {
+    button: backgroundColorButton,
+    swatch: backgroundColorSwatch,
+    label: "Background Color",
+  },
+};
+
+function renderColorControl(field: SidebarSubtitleColorField, color: SidebarRgbaColor): void {
+  const control = colorControls[field];
+  control.swatch.style.setProperty("--subtitle-swatch", rgbaCss(color));
+  control.button.setAttribute("aria-label", `${control.label}: ${rgbaLabel(color)}`);
+}
+
+function renderSubtitleStyle(): void {
+  const state = sidebarState.snapshot.subtitleStyle;
+  const style = state.displayStyle;
+  renderColorControl("fontColor", style.fontColor);
+  renderColorControl("borderColor", style.borderColor);
+  renderColorControl("backgroundColor", style.backgroundColor);
+  fontSizeSelect.value = String(style.fontSize);
+  borderWidthSelect.value = String(style.borderWidth);
+  fontButton.textContent = style.fontFamily ?? "System Default";
+  fontBold.checked = style.bold;
+  fontItalic.checked = style.italic;
+  fontStatus.textContent = state.fontResolution.fallbackActive
+    ? `${state.fontResolution.preferredFamily} is unavailable; using System Font.`
+    : "";
+  fontStatus.dataset.state = state.fontResolution.fallbackActive ? "error" : "";
+  for (const field of ["fontColor", "borderColor", "backgroundColor"] as const) {
+    const control = colorControls[field];
+    control.button.setAttribute("aria-busy", String(state.feedbackByField[field] === "saving"));
+    control.button.setAttribute("aria-expanded", String(state.colorTarget === field));
+  }
+  borderWidthSelect.setAttribute(
+    "aria-busy",
+    String(state.feedbackByField.borderWidth === "saving"),
+  );
+  for (const [field, control] of [
+    ["fontSize", fontSizeSelect],
+    ["bold", fontBold],
+    ["italic", fontItalic],
+  ] as const) {
+    control.setAttribute("aria-busy", String(state.feedbackByField[field] === "saving"));
+  }
+  const selectedColor = state.colorTarget ? style[state.colorTarget] : null;
+  for (const preset of Array.from(
+    colorPalette.querySelectorAll<HTMLButtonElement>("button[data-rgba]"),
+  )) {
+    const channels = preset.dataset.rgba?.split(",").map(Number) ?? [];
+    preset.setAttribute(
+      "aria-checked",
+      String(
+        Boolean(selectedColor) &&
+          channels.length === 4 &&
+          channels.every(
+            (channel, index) =>
+              channel ===
+              [selectedColor!.r, selectedColor!.g, selectedColor!.b, selectedColor!.a][index],
+          ),
+      ),
+    );
+  }
+  subtitleStyleError.textContent = state.groupError ?? "";
+  subtitleStyleError.dataset.state = state.groupError ? "error" : "";
+}
+
+function commitSubtitleStyle(field: SidebarSubtitleStyleField, value: unknown): void {
+  const interactionId = subtitleStyleInteractionId(field);
+  if (!sidebarState.previewSubtitleStyle(interactionId, field, value)) return;
+  renderSubtitleStyle();
+  window.iina?.postMessage(
+    "subtitle-style:edit",
+    envelope({ interactionId, phase: "preview", field, value }),
+  );
+  const requestId = nextRequestId();
+  if (!sidebarState.beginSubtitleStyleSave(requestId, interactionId, field)) return;
+  renderSubtitleStyle();
+  window.iina?.postMessage(
+    "subtitle-style:edit",
+    envelope({ interactionId, phase: "commit", field, value }, requestId),
+  );
 }
 
 function statusForRegion(regionId: string): HTMLParagraphElement | null {
@@ -812,6 +1013,117 @@ window.addEventListener("pointercancel", completeOverlayPositionInteraction);
 window.addEventListener("mouseup", completeOverlayPositionInteraction);
 window.addEventListener("touchend", completeOverlayPositionInteraction);
 
+function openColorPalette(colorTarget: SidebarSubtitleColorField): void {
+  const wasOpenForTarget =
+    !colorPalette.hidden && sidebarState.snapshot.subtitleStyle.colorTarget === colorTarget;
+  if (wasOpenForTarget) {
+    closeColorPalette(true);
+    return;
+  }
+  if (!sidebarState.openSubtitleColorPalette(colorTarget)) return;
+  colorPalette.hidden = false;
+  renderSubtitleStyle();
+  colorPalette.querySelector<HTMLButtonElement>("button")?.focus();
+}
+
+function closeColorPalette(restoreFocus: boolean): void {
+  const colorTarget = sidebarState.snapshot.subtitleStyle.colorTarget;
+  sidebarState.closeSubtitleColorPalette();
+  colorPalette.hidden = true;
+  renderSubtitleStyle();
+  if (restoreFocus && colorTarget) colorControls[colorTarget].button.focus();
+}
+
+function focusActiveSubtitleStylePicker(): void {
+  window.iina?.postMessage("subtitle-style:picker-focus", envelope({}));
+}
+
+fontColorButton.addEventListener("click", () => openColorPalette("fontColor"));
+borderColorButton.addEventListener("click", () => openColorPalette("borderColor"));
+backgroundColorButton.addEventListener("click", () => openColorPalette("backgroundColor"));
+
+colorPalette.addEventListener("click", (event) => {
+  const button = (event.target as Element).closest<HTMLButtonElement>("button[data-rgba]");
+  if (!button) return;
+  const channels = button.dataset.rgba?.split(",").map(Number) ?? [];
+  if (channels.length !== 4 || channels.some((channel) => !Number.isInteger(channel))) return;
+  const colorTarget = sidebarState.snapshot.subtitleStyle.colorTarget;
+  if (!colorTarget) return;
+  commitSubtitleStyle(colorTarget, {
+    r: channels[0],
+    g: channels[1],
+    b: channels[2],
+    a: channels[3],
+  });
+  closeColorPalette(true);
+});
+
+colorPalette.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  closeColorPalette(true);
+});
+
+document.addEventListener("pointerdown", (event) => {
+  if (colorPalette.hidden || !(event.target instanceof Element)) return;
+  if (
+    colorPalette.contains(event.target) ||
+    event.target.closest<HTMLButtonElement>(".subtitle-color-trigger")
+  )
+    return;
+  closeColorPalette(false);
+});
+
+window.addEventListener("blur", () => {
+  if (!colorPalette.hidden) closeColorPalette(false);
+});
+
+subtitleShowColors.addEventListener("click", () => {
+  const colorTarget = sidebarState.snapshot.subtitleStyle.colorTarget;
+  if (!colorTarget) return;
+  const requestId = nextRequestId();
+  const started = pendingColorPickerRequestId
+    ? sidebarState.restartSubtitleColorPicker(requestId, colorTarget)
+    : sidebarState.beginSubtitleColorPicker(requestId, colorTarget);
+  if (!started) return;
+  pendingColorPickerRequestId = requestId;
+  closeColorPalette(false);
+  renderSubtitleStyle();
+  window.iina?.postMessage(
+    "subtitle-style:picker-open",
+    envelope({ kind: "color", field: colorTarget }, requestId),
+  );
+});
+
+fontSizeSelect.addEventListener("change", () => {
+  commitSubtitleStyle("fontSize", Number(fontSizeSelect.value));
+});
+
+borderWidthSelect.addEventListener("change", () => {
+  commitSubtitleStyle("borderWidth", Number(borderWidthSelect.value));
+});
+
+fontBold.addEventListener("change", () => {
+  commitSubtitleStyle("bold", fontBold.checked);
+});
+
+fontItalic.addEventListener("change", () => {
+  commitSubtitleStyle("italic", fontItalic.checked);
+});
+
+fontButton.addEventListener("click", () => {
+  if (pendingFontPickerRequestId) {
+    focusActiveSubtitleStylePicker();
+    return;
+  }
+  const requestId = nextRequestId();
+  pendingFontPickerRequestId = requestId;
+  fontButton.setAttribute("aria-busy", "true");
+  window.iina?.postMessage(
+    "subtitle-style:picker-open",
+    envelope({ kind: "font", field: "fontFamily" }, requestId),
+  );
+});
+
 retrySubtitleButton.addEventListener("click", () => {
   const requestId = beginOperation("subtitle-retry", "retry-preparation", "Retrying…");
   window.iina?.postMessage("subtitle:retry-preparation", envelope({}, requestId));
@@ -1309,6 +1621,43 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
   renderActiveFeedback();
 }
 
+window.iina?.onMessage("subtitle-style:state", (raw: unknown) => {
+  if (sidebarState.applySubtitleStyleState(raw as SidebarSubtitleStyleAuthorityState))
+    renderSubtitleStyle();
+});
+
+window.iina?.onMessage("subtitle-style:save-result", (raw: unknown) => {
+  if (sidebarState.finishSubtitleStyleSave(raw as SidebarSubtitleStyleSaveResult))
+    renderSubtitleStyle();
+});
+
+window.iina?.onMessage("subtitle-style:picker-result", (raw: unknown) => {
+  const result = raw as {
+    requestId?: string;
+    outcome?: "confirmed" | "cancelled" | "unchanged" | "focused" | "failed";
+    authority?: SidebarSubtitleStyleAuthorityState;
+  };
+  if (result.requestId === pendingColorPickerRequestId && result.authority && result.outcome) {
+    const session = sidebarState.snapshot.subtitleStyle.nativeColorSession;
+    if (!sidebarState.finishSubtitleColorPicker(result.requestId, result.outcome, result.authority))
+      return;
+    pendingColorPickerRequestId = null;
+    renderSubtitleStyle();
+    if (session) colorControls[session.field].button.focus();
+    if (result.outcome === "unchanged") subtitleStyleError.textContent = "";
+    return;
+  }
+  if (result.requestId !== pendingFontPickerRequestId || !result.authority) return;
+  pendingFontPickerRequestId = null;
+  fontButton.setAttribute("aria-busy", "false");
+  sidebarState.applySubtitleStyleState(result.authority);
+  renderSubtitleStyle();
+  if (result.outcome === "failed") {
+    subtitleStyleError.textContent = "The subtitle font picker is unavailable.";
+    subtitleStyleError.dataset.state = "error";
+  }
+});
+
 window.iina?.onMessage("state:update", (raw: unknown) => {
   const view = raw as {
     status?: SessionStatus;
@@ -1332,9 +1681,12 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     targetLanguageRevision?: number;
     targetLanguages?: Array<{ id: string; displayName: string; order: number }>;
     overlayPosition?: SidebarOverlayPositionAuthorityState;
+    subtitleStyle?: SidebarSubtitleStyleAuthorityState | null;
   };
   if (view.overlayPosition && sidebarState.applyOverlayPositionState(view.overlayPosition))
     renderOverlayPosition();
+  if (view.subtitleStyle && sidebarState.applySubtitleStyleState(view.subtitleStyle))
+    renderSubtitleStyle();
   if (view.targetLanguages) {
     const signature = JSON.stringify(view.targetLanguages);
     if (signature !== renderedLanguageCatalogSignature) {
@@ -1444,5 +1796,6 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
 
 window.iina?.postMessage("ui:ready", envelope({}));
 window.setInterval(() => window.iina?.postMessage("ui:poll", envelope({})), 750);
+renderSubtitleStyle();
 applyProviderKind();
 requestModels("open");

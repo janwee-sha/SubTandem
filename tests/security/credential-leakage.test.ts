@@ -13,6 +13,13 @@ import type { SubtitleCue } from "../../src/subtitles/types.js";
 import { discoverProviderModels } from "../../src/providers/model-discovery.js";
 
 describe("credential and content leakage boundaries", () => {
+  it("keeps style-picker token, bodies and native failures out of user-visible source", () => {
+    const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+    const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
+    expect(sidebarSource).not.toMatch(/helperToken|Authorization|stderr|rawError/);
+    expect(globalSource).not.toContain("console.log");
+    expect(globalSource).not.toContain("console.error");
+  });
   it("drops Claude preview keys, cursors, endpoints and raw model responses from failures", async () => {
     const sensitive = [
       "PRIVATE_PREVIEW_KEY",

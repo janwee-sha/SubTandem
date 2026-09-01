@@ -6,6 +6,12 @@ import {
   isOverlayPosition,
   type OverlayRegion,
 } from "../../domain/overlay-position.js";
+import {
+  cloneSubtitleTextStyle,
+  DEFAULT_SUBTITLE_TEXT_STYLE,
+  isSubtitleTextStyle,
+  type SubtitleTextStyle,
+} from "../../domain/subtitle-style.js";
 
 export interface TranslationOverlayWebView {
   simpleMode(): void;
@@ -30,6 +36,7 @@ export class WebViewTranslationOverlay {
   private renderRevision = 0;
   private lines: string[] | null = null;
   private position = DEFAULT_OVERLAY_POSITION;
+  private style = cloneSubtitleTextStyle(DEFAULT_SUBTITLE_TEXT_STYLE);
   private region: OverlayRegion = {
     top: 0,
     bottom: 1,
@@ -74,6 +81,15 @@ export class WebViewTranslationOverlay {
     this.position = position;
     this.renderRevision += 1;
     if (this.ready) this.post("overlay:layout", this.layoutPayload());
+    return true;
+  }
+
+  setStyle(style: SubtitleTextStyle): boolean {
+    if (!isSubtitleTextStyle(style)) return false;
+    if (JSON.stringify(style) === JSON.stringify(this.style)) return true;
+    this.style = cloneSubtitleTextStyle(style);
+    this.renderRevision += 1;
+    if (this.ready && this.lines) this.post("overlay:render", this.renderPayload());
     return true;
   }
 
@@ -150,6 +166,7 @@ export class WebViewTranslationOverlay {
       renderRevision: this.renderRevision,
       position: this.position,
       region: { ...this.region },
+      style: cloneSubtitleTextStyle(this.style),
     };
   }
 

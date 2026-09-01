@@ -5,6 +5,24 @@ interface SubTandemOverlayRegion {
   marginY: number;
 }
 
+interface SubTandemOverlayRgba {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+}
+
+interface SubTandemOverlayTextStyle {
+  fontColor: SubTandemOverlayRgba;
+  fontSize: number;
+  fontFamily: string | null;
+  bold: boolean;
+  italic: boolean;
+  borderColor: SubTandemOverlayRgba;
+  borderWidth: number;
+  backgroundColor: SubTandemOverlayRgba;
+}
+
 interface SubTandemOverlayLayoutInput {
   viewportHeight: number;
   blockHeight: number;
@@ -15,7 +33,12 @@ interface SubTandemOverlayLayoutInput {
 interface SubTandemOverlayTypography {
   fontSize: number;
   fontWeight: number;
+  fontStyle: "normal" | "italic";
   strokeWidth: number;
+  fontFamily: string | null;
+  fontColor: string;
+  borderColor: string;
+  backgroundColor: string;
 }
 
 interface SubTandemOverlayLayout {
@@ -32,6 +55,7 @@ interface SubTandemOverlayFrame {
   lines: string[];
   position: number;
   region: SubTandemOverlayRegion;
+  style: SubTandemOverlayTextStyle;
 }
 
 interface SubTandemOverlayStateCoordinator {
@@ -49,10 +73,16 @@ interface SubTandemOverlayStateCoordinator {
 }
 
 interface Window {
-  calculateSubTandemOverlayTypography(viewportHeight: number): SubTandemOverlayTypography;
+  calculateSubTandemOverlayTypography(
+    viewportHeight: number,
+    style: SubTandemOverlayTextStyle,
+  ): SubTandemOverlayTypography;
   calculateSubTandemOverlayLayout(input: SubTandemOverlayLayoutInput): SubTandemOverlayLayout;
   createSubTandemOverlayState(): SubTandemOverlayStateCoordinator;
 }
+
+const fontSizes = [30, 35, 40, 45, 50, 55, 60, 65, 70];
+const borderWidths = [0, 0.25, 0.5, 1, 1.5, 2, 2.5, 3, 4, 5];
 
 function validPosition(value: unknown): value is number {
   return Number.isInteger(value) && (value as number) >= 0 && (value as number) <= 100;
@@ -80,11 +110,77 @@ function validRegion(value: unknown): value is SubTandemOverlayRegion {
   );
 }
 
-function calculateSubTandemOverlayTypography(viewportHeight: number): SubTandemOverlayTypography {
-  if (!Number.isFinite(viewportHeight) || viewportHeight <= 0)
+function validColor(value: unknown): value is SubTandemOverlayRgba {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const color = value as Record<string, unknown>;
+  return (
+    Object.keys(color).sort().join(",") === "a,b,g,r" &&
+    [color.r, color.g, color.b, color.a].every(
+      (channel) =>
+        Number.isInteger(channel) && (channel as number) >= 0 && (channel as number) <= 255,
+    )
+  );
+}
+
+function printableFontFamily(value: string): boolean {
+  return Array.from(value).every((character) => {
+    const code = character.charCodeAt(0);
+    return code > 31 && code !== 127;
+  });
+}
+
+function validStyle(value: unknown): value is SubTandemOverlayTextStyle {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const style = value as Record<string, unknown>;
+  return (
+    Object.keys(style).sort().join(",") ===
+      "backgroundColor,bold,borderColor,borderWidth,fontColor,fontFamily,fontSize,italic" &&
+    validColor(style.fontColor) &&
+    fontSizes.includes(style.fontSize as number) &&
+    (style.fontFamily === null ||
+      (typeof style.fontFamily === "string" &&
+        style.fontFamily.length >= 1 &&
+        style.fontFamily.length <= 256 &&
+        printableFontFamily(style.fontFamily))) &&
+    typeof style.bold === "boolean" &&
+    typeof style.italic === "boolean" &&
+    validColor(style.borderColor) &&
+    borderWidths.includes(style.borderWidth as number) &&
+    validColor(style.backgroundColor)
+  );
+}
+
+function cloneStyle(style: SubTandemOverlayTextStyle): SubTandemOverlayTextStyle {
+  return {
+    ...style,
+    fontColor: { ...style.fontColor },
+    borderColor: { ...style.borderColor },
+    backgroundColor: { ...style.backgroundColor },
+  };
+}
+
+function rgba(color: SubTandemOverlayRgba): string {
+  return `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a / 255})`;
+}
+
+function calculateSubTandemOverlayTypography(
+  viewportHeight: number,
+  style: SubTandemOverlayTextStyle,
+): SubTandemOverlayTypography {
+  if (!Number.isFinite(viewportHeight) || viewportHeight <= 0 || !validStyle(style))
     throw new Error("INVALID_OVERLAY_TYPOGRAPHY");
   const scale = viewportHeight / 720;
-  return { fontSize: 29 * scale, fontWeight: 400, strokeWidth: 2 * scale };
+  const strokeWidth = style.borderWidth * (2 / 3) * scale;
+  return {
+    fontSize: style.fontSize * (29 / 40) * scale,
+    fontWeight: style.bold ? 700 : 400,
+    fontStyle: style.italic ? "italic" : "normal",
+    strokeWidth,
+    fontFamily: style.fontFamily,
+    fontColor: rgba(style.fontColor),
+    borderColor: strokeWidth === 0 ? "transparent" : rgba(style.borderColor),
+    backgroundColor: rgba(style.backgroundColor),
+  };
 }
 
 function calculateSubTandemOverlayLayout(
@@ -136,7 +232,14 @@ function createSubTandemOverlayState(): SubTandemOverlayStateCoordinator {
   let layoutSignature = "";
   const snapshot = (): { renderRevision: number; frame: SubTandemOverlayFrame | null } => ({
     renderRevision,
-    frame: frame ? { ...frame, lines: [...frame.lines], region: { ...frame.region } } : null,
+    frame: frame
+      ? {
+          ...frame,
+          lines: [...frame.lines],
+          region: { ...frame.region },
+          style: cloneStyle(frame.style),
+        }
+      : null,
   });
   const base = (value: unknown): Record<string, unknown> | null => {
     if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -145,7 +248,8 @@ function createSubTandemOverlayState(): SubTandemOverlayStateCoordinator {
       !Number.isInteger(record.renderRevision) ||
       (record.renderRevision as number) <= renderRevision ||
       !validPosition(record.position) ||
-      !validRegion(record.region)
+      !validRegion(record.region) ||
+      !validStyle(record.style)
     )
       return null;
     return record;
@@ -158,7 +262,7 @@ function createSubTandemOverlayState(): SubTandemOverlayStateCoordinator {
       const record = base(value);
       if (
         !record ||
-        Object.keys(record).sort().join(",") !== "lines,position,region,renderRevision" ||
+        Object.keys(record).sort().join(",") !== "lines,position,region,renderRevision,style" ||
         !Array.isArray(record.lines) ||
         record.lines.length === 0 ||
         record.lines.some((line) => typeof line !== "string" || !line.trim())
@@ -170,13 +274,17 @@ function createSubTandemOverlayState(): SubTandemOverlayStateCoordinator {
         lines: [...record.lines] as string[],
         position: record.position as number,
         region: { ...(record.region as unknown as SubTandemOverlayRegion) },
+        style: cloneStyle(record.style as SubTandemOverlayTextStyle),
       };
       layoutSignature = "";
       return true;
     },
     applyLayout(value: unknown): boolean {
       const record = base(value);
-      if (!record || Object.keys(record).sort().join(",") !== "position,region,renderRevision")
+      if (
+        !record ||
+        Object.keys(record).sort().join(",") !== "position,region,renderRevision,style"
+      )
         return false;
       renderRevision = record.renderRevision as number;
       if (frame) {
@@ -185,6 +293,7 @@ function createSubTandemOverlayState(): SubTandemOverlayStateCoordinator {
           renderRevision,
           position: record.position as number,
           region: { ...(record.region as unknown as SubTandemOverlayRegion) },
+          style: cloneStyle(record.style as SubTandemOverlayTextStyle),
         };
       }
       layoutSignature = "";

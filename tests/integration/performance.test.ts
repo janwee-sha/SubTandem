@@ -6,6 +6,9 @@ import { readFileSync } from "node:fs";
 import { selectNearbyCues } from "../../src/app/scheduler.js";
 import { detectSubtitleLanguage } from "../../src/subtitles/language-detection.js";
 import { createTranslationAlignmentFixture } from "../helpers/translation-alignment.js";
+import { WebViewTranslationOverlay } from "../../src/adapters/iina/webview-translation-overlay.js";
+import { DEFAULT_SUBTITLE_TEXT_STYLE } from "../../src/domain/subtitle-style.js";
+import { FakeIinaOverlay } from "../helpers/fake-iina.js";
 
 await import("../../ui/overlay-state.js");
 
@@ -31,6 +34,38 @@ const cues = Array.from({ length: 120 }, (_, index): SubtitleCue => ({
 }));
 
 describe("automated acceptance performance", () => {
+  it("coalesces 50 full-style edits into latest-only renders without clearing playback", () => {
+    const view = new FakeIinaOverlay();
+    let loaded: (() => void) | null = null;
+    const overlay = new WebViewTranslationOverlay(view, {
+      on: (_name, callback) => {
+        loaded = callback;
+        return "loaded";
+      },
+      off: () => undefined,
+    });
+    loaded?.();
+    view.trigger("overlay:ready", {});
+    overlay.show(["current"]);
+    const started = performance.now();
+    for (let index = 0; index < 50; index += 1) {
+      overlay.setStyle({
+        ...DEFAULT_SUBTITLE_TEXT_STYLE,
+        fontColor: { r: index, g: 255 - index, b: index * 2, a: 255 - index },
+        fontSize: [30, 35, 40, 45, 50, 55, 60, 65, 70][index % 9]!,
+        bold: index % 2 === 0,
+        italic: index % 3 === 0,
+        borderWidth: [0, 0.25, 0.5, 1, 1.5, 2, 2.5, 3, 4, 5][index % 10]!,
+        backgroundColor: { r: index * 2, g: index, b: 0, a: index },
+      });
+    }
+    expect(performance.now() - started).toBeLessThan(100);
+    expect(view.messages.filter((message) => message.name === "overlay:clear")).toHaveLength(1);
+    expect(view.messages.at(-1)).toMatchObject({
+      name: "overlay:render",
+      data: { style: { fontColor: { r: 49 }, backgroundColor: { a: 49 } } },
+    });
+  });
   it("lays out 101 live position inputs monotonically within the preview budget", () => {
     const durations: number[] = [];
     const offsets: number[] = [];

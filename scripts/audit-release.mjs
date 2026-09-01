@@ -139,6 +139,7 @@ export function validateArchiveEntries(entries, expectedCompliance = {}) {
     "dist/ui/sidebar.html",
     "dist/ui/overlay.html",
     "dist/native/subtandem-subtitle-extractor",
+    "dist/native/subtandem-style-picker",
     "dist/native/subtandem-transport",
   ];
   for (const name of required) {
@@ -152,6 +153,7 @@ export function validateArchiveEntries(entries, expectedCompliance = {}) {
     .map((entry) => entry.name)
     .sort();
   const expectedNativeFiles = [
+    "dist/native/subtandem-style-picker",
     "dist/native/subtandem-subtitle-extractor",
     "dist/native/subtandem-transport",
   ];
@@ -559,6 +561,7 @@ export function auditRelease(options) {
     const helperPaths = {
       "subtandem-transport": resolve(options.buildHelper),
       "subtandem-subtitle-extractor": resolve(options.buildExtractor),
+      "subtandem-style-picker": resolve(options.buildStylePicker),
     };
     const buildHelpers = {};
     const packageHelpers = {};
@@ -636,6 +639,7 @@ function parseArguments(argumentsList) {
     ["--expected-commit", "expectedCommit"],
     ["--build-helper", "buildHelper"],
     ["--build-extractor", "buildExtractor"],
+    ["--build-style-picker", "buildStylePicker"],
     ["--ffmpeg-source", "ffmpegSource"],
     ["--ffmpeg-lock", "ffmpegLock"],
     ["--gates", "gates"],
@@ -660,6 +664,7 @@ function parseArguments(argumentsList) {
     "expectedCommit",
     "buildHelper",
     "buildExtractor",
+    "buildStylePicker",
     "ffmpegSource",
     "ffmpegLock",
     "gates",
