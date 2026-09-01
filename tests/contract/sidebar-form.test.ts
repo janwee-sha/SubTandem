@@ -363,6 +363,24 @@ describe("Subtitle Font controls contract", () => {
     expect(triggerRule).toContain("background: var(--secondary-control-surface)");
     expect(triggerRule).not.toContain("background: var(--accent)");
   });
+
+  it("shows rounded rectangular swatches without truncated color text", () => {
+    const triggers = [
+      ...html.matchAll(/<button[\s\S]*?class="subtitle-color-trigger"[\s\S]*?<\/button>/g),
+    ];
+    const triggerRule = css.match(/\.subtitle-color-trigger\s*\{[\s\S]*?\n}/)?.[0] ?? "";
+    const swatchRule = css.match(/\.subtitle-color-swatch\s*\{[\s\S]*?\n}/)?.[0] ?? "";
+    expect(triggers).toHaveLength(3);
+    expect(triggers.every(([trigger]) => trigger.includes('class="subtitle-color-swatch"'))).toBe(
+      true,
+    );
+    expect(triggers.every(([trigger]) => trigger.includes('aria-label="'))).toBe(true);
+    expect(html).not.toContain("subtitle-color-value");
+    expect(triggerRule).toContain("width: 38px");
+    expect(triggerRule).toContain("min-width: 38px");
+    expect(swatchRule).toContain("border-radius: 6px");
+    expect(swatchRule).toContain("width: 100%");
+  });
 });
 
 describe("Subtitle Border and Background controls contract", () => {

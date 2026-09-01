@@ -894,7 +894,11 @@ function createSubTandemSidebarState(
     const session = snapshot.subtitleStyle.nativeColorSession;
     if (!session || session.requestId !== requestId || !validAuthorityState(authority))
       return false;
-    if (!applySubtitleStyleState(authority)) return false;
+    if (
+      authority.stateRevision >= snapshot.subtitleStyle.stateRevision &&
+      !applySubtitleStyleState(authority)
+    )
+      return false;
     snapshot.subtitleStyle.nativeColorSession = null;
     snapshot.subtitleStyle.feedbackByField[session.field] = "idle";
     if (outcome === "failed")

@@ -17,7 +17,7 @@ Background
 - Width 为单选下拉：0、0.25、0.5、1、1.5、2、2.5、3、4、5。
 - Bold/Italic 为相互独立的 checkbox。
 - Font 为显示请求 family 或 `System Default` 的 button；fallback 时继续显示请求 family，并附 `using System Font` 状态。
-- 三个 Color trigger 显示色样、可读颜色/alpha 值和所属字段名称。
+- 三个 Color trigger 的视觉内容只显示与 IINA 原生控件一致的圆角矩形色样；按钮的可访问名称提供所属字段及可读颜色/alpha 值。
 
 ## 紧凑色盘
 
@@ -56,7 +56,7 @@ Background
 - Tab/Shift-Tab 可到达全部八项；select、checkbox、button 保留平台原生键盘行为。
 - Color trigger Enter/Space 打开；palette 内方向键或 Tab 可导航，Enter/Space 选择，Escape 关闭并回 trigger。
 - Font native panel 的搜索、列表、Choose/Cancel 全部可由键盘完成。
-- label、当前值、busy、fallback、错误和焦点必须可辨识；颜色名称/数值不得仅通过色样表达。
+- label、当前值、busy、fallback、错误和焦点必须可辨识；颜色名称/数值通过按钮的可访问名称表达，不在窄侧栏显示可能截断的代码文本。
 - CSS 使用 `:focus-visible`，并在 `forced-colors`、`prefers-contrast: more`、亮色与暗色外观下保留边界、文字、选中和焦点状态。
 - 窄 Sidebar 可换行，但组标题、字段值、色样与错误不得截断或覆盖 Position。
 

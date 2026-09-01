@@ -98,18 +98,19 @@ describe("Overlay DOM layout state", () => {
     });
   });
 
-  it("includes text-stroke paint overflow in the positioned visual block", () => {
-    expect(globalThis.calculateSubTandemOverlayPaintMetrics(80, 2)).toEqual({
-      layoutHeight: 84,
-      contentOffset: 2,
+  it("anchors a stroke-padded painted block inside the bottom endpoint", () => {
+    const strokeWidth = globalThis.calculateSubTandemOverlayTypography(720, {
+      ...style,
+      borderWidth: 5,
+    }).strokeWidth;
+    const measuredBlockHeight = 80 + strokeWidth * 2;
+    const bottom = globalThis.calculateSubTandemOverlayLayout({
+      viewportHeight: 720,
+      blockHeight: measuredBlockHeight,
+      position: 100,
+      region,
     });
-    expect(globalThis.calculateSubTandemOverlayPaintMetrics(80, 0)).toEqual({
-      layoutHeight: 80,
-      contentOffset: 0,
-    });
-    expect(() => globalThis.calculateSubTandemOverlayPaintMetrics(80, -1)).toThrow(
-      "INVALID_OVERLAY_PAINT_METRICS",
-    );
+    expect(bottom.topOffset + measuredBlockHeight).toBe(bottom.safeBottom);
   });
 
   it("matches IINA subtitle endpoints while anchoring and clamping the rendered block", () => {

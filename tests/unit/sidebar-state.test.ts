@@ -559,6 +559,39 @@ describe("Sidebar native color picker state", () => {
     expect(state.snapshot.subtitleStyle.feedbackByField.fontColor).toBe("idle");
     expect(state.snapshot.subtitleStyle.groupError).toBeNull();
   });
+
+  it("settles the current picker after a newer authority snapshot arrives first", () => {
+    const state = createState();
+    state.applySubtitleStyleState(subtitleAuthority());
+    state.beginSubtitleColorPicker("picker-delayed", "fontColor");
+    const latestStyle = {
+      ...defaultSubtitleStyle,
+      fontColor: { r: 12, g: 34, b: 56, a: 255 },
+    };
+    expect(
+      state.applySubtitleStyleState(
+        subtitleAuthority({
+          phase: "committed",
+          liveStyle: latestStyle,
+          committedStyle: latestStyle,
+          stateRevision: 3,
+          latestIntentSequence: 2,
+          committedRevision: 2,
+        }),
+      ),
+    ).toBe(true);
+
+    expect(
+      state.finishSubtitleColorPicker(
+        "picker-delayed",
+        "confirmed",
+        subtitleAuthority({ phase: "committed", stateRevision: 2 }),
+      ),
+    ).toBe(true);
+    expect(state.snapshot.subtitleStyle.nativeColorSession).toBeNull();
+    expect(state.snapshot.subtitleStyle.feedbackByField.fontColor).toBe("idle");
+    expect(state.snapshot.subtitleStyle.displayStyle).toEqual(latestStyle);
+  });
 });
 
 describe("Sidebar model catalog state", () => {

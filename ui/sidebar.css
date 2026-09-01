@@ -672,21 +672,15 @@ dd {
 }
 
 .subtitle-color-trigger {
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
-  align-items: center;
-  gap: 6px;
-  width: auto;
-  min-width: 96px;
-  max-width: 132px;
-  flex: 1;
+  display: block;
+  width: 38px;
+  min-width: 38px;
+  max-width: 38px;
+  height: 26px;
+  flex: 0 0 38px;
   min-height: 26px;
-  padding: 2px 6px;
-  color: var(--label-primary);
+  padding: 2px;
   background: var(--secondary-control-surface);
-  font-size: 11px;
-  font-weight: 400;
-  text-align: left;
 }
 
 .subtitle-color-trigger[aria-expanded="true"] {
@@ -707,14 +701,9 @@ dd {
 }
 
 .subtitle-color-swatch {
-  width: 20px;
-  height: 20px;
-}
-
-.subtitle-color-value {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
 }
 
 .subtitle-font-button {

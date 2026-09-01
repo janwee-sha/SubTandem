@@ -64,6 +64,7 @@ describe("translation overlay WebView contract", () => {
     expect(textRule).toContain("display: inline-block");
     expect(source).toContain("translationText.style.webkitTextStrokeWidth");
     expect(source).toContain("translationText.style.webkitTextStrokeColor");
+    expect(source).toContain("translationText.style.padding");
     expect(source).toContain("translationText.style.backgroundColor");
     expect(source).toContain('translationText.style.textShadow = "none"');
   });
@@ -78,8 +79,11 @@ describe("translation overlay WebView contract", () => {
     expect(source).toContain("new ResizeObserver");
     expect(source).toContain("requestAnimationFrame");
     expect(source).toContain("translationText.getBoundingClientRect().height");
+    expect(source).toContain("translationText.scrollHeight");
+    expect(source).toContain("Math.ceil");
+    expect(source).toContain("if (blockHeight === 0) return");
     expect(source).toContain("applyHorizontalBounds");
-    expect(source).toContain("calculateSubTandemOverlayPaintMetrics");
+    expect(source).not.toContain("calculateSubTandemOverlayPaintMetrics");
     expect(source.indexOf("applyHorizontalBounds();")).toBeLessThan(
       source.indexOf("translationText.getBoundingClientRect().height"),
     );

@@ -20,6 +20,7 @@ function applyTypography(): SubTandemOverlayTypography | null {
   translationText.style.color = typography.fontColor;
   translationText.style.webkitTextStrokeWidth = `${typography.strokeWidth}px`;
   translationText.style.webkitTextStrokeColor = typography.borderColor;
+  translationText.style.padding = `${typography.strokeWidth}px`;
   translationText.style.backgroundColor = typography.backgroundColor;
   translationText.style.textShadow = "none";
   return typography;
@@ -53,11 +54,13 @@ function layoutCurrent(): void {
   const typography = applyTypography();
   if (!typography) return;
   applyHorizontalBounds();
-  const blockHeight = translationText.getBoundingClientRect().height;
-  const paint = window.calculateSubTandemOverlayPaintMetrics(blockHeight, typography.strokeWidth);
-  const result = overlayState.layout(window.innerHeight, paint.layoutHeight);
+  const blockHeight = Math.ceil(
+    Math.max(translationText.getBoundingClientRect().height, translationText.scrollHeight),
+  );
+  if (blockHeight === 0) return;
+  const result = overlayState.layout(window.innerHeight, blockHeight);
   if (!result?.changed) return;
-  translation.style.top = `${result.layout.topOffset + paint.contentOffset}px`;
+  translation.style.top = `${result.layout.topOffset}px`;
   translation.style.left = `${result.layout.horizontalMargin}px`;
   translation.style.right = `${result.layout.horizontalMargin}px`;
 }

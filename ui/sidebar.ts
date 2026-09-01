@@ -129,7 +129,6 @@ const translationPositionStatus = document.querySelector<HTMLParagraphElement>(
 )!;
 const fontColorButton = document.querySelector<HTMLButtonElement>("#subtitle-font-color")!;
 const fontColorSwatch = fontColorButton.querySelector<HTMLElement>(".subtitle-color-swatch")!;
-const fontColorValue = fontColorButton.querySelector<HTMLElement>(".subtitle-color-value")!;
 const fontSizeSelect = document.querySelector<HTMLSelectElement>("#subtitle-font-size")!;
 const fontButton = document.querySelector<HTMLButtonElement>("#subtitle-font-family")!;
 const fontBold = document.querySelector<HTMLInputElement>("#subtitle-font-bold")!;
@@ -137,15 +136,12 @@ const fontItalic = document.querySelector<HTMLInputElement>("#subtitle-font-ital
 const fontStatus = document.querySelector<HTMLParagraphElement>("#subtitle-font-status")!;
 const borderColorButton = document.querySelector<HTMLButtonElement>("#subtitle-border-color")!;
 const borderColorSwatch = borderColorButton.querySelector<HTMLElement>(".subtitle-color-swatch")!;
-const borderColorValue = borderColorButton.querySelector<HTMLElement>(".subtitle-color-value")!;
 const borderWidthSelect = document.querySelector<HTMLSelectElement>("#subtitle-border-width")!;
 const backgroundColorButton = document.querySelector<HTMLButtonElement>(
   "#subtitle-background-color",
 )!;
 const backgroundColorSwatch =
   backgroundColorButton.querySelector<HTMLElement>(".subtitle-color-swatch")!;
-const backgroundColorValue =
-  backgroundColorButton.querySelector<HTMLElement>(".subtitle-color-value")!;
 const colorPalette = document.querySelector<HTMLElement>("#subtitle-color-palette")!;
 const subtitleColorGrid = colorPalette.querySelector<HTMLElement>(".subtitle-color-grid")!;
 const subtitleShowColors = document.querySelector<HTMLButtonElement>("#subtitle-show-colors")!;
@@ -360,24 +356,21 @@ function rgbaCss(color: SidebarRgbaColor): string {
 
 const colorControls: Record<
   SidebarSubtitleColorField,
-  { button: HTMLButtonElement; swatch: HTMLElement; value: HTMLElement; label: string }
+  { button: HTMLButtonElement; swatch: HTMLElement; label: string }
 > = {
   fontColor: {
     button: fontColorButton,
     swatch: fontColorSwatch,
-    value: fontColorValue,
     label: "Font Color",
   },
   borderColor: {
     button: borderColorButton,
     swatch: borderColorSwatch,
-    value: borderColorValue,
     label: "Border Color",
   },
   backgroundColor: {
     button: backgroundColorButton,
     swatch: backgroundColorSwatch,
-    value: backgroundColorValue,
     label: "Background Color",
   },
 };
@@ -385,7 +378,6 @@ const colorControls: Record<
 function renderColorControl(field: SidebarSubtitleColorField, color: SidebarRgbaColor): void {
   const control = colorControls[field];
   control.swatch.style.setProperty("--subtitle-swatch", rgbaCss(color));
-  control.value.textContent = rgbaLabel(color);
   control.button.setAttribute("aria-label", `${control.label}: ${rgbaLabel(color)}`);
 }
 
