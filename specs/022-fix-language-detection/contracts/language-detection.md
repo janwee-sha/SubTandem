@@ -19,7 +19,7 @@ type LanguageDetectionResult =
   | { state: "unsupported" };
 ```
 
-协调结果增加 `contentHash` 和 `attemptId`。`reliable` 的唯一含义是“已选定受支持正文候选”，不表示高置信度。不得将正文、候选列表、分数、原始元数据、路径或异常传播到 Sidebar、Global、日志或诊断。
+协调结果增加 `contentHash` 和 `attemptId`。`reliable` 的唯一含义是“已选定受支持正文候选”，不表示高置信度。不得将正文、候选列表、分数、原始元数据、路径或异常传播到 Sidebar、Global、日志或诊断；字幕正文、译文进入仅会话保留的 Log Viewer 时适用 [FR-012](../spec.md#功能需求) 的调试例外，随所属会话销毁。该例外不放宽其他字段限制，也不适用于检测消息、错误、安全计时记录或持久化验收证据。
 
 ## 正文与权重
 

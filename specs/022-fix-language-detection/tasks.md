@@ -79,7 +79,7 @@
 - [ ] T023 [P] [US3] 在 `tests/integration/auto-language-support.test.ts` 补充正式 Main 正文入口的标签变体、既有长轨、中文/地区等价、未启用、未选择/失效 Profile revision、seek 和目标保存成功/失败回归；禁止用 `ControllerSource.language` 的元数据赋值或直接 `setLanguageDetection()` 冒充端到端检测。
 - [ ] T024 [P] [US3] 在 `tests/integration/embedded-subtitle.test.ts` 用同正文格式派生媒体调用正式 native helper 提取，再进入生产准备、检测和翻译流程，验证 SubRip/ASS/SSA/`mov_text` 与外挂结果和方向一致；覆盖正确/缺失/错误标签和精确选轨，不能只用伪造提取回复证明格式兼容。
 - [ ] T025 [P] [US3] 在 `tests/unit/language-detection-coordinator.test.ts` 扩充换轨、换片、正文改变、禁用、关窗、同正文新 attempt、双窗口并发及每种真实步骤间迟到结果回归；断言失效后零提交/零请求、引用释放，seek 不重检、目标改变只重新门控。
-- [ ] T026 [P] [US3] 新增 `tests/security/language-detection.test.ts`，调用生产检测、Main 和 controller 检查离线处理、仅选定 Profile revision 接收附近必要字幕、无跨会话缓存，日志/消息/错误不含正文、译文、候选、路径、原始标签或凭据；验证安全计时仅白名单字段，并调用 T029 工具证明回环监听、计数区分、无正文输出及宿主输入不回显。
+- [ ] T026 [P] [US3] 新增 `tests/security/language-detection.test.ts`，调用生产检测、Main 和 controller 检查离线处理、仅选定 Profile revision 接收附近必要字幕、无跨会话缓存；按 FR-012 允许仅会话保留的 Log Viewer 日志包含字幕正文、译文，验证日志随所属会话销毁、不持久化、不跨会话复用；其他日志/诊断及检测消息/错误不含正文、译文，所有日志/诊断及检测消息/错误不含候选、路径、原始标签或凭据；验证安全计时仅白名单字段，并调用 T029 工具证明回环监听、计数区分、无正文输出及宿主输入不回显。
 - [ ] T027 [P] [US3] 在 `tests/integration/performance.test.ts` 替换将同进程前 20 次当作首次的检测测试：至少 40 次独立进程初始化和 40 次热调用分别测量，另列模型导入成本；通过生产协调器计时扫描/取样/分类/聚合和调度总耗时，报告首次 p95 ≤100 ms、重复 p95 ≤50 ms、实际步骤 p99 ≤16 ms、总期限 ≤500 ms，覆盖 20,000 cue 及超采样预算输入，不以 Node 结果代替宿主验收。
 
 ### 实现与验证
