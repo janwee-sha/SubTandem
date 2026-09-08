@@ -23,7 +23,7 @@
 
 - [ ] T003 [P] 收集 `tests/fixtures/languages/calibration/` 中的自然字幕及逐件许可/署名，在 `tests/fixtures/languages/calibration.json` 登记来源、修订、哈希、作品/译本谱系、样本及待核对真值；按语料契约补齐至少 20 种语言及短中长、指定回归、真实混语、罗马字日语、自然豪萨语、共享文字和范围外分层，不以可下载或轨道标签代替许可与真值。
 - [ ] T004 [P] 从与 T003 隔离的作品和译本谱系收集 `tests/fixtures/languages/acceptance/`，在 `tests/fixtures/languages/acceptance.json` 登记同等准入信息；唯一自然主样本须覆盖至少 20 种源语言、每种至少 20 条自然 cue，5–11、12–30、≥31 cue 正样本组各至少 20 个独立片段，并补齐语料契约全部内容分层及指定回归；分段、格式及受控混合变体不能补数量。
-- [ ] T005 由开发者逐项核对 `tests/fixtures/languages/calibration.json` 和 `tests/fixtures/languages/acceptance.json` 的正文真值、中文形式、语言文字区间、混合占比/并列集合、正文充分性、正样本归属及核对依据；用 T001 核验两集合完整覆盖、来源隔离和主样本分母后，将正文/真值/来源组/分层哈希写入 `tests/fixtures/languages/freeze.json`；缺失许可、无法核对或覆盖不足时继续补足，不标记冻结。
+- [ ] T005 由开发者逐项核对 `tests/fixtures/languages/calibration.json` 和 `tests/fixtures/languages/acceptance.json` 的正文真值、中文形式、语言文字区间、混合占比、范围内最高占比的预期集合、正文充分性、正样本归属及核对依据；用 T001 核验两集合完整覆盖、来源隔离和主样本分母后，将正文/真值/来源组/分层哈希写入 `tests/fixtures/languages/freeze.json`；缺失许可、无法核对或覆盖不足时继续补足，不标记冻结。
 - [ ] T006 在 `tests/unit/language-detection.test.ts` 增加附录 A 的 67 种源身份与锁定模型代码一致性回归，在 `tests/unit/target-languages.test.ts` 调整检测映射断言归属并保留 156 项目标目录的 ID、显示名、顺序、Provider 标签和等价属性检查；证明目标选项不扩展源范围。
 - [ ] T007 在 `package.json`、`package-lock.json` 将 `franc-min@6.2.0` 替换为固定 `franc@6.2.0`，核验全部源模型代码及范围外候选数据，并更新 `THIRD_PARTY_NOTICES.txt` 中实际分发组件和传递依赖声明。
 - [ ] T008 新增 `src/domain/source-languages.ts` 的固定源映射，将 `src/domain/target-languages.ts` 中仅供检测的元数据和反向查询迁出，更新 `src/subtitles/language-detection.ts` 的依赖与映射导入；保留 `cmn → zh` 和源身份范围，移除 `franc-min` 生产路径，通过 T006 回归。
@@ -52,21 +52,21 @@
 
 ## 阶段 4：用户故事 2——含混与混合正文优先尝试翻译（P1）
 
-**目标**：有受支持候选就尝试翻译；混合正文按有效文字量选主语言，仅有明确范围外证据时返回 `unsupported`。
+**目标**：有受支持候选就尝试翻译；混合正文按有效文字量在范围内选主语言，范围外占优不触发拒绝；没有范围内候选且正文可确认仅属范围外时返回 `unsupported`。
 
-**独立验收**：罗马字/稀少文字存在候选时不返回 `unknown`，自然豪萨语识别正确；混合多数、40/35/25、并列及分段/时长变体符合文字量规则；空白/数字/符号/网址、无候选和已确认范围外状态及零调用正确。误判仍计识别错误。
+**独立验收**：罗马字/稀少文字存在候选时不返回 `unknown`，自然豪萨语识别正确；混合多数、40/35/25、范围外占优、范围内外等比、范围内并列及分段/时长变体符合范围内最高文字量规则；空白/数字/符号/网址、无候选和仅范围外正文的状态及零调用正确。误判仍计识别错误。
 
 ### 回归测试
 
-- [ ] T017 [P] [US2] 在 `tests/unit/language-detection.test.ts` 增加校准集真实混语、罗马字日语与自然豪萨语回归，并以登记派生关系的边界样本覆盖文字量与 cue 数/时长相反、40/35/25、最高并列、同 cue/跨 cue、词内拆分/Han 换行、成团/交错、超采样上限及重复次数；覆盖 fi/he/no、无法稳定归属的范围外文字、低分差/无候选注入和中文形式冲突。
-- [ ] T018 [P] [US2] 在 `tests/integration/auto-language-support.test.ts` 从正文入口验证低置信度、罗马字/歌词、混合及稀少文字候选进入已选 Provider，混合主语言与目标等价时零调用；正确/缺失/错误标签均不能覆盖正文候选或使无候选触发翻译，误判与翻译可用性分别断言。
+- [ ] T017 [P] [US2] 在 `tests/unit/language-detection.test.ts` 增加校准集真实混语、罗马字日语与自然豪萨语回归，并以登记派生关系的边界样本覆盖文字量与 cue 数/时长相反、40/35/25、范围内最高并列、同 cue/跨 cue、词内拆分/Han 换行、成团/交错、超采样上限及重复次数；覆盖用户故事 2 场景 6–7、范围外多语言合计占优、范围内少量文字及仅范围外混合，断言范围外文字不转计且占比分母完整；覆盖 fi/he/no、无法稳定归属的范围外文字、低分差/无候选注入和中文形式冲突。
+- [ ] T018 [P] [US2] 在 `tests/integration/auto-language-support.test.ts` 从正文入口验证低置信度、罗马字/歌词、混合及稀少文字候选进入已选 Provider，覆盖范围外占优但选中范围内语言；所选范围内主语言与目标等价时零调用；正确/缺失/错误标签均不能覆盖正文候选或使无候选触发翻译，误判与翻译可用性分别断言。
 
 ### 实现与验证
 
-- [ ] T019 [US2] 在 `src/subtitles/language-detection.ts` 完成混合片段的局部/邻近上下文归属及长轨均匀采样：全量预算内计实际文字，超预算最多 64 个代表区间，观测文字不超所选预算，按区间实际代表文字计权且上下文不重复计权；整轨候选仅补无局部候选片段，平票按规范语言 ID 的 Unicode 码点序选择。
-- [ ] T020 [US2] 在 `src/subtitles/language-detection.ts` 实现独立范围外证据判断：完整查询的局部/上下文同身份与校准分差仅确认范围外，证据不足回到受支持候选；分别累计不同范围外语言，无稳定身份的文字保留未归属量，不合并争夺主语言；全轨仅有确认范围外正文可返回 `unsupported`，仅无有效文字/无候选/异常/超时返回 `unknown`。
+- [ ] T019 [US2] 在 `src/subtitles/language-detection.ts` 完成混合片段的局部/邻近上下文归属及长轨均匀采样：全量预算内计实际文字，超预算最多 64 个代表区间，观测文字不超所选预算，按区间实际代表文字计权且上下文不重复计权；整轨候选仅补无局部候选片段，仅从范围内候选选择累计文字量最大者，范围内平票按规范语言 ID 的 Unicode 码点序选择。
+- [ ] T020 [US2] 在 `src/subtitles/language-detection.ts` 实现独立范围外证据判断：完整查询的局部/上下文同身份与校准分差仅确认范围外，证据不足回到受支持候选；范围外语言分别累计，无稳定身份的文字保留未归属量，均保留在占比分母且不参与范围内排序、不转计文字量；范围外占优不能拒绝已有范围内候选；没有范围内候选且正文可确认仅属范围外时返回 `unsupported`，仅无有效文字/无候选/异常/超时返回 `unknown`。
 - [ ] T021 [US2] 在 `src/subtitles/language-detection.ts` 先以 `zh` 参与主语言比较，再仅用归属中文的正文判别书写形式；保留至少三种独有形式字的证据规则，排除 `后/里/云` 等共享字，证据不足或冲突返回 `zh`，保留 `src/domain/language.ts` 的既有等价行为。
-- [ ] T022 [US2] 运行 `tests/unit/language-detection.test.ts`、`tests/integration/auto-language-support.test.ts` 的本故事及 US1 回归，并执行增量交付检查；在 `docs/validation/language-detection.md` 记录混合文字量/并列/变体一致性、范围外与无候选零调用，以及罗马字误判和自然豪萨语的独立结果。
+- [ ] T022 [US2] 运行 `tests/unit/language-detection.test.ts`、`tests/integration/auto-language-support.test.ts` 的本故事及 US1 回归，并执行增量交付检查；在 `docs/validation/language-detection.md` 记录混合范围内最高文字量/并列/变体一致性、范围外占优时的候选与翻译资格、仅范围外及无候选零调用，以及罗马字误判和自然豪萨语的独立结果。
 
 ## 阶段 5：用户故事 3——入口、既有语言与会话一致（P2）
 
