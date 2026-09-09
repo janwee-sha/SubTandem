@@ -1,0 +1,75 @@
+7
+00:00:28,672 --> 00:00:30,464
+Loggar helt enkelt in
+
+8
+00:00:31,744 --> 00:00:35,328
+Då ser ni att jag är inne som användare
+
+9
+00:00:36,096 --> 00:00:38,400
+Tore Danielsson
+
+10
+00:00:38,656 --> 00:00:40,960
+Det är jag och så ser min användarsida ut
+
+11
+00:00:41,472 --> 00:00:44,032
+Jag har ju också diskussionssida
+
+12
+00:00:44,544 --> 00:00:48,640
+Där är det inte så mycket där just nu jag har fått två
+
+13
+00:00:48,896 --> 00:00:52,736
+Mail kan man säga så skickas till min diskussionssida
+
+14
+00:00:53,760 --> 00:00:55,296
+Som man kan prenumerera på
+
+15
+00:00:55,808 --> 00:00:57,344
+Jag har en sandlåda där
+
+16
+00:00:57,856 --> 00:01:02,976
+Jag kan testa att göra olika saker och lägga in en rubrik och lägga text och så där
+
+17
+00:01:04,256 --> 00:01:10,400
+Och en bevakningslista så kan jag se mina bidrag och sedan finns det Beta
+
+18
+00:01:10,656 --> 00:01:12,704
+Funktioner som är nya funktioner som man kan testa
+
+19
+00:01:13,472 --> 00:01:15,520
+Så det kan man titta på
+
+20
+00:01:16,800 --> 00:01:19,616
+Det man kan göra på användarssidan är att skriva någonting
+
+21
+00:01:19,872 --> 00:01:21,408
+Enkelt
+
+22
+00:01:24,480 --> 00:01:27,296
+Går tillbaks till
+
+23
+00:01:27,552 --> 00:01:28,320
+Huvudsidan då
+
+24
+00:01:29,600 --> 00:01:33,184
+Kan vi se här –  vi testar den här utmärkta artikeln
+
+25
+00:01:33,696 --> 00:01:39,840
+Här kan jag berätta att alla sidor på Wikipedia, här är en artikelsida och till den

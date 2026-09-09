@@ -1,0 +1,47 @@
+[Script Info]
+ScriptType: v4.00+
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,24,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,1,0,2,10,10,10,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:02:37.99,0:02:44.99,Default,,0,0,0,,{\i1}We sort of put it out there, and we got thousands of comments,{\i0}
+Dialogue: 0,0:02:44.99,0:02:49.00,Default,,0,0,0,,{\i1}and thousands of comments, they were online comments, from around the world,{\i0}
+Dialogue: 0,0:02:49.00,0:02:56.97,Default,,0,0,0,,{\i1}which was, I think, in, this was 1997, it was probably a first in terms of online comments{\i0}
+Dialogue: 0,0:02:56.97,0:02:59.97,Default,,0,0,0,,{\i1}globally from the U.S. government perspective.{\i0}
+Dialogue: 0,0:02:59.97,0:03:07.98,Default,,0,0,0,,{\i1}So, then we did more talking, more talking around the world, more talking with people and produced the White Paper.{\i0}
+Dialogue: 0,0:03:07.98,0:03:10.99,Default,,0,0,0,,{\i1}There was a huge amount of excitement about it.{\i0}
+Dialogue: 0,0:03:10.99,0:03:14.99,Default,,0,0,0,,{\i1}There was an enormous amount of energy.{\i0}
+Dialogue: 0,0:03:14.99,0:03:16.99,Default,,0,0,0,,{\i1}Was there trepidation as well?{\i0}
+Dialogue: 0,0:03:16.99,0:03:24.00,Default,,0,0,0,,{\i1}Well, of course there were some people that were saying that it wasn’t going to work,{\i0}
+Dialogue: 0,0:03:24.00,0:03:28.00,Default,,0,0,0,,{\i1}or that it should be managed by the ITU.{\i0}
+Dialogue: 0,0:03:28.00,0:03:30.97,Default,,0,0,0,,{\i1}But in fact, it was a pretty small number.{\i0}
+Dialogue: 0,0:03:30.97,0:03:42.98,Default,,0,0,0,,{\i1}There was very strong global consensus for allowing this to move into a non-governmental setting.{\i0}
+Dialogue: 0,0:03:42.98,0:03:48.99,Default,,0,0,0,,{\i1}And in fact, it was really trying to replicate, or preserve, as much of what had been going on,{\i0}
+Dialogue: 0,0:03:48.99,0:03:52.99,Default,,0,0,0,,{\i1}because while DARPA had been funding the work that Jon [Postel] did,{\i0}
+Dialogue: 0,0:03:52.99,0:03:57.00,Default,,0,0,0,,{\i1}it was with a very light touch, and he was really running it.{\i0}
+Dialogue: 0,0:03:57.00,0:04:02.00,Default,,0,0,0,,{\i1}So, there was…  It sounds like there was pretty much universal acceptance that the DNS,{\i0}
+Dialogue: 0,0:04:02.00,0:04:08.98,Default,,0,0,0,,{\i1}management of the DNS, would at least go toward a private model{\i0}
+Dialogue: 0,0:04:08.98,0:04:10.98,Default,,0,0,0,,{\i1}instead of a government model.  Right?{\i0}
+Dialogue: 0,0:04:10.98,0:04:12.48,Default,,0,0,0,,{\i1}Yes. Yes, there was.{\i0}
+Dialogue: 0,0:04:12.48,0:04:18.99,Default,,0,0,0,,{\i1}And just to put this in context, that was a time in which there was enormous amount{\i0}
+Dialogue: 0,0:04:18.99,0:04:23.99,Default,,0,0,0,,{\i1}of optimism and awareness about what the Internet was doing.{\i0}
+Dialogue: 0,0:04:23.99,0:04:31.00,Default,,0,0,0,,{\i1}The U.S. government produced a paper on a framework for global Internet commerce,{\i0}
+Dialogue: 0,0:04:31.00,0:04:34.00,Default,,0,0,0,,{\i1}that called for a very light regulatory touch.{\i0}
+Dialogue: 0,0:04:34.00,0:04:38.97,Default,,0,0,0,,{\i1}The European Union produced one.  There was one produced by Japan,{\i0}
+Dialogue: 0,0:04:38.97,0:04:45.98,Default,,0,0,0,,{\i1}and there were big international conferences where people were very focused on{\i0}
+Dialogue: 0,0:04:45.98,0:04:51.99,Default,,0,0,0,,{\i1}not imposing a heavy governmental regulatory regime on the Internet.{\i0}
+Dialogue: 0,0:04:51.99,0:04:54.99,Default,,0,0,0,,{\i1}And there was that little bit of a sense of, you know, what if everyone did?{\i0}
+Dialogue: 0,0:04:54.99,0:04:58.99,Default,,0,0,0,,{\i1}So, you know, if you pass a regulation.{\i0}
+Dialogue: 0,0:04:58.99,0:05:08.00,Default,,0,0,0,,{\i1}So, ICANN grew up in the midst of a very vibrant global discussion about{\i0}
+Dialogue: 0,0:05:08.00,0:05:14.98,Default,,0,0,0,,{\i1}allowing the Internet to be the Internet, and a sort of light-handed regulatory approach to it.{\i0}
+Dialogue: 0,0:05:14.98,0:05:22.98,Default,,0,0,0,,{\i1}So, you know, some of the things that we have seen in more recent years, were really not there.{\i0}
+Dialogue: 0,0:05:22.98,0:05:30.99,Default,,0,0,0,,{\i1}The whole concept, ICANN is such an unusual beast in this sort of bottom-up policy formation system,{\i0}
+Dialogue: 0,0:05:30.99,0:05:37.00,Default,,0,0,0,,{\i1}with multiple inputs, unlike traditional organizations where it goes from the top-down.{\i0}
+Dialogue: 0,0:05:37.00,0:05:38.00,Default,,0,0,0,,{\i1}Where did that come from?{\i0}
+Dialogue: 0,0:05:38.00,0:05:43.00,Default,,0,0,0,,{\i1}It came from the…{\i0}
+Dialogue: 0,0:05:43.00,0:05:49.98,Default,,0,0,0,,{\i1}What we were saying was, the whole notion all along was private sector leadership.{\i0}
+Dialogue: 0,0:05:49.98,0:05:55.98,Default,,0,0,0,,{\i1}Now, today we wouldn’t call that, we wouldn’t say private sector leadership, we would say multistakeholder.{\i0}
+Dialogue: 0,0:05:55.98,0:05:58.99,Default,,0,0,0,,{\i1}We didn’t mean just business or anything like that,{\i0}

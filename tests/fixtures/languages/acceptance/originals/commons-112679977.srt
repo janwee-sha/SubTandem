@@ -1,0 +1,255 @@
+1
+00:00:02,441 --> 00:00:04,989
+Voici votre télescope.
+
+2
+00:00:05,282 --> 00:00:07,360
+Une merveille d'ingénierie.
+
+3
+00:00:07,513 --> 00:00:09,916
+Une machine à explorer.
+
+4
+00:00:10,259 --> 00:00:12,515
+Utilisez-le pour remonter le temps
+
+5
+00:00:12,545 --> 00:00:16,825
+et explorer les premières galaxies
+qui se sont formées après le Big Bang;
+
+6
+00:00:17,782 --> 00:00:21,556
+pour scruter les atmosphères des planètes 
+en orbite autour des étoiles.
+
+7
+00:00:21,837 --> 00:00:27,313
+C'est votre instrument vers l'inexploré,
+l'inconnu et l'inimaginable.
+
+8
+00:00:31,502 --> 00:00:35,015
+Voici le télescope spatial
+le plus grand, le plus complexe
+
+9
+00:00:35,057 --> 00:00:38,833
+et le plus ambitieux jamais construit.
+
+10
+00:00:38,888 --> 00:00:41,498
+Il changera notre compréhension du cosmos
+
+11
+00:00:41,540 --> 00:00:43,493
+et notre place dans l’univers.
+
+12
+00:00:43,733 --> 00:00:46,297
+Le télescope spatial James Webb.
+
+13
+00:00:55,183 --> 00:00:59,230
+Équipé du plus grand miroir
+primaire jamais utilisé dans l'espace;
+
+14
+00:00:59,277 --> 00:01:01,161
+mesurant 6,5 mètres,
+
+15
+00:01:01,208 --> 00:01:06,545
+c'est plus de 6 fois la taille du miroir
+primaire du télescope spatial Hubble.
+
+16
+00:01:08,580 --> 00:01:12,265
+Les quatre instruments et caméras
+infrarouges de pointe de Webb
+
+17
+00:01:12,311 --> 00:01:15,528
+fonctionnent à des températures 
+extrêmement basses,
+
+18
+00:01:15,926 --> 00:01:18,927
+des températures plus basses
+que la surface de Pluton.
+
+19
+00:01:21,786 --> 00:01:23,177
+Obtenir ce froid
+
+20
+00:01:23,219 --> 00:01:26,759
+se fait à l'aide du plus grand
+pare-soleil jamais utilisé;
+
+21
+00:01:26,791 --> 00:01:29,728
+un pare-soleil à 5 couches
+de la taille d'un court de tennis
+
+22
+00:01:29,754 --> 00:01:33,554
+qui bloque la chaleur du Soleil,
+de la Terre et de la Lune.
+
+23
+00:01:38,719 --> 00:01:40,610
+Webb sera le premier télescope
+
+24
+00:01:40,656 --> 00:01:44,477
+à détecter la lumière des galaxies 
+les plus éloignées de l'univers.
+
+25
+00:01:45,142 --> 00:01:49,704
+Ces premières galaxies se sont formées 
+il y a environ 13,5 milliards d'années,
+
+26
+00:01:49,735 --> 00:01:53,545
+environ 300 millions d'années
+seulement après le Big Bang.
+
+27
+00:01:54,249 --> 00:01:56,695
+Webb propose des technologies avancées
+
+28
+00:01:56,741 --> 00:02:00,954
+pour répondre à certaines des questions 
+les plus fondamentales sur l'univers.
+
+29
+00:02:01,148 --> 00:02:04,641
+Comment les premières galaxies 
+se sont-elles formées et ont-elles évolué?
+
+30
+00:02:04,674 --> 00:02:08,074
+Existe-t-il des signatures chimiques
+des éléments constitutifs de la vie
+
+31
+00:02:08,104 --> 00:02:09,151
+sur d'autres planètes?
+
+32
+00:02:09,184 --> 00:02:11,268
+Notre système solaire est unique?
+
+33
+00:02:15,586 --> 00:02:20,766
+Lancer un si grand télescope dans l'espace
+est un défi d'ingénierie incroyable.
+
+34
+00:02:21,240 --> 00:02:22,516
+Entièrement déployé,
+
+35
+00:02:22,551 --> 00:02:26,203
+Webb est trop grand pour tenir
+dans n'importe quelle coiffe de fusée.
+
+36
+00:02:26,232 --> 00:02:30,960
+Les ingénieurs l'ont conçu pour être plié,
+comme un origami, se glisser à l'intérieur
+
+37
+00:02:31,006 --> 00:02:34,279
+de la coiffe de la fusée Ariane 5
+de 5 mètres de diamètre
+
+38
+00:02:34,309 --> 00:02:36,090
+de l'Agence Spatiale Européenne.
+
+39
+00:02:39,281 --> 00:02:43,558
+Après le lancement, les contrôleurs 
+au sol déploient Webb à distance.
+
+40
+00:02:44,200 --> 00:02:47,143
+Le déploiement est un travail complexe.
+
+41
+00:02:47,495 --> 00:02:48,921
+Pendant près de 3 semaines,
+
+42
+00:02:48,976 --> 00:02:51,547
+les contrôleurs déplient
+soigneusement Webb.
+
+43
+00:02:51,765 --> 00:02:55,990
+Après cette opération délicate, les miroirs
+dorés de Webb sont alignés avec précision
+
+44
+00:02:56,030 --> 00:02:59,591
+à l'aide de moteurs derrière 
+chaque segment de miroir hexagonal,
+
+45
+00:02:59,643 --> 00:03:03,679
+les ajustant pour former
+un miroir parfait.
+
+46
+00:03:04,174 --> 00:03:08,514
+Une fois les instruments refroidis,
+l'exploration commencera.
+
+47
+00:03:09,400 --> 00:03:13,252
+Webb est un défi technologique 
+hors du commun.
+
+48
+00:03:13,282 --> 00:03:18,832
+Né des efforts de milliers de personnes
+aux États-Unis, au Canada et en Europe.
+
+49
+00:03:19,709 --> 00:03:23,556
+Le télescope spatial James Webb 
+est votre télescope.
+
+50
+00:03:23,628 --> 00:03:25,469
+Utilisez-le pour explorer.
+
+51
+00:03:25,502 --> 00:03:27,281
+Pour remettre en cause nos théories.
+
+52
+00:03:27,311 --> 00:03:29,487
+Pour voir des sites jusqu'ici invisibles.
+
+53
+00:03:29,688 --> 00:03:35,447
+C'est à vous de dévoiler la beauté
+et les mystères du ciel, et...
+
+54
+00:03:35,481 --> 00:03:37,478
+de comprendre notre place dans l’univers.
+
+55
+00:03:38,631 --> 00:03:41,352
+[Explorer le système solaire et au-delà]
+
+56
+00:03:41,931 --> 00:03:43,553
+[NASA]

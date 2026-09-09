@@ -4,13 +4,17 @@ import type { TranslationProvider } from "../../src/providers/provider.js";
 import type { SubtitleCue } from "../../src/subtitles/types.js";
 import { readFileSync } from "node:fs";
 import { selectNearbyCues } from "../../src/app/scheduler.js";
-import { detectSubtitleLanguage } from "../../src/subtitles/language-detection.js";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { arch, cpus, platform, release } from "node:os";
+import type { LanguageDetectionMetrics } from "../../src/app/language-detection.js";
 import { createTranslationAlignmentFixture } from "../helpers/translation-alignment.js";
 import { WebViewTranslationOverlay } from "../../src/adapters/iina/webview-translation-overlay.js";
 import { DEFAULT_SUBTITLE_TEXT_STYLE } from "../../src/domain/subtitle-style.js";
 import { FakeIinaOverlay } from "../helpers/fake-iina.js";
 
-await import("../../ui/overlay-state.js");
+const overlayStateModule: string = "../../ui/overlay-state.js";
+await import(overlayStateModule);
 
 class LatestOverlay implements TranslationOverlaySink {
   lines: string[] = [];
@@ -36,7 +40,7 @@ const cues = Array.from({ length: 120 }, (_, index): SubtitleCue => ({
 describe("automated acceptance performance", () => {
   it("coalesces 50 full-style edits into latest-only renders without clearing playback", () => {
     const view = new FakeIinaOverlay();
-    let loaded: (() => void) | null = null;
+    let loaded: () => void = () => undefined;
     const overlay = new WebViewTranslationOverlay(view, {
       on: (_name, callback) => {
         loaded = callback;
@@ -44,7 +48,7 @@ describe("automated acceptance performance", () => {
       },
       off: () => undefined,
     });
-    loaded?.();
+    loaded();
     view.trigger("overlay:ready", {});
     overlay.show(["current"]);
     const started = performance.now();
@@ -85,29 +89,92 @@ describe("automated acceptance performance", () => {
     expect(durations.filter((duration) => duration <= 100)).toHaveLength(101);
     expect(durations.every((duration) => duration <= 200)).toBe(true);
   });
-  it("keeps maximum language detection samples within first, warm and sync budgets", () => {
-    const sample = Array.from({ length: 64 }, (_, index): SubtitleCue => ({
-      id: `language-${index}`,
-      index,
-      startMs: index * 1_000,
-      endMs: index * 1_000 + 900,
-      sourceText: `The passengers wait beside the station while the damaged engine is repaired in scene ${index}`,
-      normalizedText: `The passengers wait beside the station while the damaged engine is repaired in scene ${index}`,
-    }));
-    const durations: number[] = [];
-    for (let iteration = 0; iteration < 40; iteration += 1) {
-      const started = performance.now();
-      detectSubtitleLanguage(sample);
-      durations.push(performance.now() - started);
-    }
-    const percentile = (values: number[], percentage: number): number =>
-      [...values].sort((left, right) => left - right)[
-        Math.min(values.length - 1, Math.ceil(values.length * percentage) - 1)
-      ]!;
-    expect(percentile(durations.slice(0, 20), 0.95)).toBeLessThanOrEqual(100);
-    expect(percentile(durations.slice(20), 0.95)).toBeLessThanOrEqual(50);
-    expect(percentile(durations, 0.99)).toBeLessThanOrEqual(16);
-  });
+  it("measures 40 independent initializations, 40 warm detections and 20,000 cues through real work steps", () => {
+    const output = "build/language-performance";
+    mkdirSync(output, { recursive: true });
+    writeFileSync(`${output}/package.json`, JSON.stringify({ type: "module" }));
+    execFileSync(
+      "node_modules/.bin/tsc",
+      ["-p", "tsconfig.plugin.json", "--outDir", `${output}/src`],
+      { stdio: "pipe" },
+    );
+    const run = (
+      mode: string,
+      seed = 0,
+    ): { importMs: number; metrics: LanguageDetectionMetrics[] } =>
+      JSON.parse(
+        execFileSync(
+          process.execPath,
+          ["tests/helpers/language-performance-worker.mjs", `${output}/src`, mode, String(seed)],
+          { encoding: "utf8", timeout: 10000 },
+        ),
+      );
+    const first = Array.from({ length: 40 }, (_, index) => run("first", index));
+    const warm = run("warm");
+    const stress = run("stress");
+    const percentile = (values: number[], fraction: number) =>
+      [...values].sort((a, b) => a - b)[Math.ceil(values.length * fraction) - 1]!;
+    const all = [...first.flatMap((item) => item.metrics), ...warm.metrics];
+    const report = {
+      firstCount: first.length,
+      repeatCount: warm.metrics.length,
+      importP95Ms: percentile(
+        first.map((item) => item.importMs),
+        0.95,
+      ),
+      firstP95Ms: percentile(
+        first.flatMap((item) => item.metrics.map((metric) => metric.elapsedMs)),
+        0.95,
+      ),
+      repeatP95Ms: percentile(
+        warm.metrics.map((metric) => metric.elapsedMs),
+        0.95,
+      ),
+      stepP99Ms: percentile(
+        [...all, ...stress.metrics].flatMap((metric) => [...metric.stepDurationsMs]),
+        0.99,
+      ),
+      maxMs: Math.max(
+        ...all.map((metric) => metric.elapsedMs),
+        ...stress.metrics.map((metric) => metric.elapsedMs),
+      ),
+      stress: stress.metrics.map((metric) => ({
+        elapsedMs: metric.elapsedMs,
+        state: metric.state,
+        steps: metric.stepDurationsMs.length,
+      })),
+    };
+    console.log(JSON.stringify({ languageDetectionPerformance: report }));
+    if (process.env.SUBTANDEM_LANGUAGE_PERFORMANCE_REPORT === "1")
+      writeFileSync(
+        "docs/validation/language-detection-node.json",
+        JSON.stringify(
+          {
+            ...report,
+            environment: {
+              platform: platform(),
+              release: release(),
+              architecture: arch(),
+              cpu: cpus()[0]?.model,
+              node: process.version,
+            },
+            measuredAt: new Date().toISOString(),
+            ordinaryReliableCount: all.filter((metric) => metric.state === "reliable").length,
+          },
+          null,
+          2,
+        ) + "\n",
+      );
+    expect(
+      first.every((item) => item.metrics.length === 1 && item.metrics[0]!.kind === "first"),
+    ).toBe(true);
+    expect(warm.metrics.every((metric) => metric.kind === "repeat")).toBe(true);
+    expect(all.every((metric) => metric.state === "reliable")).toBe(true);
+    expect(report.firstP95Ms).toBeLessThanOrEqual(100);
+    expect(report.repeatP95Ms).toBeLessThanOrEqual(50);
+    expect(report.stepP99Ms).toBeLessThanOrEqual(16);
+    expect(report.maxMs).toBeLessThanOrEqual(500);
+  }, 120000);
 
   it("streams a four-hour, 20 GB-class, 20,000-cue workload without whole-media loading", () => {
     const large = Array.from({ length: 20_000 }, (_, index): SubtitleCue => ({

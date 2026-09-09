@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "version": "commons-2026-09-09-v1",
+  "status": "frozen",
+  "reviewedBy": "项目开发者（当前会话用户）",
+  "frozenAt": "2026-09-10",
+  "reviewEvidence": "当前会话用户于 2026-09-10 回复：已核对通过。",
+  "splits": {
+    "calibration": {
+      "sources": "214e13aefe7379a4ffe01b066be90bc8cce346d7799d9e25ae4042d0f0c1059c",
+      "groups": "6f5d6a339043a48c06c03ddd4775c3361175ce20f6b61406b938145b0fefa239",
+      "samples": "31697564e6af70d8e729d06a511ffdbbefd30b255f79d7d7beee6a82cb5d7a7a",
+      "truth": "236d4025ec2806ffb172e194450d5b908d0c6154ec7f4d918994eecd5ce0f811",
+      "strata": "e9450e11f5cbab0bcf6a2b505b74f68e675be2b975221fed5119f844f81947c0",
+      "units": "15136ab8808411c639105ebfb8b238749fd22828ba3903f133e67205e68b51f7"
+    },
+    "acceptance": {
+      "sources": "40657cc2b30b54fca9eb7e03604fb88a30117780fc174ec882cc35ea463488fa",
+      "groups": "dd1f7fc17ac2b4824203ab7707df1299526f9bf0c32641d957478a0797a3de2f",
+      "samples": "5d2ad3f471e63761e213bb3ac6abda2683e31b211cd12a55475877152c4334cf",
+      "truth": "11b2833513e338314d072c7f7f181adc55134e38b03efc69bc384a0add933fd7",
+      "strata": "28c8b94255d40c57bf902a1c7af6dd92ba6e1d9cc4265a1265da8ff3b69282e3",
+      "units": "9eaeeb0b32eb4953790ba3bd7d6053518598d62ba9816bb5e8fea8b65350d662"
+    }
+  }
+}

@@ -100,7 +100,7 @@ After any installation method, approve the requested plugin permissions if promp
 ## 🌍 Quick Start
 
 1. Load a local video and select a supported embedded text subtitle or external SRT/ASS subtitle as the primary subtitle in IINA.
-2. Under **Languages**, select your mother language. Confirm the subtitle language if IINA cannot identify it, then save the language settings.
+2. Under **Languages**, select your mother language and save. SubTandem detects the source language offline from the subtitle text.
 3. Under **Translation service**, create an OpenAI, Claude, DeepSeek, or Ollama profile. If the service requires authentication, enter its API key before manually refreshing the model list. Select a returned model, or enter an exact custom Model ID.
 4. Save and test the profile, then click **Select**. Selecting a profile explicitly authorizes SubTandem to send nearby subtitle text to the displayed endpoint.
 5. Turn on **Translate**. The original subtitle remains selected in IINA; translated cues appear in SubTandem's overlay. Under **Subtitle**, use **Position** to move the overlay from top (`0`) to bottom (`100`).
@@ -145,6 +145,7 @@ For any service, start with **Use macOS proxy settings**. Choose **Connect direc
 
 ## 🔒 Privacy, Credentials, and Cost
 
+- For debugging, subtitle text, nearby context and translations appear in IINA’s Log Viewer. IINA may also write these logs to disk when logging is enabled; they can remain after the playback session ends. SubTandem does not reuse logs as a translation cache. Credentials are never logged.
 - SubTandem sends only nearby subtitle cue text, language direction, opaque cue identifiers, and limited neighboring context to the profile you explicitly select. It does not send video or audio content.
 - The `video-overlay` permission displays the current translation in a local, non-interactive overlay. The overlay does not accept input or enable dragging on the video, does not use network or WebView storage, and is cleared with the playback session.
 - OpenAI, Claude, DeepSeek, and Ollama keys are stored as local plaintext in the plugin's private `credentials.json` file. Its directory uses mode `0700` and the file uses mode `0600`. Keys are not written to IINA preferences, logs, diagnostics, the sidebar state, or the plugin package, and are not shown again after saving.
@@ -161,7 +162,7 @@ SubTandem does not perform audio transcription, OCR or extraction of image-based
 ## 🛠️ Troubleshooting
 
 - **Select a supported text subtitle:** Select a local embedded SubRip/ASS/SSA/`mov_text` track or an external SRT/ASS track as IINA's primary subtitle. Remote embedded and image-based tracks are not supported; use the displayed state to reselect a text track or retry a failed preparation.
-- **Confirm the subtitle language:** Enter a BCP 47 language tag such as `en-US`, then save the language settings.
+- **Language detection:** Detection covers 67 source languages independently of the larger target-language list. The best text candidate may be wrong. For mixed subtitles, SubTandem chooses the supported language with the most text, even if an unsupported language is more common. **Subtitle language could not be identified** means no candidate could be selected; **This subtitle language is not supported** means the text is outside the supported source set. Equivalent source and target languages need no translation.
 - **Translation service unavailable:** Test the profile and check its endpoint, exact model ID, key, network route, or Ollama process. For Claude, also check the API root rather than a full resource URL, Messages compatibility, authentication/version support, model access, spend limits, quotas, rate limits, and refusals. For DeepSeek, check account balance, quota, rate limits, and access to the fixed API route. Playback and the original subtitle continue normally.
 - **Credential could not be saved:** Install the release package rather than using an incomplete development copy, make sure the plugin data directory is writable, and fully restart IINA.
 - **No rendered translation:** Confirm that the profile is tested and selected, the source and mother languages differ, and **Translate** is enabled. Playback must also be within the time range of an available translated cue.

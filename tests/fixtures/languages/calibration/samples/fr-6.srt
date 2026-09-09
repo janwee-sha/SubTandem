@@ -1,0 +1,23 @@
+1
+00:00:00,000 --> 00:00:07,760
+Bonjour, bonjour tout le monde, bienvenue dans cette courte vidéo d'environ une heure
+
+2
+00:00:07,760 --> 00:00:12,080
+qui sert d'introduction à Wikidata pour les personnes débutantes.
+
+3
+00:00:12,080 --> 00:00:19,840
+L'idée c'est de revenir sur quelques bases, qu'est-ce que Wikidata, qu'est-ce que
+
+4
+00:00:19,840 --> 00:00:25,800
+contient Wikidata, comment ça fonctionne, comment créer un nouvel élément et éventuellement
+
+5
+00:00:25,800 --> 00:00:32,760
+pour finir quelques outils pour mieux être plus efficace dans sa contribution à Wikidata.
+
+6
+00:00:32,760 --> 00:00:41,560
+Avant de parler de Wikidata, le site lui-même, on va peut-être un peu parler de son utilité et donc

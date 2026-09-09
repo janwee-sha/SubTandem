@@ -1,0 +1,106 @@
+{
+  "acquiredAt": "2026-09-09",
+  "subtitle": {
+    "pageId": 83299994,
+    "title": "TimedText:A Surprise Victory.webm.fa.srt",
+    "revision": 371572710,
+    "timestamp": "2019-10-23T02:11:17Z",
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=371572710",
+    "contributors": "https://commons.wikimedia.org/w/index.php?curid=83299994&action=history",
+    "revisionComment": "Import Persian subtitles for [[:File:A Surprise Victory.webm]]"
+  },
+  "textPolicy": {
+    "file": "commons-text-policy.json",
+    "sha256": "829bb2b3f8cdb2e111557a29b8735535c82cb06349a886676325b84443d00236",
+    "license": "CC-BY-SA-4.0"
+  },
+  "originalWork": {
+    "pageId": 83299993,
+    "title": "File:A Surprise Victory.webm",
+    "revision": 904398626,
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=904398626",
+    "metadata": {
+      "DateTime": {
+        "value": "2019-10-23 02:11:15",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "A Surprise Victory",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "Abbas (photographer)|Videos of 2016|Uploaded with video2commons|Videos of people of Iran|Videos from Vimeo|License reviewed by YouTubeReviewBot|Files with closed captioning in Persian|Videos about 1979 Iranian Revolution",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "<b><a href=\"//commons.wikimedia.org/wiki/Commons:Timed_Text\" title=\"Commons:Timed Text\">Closed captions</a> are available for this media file. </b>",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "2016-01-18",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "<a href=\"//commons.wikimedia.org/wiki/Category:Vimeo\" title=\"Category:Vimeo\">Vimeo</a>: <a rel=\"nofollow\" class=\"external text\" data-mw-original-href=\"//vimeo.com/152200910\" href=\"https://vimeo.com/152200910\">A Surprise Victory</a> (<a rel=\"nofollow\" class=\"external text\" href=\"//web.archive.org/web/*/https://vimeo.com/152200910\"><span style=\"color:#9602fc\">view archived source</span></a>)",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://vimeo.com/user43231867\">Abbas Multimedia Videos</a>",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC BY 3.0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Attribution 3.0",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "true",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Attribution": {
+        "value": "Abbas Multimedia Videos",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "https://creativecommons.org/licenses/by/3.0",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc-by-3.0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "permissionWikitext": "=={{int:filedesc}}==\n{{Information\n|description=Abbas speaks about 1979 revolution\n{{Closed captions}}\n|date=2016-01-18\n|source={{From Vimeo|1=152200910|2=A Surprise Victory}}\n|author=[https://vimeo.com/user43231867 Abbas Multimedia Videos]\n|permission=\n|other_versions=\n|other_fields=\n}}\n\n=={{int:license-header}}==\n{{cc-by-3.0|Abbas Multimedia Videos}}\n{{VimeoReview|id=152200910|license=by-3.0|date=2019-12-10}}\n\n[[Category:Uploaded with video2commons]]\n[[Category:Abbas (photographer)]]\n[[Category:Videos about 1979 Iranian Revolution]]\n[[Category:Videos of 2016|0118]]\n[[Category:Videos of people of Iran]]"
+  },
+  "changes": "原件为固定修订正文；自然片段只截取连续原始 cue，原文和时间不改写；派生变体另行登记。",
+  "audit": "已检查 Commons 正文许可及原作品许可字段；该记录不是字幕语言真值的人工核对。"
+}

@@ -1,0 +1,11 @@
+1
+00:00:00,000 --> 00:00:02,000
+the Kola superdeep borehole in Russia, some call it the gateway to hell, with locals claiming to hear the screams of tortured souls. At around 30 to 50 km depth, we reach the next layer, the mantle. It's made of hot rock, which appears solid to us, but actually flows very slowly, just a few centimeters a year. These delicate shifts below can give rise to earthquakes above. In the 1960s, a group of scientists attempted to drill into the earth's mantle. Although unsuccessful, new efforts are afoot with a plan to
+
+2
+00:00:02,000 --> 00:00:04,000
+Man braucht also auch zwei Zahlengeraden. Man nennt so ein zweidimensionales Koordinatensystem, wie ihr hier seht, kartesisches Koordinatensystem. Wichtig ist dabei, dass die Achsen senkrecht aufeinander stehen und dass die Skala bei x und y-Achse jeweils gleich ist. Darauf gehe ich später noch ein. Den Schnittpunkt der beiden Zahlengeraden nennt man Ursprung. Die beiden Geraden nennt man jetzt Achsen. Um sie zu unters
+
+3
+00:00:04,000 --> 00:00:06,000
+qu'on peut faire ça. Donc là on va rentrer dans le sujet de Wikidata, en l'occurrence typiquement je peux cliquer sur le petit bouton ici ou ici dans outils si je descends un peu je dois avoir quelque part ici vers le bas élément Wikidata. Si je clique dessus j'atterris directement sur la page de Wikidata de cet

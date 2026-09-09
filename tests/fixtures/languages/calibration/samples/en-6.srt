@@ -1,0 +1,23 @@
+1
+00:00:00,640 --> 00:00:04,246
+It's 6371 km,
+
+2
+00:00:04,278 --> 00:00:07,758
+center of the earth. Follow us down. We're going all the way
+
+3
+00:00:07,774 --> 00:00:09,490
+to the heart of the planet.
+
+4
+00:00:14,510 --> 00:00:18,446
+Our world is made of layers, a bit like an onion. And as
+
+5
+00:00:18,478 --> 00:00:21,718
+far as we know, life only exists in the first
+
+6
+00:00:21,774 --> 00:00:25,758
+layer, the crust. In the crust, you'll find the burrows of

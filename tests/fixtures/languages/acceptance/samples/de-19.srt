@@ -1,0 +1,84 @@
+49
+00:04:26,160 --> 00:04:29,800
+plus zweiter Wert mal erster Wert,
+
+50
+00:04:38,040 --> 00:04:40,840
+minus zweiter Wert mal zweiter Wert.
+
+51
+00:04:42,000 --> 00:04:43,720
+Wenn ich das vereinfache,
+
+52
+00:04:45,160 --> 00:04:47,640
+sehe ich,
+dass dieses gemischte Glied,
+
+53
+00:04:47,640 --> 00:04:50,920
+also "ab" bzw. "ba" rausfällt.
+
+54
+00:04:52,240 --> 00:04:53,520
+Es bleibt übrig:
+
+55
+00:04:56,840 --> 00:04:59,760
+Das ist dann die
+3. Binomische Formel, nämlich:
+
+56
+00:05:08,280 --> 00:05:09,880
+Wenn ich also einen Term sehe,
+
+57
+00:05:09,920 --> 00:05:13,800
+bei dem hinten und vorne
+ein Quadrat steht, so wie hier,
+
+58
+00:05:14,800 --> 00:05:16,080
+zum Beispiel:
+
+59
+00:05:21,520 --> 00:05:24,440
+Dann kann ich prüfen,
+ob ich diesen Term umformen kann.
+
+60
+00:05:25,080 --> 00:05:26,600
+Das wäre hier zum Beispiel:
+
+61
+00:05:33,840 --> 00:05:36,240
+Diese Art von Umformung
+könnt ihr später
+
+62
+00:05:36,280 --> 00:05:39,600
+bei der Berechnung der Nullstellen
+ziemlich gut gebrauchen.
+
+63
+00:05:40,400 --> 00:05:43,480
+Wer sagt:
+"Mir schwirrt vor lauter Gleichungen,
+
+64
+00:05:43,520 --> 00:05:46,120
+Termen und Binomischen Formeln
+der Kopf.
+
+65
+00:05:46,240 --> 00:05:48,200
+Zeig mir doch
+lieber ein schönes Bild."
+
+66
+00:05:49,240 --> 00:05:50,720
+Bitte, hier ist es.
+
+67
+00:05:51,320 --> 00:05:52,600
+Das ist ein Quadrat.

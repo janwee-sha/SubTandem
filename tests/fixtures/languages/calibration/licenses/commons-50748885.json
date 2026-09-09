@@ -1,0 +1,101 @@
+{
+  "acquiredAt": "2026-09-09",
+  "subtitle": {
+    "pageId": 50748885,
+    "title": "TimedText:AbelRamirezInterview.webm.es.srt",
+    "revision": 229924824,
+    "timestamp": "2017-01-16T18:17:26Z",
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=229924824",
+    "contributors": "https://commons.wikimedia.org/w/index.php?curid=50748885&action=history",
+    "revisionComment": "Improved subtitles (SPANISH)"
+  },
+  "textPolicy": {
+    "file": "commons-text-policy.json",
+    "sha256": "829bb2b3f8cdb2e111557a29b8735535c82cb06349a886676325b84443d00236",
+    "license": "CC-BY-SA-4.0"
+  },
+  "originalWork": {
+    "pageId": 50440971,
+    "title": "File:AbelRamirezInterview.webm",
+    "revision": 779805370,
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=779805370",
+    "metadata": {
+      "DateTime": {
+        "value": "2016-08-01 19:17:26",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "AbelRamirezInterview",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "WebM videos|Abel Ramírez Aguilar|Video display resolution 1280 x 720|Videos of SPM artist interviews by Wiki Learning students|Videos as part of servicio social projects (Wiki Learning Tec de Monterrey)|Wiki Learning Tec de Monterrey videos by students Summer 2016",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "Interview of Salón de la Plástica Mexicana sculptor Abel Ramirez done by students of Wiki Learning Tec de Monterrey user group. This video is under a CC-by-SA 4.0 license as noted in the credits",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "2016-07-15",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "Wiki Learning Tec de Monterrey user group",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "<a href=\"//commons.wikimedia.org/wiki/User:MarianaPA\" title=\"User:MarianaPA\">User:MarianaPA</a>, <a href=\"//commons.wikimedia.org/wiki/User:Escasalv\" title=\"User:Escasalv\">User:Escasalv</a>, <a href=\"//commons.wikimedia.org/wiki/User:Erickdavid_perez\" title=\"User:Erickdavid perez\">User:erickdavid_perez</a>",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC BY-SA 4.0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Attribution-Share Alike 4.0",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "true",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "https://creativecommons.org/licenses/by-sa/4.0",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc-by-sa-4.0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "permissionWikitext": "=={{int:filedesc}}==\n{{Information\n|description={{en|1=Interview of Salón de la Plástica Mexicana sculptor Abel Ramirez done by students of Wiki Learning Tec de Monterrey user group. This video is under a CC-by-SA 4.0 license as noted in the credits}}\n|date=2016-07-15\n|source=Wiki Learning Tec de Monterrey user group\n|author=[[User:MarianaPA]], [[User:Escasalv]], [[User:erickdavid_perez]]\n|permission=\n|other versions=\n}}\n\n=={{int:license-header}}==\n{{cc-by-sa-4.0}}\n\n[[Category:Videos of SPM artist interviews by Wiki Learning students]]\n[[Category:Abel Ramírez Aguilar]]\n[[Category:Video display resolution 1280 x 720]]\n[[Category:WebM videos]]\n[[Category:Wiki Learning Tec de Monterrey videos by students Summer 2016]]\n[[Category:Videos as part of servicio social projects (Wiki Learning Tec de Monterrey)]]"
+  },
+  "changes": "原件为固定修订正文；自然片段只截取连续原始 cue，原文和时间不改写；派生变体另行登记。",
+  "audit": "已检查 Commons 正文许可及原作品许可字段；该记录不是字幕语言真值的人工核对。"
+}

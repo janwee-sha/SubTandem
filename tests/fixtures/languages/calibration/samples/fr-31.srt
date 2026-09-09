@@ -1,0 +1,123 @@
+26
+00:02:37,440 --> 00:02:43,640
+qu'on peut faire ça. Donc là on va rentrer dans le sujet de Wikidata, en l'occurrence typiquement
+
+27
+00:02:43,640 --> 00:02:50,320
+je peux cliquer sur le petit bouton ici ou ici dans outils si je descends un peu je dois avoir
+
+28
+00:02:50,320 --> 00:02:57,400
+quelque part ici vers le bas élément Wikidata. Si je clique dessus j'atterris directement sur la
+
+29
+00:02:57,400 --> 00:03:03,320
+page de Wikidata de cet élément de cette espèce de cheval en l'occurrence la race poids de 20
+
+30
+00:03:03,320 --> 00:03:12,440
+glaciers. Ce qu'on voit dans Wikidata c'est qu'on commence par on a une URL qui contient un chiffre
+
+31
+00:03:12,440 --> 00:03:19,800
+ici vous le voyez le même chiffre on le retrouve ici ensuite et c'est ça qui va vraiment identifier
+
+32
+00:03:19,800 --> 00:03:26,440
+cette page cet élément on dit dans le jargon Wikidata ensuite on voit le différent de
+
+33
+00:03:26,440 --> 00:03:31,760
+informations textuelles ce qu'on appelle un libellé et une description en plusieurs langues en
+
+34
+00:03:31,760 --> 00:03:36,760
+français en allemand en anglais par exemple on peut dire que en français on appelle cette espèce
+
+35
+00:03:36,760 --> 00:03:44,280
+le poids de 20 glaciers et c'est une race de une race de cheval en allemand dit poids de 20 tout court
+
+36
+00:03:44,280 --> 00:03:49,880
+poids de vines sans doute en allemand voilà qui dit aussi que c'est une espèce une race de cheval
+
+37
+00:03:49,880 --> 00:03:59,120
+et en anglais précise horse à la fin pour dire que c'est spécifiquement un cheval ensuite on sait
+
+38
+00:03:59,120 --> 00:04:05,000
+là qu'on a les vraies informations les données des données structurées on va retrouver un peu comme
+
+39
+00:04:05,000 --> 00:04:10,400
+d'un infobox d'ailleurs c'est pour ça que je vous ai commencé par là on va trouver des paramètres
+
+40
+00:04:10,400 --> 00:04:16,560
+des valeurs générales les propriétés on appelle ça nature de l'élément qu'est ce que c'est de quoi
+
+41
+00:04:16,560 --> 00:04:23,320
+c'est une classe quelle image représente ce sujet et donc à chaque fois ça va par deux la propriété et
+
+42
+00:04:23,320 --> 00:04:29,080
+la valeur nature c'est des termes de chevaux sous classe de cheval de trait c'est pas n'importe quelle
+
+43
+00:04:29,080 --> 00:04:37,200
+race de cheval race de cheval des chevaux de course de loisirs ou de travail cheval de trait
+
+44
+00:04:38,200 --> 00:04:50,040
+une image la masse moyenne voilà en général il pèse 740 kg la population combien d'animaux il y a
+
+45
+00:04:50,040 --> 00:04:57,440
+etc etc si je descends vous allez voir qu'il ya beaucoup beaucoup d'informations et si je descends
+
+46
+00:04:57,440 --> 00:05:01,440
+tout en bas c'est là qu'on voit les fameux liens d'une wikipedia à l'autre pour dire bah c'est le
+
+47
+00:05:01,440 --> 00:05:08,680
+même sujet et même pas qu'entre les wikipedia mais aussi vers wikimedia commons en l'occurrence si
+
+48
+00:05:08,680 --> 00:05:15,120
+on veut voir plus d'images toutes ces informations elles ont été rentrées depuis la création de
+
+49
+00:05:15,120 --> 00:05:21,800
+wikidata il y a plus d'une dizaine d'années maintenant à la main avec des bottes de différentes
+
+50
+00:05:21,800 --> 00:05:29,240
+façons récupérer de sources et là tout ce que je fais c'est avec l'interface en français mais quand
+
+51
+00:05:29,240 --> 00:05:35,440
+je suis connecté à wikidata je peux toujours cliquer en haut et je peux passer en grec une
+
+52
+00:05:35,440 --> 00:05:41,320
+langue que je ne connais pas mais c'est pour vous démontrer vraiment la différence et vous allez
+
+53
+00:05:41,320 --> 00:05:46,560
+voir que au bout d'un peu de secondes on a toutes les informations qui apparaissent en grec alors pas
+
+54
+00:05:46,560 --> 00:05:54,800
+toutes toutes mais voilà qu'est ce que c'est etc vous voyez que là les toutes et voilà que 750
+
+55
+00:05:54,800 --> 00:06:04,520
+kg c'est ici en grec etc etc donc là pas le grec je vais avoir du mal à vous dire tout ça mais
+
+56
+00:06:04,520 --> 00:06:10,760
+vous voyez et si vous passez dans n'importe quelle langue que connaît wikidata et il y en a beaucoup

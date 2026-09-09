@@ -1,0 +1,640 @@
+1
+00:00:03,990 --> 00:00:05,330
+Süpermen.
+
+2
+00:00:05,990 --> 00:00:06,769
+Bu bir kuş mu?
+
+3
+00:00:06,794 --> 00:00:07,857
+Bu bir uçak mı?
+
+4
+00:00:07,882 --> 00:00:08,336
+Hayır
+
+5
+00:00:08,360 --> 00:00:10,388
+Süpermen (veya
+Übermensch/Üst-insan), Nietzsche
+
+6
+00:00:10,400 --> 00:00:12,440
+tarafından geliştirilmiş
+felsefi bir kavramdır.
+
+7
+00:00:12,610 --> 00:00:14,353
+Peki, Süpermen de kim oluyor?
+
+8
+00:00:14,384 --> 00:00:17,787
+İnsanî fıtrattan
+gelen zayıflıkları aşan
+
+9
+00:00:17,870 --> 00:00:19,700
+ve hayatı olumlayandır.
+
+10
+00:00:19,820 --> 00:00:22,330
+Ama Nietzsche'nin ne
+demek istediğini anlamak için,
+
+11
+00:00:22,550 --> 00:00:24,740
+19. yüzyıla gitmemiz gerekiyor.
+
+12
+00:00:25,420 --> 00:00:28,004
+Friedrich Nietzsche, 1844'te o
+
+13
+00:00:28,028 --> 00:00:30,010
+zamanki adıyla Prusya'da doğdu.
+
+14
+00:00:30,230 --> 00:00:31,950
+19. yüzyılın sonu,
+
+15
+00:00:32,030 --> 00:00:33,490
+bir devrimler çağıydı.
+
+16
+00:00:33,680 --> 00:00:36,541
+Liberal devrim, Sanayi Devrimi,
+
+17
+00:00:36,565 --> 00:00:38,725
+ve bunların yanısıra bilimsel
+devrimlerin de dönemiydi.
+
+18
+00:00:38,810 --> 00:00:40,689
+Darwin'in evrim teorisi
+
+19
+00:00:40,713 --> 00:00:45,337
+insan ve doğa arasındaki
+ilişkinin anlayışını alt üst etti:
+
+20
+00:00:45,361 --> 00:00:47,830
+ne de olsa insan hayvanı,
+
+21
+00:00:47,910 --> 00:00:49,526
+diğer pek çoklarıyla
+birlikte, bir hayvandı.
+
+22
+00:00:49,550 --> 00:00:53,270
+Romantizm bu bağlamda gelişti:
+
+23
+00:00:53,530 --> 00:00:57,853
+romantizm, Aydınlanma'da
+aklın başköşede oluşunu sorgular,
+
+24
+00:00:57,877 --> 00:01:00,560
+ve tutkularla,
+duyguları yüceltir.
+
+25
+00:01:00,670 --> 00:01:03,760
+Nietzsche'nin çalışmaları işte
+bu düşüncelerle de örtüşebilir.
+
+26
+00:01:04,150 --> 00:01:08,780
+Kendisi, birkaç yıl boyunca aydınların
+ve üniversite çevrelerinin arasındaydı,
+
+27
+00:01:08,840 --> 00:01:12,200
+ama en verimli yılları
+oradan uzakta geçti.
+
+28
+00:01:12,400 --> 00:01:16,635
+1878'de eski
+dostlarını terk etti,
+
+29
+00:01:16,659 --> 00:01:20,080
+ve tüm zamanını düşünmeye adadı.
+
+30
+00:01:20,440 --> 00:01:22,790
+1889'da,
+
+31
+00:01:22,990 --> 00:01:25,767
+bunamasına yol açan bir
+zihinsel çöküntü yaşadı,
+
+32
+00:01:25,791 --> 00:01:30,040
+ve sonraki birkaç yılını ölümüne kadar
+kız kardeşinin bakımı altında geçirdi.
+
+33
+00:01:31,020 --> 00:01:34,670
+Nietzsche'nin düşüncesi
+5 ana fikirde özetlenebilir.
+
+34
+00:01:34,943 --> 00:01:38,270
+1- yaşamın güçleri:
+Apollon ve Dionisos
+
+35
+00:01:38,830 --> 00:01:42,430
+Nietzsche'ye göre
+hayatta iki tür güç vardır.
+
+36
+00:01:42,910 --> 00:01:45,220
+Onları birbirinden
+ayırmak için Yunan tanrıları
+
+37
+00:01:45,232 --> 00:01:47,360
+Apollon ve Dionisos'un
+isimlerini kullandı.
+
+38
+00:01:47,660 --> 00:01:52,370
+Apollon güneşi, güzelliği,
+uyumu ve ölçüyü temsil eder.
+
+39
+00:01:52,770 --> 00:01:53,850
+Diğer tarafta Dionisos ise:
+
+40
+00:01:53,980 --> 00:01:57,660
+kaosu, hazzı, sarhoşluğu
+ve aşırılığı temsil eder.
+
+41
+00:01:58,100 --> 00:02:02,080
+Nietzsche, bu nedenle yaşamın hem Apolloncu
+hem de Dionisosçu olduğunu söyler:
+
+42
+00:02:02,230 --> 00:02:04,700
+Apolloncudur, çünkü
+yaşam güzeldir,
+
+43
+00:02:04,820 --> 00:02:10,080
+çünkü aşırıya kaçmadan alınabilir
+ve güzelliklerle "süslenebilir";
+
+44
+00:02:10,220 --> 00:02:11,810
+ama yaşam aynı
+zamanda Dionisosçudur.
+
+45
+00:02:12,340 --> 00:02:14,070
+Çünkü yaşam, en derininde,
+
+46
+00:02:14,280 --> 00:02:16,302
+kaotik güçlerle hareket eder,
+
+47
+00:02:16,327 --> 00:02:19,344
+o güçler ki
+kontrolsüz ve aşırıdır.
+
+48
+00:02:19,870 --> 00:02:21,080
+2- Güç istenci
+
+49
+00:02:21,640 --> 00:02:24,610
+Nietzsche için dünyayı
+hareket ettiren, "güç istenci" dir.
+
+50
+00:02:24,900 --> 00:02:28,780
+Bu, insanlarda da dahil olmak
+üzere tüm doğal güçlerde bulunur.
+
+51
+00:02:29,110 --> 00:02:32,870
+Tüm canlılar; hayatta kalmayı,
+varlığını sürdürmeyi, yayılmayı,
+
+52
+00:02:32,990 --> 00:02:36,390
+güçlerini göstermeyi ve kendi
+dışındaki güçleri değiştirmeyi amaçlar.
+
+53
+00:02:36,850 --> 00:02:39,538
+Güç arzusu, sonsuz bir
+arzudur. Nesnelerin ve
+
+54
+00:02:39,550 --> 00:02:42,250
+varlıkların sahip olduğu
+bir tür içsel güçtür
+
+55
+00:02:42,380 --> 00:02:44,490
+ve sürekli dışarıdan
+temin edilmesi gerekir.
+
+56
+00:02:44,820 --> 00:02:46,130
+Peki nasıl temin edilir?
+
+57
+00:02:46,350 --> 00:02:47,810
+Yaratıcılık yoluyla.
+
+58
+00:02:48,010 --> 00:02:50,530
+Yaratma, değiştirme ve yok etme
+
+59
+00:02:50,940 --> 00:02:53,537
+Yaratıcılık sadece insana özgü
+
+60
+00:02:53,561 --> 00:02:55,300
+değildir, tüm
+güçler buna sahiptir.
+
+61
+00:02:55,940 --> 00:02:59,110
+3- Nihilizm: yenilmesi
+gereken bir hastalık.
+
+62
+00:02:59,600 --> 00:03:01,809
+Hiç kuşkusuz Nietzsche,
+Hristiyan değerleri
+
+63
+00:03:01,834 --> 00:03:03,739
+ve kültürünü en çok
+eleştirenlerden biridir,
+
+64
+00:03:03,764 --> 00:03:05,534
+ve bunu çok derinden yapmıştır.
+
+65
+00:03:05,790 --> 00:03:07,670
+"Tanrı öldü" diye ilan etti ve
+
+66
+00:03:07,960 --> 00:03:09,631
+Tanrı olmadan bütün değer
+
+67
+00:03:09,655 --> 00:03:12,410
+sistemimizin havada
+kalacağını gösterdi.
+
+68
+00:03:12,570 --> 00:03:15,070
+Bir şeylere, değer
+biçen insandır;
+
+69
+00:03:15,230 --> 00:03:16,230
+bu nedenle,
+
+70
+00:03:16,270 --> 00:03:18,963
+kölelik durumundan çıkmak için,
+
+71
+00:03:18,988 --> 00:03:21,844
+yeniden hayata değer
+veren kendimiz olmalıyız.
+
+72
+00:03:22,040 --> 00:03:24,241
+Nietzsche bizi sürünün
+
+73
+00:03:24,265 --> 00:03:25,520
+dışına çıkmaya çağırıyor.
+
+74
+00:03:26,130 --> 00:03:27,970
+Nihilizm, tanımı gereği,
+
+75
+00:03:28,060 --> 00:03:30,014
+yaşamın anlamını ve
+
+76
+00:03:30,038 --> 00:03:31,650
+değerini reddeden bir akımdır.
+
+77
+00:03:31,930 --> 00:03:33,694
+Nihilizme göre hayatın bir
+
+78
+00:03:33,718 --> 00:03:35,720
+anlamı yoktur ve olamaz.
+
+79
+00:03:35,990 --> 00:03:39,006
+Ancak Nietzsche için
+
+80
+00:03:39,030 --> 00:03:40,640
+izlenecek tek değer,
+
+81
+00:03:40,720 --> 00:03:43,530
+kaotik ve Dionisosçu kısmı
+da dahil, hayatın kendisidir.
+
+82
+00:03:44,160 --> 00:03:47,540
+O, Platon ve Sokrates
+tarafından başlatılan tüm
+
+83
+00:03:47,565 --> 00:03:50,447
+felsefi geleneği nihilist
+olarak kabul eder,
+
+84
+00:03:50,479 --> 00:03:53,153
+çünkü hayata anlam vermek
+için yanlış değerleri benimsediler:
+
+85
+00:03:53,178 --> 00:03:55,404
+mesela, İyilik ve Gerçeklik.
+
+86
+00:03:55,870 --> 00:03:57,090
+Nietzsche'ye göre
+
+87
+00:03:57,230 --> 00:04:01,117
+İbrahimî dinler köle
+ahlâkını yüceltmiştir.
+
+88
+00:04:01,142 --> 00:04:05,304
+Toplumda güçlü ve iktidar
+sahibi olanların ahlâkı hafife alınır,
+
+89
+00:04:05,380 --> 00:04:09,214
+ve cinselliğe, içgüdülere ve
+duygulara savaş ilan edilir.
+
+90
+00:04:09,239 --> 00:04:12,874
+Bu, uysal, itaatkâr ve
+resmî bir insan yaratır.
+
+91
+00:04:13,030 --> 00:04:14,599
+Yani bir köle...
+
+92
+00:04:14,624 --> 00:04:16,364
+Nietszche, ikisini
+de eleştiriyor:
+
+93
+00:04:16,640 --> 00:04:20,840
+hem yaşama akılcı bir anlam
+vermeye çalışan rasyonalizmi,
+
+94
+00:04:21,071 --> 00:04:23,795
+hem de tam tersini değer yoktur
+
+95
+00:04:23,819 --> 00:04:26,091
+ve hiçbir şeyin
+de değeri yoktur.
+
+96
+00:04:26,460 --> 00:04:27,932
+4- Vitalizm(Dirimselcilik)
+
+97
+00:04:28,500 --> 00:04:30,436
+Nihilizmle karşı karşıya kalan
+
+98
+00:04:30,460 --> 00:04:32,740
+Nietzsche başka
+bir bakış açısı önerir:
+
+99
+00:04:32,900 --> 00:04:33,900
+vitalizm.
+
+100
+00:04:34,050 --> 00:04:35,720
+Dünya düzen içinde değil,
+
+101
+00:04:35,780 --> 00:04:39,490
+dünya hareket hâlindedir,
+kaotik güçlerin sonsuz bir yığınıdır.
+
+102
+00:04:39,620 --> 00:04:42,178
+Bilim aracılığıyla bu güçleri
+
+103
+00:04:42,202 --> 00:04:43,990
+uyumlu bir şekilde hayal ederiz,
+
+104
+00:04:44,040 --> 00:04:45,850
+ancak bu yalnızca
+bir yanılsamadır.
+
+105
+00:04:46,260 --> 00:04:50,580
+Vitalizme göre hayat
+amaçtır ve onun ana değeridir.
+
+106
+00:04:50,720 --> 00:04:51,470
+Nietzsche,
+
+107
+00:04:51,560 --> 00:04:53,957
+mantığa, bedene,
+içgüdüye ek olarak
+
+108
+00:04:53,982 --> 00:04:56,350
+mantıksızlığa, doğaya, güce ve
+
+109
+00:04:56,374 --> 00:04:58,374
+hayatta kalmaya da değer verir.
+
+110
+00:04:58,480 --> 00:05:00,150
+Diğer bir deyişle:
+
+111
+00:05:00,250 --> 00:05:02,381
+hayatı olduğu gibi, kaotik ve
+
+112
+00:05:02,405 --> 00:05:04,670
+kontrol edilemez
+olarak kabul edin.
+
+113
+00:05:04,999 --> 00:05:06,830
+5- Süpermen.
+
+114
+00:05:07,270 --> 00:05:09,694
+Nietzsche için
+nihilizm, insanî bir
+
+115
+00:05:09,718 --> 00:05:12,370
+zayıflık durumundan
+yaratılmıştır.
+
+116
+00:05:12,450 --> 00:05:15,290
+Köle olma, Süpermen veya
+Üst-insan olma ile karşıtlanır:
+
+117
+00:05:15,340 --> 00:05:18,190
+yaşamı olumluyan güçlü insan,
+
+118
+00:05:18,270 --> 00:05:20,540
+kendi güç istencini takip eder,
+
+119
+00:05:20,620 --> 00:05:22,690
+ve kendini geliştirmeyi
+zorunlu görür.
+
+120
+00:05:23,050 --> 00:05:24,801
+Bu dinî değil,
+
+121
+00:05:24,837 --> 00:05:28,435
+ama ahlâki veya
+akılcı da değildir.
+
+122
+00:05:28,510 --> 00:05:29,530
+Süpermen yaşamak istiyor,
+
+123
+00:05:29,610 --> 00:05:31,951
+özgür ve kendisi olmak istiyor.
+
+124
+00:05:32,320 --> 00:05:34,207
+Süpermen'in bakış açısından,
+
+125
+00:05:34,232 --> 00:05:37,864
+özgürlük, güçlü bir
+öz iradenin etkinliğidir.
+
+126
+00:05:37,920 --> 00:05:41,100
+Evrensel normlar ve ahlâk
+kuralları altında kim varsa
+
+127
+00:05:41,350 --> 00:05:43,520
+onlar zayıftır ve
+zayıflaşacaklardır.
+
+128
+00:05:44,570 --> 00:05:47,386
+Nietzsche'nin ölümünden
+sonra bu fikirlerin gelişiminden
+
+129
+00:05:47,411 --> 00:05:50,164
+bahsetmeden geçemeyiz.
+
+130
+00:05:50,700 --> 00:05:53,590
+Ölümünden sonra kız
+kardeşi eserlerini sahiplendi,
+
+131
+00:05:53,780 --> 00:05:56,565
+ve anti-Semitik ve
+Nazizm'e yakın olarak,
+
+132
+00:05:56,590 --> 00:06:01,484
+onun ideolojisini Nazi düşüncesinin
+hizmetine sokmak için çabaladı.
+
+133
+00:06:01,800 --> 00:06:02,490
+Bu nedenle,
+
+134
+00:06:02,510 --> 00:06:04,060
+Nietzsche'nin düşüncesi
+
+135
+00:06:04,110 --> 00:06:08,110
+Nazizm ve anti-Semitizmin
+gelişmesine de katkıda bulunmuştur.
+
+136
+00:06:08,390 --> 00:06:11,740
+Ancak bu, Nietzsche'nin bir
+Nazi olduğu anlamına gelmez.
+
+137
+00:06:12,000 --> 00:06:14,390
+Ayrıca, son
+yıllarında Almanya'nın
+
+138
+00:06:14,600 --> 00:06:18,900
+milliyetçi ve anti-Semitik
+yönelimini reddettiğini de biliyoruz.
+
+139
+00:06:19,130 --> 00:06:21,240
+Buradan bir şeyler
+de öğrenebiliriz:
+
+140
+00:06:21,490 --> 00:06:25,446
+en zeki filozoflar bile
+fikirlerinin gelecekte izleyeceği
+
+141
+00:06:25,471 --> 00:06:27,744
+yol üzerinde kontrole
+sahip değildir.

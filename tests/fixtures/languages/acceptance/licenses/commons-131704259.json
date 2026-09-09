@@ -1,0 +1,101 @@
+{
+  "acquiredAt": "2026-09-09",
+  "subtitle": {
+    "pageId": 131704259,
+    "title": "TimedText:How to correct an error in a Wikipedia article extended version with a sketch.webm.uk.srt",
+    "revision": 761149052,
+    "timestamp": "2023-05-09T15:31:31Z",
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=761149052",
+    "contributors": "https://commons.wikimedia.org/w/index.php?curid=131704259&action=history",
+    "revisionComment": "ukrainian subtitles"
+  },
+  "textPolicy": {
+    "file": "commons-text-policy.json",
+    "sha256": "829bb2b3f8cdb2e111557a29b8735535c82cb06349a886676325b84443d00236",
+    "license": "CC-BY-SA-4.0"
+  },
+  "originalWork": {
+    "pageId": 131515218,
+    "title": "File:How to correct an error in a Wikipedia article extended version with a sketch.webm",
+    "revision": 803343019,
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=803343019",
+    "metadata": {
+      "DateTime": {
+        "value": "2023-05-04 10:23:19",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "How to correct an error in a Wikipedia article extended version with a sketch",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "Czech Wikipedia|Self-published work|Wikipedia manuals|Videos of Wikimedia Czech Republic promotional",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "Written by Natálie Schejbalová, camera and postproduction Michal Barbuščák, presented by Anatol Svahilec and Natálie Schejbalová How to correct an error in a Wikipedia article extended version with a sketch. It's more entertaining, but doesn't go into as much detail in explaining the editing as the first version. <a class=\"external free\" href=\"https://commons.wikimedia.org/wiki/File:N%C3%A1vod_jak_opravit_chybu_na_Wikipedii.webm\">https://commons.wikimedia.org/wiki/File:N%C3%A1vod_jak_opravit_chybu_na_Wikipedii.webm</a>",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "2023-05-02",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "<a href=\"//commons.wikimedia.org/wiki/User:Nat%C3%A1lie_Schejbalov%C3%A1_(WMCZ)\" title=\"User:Natálie Schejbalová (WMCZ)\">Natálie Schejbalová (WMCZ)</a>",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC BY-SA 4.0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Attribution-Share Alike 4.0",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "true",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "https://creativecommons.org/licenses/by-sa/4.0",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc-by-sa-4.0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "permissionWikitext": "=={{int:filedesc}}==\n{{Information\n|description={{en|1=Written by Natálie Schejbalová, camera and postproduction Michal Barbuščák, presented by Anatol Svahilec and Natálie Schejbalová How to correct an error in a Wikipedia article extended version with a sketch. It's more entertaining, but doesn't go into as much detail in explaining the editing as the first version. https://commons.wikimedia.org/wiki/File:N%C3%A1vod_jak_opravit_chybu_na_Wikipedii.webm}}\n|date=2023-05-02\n|source={{own}}\n|author=[[User:Natálie Schejbalová (WMCZ)|Natálie Schejbalová (WMCZ)]]\n|permission=\n|other versions=\n}}\n\n=={{int:license-header}}==\n{{self|cc-by-sa-4.0}}\n\n[[Category:Wikipedia manuals]]\n[[Category:Czech Wikipedia]]\n[[Category:Videos of Wikimedia Czech Republic promotional]]"
+  },
+  "changes": "原件为固定修订正文；自然片段只截取连续原始 cue，原文和时间不改写；派生变体另行登记。",
+  "audit": "已检查 Commons 正文许可及原作品许可字段；该记录不是字幕语言真值的人工核对。"
+}

@@ -1,0 +1,101 @@
+{
+  "acquiredAt": "2026-09-09",
+  "subtitle": {
+    "pageId": 148812203,
+    "title": "TimedText:Event registration Episode 3 Arabic add other organizers.webm.ar.srt",
+    "revision": 879820003,
+    "timestamp": "2024-05-28T13:33:39Z",
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=879820003",
+    "contributors": "https://commons.wikimedia.org/w/index.php?curid=148812203&action=history",
+    "revisionComment": "[[Special:MyLanguage/COM:AES|←]]Created page with '1 00:00:00,464 --> 00:00:02,791 أهلا وسهلا معكم محمد بشوندة سفير  2 00:00:02,791 --> 00:00:05,591 المنتج لدى المجتمع العربي. في  3 00:00:05,591 --> 00:00:06,644 مؤسسة ويكيميديا  4 00:00:07,849 --> 00:00:10,322 رقم ثلاثة المخصصة   5 00:00:10,831 --> 00:00:13,668 لتعلم كيفية  استعمال   6 00:00:13,668 --> 00:00:16,104 أداة فعليات ال...'"
+  },
+  "textPolicy": {
+    "file": "commons-text-policy.json",
+    "sha256": "829bb2b3f8cdb2e111557a29b8735535c82cb06349a886676325b84443d00236",
+    "license": "CC-BY-SA-4.0"
+  },
+  "originalWork": {
+    "pageId": 148811957,
+    "title": "File:Event registration Episode 3 Arabic add other organizers.webm",
+    "revision": 1236618065,
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=1236618065",
+    "metadata": {
+      "DateTime": {
+        "value": "2024-05-28 13:25:59",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "Event registration Episode 3 Arabic add other organizers",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "Self-published work|Arabic Video Guide Series",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "Episode 3:  How do I add other organizers to my event registration",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "2024-05-28",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "<a href=\"//commons.wikimedia.org/wiki/User:Bachounda_(WMF)\" title=\"User:Bachounda (WMF)\">Bachounda (WMF)</a>",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC BY-SA 4.0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Attribution-Share Alike 4.0",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "true",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "https://creativecommons.org/licenses/by-sa/4.0",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc-by-sa-4.0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "permissionWikitext": "=={{int:filedesc}}==\n{{Information\n|description={{en|1=Episode 3:  How do I add other organizers to my event registration}}\n{{ar|1=الحلقة 3: كيف يمكنني إضافة منظمين آخرين إلى تسجيل الفعالية الخاصة بي}}\n|date=2024-05-28\n|source={{own}}\n|author=[[User:Bachounda (WMF)|Bachounda (WMF)]]\n|permission=\n|other versions=\n}}\n\n=={{int:license-header}}==\n{{self|cc-by-sa-4.0}}\n\n[[Category:Arabic Video Guide Series]]"
+  },
+  "changes": "原件为固定修订正文；自然片段只截取连续原始 cue，原文和时间不改写；派生变体另行登记。",
+  "audit": "已检查 Commons 正文许可及原作品许可字段；该记录不是字幕语言真值的人工核对。"
+}

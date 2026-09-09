@@ -1,0 +1,106 @@
+{
+  "acquiredAt": "2026-09-09",
+  "subtitle": {
+    "pageId": 148744348,
+    "title": "TimedText:Aline Dykmans - Sheep Possible (2015).webm.fi.srt",
+    "revision": 1004817811,
+    "timestamp": "2025-03-03T10:30:57Z",
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=1004817811",
+    "contributors": "https://commons.wikimedia.org/w/index.php?curid=148744348&action=history",
+    "revisionComment": ""
+  },
+  "textPolicy": {
+    "file": "commons-text-policy.json",
+    "sha256": "829bb2b3f8cdb2e111557a29b8735535c82cb06349a886676325b84443d00236",
+    "license": "CC-BY-SA-4.0"
+  },
+  "originalWork": {
+    "pageId": 146789463,
+    "title": "File:Aline Dykmans - Sheep Possible (2015).webm",
+    "revision": 1063097573,
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=1063097573",
+    "metadata": {
+      "DateTime": {
+        "value": "2024-03-26 13:04:33",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "Aline Dykmans - Sheep Possible (2015)",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "WebM videos|Files from external sources with reviewed licenses|Animated short films|Uploaded with video2commons|Videos from Vimeo|Videos of 2015 from Belgium|Video display resolution 1280 x 720|Short films videos|Videos in English|Videos uploaded by Jayvee Enaguas (The Harvett Vault)|Videos of anthropomorphic animals|Videos of short films from 2015",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "<i><b>Sheep Possible</b></i> is an Belgian 2D-animated short film created by Aline Dykmans at <a href=\"https://en.wikipedia.org/wiki/LUCA_School_of_Arts\" class=\"extiw\" title=\"w:LUCA School of Arts\">LUCA School of Arts</a>.",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "2015-05-28",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "<a href=\"//commons.wikimedia.org/wiki/Category:Vimeo\" title=\"Category:Vimeo\">Vimeo</a>: <a rel=\"nofollow\" class=\"external text\" data-mw-original-href=\"//vimeo.com/129135849\" href=\"https://vimeo.com/129135849\"><i>Sheep Possible</i> (2015)</a> (<a rel=\"nofollow\" class=\"external text\" href=\"//web.archive.org/web/*/https://vimeo.com/129135849\"><span style=\"color:#9602fc\">view archived source</span></a>) | <a rel=\"nofollow\" class=\"external text\" href=\"https://tilde.club/~harvettfox96/f/archive/vimeo/129135849-20240326.info.json\">JSON metadata</a> (archived: 2024-03-26)",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://vimeo.com/user37811018/\">Aline Dykmans</a>",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC BY 3.0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Attribution 3.0",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "true",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Attribution": {
+        "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://vimeo.com/user37811018/\">Aline Dykmans</a>",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "https://creativecommons.org/licenses/by/3.0",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc-by-3.0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "permissionWikitext": "=={{int:filedesc}}==\n{{Information\n|description=\n{{en|'''''Sheep Possible''''' is an Belgian 2D-animated short film created by Aline Dykmans at {{w|LUCA School of Arts}}.}}\n|date=2015-05-28\n|source={{from Vimeo|129135849|''Sheep Possible'' (2015)}} &#124; [https://tilde.club/~harvettfox96/f/archive/vimeo/129135849-20240326.info.json JSON metadata] (archived: 2024-03-26)\n|author=[https://vimeo.com/user37811018/ Aline Dykmans]}}\n\n=={{int:license-header}}==\n{{CC-BY-3.0|[https://vimeo.com/user37811018/ Aline Dykmans]}}\n{{LicenseReview|site={{from Vimeo|129135849|''Sheep Possible'' (2015)}} &#124; [https://tilde.club/~harvettfox96/f/archive/vimeo/129135849-20240326.info.json JSON metadata] (archived: 2024-03-26)|user=GRuban|date=2024-04-08}}\n\n[[Category:Animated short films]]\n[[Category:Short films videos]]\n[[Category:Uploaded with video2commons]]\n[[Category:Video display resolution 1280 x 720]]\n[[Category:Videos in English]]\n[[Category:Videos of short films from 2015|Sheep Possible]]\n[[Category:Videos of anthropomorphic animals]]\n[[Category:Videos uploaded by Jayvee Enaguas (The Harvett Vault)]]\n[[Category:WebM videos]]\n[[Category:Videos of 2015 from Belgium]]"
+  },
+  "changes": "原件为固定修订正文；自然片段只截取连续原始 cue，原文和时间不改写；派生变体另行登记。",
+  "audit": "已检查 Commons 正文许可及原作品许可字段；该记录不是字幕语言真值的人工核对。"
+}

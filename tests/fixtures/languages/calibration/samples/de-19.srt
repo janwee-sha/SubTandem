@@ -1,0 +1,80 @@
+1
+00:00:00,000 --> 00:00:04,040
+Hallo und willkommen
+zu kolleg24 Mathematik.
+
+2
+00:00:04,240 --> 00:00:05,320
+In diesem Video
+
+3
+00:00:05,360 --> 00:00:07,240
+geht es ums Koordinatensystem.
+
+4
+00:00:07,400 --> 00:00:08,440
+Genauer gesagt darum,
+
+5
+00:00:08,480 --> 00:00:10,960
+was ein kartesisches
+Koordinatensystem ist
+
+6
+00:00:11,040 --> 00:00:13,000
+und wie man darin Punkte abliest.
+
+7
+00:00:13,760 --> 00:00:14,960
+Außerdem zeige ich euch,
+
+8
+00:00:15,000 --> 00:00:19,160
+was die vier Quadranten
+eines Koordinatensystems sind.
+
+9
+00:00:19,680 --> 00:00:21,560
+Jetzt aber erst mal zu den Basics.
+
+10
+00:00:23,080 --> 00:00:25,240
+In der Ebene werden einem Punkt
+
+11
+00:00:25,320 --> 00:00:27,720
+zwei Koordinaten zugeordnet.
+
+12
+00:00:28,280 --> 00:00:29,400
+Hier zum Beispiel
+
+13
+00:00:29,440 --> 00:00:32,440
+dem Punkt A die Koordinaten 3 und 2.
+
+14
+00:00:33,640 --> 00:00:36,200
+Die Längen- und Breitengrade
+unserer Erde
+
+15
+00:00:36,280 --> 00:00:37,640
+machen nichts anderes
+
+16
+00:00:37,680 --> 00:00:41,720
+und bilden so auch
+ein riesiges Koordinatensystem.
+
+17
+00:00:42,720 --> 00:00:44,680
+Das einfachste Koordinatensystem
+
+18
+00:00:44,720 --> 00:00:45,960
+ist eindimensional,
+
+19
+00:00:46,360 --> 00:00:49,840
+sieht so aus und heißt Zahlengerade.

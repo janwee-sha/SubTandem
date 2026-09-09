@@ -1,88 +1,164 @@
+import { translateCorpusSample } from "../helpers/language-translation.js";
 import { afterEach, describe, expect, it } from "vitest";
 import { PlaybackSession } from "../../src/app/playback-session.js";
 import { classifySubtitleSelection } from "../../src/adapters/iina/subtitle-source.js";
 import { ProviderSimulator } from "../helpers/provider-server.js";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import {
+  calibrateLanguageDetection,
+  requiresAccurateCandidate,
+} from "../helpers/language-calibration.js";
 import { detectSubtitleLanguage } from "../../src/subtitles/language-detection.js";
-import type { SubtitleCue } from "../../src/subtitles/types.js";
+import { shouldTranslate } from "../../src/domain/language.js";
+import {
+  corpusHash,
+  evaluationOutcome,
+  loadFrozenCorpora,
+  summarizeCorpus,
+  verifyDetectorConfiguration,
+  type CorpusSplit,
+  type EvaluationRecord,
+} from "../helpers/language-corpus.js";
 
 const simulators: ProviderSimulator[] = [];
 afterEach(async () => Promise.all(simulators.splice(0).map((server) => server.close())));
 
 describe("controlled provider acceptance runner", () => {
-  it("keeps calibration and acceptance fixtures isolated with twenty cues per language", () => {
-    const calibration = JSON.parse(
-      readFileSync(new URL("../fixtures/languages/calibration.json", import.meta.url), "utf8"),
-    ) as { source: string; cycles: number; languages: Array<{ templates: string[] }> };
-    const acceptance = JSON.parse(
-      readFileSync(new URL("../fixtures/languages/acceptance.json", import.meta.url), "utf8"),
-    ) as { source: string; cycles: number; languages: Array<{ templates: string[] }> };
-    expect(calibration.source).not.toBe(acceptance.source);
-    for (const fixture of [calibration, acceptance]) {
-      expect(fixture.languages.length).toBeGreaterThanOrEqual(20);
-      for (const language of fixture.languages)
-        expect(language.templates.length * fixture.cycles).toBeGreaterThanOrEqual(20);
-    }
-  });
-
-  it("meets frozen language accuracy, metadata-conflict and false-reliable gates", () => {
-    const fixture = JSON.parse(
-      readFileSync(new URL("../fixtures/languages/acceptance.json", import.meta.url), "utf8"),
-    ) as {
-      cycles: number;
-      languages: Array<{
-        id: string;
-        trackLanguage: string;
-        templates: string[];
-      }>;
-      unreliable: Array<{ id: string; expected: "unknown" | "unsupported"; templates: string[] }>;
-    };
-    const expand = (templates: string[], cycles: number): SubtitleCue[] =>
-      Array.from({ length: cycles }, (_, cycle) =>
-        templates.map((text, index): SubtitleCue => ({
-          id: `${cycle}-${index}`,
-          index: cycle * templates.length + index,
-          startMs: (cycle * templates.length + index) * 1_000,
-          endMs: (cycle * templates.length + index) * 1_000 + 900,
-          sourceText: `${text} ${cycle + 1}`,
-          normalizedText: `${text} ${cycle + 1}`,
-        })),
-      ).flat();
-    const results = fixture.languages.map((language) => ({
-      expected: language.id,
-      metadataConflict: language.trackLanguage !== language.id,
-      result: detectSubtitleLanguage(expand(language.templates, fixture.cycles)),
-    }));
-    const correct = results.filter(
-      ({ expected, result }) => result.state === "reliable" && result.languageId === expected,
-    ).length;
-    const conflictCorrect = results.filter(
-      ({ expected, metadataConflict, result }) =>
-        metadataConflict && result.state === "reliable" && result.languageId === expected,
-    ).length;
-    const conflicts = results.filter(({ metadataConflict }) => metadataConflict).length;
-    expect(correct / results.length, JSON.stringify(results)).toBeGreaterThanOrEqual(0.95);
-    expect(conflictCorrect / conflicts).toBeGreaterThanOrEqual(0.95);
-    const unreliableResults = fixture.unreliable.map(({ id, templates, expected }) => {
-      const repeats = Math.max(5, 20 / templates.length);
-      const windowed = templates.flatMap((text, templateIndex) =>
-        Array.from({ length: repeats }, (_, cycle): SubtitleCue => ({
-          id: `${templateIndex}-${cycle}`,
-          index: templateIndex * repeats + cycle,
-          startMs: (templateIndex * repeats + cycle) * 1_000,
-          endMs: (templateIndex * repeats + cycle) * 1_000 + 900,
-          sourceText: `${text} ${cycle + 1}`,
-          normalizedText: `${text} ${cycle + 1}`,
-        })),
+  it("evaluates language detection against admitted, frozen natural subtitles", async () => {
+    const mode = process.env.SUBTANDEM_LANGUAGE_CORPUS ?? "acceptance";
+    expect(["calibration", "acceptance"]).toContain(mode);
+    const corpora = loadFrozenCorpora();
+    const corpus = corpora[mode as CorpusSplit];
+    if (process.env.SUBTANDEM_LANGUAGE_CALIBRATE === "1") {
+      expect(mode).toBe("calibration");
+      const grid = calibrateLanguageDetection(corpus);
+      writeFileSync(
+        "docs/validation/language-calibration-grid.json",
+        JSON.stringify(grid, null, 2) + "\n",
       );
-      const result = detectSubtitleLanguage(windowed);
-      return { id, expected, result };
-    });
-    const falseReliable = unreliableResults.filter(
-      ({ expected, result }) => result.state === "reliable" || result.state !== expected,
-    ).length;
-    expect(falseReliable, JSON.stringify(unreliableResults)).toBe(0);
-  });
+      console.info(
+        JSON.stringify({
+          configurationCount: grid.configurationCount,
+          behaviorQualifiedCount: grid.behaviorQualifiedCount,
+          preferredParameters: grid.preferredParameters,
+        }),
+      );
+      expect(grid.preferredParameters).not.toBeNull();
+      return;
+    }
+    const configuration =
+      mode === "acceptance" ? verifyDetectorConfiguration() : "calibration-unfrozen";
+    const build = corpusHash(
+      readFileSync(new URL("../../src/subtitles/language-detection.ts", import.meta.url)),
+    );
+    const records: EvaluationRecord[] = [];
+    const directions: Array<{ sampleId: string; correct: boolean }> = [];
+    const failures: string[] = [];
+    for (const sample of corpus.samples) {
+      const start = performance.now();
+      const result = detectSubtitleLanguage(sample.cues);
+      const elapsedMs = performance.now() - start;
+      const target = sample.truth.expectedLanguageIds.some((id) => !shouldTranslate(id, "en"))
+        ? "ja"
+        : "en";
+      const expected = sample.truth.expectedLanguageIds[0];
+      const metadata = [expected, undefined, expected === "en" ? "ja" : "en"];
+      let providerCalls = 0;
+      for (const [index, tag] of metadata.entries()) {
+        const actual = await translateCorpusSample(sample, target, tag);
+        providerCalls += actual.calls;
+        if (JSON.stringify(actual.result) !== JSON.stringify(result))
+          failures.push(`${sample.sampleId}:metadata-result`);
+        if (!actual.gatesPassed) failures.push(`${sample.sampleId}:translation-gates`);
+        if (sample.primary && sample.truth.positive && index > 0)
+          directions.push({
+            sampleId: sample.sampleId,
+            correct: actual.calls > 0 && actual.correctDirection,
+          });
+      }
+      if (result.state === "reliable") {
+        const equal = await translateCorpusSample(sample, result.languageId, undefined);
+        if (equal.calls !== 0 || !equal.gatesPassed)
+          failures.push(`${sample.sampleId}:equivalence`);
+      }
+      for (const gate of ["disabled", "unselected", "invalidated-profile"] as const) {
+        const blocked = await translateCorpusSample(sample, target, undefined, gate);
+        if (blocked.calls !== 0 || !blocked.gatesPassed)
+          failures.push(`${sample.sampleId}:${gate}`);
+      }
+      const outcome = evaluationOutcome(sample, result);
+      records.push({ sampleId: sample.sampleId, result, outcome, elapsedMs, providerCalls });
+      if (
+        sample.truth.behavior === "candidate"
+          ? result.state !== "reliable"
+          : result.state !== sample.truth.behavior
+      )
+        failures.push(`${sample.sampleId}:behavior`);
+      const requiredAccuracy = requiresAccurateCandidate(sample);
+      if (requiredAccuracy && sample.truth.behavior === "candidate" && outcome !== "correct")
+        failures.push(`${sample.sampleId}:required-accuracy`);
+      if (
+        sample.tags.includes("supported-tie") &&
+        Array.from({ length: 3 }, () => detectSubtitleLanguage(sample.cues)).some(
+          (repeated) => JSON.stringify(repeated) !== JSON.stringify(result),
+        )
+      )
+        failures.push(`${sample.sampleId}:unstable-tie`);
+    }
+    const strata = summarizeCorpus(corpus, records);
+    const byId = new Map(records.map((record) => [record.sampleId, record]));
+    const variants = corpus.samples
+      .filter((sample) => sample.kind === "variant" && !sample.tags.includes("translation"))
+      .map((sample) => ({
+        sampleId: sample.sampleId,
+        consistent:
+          JSON.stringify(byId.get(sample.sampleId)!.result) ===
+          JSON.stringify(byId.get(sample.derivedFrom[0]!)!.result),
+      }));
+    const report = {
+      mode,
+      corpus: corpus.hashes,
+      configuration,
+      build,
+      records,
+      strata,
+      variants: {
+        denominator: variants.length,
+        consistent: variants.filter((v) => v.consistent).length,
+        records: variants,
+      },
+      metadataDirections: {
+        denominator: directions.length,
+        correct: directions.filter((d) => d.correct).length,
+      },
+      failures,
+    };
+    if (process.env.SUBTANDEM_LANGUAGE_REPORT === "1")
+      writeFileSync(
+        `docs/validation/language-detection-${mode}.json`,
+        JSON.stringify(report, null, 2) + "\n",
+      );
+    console.info(JSON.stringify(report));
+    for (const name of ["positive", "positive:short", "positive:medium", "positive:long"]) {
+      const group = strata.find((entry) => entry.stratum === name);
+      expect(group, name).toBeDefined();
+      expect(group!.denominator).toBeGreaterThan(0);
+      expect(group!.counts.correct / group!.denominator, name).toBeGreaterThanOrEqual(0.95);
+      expect(
+        (group!.counts.unknown + group!.counts.unsupported) / group!.denominator,
+        name,
+      ).toBeLessThanOrEqual(0.05);
+    }
+    for (const group of strata)
+      expect(Object.values(group.counts).reduce((a, b) => a + b, 0)).toBe(group.denominator);
+    expect(directions.length).toBeGreaterThan(0);
+    expect(
+      directions.filter((direction) => direction.correct).length / directions.length,
+    ).toBeGreaterThanOrEqual(0.95);
+    expect(variants.length).toBeGreaterThan(0);
+    expect(variants.every((variant) => variant.consistent)).toBe(true);
+    expect(failures).toEqual([]);
+  }, 600_000);
 
   it("classifies every synthetic selected track with 100% exact identity", () => {
     const cases = Array.from({ length: 30 }, (_, index) => {

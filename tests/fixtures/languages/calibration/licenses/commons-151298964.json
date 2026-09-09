@@ -1,0 +1,106 @@
+{
+  "acquiredAt": "2026-09-09",
+  "subtitle": {
+    "pageId": 151298964,
+    "title": "TimedText:A voyage to the centre of the Earth - The Royal Society (internal structure of Earth).webm.en.srt",
+    "revision": 907716837,
+    "timestamp": "2024-08-08T15:02:58Z",
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=907716837",
+    "contributors": "https://commons.wikimedia.org/w/index.php?curid=151298964&action=history",
+    "revisionComment": ""
+  },
+  "textPolicy": {
+    "file": "commons-text-policy.json",
+    "sha256": "829bb2b3f8cdb2e111557a29b8735535c82cb06349a886676325b84443d00236",
+    "license": "CC-BY-SA-4.0"
+  },
+  "originalWork": {
+    "pageId": 146128828,
+    "title": "File:A voyage to the centre of the Earth - The Royal Society (internal structure of Earth).webm",
+    "revision": 1145693707,
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=1145693707",
+    "metadata": {
+      "DateTime": {
+        "value": "2024-03-06 18:31:45",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "A voyage to the centre of the Earth - The Royal Society (internal structure of Earth)",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "Files from external sources with reviewed licenses|Videos from YouTube|Media of the day|Files with closed captioning in English|Uploaded with video2commons|Videos of the 2020s|Videos of Earth|Internal structure of Earth|Files with closed captioning in German|Videos by The Royal Society|Files with closed captioning in Spanish|Files with closed captioning in Dutch|Videos of geology|Files with closed captioning in Swedish|Kilometer-scale|Files with closed captioning in French|Files with closed captioning in Greek|Files with closed captioning in Ukrainian|Videos of structure of the Earth|Videos uploaded by Prototyperspective",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "Accompany seismologist Paula Koelemeijer on a voyage to the centre of the Earth!\nFind out which animal burrows the farthest, where the world's deepest hole is, and discover two mysterious blobs the size of continents lurking in the Earth's mantle!",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "2023-07-27",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "<bdi lang=\"en\" dir=\"ltr\"><a href=\"//commons.wikimedia.org/wiki/Commons:YouTube_files\" title=\"Commons:YouTube files\">YouTube</a>: <a rel=\"nofollow\" class=\"external text\" href=\"https://www.youtube.com/watch?v=LUqwHnsLIu8\"><bdi lang=\"\">Three minutes to the centre of the Earth | The Royal Society</bdi></a></bdi>",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.youtube.com/@royalsociety\">The Royal Society</a>",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC BY 3.0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Attribution 3.0",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "true",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Attribution": {
+        "value": "The Royal Society",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "https://creativecommons.org/licenses/by/3.0",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc-by-3.0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "permissionWikitext": "=={{int:filedesc}}==\n{{Information\n|description={{en|1=Accompany seismologist Paula Koelemeijer on a voyage to the centre of the Earth!\n\nFind out which animal burrows the farthest, where the world's deepest hole is, and discover two mysterious blobs the size of continents lurking in the Earth's mantle!}}\n{{uk|1=«Три хвилини до центру Землі» – пояснювальний ролик {{wu|Лондонське королівське товариство|Королівського товариства}} про внутрішню {{wu|Будова Землі|будову Землі}}.}}\n|date=2023-07-27\n|source={{From YouTube|1=LUqwHnsLIu8|2=Three minutes to the centre of the Earth &#124; The Royal Society|archived=no}}\n|author=[https://www.youtube.com/@royalsociety The Royal Society]\n|permission=\n|other_versions=\n|other_fields=\n}}\n{{Closed captions}}\n\n== {{Assessment}} ==\n{{Media of the day|2024|08|11}}\n\n=={{int:license-header}}==\n{{YouTube CC-BY|The Royal Society}}\n{{LicenseReview|site={{From YouTube|1=LUqwHnsLIu8|2=Three minutes to the centre of the Earth &#124; The Royal Society|archived=no}}|user=Speravir|date=2024-08-07}}\n\n[[Category:Uploaded with video2commons]]\n[[Category:Videos of geology]]\n[[Category:Videos of Earth]]\n[[Category:Internal structure of Earth]]\n[[Category:Videos by The Royal Society]]\n[[Category:Videos of structure of the Earth]]\n[[Category:Videos of the 2020s]]\n[[Category:Kilometer-scale]]\n[[Category:Videos uploaded by Prototyperspective]]"
+  },
+  "changes": "原件为固定修订正文；自然片段只截取连续原始 cue，原文和时间不改写；派生变体另行登记。",
+  "audit": "已检查 Commons 正文许可及原作品许可字段；该记录不是字幕语言真值的人工核对。"
+}

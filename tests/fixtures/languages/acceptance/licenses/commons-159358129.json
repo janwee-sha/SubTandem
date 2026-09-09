@@ -1,0 +1,101 @@
+{
+  "acquiredAt": "2026-09-09",
+  "subtitle": {
+    "pageId": 159358129,
+    "title": "TimedText:Cosmos Laundromat - First Cycle - Official Blender Foundation release.webm.hu.srt",
+    "revision": 995655384,
+    "timestamp": "2025-02-08T15:24:25Z",
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=995655384",
+    "contributors": "https://commons.wikimedia.org/w/index.php?curid=159358129&action=history",
+    "revisionComment": ""
+  },
+  "textPolicy": {
+    "file": "commons-text-policy.json",
+    "sha256": "829bb2b3f8cdb2e111557a29b8735535c82cb06349a886676325b84443d00236",
+    "license": "CC-BY-SA-4.0"
+  },
+  "originalWork": {
+    "pageId": 46666797,
+    "title": "File:Cosmos Laundromat - First Cycle - Official Blender Foundation release.webm",
+    "revision": 1212974386,
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=1212974386",
+    "metadata": {
+      "DateTime": {
+        "value": "2016-01-29 16:41:41",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "Cosmos Laundromat - First Cycle - Official Blender Foundation release",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "WebM videos|Cosmos Laundromat|Files from external sources with reviewed licenses|Files with closed captioning in Czech|Videos from YouTube|Files uploaded by Yann Forget|Media of the day|Videos created with Blender|Files with closed captioning in Norwegian Bokmål|Files with closed captioning in English|Uploaded with video2commons|Videos of 2015 from the Netherlands|Video display resolution 2048 x 858|Blender movies|Files with closed captioning in British English|Files with closed captioning in German|Files with closed captioning in Serbian|Files with closed captioning in Spanish|Files with closed captioning in Hebrew|Files with closed captioning in Italian|Files with closed captioning in Chinese|Files with closed captioning in Dutch|Files with closed captioning in Turkish|Files with closed captioning in Finnish|Files with closed captioning in Portuguese|Files with closed captioning in Russian|Files with closed captioning in Brazilian Portuguese|Files with closed captioning in Polish|Files with closed captioning in Swedish|Files with closed captioning in French|Files with closed captioning in Hungarian|Files with closed captioning in Japanese|Files with closed captioning in Indonesian|Files with closed captioning in Danish|Files with closed captioning in Slovak|Files with closed captioning in Thai|Files with closed captioning in Levantine Arabic|Videos of short films from 2015|Opus videos|VP9 videos",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "On a desolate island, suicidal sheep Franck meets his fate in a quirky salesman, who offers him the gift of a lifetime. Little does he know that he can only handle so much lifetime. (Target audience age: 13+)\n<p>\"Cosmos Laundromat\" started in 2014 as an experimental feature film, in which an adventurous and absurdist love story is being told by multiple teams - each working in their own unique style. The opening of the film, the 10 minutes pilot \"First Cycle\", has been made in the Netherlands by the studio of Blender Institute in Amsterdam.\n</p><p>The film itself and all of the artwork files were made with free/open source software and are available under a permissive license. Free to share, free to remix and free to learn from.\n</p>\nProduction website: <a rel=\"nofollow\" class=\"external free\" href=\"http://gooseberry.blender.org\">http://gooseberry.blender.org</a>",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "2015-08-10",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "<bdi lang=\"en\" dir=\"ltr\"><a href=\"//commons.wikimedia.org/wiki/Commons:YouTube_files\" title=\"Commons:YouTube files\">YouTube</a>: <a rel=\"nofollow\" class=\"external text\" href=\"https://www.youtube.com/watch?v=Y-rmzh0PI3c\"><bdi lang=\"\">https://www.youtube.com/watch?v=Y-rmzh0PI3c</bdi></a> – View/save archived versions on <a rel=\"nofollow\" class=\"external text\" href=\"https://web.archive.org/web/*/https://www.youtube.com/watch?v=Y-rmzh0PI3c\">archive.org</a></bdi>",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "Blender Foundation",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC BY-SA 3.0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Attribution-Share Alike 3.0",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "true",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "https://creativecommons.org/licenses/by-sa/3.0",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc-by-sa-3.0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "permissionWikitext": "=={{int:filedesc}}==\n{{Information\n|description={{en|On a desolate island, suicidal sheep Franck meets his fate in a quirky salesman, who offers him the gift of a lifetime. Little does he know that he can only handle so much lifetime. (Target audience age: 13+)\n\n\"Cosmos Laundromat\" started in 2014 as an experimental feature film, in which an adventurous and absurdist love story is being told by multiple teams - each working in their own unique style. The opening of the film, the 10 minutes pilot \"First Cycle\", has been made in the Netherlands by the studio of Blender Institute in Amsterdam.\n\nThe film itself and all of the artwork files were made with free/open source software and are available under a permissive license. Free to share, free to remix and free to learn from.\nProduction website: http://gooseberry.blender.org }}\n|date=2015-08-10\n|source={{From YouTube|1=Y-rmzh0PI3c|2=https://www.youtube.com/watch?v=Y-rmzh0PI3c}}\n|author=Blender Foundation\n|permission=\n|other_versions=\n|other_fields=\n}}\n{{Closed captions}}\n{{Media of the day|2016|02|13}}\n\n=={{int:license-header}}==\n{{cc-by-sa-3.0}}\n{{LicenseReview|site=https://www.youtube.com/watch?v=Y-rmzh0PI3c|user=INeverCry|date=2016-02-11}}\n\n{{FileAutoCat|Width=2048|Height=858|AudioCodec=Opus|VideoCodec=VP9}}\n[[Category:Uploaded with video2commons]]\n[[Category:Cosmos Laundromat]]\n[[Category:Blender movies]]\n[[Category:Files uploaded by Yann Forget]]\n[[Category:Videos created with Blender]]\n[[Category:Videos of short films from 2015]]\n[[Category:Videos of 2015 from the Netherlands]]"
+  },
+  "changes": "原件为固定修订正文；自然片段只截取连续原始 cue，原文和时间不改写；派生变体另行登记。",
+  "audit": "已检查 Commons 正文许可及原作品许可字段；该记录不是字幕语言真值的人工核对。"
+}

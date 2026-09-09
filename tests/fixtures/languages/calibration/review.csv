@@ -1,0 +1,94 @@
+﻿样本ID,类别,条数,有效字母数,语言,预期结果,正样本,字幕文件,原始范围（从零起、不含终点）,核对依据与注意事项,核对结论,修改意见
+calibration-en-6,自然主样本,6,193,en,en,是,samples/en-6.srt,"commons-151298964: [0, 6)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-en-11,自然主样本,11,395,en,en,是,samples/en-11.srt,"commons-151298964: [6, 17)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-en-38,自然主样本,38,1454,en,en,是,samples/en-38.srt,"commons-151298964: [17, 55)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-de-eleven,自然主样本,11,332,de,de,是,samples/de-eleven.srt,"commons-175223698: [19, 30)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-de-31,自然主样本,31,853,de,de,是,samples/de-31.srt,"commons-175223698: [30, 61)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-de-19,自然主样本,19,518,de,de,是,samples/de-19.srt,"commons-175223698: [0, 19)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-de-6,自然主样本,6,184,de,de,是,samples/de-6.srt,"commons-175223698: [61, 67)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-fr-6,自然主样本,6,417,fr,fr,是,samples/fr-6.srt,"commons-191922815: [0, 6)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-fr-19,自然主样本,19,1421,fr,fr,是,samples/fr-19.srt,"commons-191922815: [6, 25)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-fr-31,自然主样本,31,2405,fr,fr,是,samples/fr-31.srt,"commons-191922815: [25, 56)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-es-6,自然主样本,6,170,es,es,是,samples/es-6.srt,"commons-50748885: [0, 6)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-es-19,自然主样本,19,737,es,es,是,samples/es-19.srt,"commons-50748885: [6, 25)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-es-31,自然主样本,31,1278,es,es,是,samples/es-31.srt,"commons-50748885: [25, 56)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-pt-6,自然主样本,6,327,pt,pt,是,samples/pt-6.srt,"commons-181446738: [10, 16)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-pt-19,自然主样本,19,1259,pt,pt,是,samples/pt-19.srt,"commons-181446738: [16, 35)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-pt-31,自然主样本,31,1686,pt,pt,是,samples/pt-31.srt,"commons-181446738: [35, 66)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-it-6,自然主样本,6,284,it,it,是,samples/it-6.srt,"commons-155528606: [4, 10)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-it-19,自然主样本,19,757,it,it,是,samples/it-19.srt,"commons-155528606: [10, 29)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-it-31,自然主样本,31,1214,it,it,是,samples/it-31.srt,"commons-155528606: [29, 60)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-hu-6,自然主样本,6,85,hu,hu,是,samples/hu-6.srt,"commons-15279321: [0, 6)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-hu-19,自然主样本,19,303,hu,hu,是,samples/hu-19.srt,"commons-15279321: [6, 25)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-hu-31,自然主样本,31,439,hu,hu,是,samples/hu-31.srt,"commons-15279321: [25, 56)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-sv-6,自然主样本,6,254,sv,sv,是,samples/sv-6.srt,"commons-86330178: [0, 6)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-sv-19,自然主样本,19,627,sv,sv,是,samples/sv-19.srt,"commons-86330178: [6, 25)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-ru-6,自然主样本,6,237,ru,ru,是,samples/ru-6.srt,"commons-67152560: [0, 6)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-ru-19,自然主样本,19,1119,ru,ru,是,samples/ru-19.srt,"commons-67152560: [6, 25)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-ru-31,自然主样本,31,1391,ru,ru,是,samples/ru-31.srt,"commons-67152560: [25, 56)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-uk-6,自然主样本,6,199,uk,uk,是,samples/uk-6.srt,"commons-161294500: [0, 6)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-uk-16,自然主样本,16,494,uk,uk,是,samples/uk-16.srt,"commons-161294500: [6, 22)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-pl-6,自然主样本,6,277,pl,pl,是,samples/pl-6.srt,"commons-66972148: [0, 6)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-pl-19,自然主样本,19,736,pl,pl,是,samples/pl-19.srt,"commons-66972148: [6, 25)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-pl-31,自然主样本,31,1343,pl,pl,是,samples/pl-31.srt,"commons-66972148: [25, 56)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-cs-6,自然主样本,6,99,cs,cs,是,samples/cs-6.srt,"commons-135290487: [0, 6)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-cs-15,自然主样本,15,464,cs,cs,是,samples/cs-15.srt,"commons-135290487: [6, 21)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-cs-31,自然主样本,31,1133,cs,cs,是,samples/cs-31.srt,"commons-135290487: [21, 52)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-nl-6,自然主样本,6,311,nl,nl,是,samples/nl-6.srt,"commons-88854756: [0, 6)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-nl-27,自然主样本,27,861,nl,nl,是,samples/nl-27.srt,"commons-88854756: [6, 33)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-tr-6,自然主样本,6,115,tr,tr,是,samples/tr-6.srt,"commons-133180134: [0, 6)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-tr-19,自然主样本,19,584,tr,tr,是,samples/tr-19.srt,"commons-133180134: [6, 25)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-tr-31,自然主样本,31,1181,tr,tr,是,samples/tr-31.srt,"commons-133180134: [25, 56)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-ar-6,自然主样本,6,135,ar,ar,是,samples/ar-6.srt,"commons-148215854: [0, 6)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-ar-19,自然主样本,19,368,ar,ar,是,samples/ar-19.srt,"commons-148215854: [6, 25)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-ar-31,自然主样本,31,626,ar,ar,是,samples/ar-31.srt,"commons-148215854: [25, 56)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-fa-6,自然主样本,6,154,fa,fa,是,samples/fa-6.srt,"commons-71133894: [0, 6)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-fa-31,自然主样本,31,1088,fa,fa,是,samples/fa-31.srt,"commons-71133894: [6, 37)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-ja-6,自然主样本,6,69,ja,ja,是,samples/ja-6.srt,"commons-55570874: [0, 6)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-ja-19,自然主样本,19,243,ja,ja,是,samples/ja-19.srt,"commons-55570874: [6, 25)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-ja-31,自然主样本,31,417,ja,ja,是,samples/ja-31.srt,"commons-55570874: [25, 56)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-ko-6,自然主样本,6,190,ko,ko,是,samples/ko-6.srt,"commons-112257572: [0, 6)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-ko-19,自然主样本,19,681,ko,ko,是,samples/ko-19.srt,"commons-112257572: [6, 25)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-ko-31,自然主样本,31,1280,ko,ko,是,samples/ko-31.srt,"commons-112257572: [25, 56)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-zh-6,自然主样本,6,65,zh,zh-Hans,是,samples/zh-6.srt,"commons-181433082: [0, 6)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-zh-19,自然主样本,19,231,zh,zh-Hans,是,samples/zh-19.srt,"commons-181433082: [6, 25)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-zh-31,自然主样本,31,437,zh,zh-Hans,是,samples/zh-31.srt,"commons-181433082: [25, 56)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-ha-6,自然主样本,6,217,ha,ha,是,samples/ha-6.srt,"commons-131816259: [0, 6)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-ha-19,自然主样本,19,581,ha,ha,是,samples/ha-19.srt,"commons-131816259: [6, 25)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-ha-31,自然主样本,31,844,ha,ha,是,samples/ha-31.srt,"commons-131816259: [25, 56)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-fr-long-extra,自然主样本,31,2490,fr,fr,是,samples/fr-long-extra.srt,"commons-191922815: [56, 87)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-es-long-extra,自然主样本,31,1422,es,es,是,samples/es-long-extra.srt,"commons-50748885: [56, 87)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-pt-long-extra,自然主样本,31,1811,pt,pt,是,samples/pt-long-extra.srt,"commons-181446738: [66, 97)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-fr-medium-extra,自然主样本,19,1465,fr,fr,是,samples/fr-medium-extra.srt,"commons-191922815: [87, 106)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-fa-medium-extra,自然主样本,15,1105,fa,fa,是,samples/fa-medium-extra.srt,"commons-83299994: [0, 15)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-unsupported-fi,自然主样本,11,382,fi,unsupported,否,samples/unsupported-fi.srt,"commons-148744348: [0, 11)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。须确认正文属于固定源范围之外；不能以检测器拒绝作为依据。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-unsupported-he,自然主样本,18,594,he,unsupported,否,samples/unsupported-he.srt,"commons-143688542: [0, 18)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。须确认正文属于固定源范围之外；不能以检测器拒绝作为依据。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-unsupported-no,自然主样本,31,1224,no,unsupported,否,samples/unsupported-no.srt,"commons-110347048: [0, 31)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。须确认正文属于固定源范围之外；不能以检测器拒绝作为依据。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-unsupported-ia,自然主样本,27,931,ia,unsupported,否,samples/unsupported-ia.srt,"commons-181841158: [0, 27)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。须确认正文属于固定源范围之外；不能以检测器拒绝作为依据。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-pl-credits,自然主样本,6,184,pl,pl,是,samples/pl-credits.srt,"commons-66972148: [74, 80)",逐段确认语言；专名、引用、拟声和借词不能只看文件标签。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-romanized-mixed,自然主样本,7,196,fr/ja,fr,是,samples/romanized-mixed.srt,"commons-192911638: [0, 7)",每 cue 第一行为译文，第二行为罗马字日语；按行核对语言区间和占比。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-en-ass,派生回归,38,1454,en,en,是,samples/en-ass.ass,"commons-151298964: [17, 55)",SRT → ASS；保留文字和时间，增加斜体样式,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-de-twelve,派生回归,12,332,de,de,是,samples/de-twelve.srt,"commons-175223698: [19, 30)",将原首 cue 在首个空格拆为两个；共 12 cue，不增加文字,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-de-duration,派生回归,11,332,de,de,是,samples/de-duration.srt,"commons-175223698: [19, 30)",交替改为 9000/200 ms，正文不变,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-romanized-only,派生回归,7,83,ja,ja,否,samples/romanized-only.srt,"commons-192911638: [0, 7)",从原有双语歌词逐 cue 保留第二行；日语罗马字的派生边界样本。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-de-inside-word,派生回归,12,332,de,de,是,samples/de-inside-word.srt,"commons-175223698: [19, 30)",在第一 cue 的第二个词内部插入 cue 边界，字母序列不变,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-zh-linebreaks,派生回归,31,437,zh,zh-Hans,是,samples/zh-linebreaks.srt,"commons-181433082: [25, 56)",中文基准正文每个码点后换行，字母序列不变,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-zh-hant-translation,派生回归,31,437,zh,zh-Hant,是,samples/zh-hant-translation.srt,"commons-193436205: [25, 56)",同一作品和时间片段的已发布繁体译本,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-zh-unspecified,派生回归,4,8,zh,zh,否,samples/zh-unspecified.srt,"commons-181433082: [25, 56)",人工边界文本，仅共享字，不计自然分母,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-zh-conflicting,派生回归,2,20,zh,zh,否,samples/zh-conflicting.srt,"commons-181433082: [25, 56)",人工边界文本，同时包含两种独有形式,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-zh-with-kana,派生回归,2,442,zh/ja,zh-Hans,否,samples/zh-with-kana.srt,"commons-181433082: [25, 56)；commons-55570874: [0, 6)",完整中文基准正文末尾添加日语问候语；人工边界样本,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-sparse,派生回归,1,5,en,en,否,samples/sparse.srt,"commons-151298964: [0, 6)",人工边界：单个英文词,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-no-letters,派生回归,3,0,,unknown,否,samples/no-letters.srt,"commons-151298964: [0, 6)",人工边界：数字、符号、完整网址,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-mixed-majority,派生回归,2,300,en/de,en,是,samples/mixed-majority.srt,"commons-151298964: [17, 55)；commons-175223698: [30, 61)",依次取各父样本规范正文前 N 个 Unicode Letter（保留区间内标点和空格，允许切断末词）；按顺序组成 cue,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-mixed-40-35-25,派生回归,3,1000,en/de/fr,en,是,samples/mixed-40-35-25.srt,"commons-151298964: [17, 55)；commons-175223698: [30, 61)；commons-191922815: [25, 56)",依次取各父样本规范正文前 N 个 Unicode Letter（保留区间内标点和空格，允许切断末词）；按顺序组成 cue,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-mixed-supported-tie,派生回归,2,400,en/de,de/en,是,samples/mixed-supported-tie.srt,"commons-151298964: [17, 55)；commons-175223698: [30, 61)",依次取各父样本规范正文前 N 个 Unicode Letter（保留区间内标点和空格，允许切断末词）；按顺序组成 cue,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-mixed-unsupported-majority,派生回归,2,400,en/fi,en,是,samples/mixed-unsupported-majority.srt,"commons-151298964: [17, 55)；commons-148744348: [0, 11)",依次取各父样本规范正文前 N 个 Unicode Letter（保留区间内标点和空格，允许切断末词）；按顺序组成 cue须确认正文属于固定源范围之外；不能以检测器拒绝作为依据。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-mixed-unsupported-combined,派生回归,3,500,en/fi/he,en,是,samples/mixed-unsupported-combined.srt,"commons-151298964: [17, 55)；commons-148744348: [0, 11)；commons-143688542: [0, 18)",依次取各父样本规范正文前 N 个 Unicode Letter（保留区间内标点和空格，允许切断末词）；按顺序组成 cue须确认正文属于固定源范围之外；不能以检测器拒绝作为依据。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-mixed-small-supported,派生回归,2,205,en/fi,en,是,samples/mixed-small-supported.srt,"commons-151298964: [17, 55)；commons-148744348: [0, 11)",依次取各父样本规范正文前 N 个 Unicode Letter（保留区间内标点和空格，允许切断末词）；按顺序组成 cue,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-mixed-supported-unsupported-tie,派生回归,2,400,en/fi,en,是,samples/mixed-supported-unsupported-tie.srt,"commons-151298964: [17, 55)；commons-148744348: [0, 11)",依次取各父样本规范正文前 N 个 Unicode Letter（保留区间内标点和空格，允许切断末词）；按顺序组成 cue须确认正文属于固定源范围之外；不能以检测器拒绝作为依据。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-unsupported-mixed,派生回归,3,600,fi/he/no,unsupported,否,samples/unsupported-mixed.srt,"commons-148744348: [0, 11)；commons-143688542: [0, 18)；commons-110347048: [0, 31)",依次取各父样本规范正文前 N 个 Unicode Letter（保留区间内标点和空格，允许切断末词）；按顺序组成 cue须确认正文属于固定源范围之外；不能以检测器拒绝作为依据。,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-mixed-within-cue,派生回归,1,300,en/de,en,是,samples/mixed-within-cue.srt,"commons-151298964: [17, 55)；commons-175223698: [30, 61)",依次取各父样本规范正文前 N 个 Unicode Letter（保留区间内标点和空格，允许切断末词）；按顺序组成 cue,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-mixed-interleaved,派生回归,4,300,en/de,en,是,samples/mixed-interleaved.srt,"commons-151298964: [17, 55)；commons-175223698: [30, 61)",依次取各父样本规范正文前 N 个 Unicode Letter（保留区间内标点和空格，允许切断末词）；按顺序组成 cue,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-mixed-over-budget,派生回归,80,24000,en/de,en,是,samples/mixed-over-budget.srt,"commons-151298964: [17, 55)；commons-175223698: [30, 61)",依次取各父样本规范正文前 N 个 Unicode Letter（保留区间内标点和空格，允许切断末词）；按顺序组成 cue,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-mixed-cue-conflict,派生回归,18,300,en/de,en,是,samples/mixed-cue-conflict.srt,"commons-151298964: [17, 55)；commons-175223698: [30, 61)",英语保持 1 cue，德语按词拆 cue；各语言文字量不变,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。
+calibration-mixed-duration-conflict,派生回归,2,300,en/de,en,是,samples/mixed-duration-conflict.srt,"commons-151298964: [17, 55)；commons-175223698: [30, 61)",英语 100 ms、德语 60000 ms；正文不变,已核对通过,2026-09-10：开发者在当前会话确认两组核对通过。

@@ -1,0 +1,101 @@
+{
+  "acquiredAt": "2026-09-09",
+  "subtitle": {
+    "pageId": 88854756,
+    "title": "TimedText:Instructievideo Wikidata aanmaken item Irene Houben.webm.nl.srt",
+    "revision": 408767414,
+    "timestamp": "2020-04-02T12:33:57Z",
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=408767414",
+    "contributors": "https://commons.wikimedia.org/w/index.php?curid=88854756&action=history",
+    "revisionComment": "Nederlands"
+  },
+  "textPolicy": {
+    "file": "commons-text-policy.json",
+    "sha256": "829bb2b3f8cdb2e111557a29b8735535c82cb06349a886676325b84443d00236",
+    "license": "CC-BY-SA-4.0"
+  },
+  "originalWork": {
+    "pageId": 88854123,
+    "title": "File:Instructievideo Wikidata aanmaken item Irene Houben.webm",
+    "revision": 1180720868,
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=1180720868",
+    "metadata": {
+      "DateTime": {
+        "value": "2020-04-02 11:47:31",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "Instructievideo Wikidata aanmaken item Irene Houben",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "Self-published work|Instructional videos|Files with closed captioning in English|Wikidata videos|Files with closed captioning in German|Files with closed captioning in Spanish|Files with closed captioning in Italian|Files with closed captioning in Dutch|Files with closed captioning in Portuguese|Files with closed captioning in Russian|Files with closed captioning in Polish|Files with closed captioning in French|Files with closed captioning in Japanese|Videos by Geert Van Pamel|Wikidata videos in Dutch|Wikimedia Belgium videos",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "Instruction video Creating Wikidata item Irene Houben.",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "2020-04-02",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "<a href=\"//commons.wikimedia.org/wiki/User:Geertivp\" title=\"User:Geertivp\">Geertivp</a>",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC BY-SA 4.0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Attribution-Share Alike 4.0",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "true",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "https://creativecommons.org/licenses/by-sa/4.0",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc-by-sa-4.0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "permissionWikitext": "=={{int:filedesc}}==\n{{Information\n|description={{nl|1=Instructievideo Wikidata aanmaken item Irene Houben.}}\n{{en|1=Instruction video Creating Wikidata item Irene Houben.}}\n{{fr|1=Vidéo d'instruction création de l'élément Wikidata sur \"Irene Houben\".}}\n{{de|1=Anleitungsvideo Wikidata-Element erstellen Irene Houben.}}\n{{es|1=Video de instrucciones Creando el artículo de Wikidata Irene Houben.}}\n{{it|1=Video di istruzioni per la creazione di Wikidata Irene Houben.}}\n{{pt|1=Vídeo de instruções Criando o item Wikidata Irene Houben.}}\n|date=2020-04-02\n|source={{own}}\n|author=[[User:Geertivp|Geertivp]]\n|permission=\n|other versions=\n}}\n{{Closed captions}}\nVideo made during the [[w:Coronavirus disease 2019]] because all Wikipedia conferences and Wikithons were cancelled.\n\n=={{int:license-header}}==\n{{self|cc-by-sa-4.0}}\n\n[[Category:Instructional videos]]\n[[Category:Videos by Geert Van Pamel]]\n[[Category:Wikidata videos]]\n[[Category:Wikimedia Belgium videos]]\n[[Category:Wikidata videos in Dutch]]"
+  },
+  "changes": "原件为固定修订正文；自然片段只截取连续原始 cue，原文和时间不改写；派生变体另行登记。",
+  "audit": "已检查 Commons 正文许可及原作品许可字段；该记录不是字幕语言真值的人工核对。"
+}

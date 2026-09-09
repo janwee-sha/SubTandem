@@ -1,0 +1,106 @@
+{
+  "acquiredAt": "2026-09-09",
+  "subtitle": {
+    "pageId": 71133894,
+    "title": "TimedText:How Tor Browser Protects Your Privacy and Identity Online.webm.fa.srt",
+    "revision": 312521769,
+    "timestamp": "2018-07-26T22:03:03Z",
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=312521769",
+    "contributors": "https://commons.wikimedia.org/w/index.php?curid=71133894&action=history",
+    "revisionComment": "Import Persian subtitles for [[:File:How Tor Browser Protects Your Privacy and Identity Online.webm]]"
+  },
+  "textPolicy": {
+    "file": "commons-text-policy.json",
+    "sha256": "829bb2b3f8cdb2e111557a29b8735535c82cb06349a886676325b84443d00236",
+    "license": "CC-BY-SA-4.0"
+  },
+  "originalWork": {
+    "pageId": 71133876,
+    "title": "File:How Tor Browser Protects Your Privacy and Identity Online.webm",
+    "revision": 1182633994,
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=1182633994",
+    "metadata": {
+      "DateTime": {
+        "value": "2018-07-26 22:01:49",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "How Tor Browser Protects Your Privacy and Identity Online",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "Media from YouTube|Tor Browser|Files from external sources with reviewed licenses|Files with closed captioning in Czech|Files with closed captioning in Norwegian Bokmål|Files with closed captioning in English|Videos of 2015|Uploaded with video2commons|Files with closed captioning in British English|Files with closed captioning in German|Files with closed captioning in Basque|Files with closed captioning in Spanish|Files with closed captioning in Italian|Files with closed captioning in Dutch|Files with closed captioning in Turkish|Files with closed captioning in Finnish|Files with closed captioning in Portuguese|Files with closed captioning in Romanian|Files with closed captioning in Russian|Files with closed captioning in Brazilian Portuguese|Files with closed captioning in Polish|Files with closed captioning in Swedish|Files with closed captioning in Vietnamese|Files with closed captioning in French|Files with closed captioning in Hungarian|Files with closed captioning in Greek|Files with closed captioning in Japanese|Files with closed captioning in Ukrainian|Files with closed captioning in Indonesian|Files with closed captioning in Icelandic|Files with closed captioning in Arabic|Files with closed captioning in Bulgarian|Files with closed captioning in Catalan|Files with closed captioning in Persian|Files with closed captioning in Slovak|Files with closed captioning in Irish|Files with closed captioning in Latvian|Files with closed captioning in Croatian|Files with closed captioning in Lithuanian|Files with closed captioning in Albanian|Videos of information privacy|Files with closed captioning in Turkmen",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "This video explains how the Tor Browser can protect your privacy when you're browsing online.",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "2015-03-17",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "<bdi lang=\"en\" dir=\"ltr\"><a href=\"//commons.wikimedia.org/wiki/Commons:YouTube_files\" title=\"Commons:YouTube files\">YouTube</a>: <a rel=\"nofollow\" class=\"external text\" href=\"https://www.youtube.com/watch?v=JWII85UlzKw\"><bdi lang=\"\">How Tor Browser Protects Your Privacy and Identity Online</bdi></a> – View/save archived versions on <a rel=\"nofollow\" class=\"external text\" href=\"https://web.archive.org/web/*/https://www.youtube.com/watch?v=JWII85UlzKw\">archive.org</a></bdi>",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.youtube.com/user/TheTorProject\">The Tor Project</a>",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC BY 3.0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Attribution 3.0",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "true",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Attribution": {
+        "value": "The Tor Project",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "https://creativecommons.org/licenses/by/3.0",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc-by-3.0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "permissionWikitext": "=={{int:filedesc}}==\n{{Information\n|description={{en|1=This video explains how the Tor Browser can protect your privacy when you're browsing online.}}\n|date=2015-03-17\n|source={{From YouTube|1=JWII85UlzKw|2=How Tor Browser Protects Your Privacy and Identity Online}}\n|author=[https://www.youtube.com/user/TheTorProject The Tor Project]\n|permission=\n|other_versions=\n|other_fields=\n}}\n{{Closed captions}}\n=={{int:license-header}}==\n{{YouTube CC-BY|The Tor Project}}\n{{LicenseReview|site={{From YouTube|1=JWII85UlzKw|2=How Tor Browser Protects Your Privacy and Identity Online}}|user=Roy17|date=2019-01-21}}\n\n[[Category:Uploaded with video2commons]]\n[[Category:Tor Browser]]\n[[Category:Videos of 2015]]\n[[Category:Videos of information privacy]]"
+  },
+  "changes": "原件为固定修订正文；自然片段只截取连续原始 cue，原文和时间不改写；派生变体另行登记。",
+  "audit": "已检查 Commons 正文许可及原作品许可字段；该记录不是字幕语言真值的人工核对。"
+}

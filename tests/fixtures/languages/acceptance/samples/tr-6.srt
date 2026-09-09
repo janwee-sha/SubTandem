@@ -1,0 +1,23 @@
+0
+00:00:00,333 --> 00:00:04,504
+Bu video, viki biçimlendimesine dair bazı kullanım talimatlarının üzerinden geçer:
+
+1
+00:00:04,504 --> 00:00:06,606
+metni nasıl koyulaştırılır
+
+2
+00:00:06,606 --> 00:00:08,908
+ve diğer viki sayfalarına bağlantı veririz.
+
+3
+00:00:08,908 --> 00:00:11,845
+Bu videodaki her şeyi kendi 
+
+4
+00:00:11,845 --> 00:00:14,514
+kullanıcı deneme tahtanızda deneyebilirsiniz.
+
+5
+00:00:14,514 --> 00:00:17,083
+Eğer bir deneme tahtanız yoksa,

@@ -1,0 +1,75 @@
+7
+00:00:41,560 --> 00:00:47,880
+le mieux c'est d'aller sur Wikipédia que tout le monde connaît et si on prend un article au hasard,
+
+8
+00:00:47,880 --> 00:00:59,240
+alors je prends l'article du jour par exemple, vous allez voir que les articles Wikipédia
+
+9
+00:00:59,240 --> 00:01:04,800
+contiennent tout un tas de textes mais contiennent aussi ce qu'on appelle les infobox ou parfois on
+
+10
+00:01:04,800 --> 00:01:11,360
+a des informations ici avec un petit crayon sur la Wikipédia en français qui récupèrent des
+
+11
+00:01:11,360 --> 00:01:16,120
+données qui proviennent de Wikidata. C'est important parce que ça permet par exemple pour une
+
+12
+00:01:16,120 --> 00:01:21,640
+personne ou pour un sujet qui a des articles dans tout un tas de langues jusqu'à plus de
+
+13
+00:01:21,640 --> 00:01:26,160
+300 langues dans toutes les Wikipédias, on est sûr qu'on a les mêmes informations qui apparaissent
+
+14
+00:01:26,160 --> 00:01:32,640
+par exemple là le statut de conservation de l'espèce, l'espèce est en danger mais maintenu,
+
+15
+00:01:32,640 --> 00:01:36,960
+on est sûr que ça apparaîtra dans toutes les langues, si on va là en l'occurrence,
+
+16
+00:01:36,960 --> 00:01:42,240
+ça n'existe que dans 10 langues mais ça permet d'avoir des meilleures qualités de données et ça
+
+17
+00:01:42,320 --> 00:01:46,480
+permet de surtout ne les stocker qu'une seule fois dans Wikidata et d'éviter de les
+
+18
+00:01:46,480 --> 00:01:53,400
+recopier à la main des dizaines et des dizaines de fois. Vous pouvez imaginer pour les dates de
+
+19
+00:01:53,400 --> 00:02:00,680
+décès de personnes, la population d'un lieu, d'une commune, d'un pays, c'est régulièrement un
+
+20
+00:02:00,680 --> 00:02:06,000
+mètre à jour et c'est un peu idiot quelque part de devoir les mettre à jour dans chaque Wikipédia.
+
+21
+00:02:06,760 --> 00:02:13,800
+Wikidata sert de dépôt central pour ce genre de données, tout comme on a Cummins qui sert à
+
+22
+00:02:13,800 --> 00:02:19,080
+gérer les images pour tous les projets Wikimedia, on a Wikidata qui fait la même chose pour les
+
+23
+00:02:19,080 --> 00:02:25,800
+data, pour les données. Je parlais de centraliser, Wikidata sert aussi à faire le lien d'une
+
+24
+00:02:25,800 --> 00:02:31,160
+Wikipedia à l'autre, là on voit que cet article existe en 10 langues mais comment dire qu'un sujet
+
+25
+00:02:31,160 --> 00:02:37,440
+sur la Wikipedia en français est le même sujet que sur la Wikipedia en anglais, c'est grâce à Wikidata

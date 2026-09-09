@@ -1,0 +1,25 @@
+1
+00:00:03,506 --> 00:00:04,381
+Dobrý den!
+
+2
+00:00:04,859 --> 00:00:09,415
+Jsem Anatol Svahilec a vy právě
+sledujete 2 minuty s wikipedistkou.
+
+3
+00:00:13,230 --> 00:00:13,730
+Čas!
+
+4
+00:00:15,120 --> 00:00:16,297
+Wikipedistický jméno?
+
+5
+00:00:16,576 --> 00:00:18,016
+Daniella Opa.
+
+6
+00:00:18,465 --> 00:00:22,167
+Jaký je váš nejoblíbenější článek,
+který jste na Wikipedii vytvořila?

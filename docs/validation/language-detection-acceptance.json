@@ -1,0 +1,1851 @@
+{
+  "mode": "acceptance",
+  "corpus": {
+    "sources": "40657cc2b30b54fca9eb7e03604fb88a30117780fc174ec882cc35ea463488fa",
+    "groups": "dd1f7fc17ac2b4824203ab7707df1299526f9bf0c32641d957478a0797a3de2f",
+    "samples": "5d2ad3f471e63761e213bb3ac6abda2683e31b211cd12a55475877152c4334cf",
+    "truth": "11b2833513e338314d072c7f7f181adc55134e38b03efc69bc384a0add933fd7",
+    "strata": "28c8b94255d40c57bf902a1c7af6dd92ba6e1d9cc4265a1265da8ff3b69282e3",
+    "units": "9eaeeb0b32eb4953790ba3bd7d6053518598d62ba9816bb5e8fea8b65350d662"
+  },
+  "configuration": "32b1189bd2adfcaacbba636e22405fc412c232b522a8bba025f258efd4577b2c",
+  "build": "1e9a16fa3e27548601b3b5144107f0d4f3f1aaf09ffb9dde53e9670d5d06b30a",
+  "records": [
+    {
+      "sampleId": "acceptance-en-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "outcome": "correct",
+      "elapsedMs": 14.604167000000075,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-en-19",
+      "result": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "outcome": "correct",
+      "elapsedMs": 8.880333000000064,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-en-38",
+      "result": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "outcome": "correct",
+      "elapsedMs": 16.244666999999936,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-de-eleven",
+      "result": {
+        "state": "reliable",
+        "languageId": "de"
+      },
+      "outcome": "correct",
+      "elapsedMs": 4.1195829999999205,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-de-31",
+      "result": {
+        "state": "reliable",
+        "languageId": "de"
+      },
+      "outcome": "correct",
+      "elapsedMs": 4.538332999999966,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-de-19",
+      "result": {
+        "state": "reliable",
+        "languageId": "de"
+      },
+      "outcome": "correct",
+      "elapsedMs": 3.2189160000000356,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-de-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "de"
+      },
+      "outcome": "correct",
+      "elapsedMs": 1.8109999999999218,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-fr-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "fr"
+      },
+      "outcome": "correct",
+      "elapsedMs": 1.2642919999998412,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-fr-19",
+      "result": {
+        "state": "reliable",
+        "languageId": "fr"
+      },
+      "outcome": "correct",
+      "elapsedMs": 5.776375000000144,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-fr-31",
+      "result": {
+        "state": "reliable",
+        "languageId": "fr"
+      },
+      "outcome": "correct",
+      "elapsedMs": 8.842999999999847,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-es-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "es"
+      },
+      "outcome": "correct",
+      "elapsedMs": 3.1227499999999964,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-es-19",
+      "result": {
+        "state": "reliable",
+        "languageId": "es"
+      },
+      "outcome": "correct",
+      "elapsedMs": 3.641499999999951,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-es-31",
+      "result": {
+        "state": "reliable",
+        "languageId": "es"
+      },
+      "outcome": "correct",
+      "elapsedMs": 6.980125000000044,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-pt-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "pt"
+      },
+      "outcome": "correct",
+      "elapsedMs": 3.536750000000211,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-pt-19",
+      "result": {
+        "state": "reliable",
+        "languageId": "pt"
+      },
+      "outcome": "correct",
+      "elapsedMs": 7.16537500000004,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-pt-31",
+      "result": {
+        "state": "reliable",
+        "languageId": "pt"
+      },
+      "outcome": "correct",
+      "elapsedMs": 11.098083000000315,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-it-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "it"
+      },
+      "outcome": "correct",
+      "elapsedMs": 0.8588329999997768,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-it-19",
+      "result": {
+        "state": "reliable",
+        "languageId": "it"
+      },
+      "outcome": "correct",
+      "elapsedMs": 3.653707999999824,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-it-31",
+      "result": {
+        "state": "reliable",
+        "languageId": "it"
+      },
+      "outcome": "correct",
+      "elapsedMs": 6.661125000000084,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-hu-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "hu"
+      },
+      "outcome": "correct",
+      "elapsedMs": 0.6214169999998376,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-hu-19",
+      "result": {
+        "state": "reliable",
+        "languageId": "hu"
+      },
+      "outcome": "correct",
+      "elapsedMs": 2.8299589999996897,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-hu-31",
+      "result": {
+        "state": "reliable",
+        "languageId": "hu"
+      },
+      "outcome": "correct",
+      "elapsedMs": 4.719333000000006,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-sv-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "sv"
+      },
+      "outcome": "correct",
+      "elapsedMs": 1.9054590000000644,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-sv-19",
+      "result": {
+        "state": "reliable",
+        "languageId": "sv"
+      },
+      "outcome": "correct",
+      "elapsedMs": 2.8068749999997635,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-sv-31",
+      "result": {
+        "state": "reliable",
+        "languageId": "sv"
+      },
+      "outcome": "correct",
+      "elapsedMs": 3.0753750000003492,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-ru-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "ru"
+      },
+      "outcome": "correct",
+      "elapsedMs": 2.4119589999995696,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-ru-19",
+      "result": {
+        "state": "reliable",
+        "languageId": "ru"
+      },
+      "outcome": "correct",
+      "elapsedMs": 3.7650000000003274,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-uk-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "uk"
+      },
+      "outcome": "correct",
+      "elapsedMs": 0.7013750000000982,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-uk-15",
+      "result": {
+        "state": "reliable",
+        "languageId": "uk"
+      },
+      "outcome": "correct",
+      "elapsedMs": 1.9732919999996739,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-uk-31",
+      "result": {
+        "state": "reliable",
+        "languageId": "uk"
+      },
+      "outcome": "correct",
+      "elapsedMs": 8.551042000000052,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-pl-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "ha"
+      },
+      "outcome": "incorrect",
+      "elapsedMs": 0.7905000000000655,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-pl-15",
+      "result": {
+        "state": "reliable",
+        "languageId": "pl"
+      },
+      "outcome": "correct",
+      "elapsedMs": 3.1532909999996264,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-pl-31",
+      "result": {
+        "state": "reliable",
+        "languageId": "pl"
+      },
+      "outcome": "correct",
+      "elapsedMs": 4.144458000000213,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-cs-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "cs"
+      },
+      "outcome": "correct",
+      "elapsedMs": 0.6875,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-cs-19",
+      "result": {
+        "state": "reliable",
+        "languageId": "cs"
+      },
+      "outcome": "correct",
+      "elapsedMs": 4.395625000000109,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-nl-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "nl"
+      },
+      "outcome": "correct",
+      "elapsedMs": 1.9444170000001577,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-nl-19",
+      "result": {
+        "state": "reliable",
+        "languageId": "nl"
+      },
+      "outcome": "correct",
+      "elapsedMs": 5.998625000000175,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-nl-31",
+      "result": {
+        "state": "reliable",
+        "languageId": "nl"
+      },
+      "outcome": "correct",
+      "elapsedMs": 6.974707999999737,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-tr-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "tr"
+      },
+      "outcome": "correct",
+      "elapsedMs": 2.144666999999572,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-tr-19",
+      "result": {
+        "state": "reliable",
+        "languageId": "tr"
+      },
+      "outcome": "correct",
+      "elapsedMs": 4.101042000000234,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-tr-31",
+      "result": {
+        "state": "reliable",
+        "languageId": "tr"
+      },
+      "outcome": "correct",
+      "elapsedMs": 7.1492920000000595,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-ar-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "ar"
+      },
+      "outcome": "correct",
+      "elapsedMs": 0.6785829999998896,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-ar-31",
+      "result": {
+        "state": "reliable",
+        "languageId": "ar"
+      },
+      "outcome": "correct",
+      "elapsedMs": 1.4822910000002594,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-fa-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "fa"
+      },
+      "outcome": "correct",
+      "elapsedMs": 1.2258339999998498,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-fa-19",
+      "result": {
+        "state": "reliable",
+        "languageId": "fa"
+      },
+      "outcome": "correct",
+      "elapsedMs": 2.462000000000444,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-fa-31",
+      "result": {
+        "state": "reliable",
+        "languageId": "fa"
+      },
+      "outcome": "correct",
+      "elapsedMs": 5.017667000000074,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-ja-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "ja"
+      },
+      "outcome": "correct",
+      "elapsedMs": 0.3255410000001575,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-ja-17",
+      "result": {
+        "state": "reliable",
+        "languageId": "ja"
+      },
+      "outcome": "correct",
+      "elapsedMs": 1.9152079999994385,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-ko-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "ko"
+      },
+      "outcome": "correct",
+      "elapsedMs": 0.19020799999998417,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-ko-19",
+      "result": {
+        "state": "reliable",
+        "languageId": "ko"
+      },
+      "outcome": "correct",
+      "elapsedMs": 1.029750000000604,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-ko-31",
+      "result": {
+        "state": "reliable",
+        "languageId": "ko"
+      },
+      "outcome": "correct",
+      "elapsedMs": 1.1126669999994192,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-zh-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "zh-Hant"
+      },
+      "outcome": "correct",
+      "elapsedMs": 0.5047089999998207,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-zh-9",
+      "result": {
+        "state": "reliable",
+        "languageId": "zh-Hant"
+      },
+      "outcome": "correct",
+      "elapsedMs": 0.59637500000008,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-zh-31",
+      "result": {
+        "state": "reliable",
+        "languageId": "zh-Hant"
+      },
+      "outcome": "correct",
+      "elapsedMs": 1.9191670000000158,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-ha-6",
+      "result": {
+        "state": "reliable",
+        "languageId": "ha"
+      },
+      "outcome": "correct",
+      "elapsedMs": 1.3268749999997453,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-ha-19",
+      "result": {
+        "state": "reliable",
+        "languageId": "ha"
+      },
+      "outcome": "correct",
+      "elapsedMs": 6.136999999999716,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-ha-31",
+      "result": {
+        "state": "reliable",
+        "languageId": "ha"
+      },
+      "outcome": "correct",
+      "elapsedMs": 4.872708999999304,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-en-long-extra",
+      "result": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "outcome": "correct",
+      "elapsedMs": 9.267040999999153,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-es-long-extra",
+      "result": {
+        "state": "reliable",
+        "languageId": "es"
+      },
+      "outcome": "correct",
+      "elapsedMs": 6.207749999999578,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-pt-long-extra",
+      "result": {
+        "state": "reliable",
+        "languageId": "pt"
+      },
+      "outcome": "correct",
+      "elapsedMs": 8.32025000000067,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-fa-long-extra",
+      "result": {
+        "state": "reliable",
+        "languageId": "fa"
+      },
+      "outcome": "correct",
+      "elapsedMs": 4.774540999999772,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-ar-medium-extra",
+      "result": {
+        "state": "reliable",
+        "languageId": "ar"
+      },
+      "outcome": "correct",
+      "elapsedMs": 6.054208000000472,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-zh-hans",
+      "result": {
+        "state": "reliable",
+        "languageId": "zh-Hans"
+      },
+      "outcome": "correct",
+      "elapsedMs": 0.5791250000002037,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-unsupported-fi",
+      "result": {
+        "state": "unsupported"
+      },
+      "outcome": "unsupported",
+      "elapsedMs": 6.865250000000742,
+      "providerCalls": 0
+    },
+    {
+      "sampleId": "acceptance-unsupported-he",
+      "result": {
+        "state": "unsupported"
+      },
+      "outcome": "unsupported",
+      "elapsedMs": 7.5816249999998035,
+      "providerCalls": 0
+    },
+    {
+      "sampleId": "acceptance-unsupported-no",
+      "result": {
+        "state": "unsupported"
+      },
+      "outcome": "unsupported",
+      "elapsedMs": 5.637832999999773,
+      "providerCalls": 0
+    },
+    {
+      "sampleId": "acceptance-unsupported-eo",
+      "result": {
+        "state": "unsupported"
+      },
+      "outcome": "unsupported",
+      "elapsedMs": 6.76391700000022,
+      "providerCalls": 0
+    },
+    {
+      "sampleId": "acceptance-repeated-lyrics",
+      "result": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "outcome": "correct",
+      "elapsedMs": 5.506124999999884,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-romanized-mixed",
+      "result": {
+        "state": "reliable",
+        "languageId": "ln"
+      },
+      "outcome": "incorrect",
+      "elapsedMs": 0.7182499999998981,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-en-ass",
+      "result": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "outcome": "correct",
+      "elapsedMs": 12.816874999999527,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-de-twelve",
+      "result": {
+        "state": "reliable",
+        "languageId": "de"
+      },
+      "outcome": "correct",
+      "elapsedMs": 2.88183300000037,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-de-duration",
+      "result": {
+        "state": "reliable",
+        "languageId": "de"
+      },
+      "outcome": "correct",
+      "elapsedMs": 1.8681660000002012,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-romanized-only",
+      "result": {
+        "state": "reliable",
+        "languageId": "ln"
+      },
+      "outcome": "incorrect",
+      "elapsedMs": 0.9610000000002401,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-de-inside-word",
+      "result": {
+        "state": "reliable",
+        "languageId": "de"
+      },
+      "outcome": "correct",
+      "elapsedMs": 2.6274169999996957,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-zh-linebreaks",
+      "result": {
+        "state": "reliable",
+        "languageId": "zh-Hant"
+      },
+      "outcome": "correct",
+      "elapsedMs": 2.4326670000000377,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-zh-unspecified",
+      "result": {
+        "state": "reliable",
+        "languageId": "zh"
+      },
+      "outcome": "correct",
+      "elapsedMs": 0.11854099999982282,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-zh-conflicting",
+      "result": {
+        "state": "reliable",
+        "languageId": "zh"
+      },
+      "outcome": "correct",
+      "elapsedMs": 0.08291700000063429,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-zh-with-kana",
+      "result": {
+        "state": "reliable",
+        "languageId": "zh-Hant"
+      },
+      "outcome": "correct",
+      "elapsedMs": 1.129916000000776,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-sparse",
+      "result": {
+        "state": "reliable",
+        "languageId": "rw"
+      },
+      "outcome": "incorrect",
+      "elapsedMs": 0.4147080000002461,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-no-letters",
+      "result": {
+        "state": "unknown"
+      },
+      "outcome": "unknown",
+      "elapsedMs": 0.1750000000001819,
+      "providerCalls": 0
+    },
+    {
+      "sampleId": "acceptance-mixed-majority",
+      "result": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "outcome": "correct",
+      "elapsedMs": 3.121874999999818,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-mixed-40-35-25",
+      "result": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "outcome": "correct",
+      "elapsedMs": 7.20245900000009,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-mixed-supported-tie",
+      "result": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "outcome": "correct",
+      "elapsedMs": 2.000250000000051,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-mixed-unsupported-majority",
+      "result": {
+        "state": "reliable",
+        "languageId": "su"
+      },
+      "outcome": "incorrect",
+      "elapsedMs": 3.2364589999997406,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-mixed-unsupported-combined",
+      "result": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "outcome": "correct",
+      "elapsedMs": 4.473540999999386,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-mixed-small-supported",
+      "result": {
+        "state": "reliable",
+        "languageId": "jv"
+      },
+      "outcome": "incorrect",
+      "elapsedMs": 2.0738329999994676,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-mixed-supported-unsupported-tie",
+      "result": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "outcome": "correct",
+      "elapsedMs": 3.011333000000377,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-unsupported-mixed",
+      "result": {
+        "state": "reliable",
+        "languageId": "jv"
+      },
+      "outcome": "incorrect",
+      "elapsedMs": 5.3306249999996,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-mixed-within-cue",
+      "result": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "outcome": "correct",
+      "elapsedMs": 2.7339589999992313,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-mixed-interleaved",
+      "result": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "outcome": "correct",
+      "elapsedMs": 2.1422080000002097,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-mixed-over-budget",
+      "result": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "outcome": "correct",
+      "elapsedMs": 29.35974999999962,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-mixed-cue-conflict",
+      "result": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "outcome": "correct",
+      "elapsedMs": 2.5649160000002666,
+      "providerCalls": 3
+    },
+    {
+      "sampleId": "acceptance-mixed-duration-conflict",
+      "result": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "outcome": "correct",
+      "elapsedMs": 2.101042000000234,
+      "providerCalls": 3
+    }
+  ],
+  "strata": [
+    {
+      "stratum": "overall",
+      "denominator": 69,
+      "counts": {
+        "correct": 63,
+        "incorrect": 2,
+        "unknown": 0,
+        "unsupported": 4
+      },
+      "rates": {
+        "correct": 0.9130434782608695,
+        "incorrect": 0.028985507246376812,
+        "unknown": 0,
+        "unsupported": 0.057971014492753624
+      }
+    },
+    {
+      "stratum": "length:short",
+      "denominator": 22,
+      "counts": {
+        "correct": 21,
+        "incorrect": 1,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 0.9545454545454546,
+        "incorrect": 0.045454545454545456,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:en",
+      "denominator": 5,
+      "counts": {
+        "correct": 5,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "content:shared-script",
+      "denominator": 39,
+      "counts": {
+        "correct": 37,
+        "incorrect": 2,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 0.9487179487179487,
+        "incorrect": 0.05128205128205128,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "content:five-six-latin",
+      "denominator": 13,
+      "counts": {
+        "correct": 12,
+        "incorrect": 1,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 0.9230769230769231,
+        "incorrect": 0.07692307692307693,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "positive",
+      "denominator": 65,
+      "counts": {
+        "correct": 63,
+        "incorrect": 2,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 0.9692307692307692,
+        "incorrect": 0.03076923076923077,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "positive:short",
+      "denominator": 22,
+      "counts": {
+        "correct": 21,
+        "incorrect": 1,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 0.9545454545454546,
+        "incorrect": 0.045454545454545456,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "length:medium",
+      "denominator": 21,
+      "counts": {
+        "correct": 20,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 1
+      },
+      "rates": {
+        "correct": 0.9523809523809523,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0.047619047619047616
+      }
+    },
+    {
+      "stratum": "positive:medium",
+      "denominator": 20,
+      "counts": {
+        "correct": 20,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "length:long",
+      "denominator": 25,
+      "counts": {
+        "correct": 22,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 3
+      },
+      "rates": {
+        "correct": 0.88,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0.12
+      }
+    },
+    {
+      "stratum": "positive:long",
+      "denominator": 22,
+      "counts": {
+        "correct": 22,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:de",
+      "denominator": 4,
+      "counts": {
+        "correct": 4,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "content:german-eleven",
+      "denominator": 1,
+      "counts": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "content:short-phrases-names",
+      "denominator": 6,
+      "counts": {
+        "correct": 6,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:fr",
+      "denominator": 3,
+      "counts": {
+        "correct": 3,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "content:credits",
+      "denominator": 1,
+      "counts": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:es",
+      "denominator": 4,
+      "counts": {
+        "correct": 4,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:pt",
+      "denominator": 4,
+      "counts": {
+        "correct": 4,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:it",
+      "denominator": 3,
+      "counts": {
+        "correct": 3,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "content:italian-nineteen",
+      "denominator": 1,
+      "counts": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:hu",
+      "denominator": 3,
+      "counts": {
+        "correct": 3,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "content:hungarian-nineteen",
+      "denominator": 1,
+      "counts": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:sv",
+      "denominator": 3,
+      "counts": {
+        "correct": 3,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "content:swedish-nineteen",
+      "denominator": 1,
+      "counts": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:ru",
+      "denominator": 2,
+      "counts": {
+        "correct": 2,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "content:five-six-distinct-script",
+      "denominator": 7,
+      "counts": {
+        "correct": 7,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "content:russian-nineteen",
+      "denominator": 1,
+      "counts": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:uk",
+      "denominator": 3,
+      "counts": {
+        "correct": 3,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:pl",
+      "denominator": 3,
+      "counts": {
+        "correct": 2,
+        "incorrect": 1,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 0.6666666666666666,
+        "incorrect": 0.3333333333333333,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:cs",
+      "denominator": 2,
+      "counts": {
+        "correct": 2,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:nl",
+      "denominator": 3,
+      "counts": {
+        "correct": 3,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:tr",
+      "denominator": 3,
+      "counts": {
+        "correct": 3,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:ar",
+      "denominator": 3,
+      "counts": {
+        "correct": 3,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:fa",
+      "denominator": 4,
+      "counts": {
+        "correct": 4,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:ja",
+      "denominator": 3,
+      "counts": {
+        "correct": 2,
+        "incorrect": 1,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 0.6666666666666666,
+        "incorrect": 0.3333333333333333,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:ko",
+      "denominator": 3,
+      "counts": {
+        "correct": 3,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:zh",
+      "denominator": 5,
+      "counts": {
+        "correct": 4,
+        "incorrect": 1,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 0.8,
+        "incorrect": 0.2,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "content:zh-Hant",
+      "denominator": 3,
+      "counts": {
+        "correct": 3,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:ha",
+      "denominator": 3,
+      "counts": {
+        "correct": 3,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "content:natural-hausa",
+      "denominator": 3,
+      "counts": {
+        "correct": 3,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "content:zh-Hans",
+      "denominator": 1,
+      "counts": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "language:fi",
+      "denominator": 1,
+      "counts": {
+        "correct": 0,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 1
+      },
+      "rates": {
+        "correct": 0,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 1
+      }
+    },
+    {
+      "stratum": "content:unsupported-fi",
+      "denominator": 1,
+      "counts": {
+        "correct": 0,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 1
+      },
+      "rates": {
+        "correct": 0,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 1
+      }
+    },
+    {
+      "stratum": "language:he",
+      "denominator": 1,
+      "counts": {
+        "correct": 0,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 1
+      },
+      "rates": {
+        "correct": 0,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 1
+      }
+    },
+    {
+      "stratum": "content:unsupported-he",
+      "denominator": 1,
+      "counts": {
+        "correct": 0,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 1
+      },
+      "rates": {
+        "correct": 0,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 1
+      }
+    },
+    {
+      "stratum": "language:no",
+      "denominator": 1,
+      "counts": {
+        "correct": 0,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 1
+      },
+      "rates": {
+        "correct": 0,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 1
+      }
+    },
+    {
+      "stratum": "content:unsupported-no",
+      "denominator": 1,
+      "counts": {
+        "correct": 0,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 1
+      },
+      "rates": {
+        "correct": 0,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 1
+      }
+    },
+    {
+      "stratum": "language:eo",
+      "denominator": 1,
+      "counts": {
+        "correct": 0,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 1
+      },
+      "rates": {
+        "correct": 0,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 1
+      }
+    },
+    {
+      "stratum": "content:unsupported-other",
+      "denominator": 1,
+      "counts": {
+        "correct": 0,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 1
+      },
+      "rates": {
+        "correct": 0,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 1
+      }
+    },
+    {
+      "stratum": "content:repeated-lyrics",
+      "denominator": 1,
+      "counts": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 1,
+        "incorrect": 0,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "length:tiny",
+      "denominator": 1,
+      "counts": {
+        "correct": 0,
+        "incorrect": 1,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 0,
+        "incorrect": 1,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "content:romanized-japanese",
+      "denominator": 1,
+      "counts": {
+        "correct": 0,
+        "incorrect": 1,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 0,
+        "incorrect": 1,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "content:natural-mixed",
+      "denominator": 1,
+      "counts": {
+        "correct": 0,
+        "incorrect": 1,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 0,
+        "incorrect": 1,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    },
+    {
+      "stratum": "positive:tiny",
+      "denominator": 1,
+      "counts": {
+        "correct": 0,
+        "incorrect": 1,
+        "unknown": 0,
+        "unsupported": 0
+      },
+      "rates": {
+        "correct": 0,
+        "incorrect": 1,
+        "unknown": 0,
+        "unsupported": 0
+      }
+    }
+  ],
+  "variants": {
+    "denominator": 7,
+    "consistent": 7,
+    "records": [
+      {
+        "sampleId": "acceptance-en-ass",
+        "consistent": true
+      },
+      {
+        "sampleId": "acceptance-de-twelve",
+        "consistent": true
+      },
+      {
+        "sampleId": "acceptance-de-duration",
+        "consistent": true
+      },
+      {
+        "sampleId": "acceptance-de-inside-word",
+        "consistent": true
+      },
+      {
+        "sampleId": "acceptance-zh-linebreaks",
+        "consistent": true
+      },
+      {
+        "sampleId": "acceptance-mixed-cue-conflict",
+        "consistent": true
+      },
+      {
+        "sampleId": "acceptance-mixed-duration-conflict",
+        "consistent": true
+      }
+    ]
+  },
+  "metadataDirections": {
+    "denominator": 130,
+    "correct": 126
+  },
+  "failures": [
+    "acceptance-pl-6:required-accuracy",
+    "acceptance-romanized-mixed:required-accuracy",
+    "acceptance-mixed-unsupported-majority:required-accuracy",
+    "acceptance-mixed-small-supported:required-accuracy",
+    "acceptance-unsupported-mixed:behavior"
+  ]
+}

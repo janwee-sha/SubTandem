@@ -1,0 +1,2055 @@
+1
+00:00:00,000 --> 00:00:07,760
+Bonjour, bonjour tout le monde, bienvenue dans cette courte vidéo d'environ une heure
+
+2
+00:00:07,760 --> 00:00:12,080
+qui sert d'introduction à Wikidata pour les personnes débutantes.
+
+3
+00:00:12,080 --> 00:00:19,840
+L'idée c'est de revenir sur quelques bases, qu'est-ce que Wikidata, qu'est-ce que
+
+4
+00:00:19,840 --> 00:00:25,800
+contient Wikidata, comment ça fonctionne, comment créer un nouvel élément et éventuellement
+
+5
+00:00:25,800 --> 00:00:32,760
+pour finir quelques outils pour mieux être plus efficace dans sa contribution à Wikidata.
+
+6
+00:00:32,760 --> 00:00:41,560
+Avant de parler de Wikidata, le site lui-même, on va peut-être un peu parler de son utilité et donc
+
+7
+00:00:41,560 --> 00:00:47,880
+le mieux c'est d'aller sur Wikipédia que tout le monde connaît et si on prend un article au hasard,
+
+8
+00:00:47,880 --> 00:00:59,240
+alors je prends l'article du jour par exemple, vous allez voir que les articles Wikipédia
+
+9
+00:00:59,240 --> 00:01:04,800
+contiennent tout un tas de textes mais contiennent aussi ce qu'on appelle les infobox ou parfois on
+
+10
+00:01:04,800 --> 00:01:11,360
+a des informations ici avec un petit crayon sur la Wikipédia en français qui récupèrent des
+
+11
+00:01:11,360 --> 00:01:16,120
+données qui proviennent de Wikidata. C'est important parce que ça permet par exemple pour une
+
+12
+00:01:16,120 --> 00:01:21,640
+personne ou pour un sujet qui a des articles dans tout un tas de langues jusqu'à plus de
+
+13
+00:01:21,640 --> 00:01:26,160
+300 langues dans toutes les Wikipédias, on est sûr qu'on a les mêmes informations qui apparaissent
+
+14
+00:01:26,160 --> 00:01:32,640
+par exemple là le statut de conservation de l'espèce, l'espèce est en danger mais maintenu,
+
+15
+00:01:32,640 --> 00:01:36,960
+on est sûr que ça apparaîtra dans toutes les langues, si on va là en l'occurrence,
+
+16
+00:01:36,960 --> 00:01:42,240
+ça n'existe que dans 10 langues mais ça permet d'avoir des meilleures qualités de données et ça
+
+17
+00:01:42,320 --> 00:01:46,480
+permet de surtout ne les stocker qu'une seule fois dans Wikidata et d'éviter de les
+
+18
+00:01:46,480 --> 00:01:53,400
+recopier à la main des dizaines et des dizaines de fois. Vous pouvez imaginer pour les dates de
+
+19
+00:01:53,400 --> 00:02:00,680
+décès de personnes, la population d'un lieu, d'une commune, d'un pays, c'est régulièrement un
+
+20
+00:02:00,680 --> 00:02:06,000
+mètre à jour et c'est un peu idiot quelque part de devoir les mettre à jour dans chaque Wikipédia.
+
+21
+00:02:06,760 --> 00:02:13,800
+Wikidata sert de dépôt central pour ce genre de données, tout comme on a Cummins qui sert à
+
+22
+00:02:13,800 --> 00:02:19,080
+gérer les images pour tous les projets Wikimedia, on a Wikidata qui fait la même chose pour les
+
+23
+00:02:19,080 --> 00:02:25,800
+data, pour les données. Je parlais de centraliser, Wikidata sert aussi à faire le lien d'une
+
+24
+00:02:25,800 --> 00:02:31,160
+Wikipedia à l'autre, là on voit que cet article existe en 10 langues mais comment dire qu'un sujet
+
+25
+00:02:31,160 --> 00:02:37,440
+sur la Wikipedia en français est le même sujet que sur la Wikipedia en anglais, c'est grâce à Wikidata
+
+26
+00:02:37,440 --> 00:02:43,640
+qu'on peut faire ça. Donc là on va rentrer dans le sujet de Wikidata, en l'occurrence typiquement
+
+27
+00:02:43,640 --> 00:02:50,320
+je peux cliquer sur le petit bouton ici ou ici dans outils si je descends un peu je dois avoir
+
+28
+00:02:50,320 --> 00:02:57,400
+quelque part ici vers le bas élément Wikidata. Si je clique dessus j'atterris directement sur la
+
+29
+00:02:57,400 --> 00:03:03,320
+page de Wikidata de cet élément de cette espèce de cheval en l'occurrence la race poids de 20
+
+30
+00:03:03,320 --> 00:03:12,440
+glaciers. Ce qu'on voit dans Wikidata c'est qu'on commence par on a une URL qui contient un chiffre
+
+31
+00:03:12,440 --> 00:03:19,800
+ici vous le voyez le même chiffre on le retrouve ici ensuite et c'est ça qui va vraiment identifier
+
+32
+00:03:19,800 --> 00:03:26,440
+cette page cet élément on dit dans le jargon Wikidata ensuite on voit le différent de
+
+33
+00:03:26,440 --> 00:03:31,760
+informations textuelles ce qu'on appelle un libellé et une description en plusieurs langues en
+
+34
+00:03:31,760 --> 00:03:36,760
+français en allemand en anglais par exemple on peut dire que en français on appelle cette espèce
+
+35
+00:03:36,760 --> 00:03:44,280
+le poids de 20 glaciers et c'est une race de une race de cheval en allemand dit poids de 20 tout court
+
+36
+00:03:44,280 --> 00:03:49,880
+poids de vines sans doute en allemand voilà qui dit aussi que c'est une espèce une race de cheval
+
+37
+00:03:49,880 --> 00:03:59,120
+et en anglais précise horse à la fin pour dire que c'est spécifiquement un cheval ensuite on sait
+
+38
+00:03:59,120 --> 00:04:05,000
+là qu'on a les vraies informations les données des données structurées on va retrouver un peu comme
+
+39
+00:04:05,000 --> 00:04:10,400
+d'un infobox d'ailleurs c'est pour ça que je vous ai commencé par là on va trouver des paramètres
+
+40
+00:04:10,400 --> 00:04:16,560
+des valeurs générales les propriétés on appelle ça nature de l'élément qu'est ce que c'est de quoi
+
+41
+00:04:16,560 --> 00:04:23,320
+c'est une classe quelle image représente ce sujet et donc à chaque fois ça va par deux la propriété et
+
+42
+00:04:23,320 --> 00:04:29,080
+la valeur nature c'est des termes de chevaux sous classe de cheval de trait c'est pas n'importe quelle
+
+43
+00:04:29,080 --> 00:04:37,200
+race de cheval race de cheval des chevaux de course de loisirs ou de travail cheval de trait
+
+44
+00:04:38,200 --> 00:04:50,040
+une image la masse moyenne voilà en général il pèse 740 kg la population combien d'animaux il y a
+
+45
+00:04:50,040 --> 00:04:57,440
+etc etc si je descends vous allez voir qu'il ya beaucoup beaucoup d'informations et si je descends
+
+46
+00:04:57,440 --> 00:05:01,440
+tout en bas c'est là qu'on voit les fameux liens d'une wikipedia à l'autre pour dire bah c'est le
+
+47
+00:05:01,440 --> 00:05:08,680
+même sujet et même pas qu'entre les wikipedia mais aussi vers wikimedia commons en l'occurrence si
+
+48
+00:05:08,680 --> 00:05:15,120
+on veut voir plus d'images toutes ces informations elles ont été rentrées depuis la création de
+
+49
+00:05:15,120 --> 00:05:21,800
+wikidata il y a plus d'une dizaine d'années maintenant à la main avec des bottes de différentes
+
+50
+00:05:21,800 --> 00:05:29,240
+façons récupérer de sources et là tout ce que je fais c'est avec l'interface en français mais quand
+
+51
+00:05:29,240 --> 00:05:35,440
+je suis connecté à wikidata je peux toujours cliquer en haut et je peux passer en grec une
+
+52
+00:05:35,440 --> 00:05:41,320
+langue que je ne connais pas mais c'est pour vous démontrer vraiment la différence et vous allez
+
+53
+00:05:41,320 --> 00:05:46,560
+voir que au bout d'un peu de secondes on a toutes les informations qui apparaissent en grec alors pas
+
+54
+00:05:46,560 --> 00:05:54,800
+toutes toutes mais voilà qu'est ce que c'est etc vous voyez que là les toutes et voilà que 750
+
+55
+00:05:54,800 --> 00:06:04,520
+kg c'est ici en grec etc etc donc là pas le grec je vais avoir du mal à vous dire tout ça mais
+
+56
+00:06:04,520 --> 00:06:10,760
+vous voyez et si vous passez dans n'importe quelle langue que connaît wikidata et il y en a beaucoup
+
+57
+00:06:10,760 --> 00:06:18,000
+plus de 400 plus que les wikipedia vous pouvez obtenir une information dans votre propre langue
+
+58
+00:06:18,000 --> 00:06:23,600
+alors là je fais une vidéo français je m'adresse à des personnes à priori francophones je repasse
+
+59
+00:06:23,600 --> 00:06:29,000
+en français et on restera en français tout du long mais ça c'est important de savoir que dans
+
+60
+00:06:29,000 --> 00:06:41,440
+wikidata tout est toujours traduit ou traduisible en tout cas donc voilà ça c'est que un élément parmi
+
+61
+00:06:41,440 --> 00:06:46,680
+beaucoup d'autres wikidata et en l'occurrence il suffit que j'aille sur si je clique sur le logo en
+
+62
+00:06:46,680 --> 00:06:51,320
+haut je reviens sur la page d'accueil vous voyez que wikidata contient actuellement au moment où
+
+63
+00:06:51,320 --> 00:07:00,720
+j'ai chargé la page littéralement plus de 113 millions de 180 mille 340 éléments et le chiffre
+
+64
+00:07:00,720 --> 00:07:05,880
+augmente régulièrement il y en a beaucoup plus que d'articles sur wikipedia par exemple même les
+
+65
+00:07:05,880 --> 00:07:10,560
+plus grosses wikipedia la wikipedia en anglais par exemple n'a que 7 millions d'articles on a beaucoup
+
+66
+00:07:10,560 --> 00:07:20,240
+plus d'éléments un élément ça correspond plus ou moins à un article c'est un concept un sujet
+
+67
+00:07:20,240 --> 00:07:27,000
+sur lequel on va décrir des données des éléments il y en a beaucoup il y en a sur on l'a vu un
+
+68
+00:07:27,000 --> 00:07:35,120
+cheval une race de cheval ça peut aussi être une personne un document un lieu dans wikidata on
+
+69
+00:07:35,120 --> 00:07:45,200
+a énormément de choses on a des beaucoup le principal typologie qu'on va retrouver dans wikidata
+
+70
+00:07:45,200 --> 00:07:49,880
+ça va être ce qu'on appelle les articles scientifiques qui peuvent servir de référence pour les autres
+
+71
+00:07:49,880 --> 00:07:58,200
+éléments qui constitue presque la moitié de ces 113 millions après on va trouver beaucoup d'êtres
+
+72
+00:07:58,200 --> 00:08:02,400
+humains on va trouver beaucoup de lieux évidemment et on va trouver beaucoup de choses on va trouver des
+
+73
+00:08:02,400 --> 00:08:11,240
+épreuves aux jeux olympiques des chevaux particuliers des personnages de fiction on peut vraiment quasiment
+
+74
+00:08:11,240 --> 00:08:18,560
+tout mettre dans wikidata alors je dis tout mettre pas tout à fait vous pouvez pas créer un article
+
+75
+00:08:18,560 --> 00:08:23,640
+un élément sur vous sur wikidata tout comme on peut pas créer un article n'importe comment dans wikidata
+
+76
+00:08:23,640 --> 00:08:36,800
+dans wikpedia on a des règles qui reposent typiquement sur sur un seuil de notabilité donc le mieux c'est
+
+77
+00:08:36,800 --> 00:08:41,000
+que je commence par cliquer ici sur introduction on va retrouver quelques informations d'introduction
+
+78
+00:08:41,000 --> 00:08:46,240
+de wikidata vous voyez là aussi d'ailleurs qui est disponible en plusieurs longs donc wikidata est une
+
+79
+00:08:46,240 --> 00:08:51,040
+base de données libres collaboratives multilingues et secondaires qui collecte des données structurées
+
+80
+00:08:51,040 --> 00:08:56,480
+pour alimenter les autres projets wiki et même en dehors du monde wiki alors chacun des mots
+
+81
+00:08:56,480 --> 00:09:02,360
+importants si vous connaissez déjà wikipedia libre sous licence libre ça doit vous parler ça veut
+
+82
+00:09:02,360 --> 00:09:09,920
+dire que tout ce qu'on publie est publié sous une licence juridique qui permet à chacun de reprendre
+
+83
+00:09:09,920 --> 00:09:14,520
+ces données et d'en refaire d'autres choses c'est l'esprit wiki de partage de la connaissance
+
+84
+00:09:15,280 --> 00:09:21,160
+collaboratif bon bah ça c'est pareil c'est aussi l'esprit wikipedia de plusieurs on est plus fort
+
+85
+00:09:21,160 --> 00:09:28,640
+moi je ne connais pas tout sur les races de chevaux sur le monde en entier d'ailleurs mais à plusieurs
+
+86
+00:09:28,640 --> 00:09:34,600
+chacun peut apporter cette hyperédifice et construire une base de données aussi importante
+
+87
+00:09:34,600 --> 00:09:38,840
+multilingues ça j'en ai parlé je vous ai fait la petite démonstration comment on peut
+
+88
+00:09:38,840 --> 00:09:44,680
+passer d'une langue à l'autre et secondaire donc ça secondaire ça fait référence à ce que je
+
+89
+00:09:44,680 --> 00:09:49,920
+parlais à l'instant c'est que ça repose sur des sources vous pouvez pas inventer des choses
+
+90
+00:09:49,920 --> 00:09:55,000
+d'ambitie data si vous ajoutez une donnée c'est toujours important d'indiquer d'où elle vient
+
+91
+00:09:55,000 --> 00:09:59,960
+avec une référence et en particulier si c'est une donnée qui n'est pas évidente qui n'est pas
+
+92
+00:09:59,960 --> 00:10:07,440
+trivial s'il peut y avoir des des questionnements voire des désaccords bah c'est important de dire
+
+93
+00:10:07,440 --> 00:10:16,160
+non c'est pas moi qui dit que ce cheval fait 740 kg ça vient de telle institution de telle
+
+94
+00:10:16,160 --> 00:10:22,520
+provenance de telle source qui le dit moi je ne fais finalement en tant que wikidatien les personnes
+
+95
+00:10:22,520 --> 00:10:27,920
+ne font que transmettre les informations qu'elles ont récolté ailleurs d'où l'idée de secondaire
+
+96
+00:10:27,920 --> 00:10:35,520
+on s'appuie sur une source préexistante donnée structurée ça j'en ai parlé rapidement
+
+97
+00:10:35,520 --> 00:10:41,600
+aussi c'est toute la structuration l'organisation des informations et même plus exactement des
+
+98
+00:10:41,600 --> 00:10:47,000
+données qui sont faites avec ce qu'on appelle des propriétés des valeurs et on verra tout à l'heure
+
+99
+00:10:47,000 --> 00:10:56,480
+d'ailleurs plus en détail qui permet de faire que les données soient correctement entrées
+
+100
+00:10:56,480 --> 00:11:03,160
+qu'on puisse en assurer en partie la qualité en fait c'est pas juste de collecter toutes les
+
+101
+00:11:03,160 --> 00:11:11,080
+informations il faut encore un peu les les structurer de façon correcte si vous voulez cette page
+
+102
+00:11:11,080 --> 00:11:17,480
+qui est assez courte donne des informations je vous laisserai les regarder si vous voulez
+
+103
+00:11:17,480 --> 00:11:23,840
+je viens plus ou moins de dire ce qu'il y a écrit ici sur les données structurées justement il y a
+
+104
+00:11:23,840 --> 00:11:30,680
+cette page qui vous rappelle à chaque fois comment sont structurés les données d'une voilà mais le
+
+105
+00:11:30,680 --> 00:11:34,280
+mieux en l'occurrence pendant cette petite question c'est de regarder directement alors ce qu'on
+
+106
+00:11:34,280 --> 00:11:43,400
+peut faire c'est chercher Douglas Adams un auteur assez connu britannique et de voir comment sont
+
+107
+00:11:43,400 --> 00:11:49,920
+fait exactement les informations donc comme je disais tout à l'heure on a ce qu'on appelle
+
+108
+00:11:49,920 --> 00:11:58,040
+une paire d'informations une couple d'informations qui sont la propriété et la valeur la façon dont
+
+109
+00:11:58,040 --> 00:12:03,160
+vous pouvez y penser si ça peut vous aider à comprendre c'est de vous imaginer qu'on fait une
+
+110
+00:12:03,160 --> 00:12:11,000
+une phrase on fait une phrase en disant que Douglas Adams a pour nature d'être un être humain Douglas
+
+111
+00:12:11,000 --> 00:12:20,360
+Adams a pour image cette image Douglas Adams a pour signature bon voilà sa signature à pour
+
+112
+00:12:20,360 --> 00:12:27,960
+nationalité le royaume pays de nationalité le royaume ni etc etc et ce qui est important
+
+113
+00:12:27,960 --> 00:12:34,200
+c'est que ici vous voyez que plusieurs fois il y a des références qui sont indiquées c'est ce que
+
+114
+00:12:34,200 --> 00:12:38,600
+je disais d'ailleurs c'est une source secondaire donc on peut cliquer dessus deux références donc
+
+115
+00:12:38,600 --> 00:12:43,240
+là par exemple comment on sait que Douglas Adams c'est britannique c'est une connaissance que vous
+
+116
+00:12:43,240 --> 00:12:48,800
+avez peut-être déjà vous personnellement mais pour être sûr on indique bah là en l'occurrence
+
+117
+00:12:48,800 --> 00:12:54,440
+il y a la bnf la bibliothèque nationale de france ou idrf qui est aussi une bibliothèque
+
+118
+00:12:54,440 --> 00:13:01,920
+universitaire française qui nous confirme qui nous prouve que il est bien britannique si je veux
+
+119
+00:13:01,920 --> 00:13:06,560
+savoir quel est son deuxième prénom son naissance ce genre de choses bah ici je peux cliquer et voir
+
+120
+00:13:06,560 --> 00:13:14,920
+avec des informations qui préouvre quel est son nom un complet par opposition à juste son cours
+
+121
+00:13:14,920 --> 00:13:23,720
+Douglas Adams ou Douglas Noël Adams et on va le faire comme ça pour tout un tas d'informations
+
+122
+00:13:23,720 --> 00:13:28,880
+si vous cliquez vous pouvez prouver vérifier aussi vous même si vous tombez sur une information
+
+123
+00:13:28,880 --> 00:13:34,640
+vous êtes un peu surpris oh tiens cette ville est située en allemand tiens c'est bizarre si
+
+124
+00:13:34,640 --> 00:13:39,000
+je regarde sur une carte on a plutôt l'impression qu'elle est située en france bah vous pouvez
+
+125
+00:13:39,000 --> 00:13:44,200
+vérifier vous même sur une carte mais le mieux c'est de vérifier avec une source une source
+
+126
+00:13:44,200 --> 00:13:48,400
+officielle par exemple administrative qui vous dit oui oui cette commune est bien située à cet
+
+127
+00:13:48,520 --> 00:13:53,920
+endroit ci ou à cet endroit là s'il y avait vraiment une erreur donc là c'est pas le cas mais
+
+128
+00:13:53,920 --> 00:13:58,280
+s'il y avait vraiment une erreur on peut toujours d'ailleurs modifier les modifications se font
+
+129
+00:13:58,280 --> 00:14:03,680
+vraiment valeur par valeur et puis là par exemple s'il y avait deux s où entre haut je peux enlever
+
+130
+00:14:03,680 --> 00:14:11,800
+les des lettres donc là j'ai commencé par un exemple simple qui est un champ de texte mais dans la
+
+131
+00:14:11,800 --> 00:14:18,840
+plupart des cas en fait dans wikidata on a des les valeurs ici sont elles-mêmes d'autres d'autres
+
+132
+00:14:18,840 --> 00:14:24,920
+éléments wikidata et comme ça on peut les relier structurer comme je disais d'ailleurs les éléments
+
+133
+00:14:24,920 --> 00:14:29,600
+les uns avec les autres donc là par exemple imaginons qu'il n'est pas seulement britannique mais qu'il
+
+134
+00:14:29,600 --> 00:14:35,040
+a aussi la nationalité allemande donc son pays de nationalité c'est l'allemagne je peux commencer
+
+135
+00:14:35,040 --> 00:14:39,400
+à taper et là je peux pas sauvegarder tout de suite je peux pas publier il faut que je dise
+
+136
+00:14:39,400 --> 00:14:44,840
+quel pays je parle est-ce que c'est bien l'allemagne un pays au centre de l'europe ou est-ce que c'est
+
+137
+00:14:44,840 --> 00:14:49,320
+une personnalité historique donc par exemple vous pourrez parler de l'allemagne de l'est ou l'allemagne
+
+138
+00:14:49,320 --> 00:14:55,640
+impériale l'allemagne de l'ouest quelque chose qui est plus ancien et pareil si je mets un pays si
+
+139
+00:14:55,640 --> 00:15:01,720
+je mets congo par exemple est-ce que je parle du la république démocratique du conglot ou juste la
+
+140
+00:15:01,720 --> 00:15:08,920
+république du congo il ya deux pays qui ont un peu le même nom c'est important de sélectionner le bon
+
+141
+00:15:08,920 --> 00:15:12,600
+et vous voyez que vous avez des précisions donc là entre parenthèses par exemple congo qui chassa et
+
+142
+00:15:12,600 --> 00:15:18,440
+congo bras à ville mais vous avez aussi la possibilité en dessous de venir la description pays d'afrique
+
+143
+00:15:18,440 --> 00:15:22,920
+centrale ayant qu'une chassa comme capitale pays d'afrique centrale dans la capitale et bras à
+
+144
+00:15:22,920 --> 00:15:27,160
+ville et comme ça je suis sûr de pas me tromper et je ne sélectionne pas non plus congo le fleuve
+
+145
+00:15:27,160 --> 00:15:32,880
+ici congo le fleuve pour nationalité ça ne voudrait rien dire donc là en l'occurrence il n'est pas
+
+146
+00:15:32,880 --> 00:15:38,040
+congolais jadu je ne sauvegarde pas mais on peut faire comme ça donc là j'avais cliqué sur ajouter
+
+147
+00:15:38,040 --> 00:15:43,760
+une valeur ça c'est pour ajouter une valeur modifiée une valeur existante mais sinon je peux descendre tout
+
+148
+00:15:43,760 --> 00:15:48,800
+en bas voilà je vais pas trop vite
+
+149
+00:16:01,800 --> 00:16:05,560
+on va prendre un élément qui est moins lourd assis voilà par
+
+150
+00:16:09,040 --> 00:16:15,320
+donc excusez-moi pour le petit cafouillage quand vous êtes tout en bas ici vous avez
+
+151
+00:16:15,320 --> 00:16:19,080
+ce qu'on appelle ajouter une déclaration et là je peux ajouter carrément une nouvelle déclaration
+
+152
+00:16:19,080 --> 00:16:24,800
+donc là en l'occurrence c'est pas forcément un bon exemple je n'ai pas de grand chose à
+
+153
+00:16:24,800 --> 00:16:31,080
+dire de plus sur Douglas Adams c'est un élément qui est très bien rempli c'est pour ça que je
+
+154
+00:16:31,080 --> 00:16:41,240
+ai pris un exemple donc je vais annuler ce qu'on ce que font les gens dans wikidata c'est que
+
+155
+00:16:41,240 --> 00:16:45,280
+chacun apporte un peu ses petits pierres et dix fils c'est le côté collaboratif dont je parlais
+
+156
+00:16:45,280 --> 00:16:52,920
+tout à l'heure et chacun ajoute des informations comme il veut alors et pour s'assurer que tout le
+
+157
+00:16:52,920 --> 00:16:59,760
+monde travaille ensemble harmonieusement et intelligemment on a dans wikidata quelques
+
+158
+00:16:59,760 --> 00:17:06,080
+outils qui permettent de s'assurer la qualité des données donc là on le voit on ne voit pas
+
+159
+00:17:06,080 --> 00:17:12,800
+beaucoup on l'a vu ici mais je vais se trouver un autre endroit comme vous voyez Douglas Adams
+
+160
+00:17:12,800 --> 00:17:19,840
+est très bien rempli la page est très longue donc là on est dans tout ce qui est identifié en
+
+161
+00:17:19,840 --> 00:17:27,920
+externe ça c'est peut-être quelque chose que je peux faire vous voyez que en général il n'y a pas
+
+162
+00:17:27,920 --> 00:17:31,040
+grand chose il y a trois petits points mais ça c'est moi qui l'ajoutais dans mon interface
+
+163
+00:17:31,040 --> 00:17:34,600
+normalement vous l'avez pas par défaut mais ça par contre c'est pour tout le monde c'est que quand
+
+164
+00:17:34,600 --> 00:17:40,840
+il y a un problème quelle que soit la nature on a des petits symboles des petites icônes qui nous
+
+165
+00:17:40,840 --> 00:17:46,840
+signalent ce qui ce qui serait à corriger ou à améliorer alors on a trois niveaux de ce qu'on
+
+166
+00:17:46,840 --> 00:17:52,320
+appelle une contrainte donc la première contrainte c'est juste ce petit drapeau avec un petit triomphe
+
+167
+00:17:52,320 --> 00:17:58,560
+qui sert juste à indiquer qu'il faut améliorer quelque chose c'est une suggestion c'est le premier
+
+168
+00:17:58,560 --> 00:18:03,840
+niveau c'est pas très grave mais il faudrait l'améliorer ensuite le niveau suivant c'est un point
+
+169
+00:18:03,840 --> 00:18:08,440
+d'esclamation là il y a quelque chose qui commence à être problématique qu'il faut vraiment vérifier
+
+170
+00:18:08,440 --> 00:18:14,320
+et le niveau le plus grave et le plus rare c'est un éclair et là c'est quelque chose qui va vraiment
+
+171
+00:18:14,320 --> 00:18:19,720
+pas du tout par exemple si vous mettez une date de naissance d'une personne qui se situe après sa
+
+172
+00:18:19,720 --> 00:18:25,320
+date de mort bah c'est pas possible on commence par naître et on finit par mourir on peut pas avoir
+
+173
+00:18:25,320 --> 00:18:30,720
+une date de naissance que si tu apprends une date de mort si vous indiquez pays de nationalité et que
+
+174
+00:18:30,720 --> 00:18:38,200
+vous avez mis congolais congou le le fleuve il vous dire pareil ça c'est pas possible un pays de
+
+175
+00:18:38,200 --> 00:18:42,880
+nationalité c'est forcément un pays et ça week data il y a des mécanismes internes qui permettent
+
+176
+00:18:42,880 --> 00:18:46,920
+de vérifier et d'indiquer donc là par exemple je ne sais pas pourquoi mais dans la bibliothèque
+
+177
+00:18:46,920 --> 00:18:53,960
+royale des pays bas il y a deux de valeur il a deux notices apparemment donc si je clique dessus
+
+178
+00:18:53,960 --> 00:18:59,880
+il va me dire sans doute ça c'est autre chose ça me dit si c'est une bibliothèque des pays bas
+
+179
+00:18:59,880 --> 00:19:05,840
+alors il doit avoir un libellé en irlandais on va essayer de trouver notre petit drapeau qui
+
+180
+00:19:05,840 --> 00:19:12,920
+va peut-être être plus parlant là il y a un petit drapeau ici là il y a le fameux point d'esclamation
+
+181
+00:19:12,920 --> 00:19:18,760
+quelque chose de plus grand on va commencer par regarder ici donc là ça c'est une chose s'il
+
+182
+00:19:18,760 --> 00:19:22,480
+a un truc ici doit être en lituanien bon on va regarder celle là justement et à chaque fois il
+
+183
+00:19:22,480 --> 00:19:29,080
+suffit de cliquer dessus et il me dit ce qui se passe alors là le problème c'est que quelqu'un
+
+184
+00:19:29,080 --> 00:19:37,320
+a mis des informations et en l'occurrence créé pas mais en fait il nous dit si je clique dessus
+
+185
+00:19:37,320 --> 00:19:43,800
+qu'il y a une contrainte de callicatif permis et c'est pas possible de mettre créé pas les
+
+186
+00:19:43,800 --> 00:19:47,600
+seuls qui sont valides c'est la liste qui est là qui est pas complète d'ailleurs donc là le créé
+
+187
+00:19:47,600 --> 00:19:53,880
+part par exemple il n'a rien à faire ici donc je peux modifier et retirer en plus l'occurrence
+
+188
+00:19:53,880 --> 00:19:57,560
+moi je connais bien wikidata mais vu que c'est un identifiant de la bibliothèque des congrès
+
+189
+00:19:57,560 --> 00:20:01,400
+c'est forcément créé par la bibliothèque de congrès donc là si je publie vous allez voir
+
+190
+00:20:01,400 --> 00:20:07,720
+que le petit point d'esclamation tout à l'heure qui indique un problème a disparu on peut remonter
+
+191
+00:20:07,720 --> 00:20:13,640
+un petit peu plus haut peut-être en trouver un autre identifiant quantique donc là c'est pareil
+
+192
+00:20:13,640 --> 00:20:20,720
+une équipe de hérone du catalan après double asadams normalement c'est un truc qui n'est pas de
+
+193
+00:20:20,720 --> 00:20:26,440
+problème donc il n'y a rien d'autre à me dire ce que je vais faire c'est que je vais aller sur
+
+194
+00:20:26,440 --> 00:20:33,280
+un élément un peu particulier qui s'appelle le sac bac à sable wikidata celui là et là je peux
+
+195
+00:20:33,280 --> 00:20:39,720
+modifier tout ce que je veux c'est là voilà pour amuser les contributeurs pour tester amuser c'est
+
+196
+00:20:39,720 --> 00:20:45,640
+peut-être un truc un peu un peu abusif comme terme mais c'est ça c'est un endroit où on peut tester
+
+197
+00:20:45,640 --> 00:20:51,880
+et faire des choses donc là par exemple vous voyez que quelqu'un a fait plein d'essais
+
+198
+00:20:51,880 --> 00:20:59,080
+et a mis plein de choses mais je peux ajouter bah comme je disais tout à l'heure donc pays donc
+
+199
+00:20:59,080 --> 00:21:04,600
+je tape pays pays nationalité par exemple et si je mets congo mais que je choisis par exemple
+
+200
+00:21:04,600 --> 00:21:12,560
+le fleuve et que je publie normalement je vais avoir une une erreur voilà il nous dit là on a une
+
+201
+00:21:12,560 --> 00:21:18,160
+contrainte qu'on appelle une contrainte de type il y a un tas de contraintes différentes et là
+
+202
+00:21:18,160 --> 00:21:22,120
+en l'occurrence les entités qui déclarent pays nationalité doit être des instances sous les
+
+203
+00:21:22,120 --> 00:21:30,640
+classes de pays alors il y a deux choses c'est que pays de nationalité ça doit être utilisé sur
+
+204
+00:21:30,640 --> 00:21:35,160
+des personnes des êtres humains ou des personnages de fiction donc il y a un premier problème de sur
+
+205
+00:21:35,160 --> 00:21:39,840
+quel type d'éléments j'ai utilisé l'élément cette propriété et il y a une deuxième contrainte en
+
+206
+00:21:39,840 --> 00:21:44,160
+dessous là il y en a deux la contrainte de type pour la valeur c'est que c'est ce qui nous dit
+
+207
+00:21:44,160 --> 00:21:49,760
+pays nationalité doit être un état ou un pays de fiction à une nation éventuellement un territoire
+
+208
+00:21:49,760 --> 00:21:55,600
+indépendant une planète de fiction pourquoi pas nationalité etc mais congo est un fleuve donc ça
+
+209
+00:21:55,600 --> 00:22:01,560
+c'est pas cohérent donc ça c'est un élément on peut faire des essais je peux ajouter et retirer
+
+210
+00:22:01,560 --> 00:22:10,760
+comme je veux on peut faire un autre essai que je titre comme je disais tout à l'heure exemple
+
+211
+00:22:10,760 --> 00:22:17,680
+titre titre du neuf le plus bon livre je j'invente n'importe quoi de plus au livre
+
+212
+00:22:17,680 --> 00:22:24,760
+et dire que le titre est en français français attention il n'y en a plusieurs donc ça pourrait
+
+213
+00:22:24,760 --> 00:22:28,960
+être est ce que c'est du français suisse du français canadien c'est du français et je peux
+
+214
+00:22:28,960 --> 00:22:37,400
+sauvegarder on peut aussi ajouter ce qu'on disait tout à l'heure un qualificatif alors je vais enlever
+
+215
+00:22:37,400 --> 00:22:41,640
+titre qualificatif c'est très parlant typiquement pour ce qu'on appelle la population ou ce genre de
+
+216
+00:22:41,640 --> 00:22:47,000
+toutes ces données de quantité qui peuvent évoluer dans le temps donc là par exemple on imagine
+
+217
+00:22:47,000 --> 00:22:51,000
+qu'on est sur une commune on peut dire que la population est de mille je peux préciser de
+
+218
+00:22:51,000 --> 00:22:58,760
+quoi d'ailleurs est-ce que c'est mille vaches est-ce que c'est mille chien on peut préciser de
+
+219
+00:22:58,760 --> 00:23:03,920
+quel type de population je pars en général c'est une population humaine il n'y a pas besoin de le
+
+220
+00:23:03,920 --> 00:23:08,760
+préciser et je peux indiquer un qualificatif donc là par exemple une population c'est important de
+
+221
+00:23:08,760 --> 00:23:13,920
+dire à quel moment la population est vraie donc là c'est ce qui nous propose un d'ailleurs assez
+
+222
+00:23:13,920 --> 00:23:19,840
+intelligemment automatiquement la dalle donc ça la population de mille elle était vraie en 2024 par
+
+223
+00:23:19,840 --> 00:23:26,240
+exemple et d'ailleurs je peux mettre 204 0101 pour dire que c'est le 1er janvier 2024 exactement
+
+224
+00:23:27,240 --> 00:23:33,040
+et là je publie et là vous avez une dien tout à l'heure Nicolas tu m'as dit bah il faut une référence
+
+225
+00:23:33,040 --> 00:23:39,120
+et d'ailleurs c'est exactement ce qui devrait nous dire là je pense donc il nous dit c'est pas un
+
+226
+00:23:39,120 --> 00:23:43,040
+territoire donc c'est normal c'est pas c'est bizarre il nous dit et bah attention il devrait
+
+227
+00:23:43,040 --> 00:23:49,320
+y avoir méthode de détermination et je pensais qu'il me dirait attention il faut une référence mais
+
+228
+00:23:49,320 --> 00:23:55,240
+apparemment il ne me le dit pas donc méthode de détermination bah voilà on peut mettre donc
+
+229
+00:23:55,240 --> 00:24:00,160
+par exemple typiquement pour une population c'est recensement recensement de la population par
+
+230
+00:24:00,160 --> 00:24:06,760
+exemple et là le bouton donc là il n'a pas totalement disparu parce que la première contrainte
+
+231
+00:24:06,760 --> 00:24:10,840
+est toujours là mais la deuxième qui était en dessous a disparu et ajouter une référence ça
+
+232
+00:24:10,840 --> 00:24:16,520
+se fait de la même façon la différence c'est que la référence ça peut être une url est-ce que
+
+233
+00:24:16,520 --> 00:24:24,760
+je l'élu sur https normalement vous cliquez juste sur rien mais là je peux mettre exemple.com c'est
+
+234
+00:24:24,760 --> 00:24:33,600
+là je l'ai eu et je peux publier ou est-ce que ma référence je l'ai vu dans un document et là
+
+235
+00:24:33,600 --> 00:24:38,680
+je peux mettre affirmé dans et là je vais pas mettre un lien url je vais mettre un document je vais
+
+236
+00:24:38,680 --> 00:24:47,360
+mettre dictionnaire des parlementaires français par exemple dictionnaire historique de la suisse par
+
+237
+00:24:47,360 --> 00:24:50,600
+exemple si j'étais sur une population d'une commune suisse voilà je peux le dire mettre comme ça
+
+238
+00:24:51,240 --> 00:24:57,280
+et donc c'est bien de mettre le document mais là c'est aussi bien de mettre typiquement dans un
+
+239
+00:24:57,280 --> 00:25:05,240
+document on peut mettre une page par exemple page et je l'ai eu page 36 et là toujours une fois
+
+240
+00:25:05,240 --> 00:25:10,840
+que j'ai fait je peux cliquer sur publier et vous voyez l'information qui est sur c et vous voyez
+
+241
+00:25:10,840 --> 00:25:14,680
+bien qu'il y a deux références différentes on peut y distinguer avec les couleurs alors qu'ils
+
+242
+00:25:14,680 --> 00:25:20,040
+n'ont pas toujours toujours très bien les visibles mais il y a un bleu ici qui permet de se séparer
+
+243
+00:25:20,040 --> 00:25:32,440
+voilà pour la base des données dans Wikidata comme on fait chaque propriété possède des
+
+244
+00:25:32,440 --> 00:25:39,000
+contraintes particulières possède des typologies particulières typiquement si je mets image il
+
+245
+00:25:39,000 --> 00:25:44,880
+va me demander une image sur commons donc que je peux commencer à taper alors je peux aller sur
+
+246
+00:25:44,880 --> 00:25:50,680
+commons et copier coller ben il y a un peu de faire ça directement je vais sur commons je prends
+
+247
+00:25:50,680 --> 00:25:56,280
+une image du jour par exemple un panier de presta de pétra pourquoi pas et je peux copier copiler
+
+248
+00:25:56,280 --> 00:26:03,960
+le nom ici et d'ailleurs maintenant il va me le trouver ici ou éventuellement mais ça ça
+
+249
+00:26:03,960 --> 00:26:10,600
+marche pas tous les coups mais si je mets suisse par exemple il va me proposer des fichiers en
+
+250
+00:26:10,600 --> 00:26:15,040
+lien avec la suisse alors le problème c'est qu'il peut y en avoir beaucoup beaucoup et ça va pas être
+
+251
+00:26:15,040 --> 00:26:24,440
+très parlant mais je peux cliquer comme ça et on rentre bien un lien vers une image et c'est
+
+252
+00:26:24,440 --> 00:26:29,120
+bien une image qui apparaît à l'écran c'est la différence entre stocker une donnée et la
+
+253
+00:26:29,120 --> 00:26:34,840
+donnée qui est affichée à votre écran sur votre ordinateur je l'ai vu rapidement tout à l'heure
+
+254
+00:26:34,840 --> 00:26:41,680
+mais je vais préciser si je mets une date par exemple une date de naissance je peux rentrer
+
+255
+00:26:41,680 --> 00:26:49,960
+juste 1950 c'est une date il a compris automatiquement que c'était une année mais je peux dire que non
+
+256
+00:26:49,960 --> 00:26:55,160
+en fait c'est au jour près et donc là il va comprendre il va pas comprendre l'occurrence
+
+257
+00:26:55,160 --> 00:27:00,040
+si je mets de supérieur par exemple 20 siècles il va comprendre que c'est 20e siècle et ça sera
+
+258
+00:27:00,040 --> 00:27:06,360
+qui sera affiché même si ce qu'on stocke derrière c'est 1950 et je peux mettre par exemple
+
+259
+00:27:06,360 --> 00:27:19,440
+01 pour dire que c'est par contre il faut que j'allie recommencer 1950 01 il est resté
+
+260
+00:27:19,520 --> 00:27:26,320
+et donc qu'il comprend automatiquement là que c'est janvier 1950 puis si je mets la
+
+261
+00:27:26,320 --> 00:27:31,960
+précision c'est 25 janvier voilà il va trouver normalement il trouve automatiquement mais je
+
+262
+00:27:31,960 --> 00:27:36,920
+peux forcer à la main pour dire que maintenant c'est au jour au mois à l'année à laquelle
+
+263
+00:27:36,920 --> 00:27:43,360
+précision pour des personnes de naissance en soixante ou souvent au jour au mois année éventuellement
+
+264
+00:27:43,360 --> 00:27:52,000
+en siècle mais vous pouvez imaginer pour une montagne à quel moment une montagne a émergé à quelle
+
+265
+00:27:52,000 --> 00:27:58,160
+époque une espèce animale faut aussi l'exister ce genre de choses ben on peut imaginer tout ce
+
+266
+00:27:58,160 --> 00:28:04,160
+qui est formation des étoiles là on est plutôt sur des milliards d'années je peux se regarder
+
+267
+00:28:04,160 --> 00:28:07,680
+comme je disais c'est un élément maquassable donc là vous voyez d'ailleurs je parlais
+
+268
+00:28:07,680 --> 00:28:10,680
+tout à l'heure des contraintes ben voilà la troisième type de contrainte c'est ce petit
+
+269
+00:28:10,680 --> 00:28:15,680
+drapeau ici ce petit éclair et là si je clique dessus il me dit qu'il y a vraiment quelque chose
+
+270
+00:28:15,680 --> 00:28:20,680
+qui va pas et typiquement date de naissance c'est vraiment que pour les êtres humains il y a
+
+271
+00:28:20,680 --> 00:28:24,120
+quelque chose qui va avoir vraiment pas du tout et une date de naissance parce que ce que je disais
+
+272
+00:28:24,120 --> 00:28:29,240
+tout à l'heure il faut une référence là c'est vraiment nécessaire c'est tellement facile de
+
+273
+00:28:29,240 --> 00:28:34,280
+se tromper dans une date de naissance puis ça concerne des personnes donc pour le droit à la vie
+
+274
+00:28:34,280 --> 00:28:40,880
+privée il faut faire attention à bien rentrer des informations voilà
+
+275
+00:28:40,880 --> 00:28:51,720
+pour l'essentiel de ce que contient Wikidata comment ajouter des informations une dernière
+
+276
+00:28:51,720 --> 00:28:56,000
+chose c'est que là j'ai modifié des éléments existants mais éventuellement vous pouvez avoir
+
+277
+00:28:56,000 --> 00:29:01,200
+besoin de créer un nouvel élément donc là alors si vous avez une ancienne interface le bouton est
+
+278
+00:29:01,200 --> 00:29:07,120
+directement disponible à gauche moi j'ai la nouvelle interface 2022 donc il faut que je clique
+
+279
+00:29:07,120 --> 00:29:11,280
+ici sur ce petit bouton pour la faire apparaître mais sinon je peux faire déplacer ici et vous
+
+280
+00:29:11,280 --> 00:29:16,760
+avez quelque chose qui ressemble peut-être plus à ça et surtout vous avez le bouton ici donc là
+
+281
+00:29:16,760 --> 00:29:22,040
+créer un nouvel élément et donc créer un nouvel élément ça permet de créer un nouvel élément
+
+282
+00:29:22,040 --> 00:29:28,360
+à partir de zéro pour commencer on donne juste le libre et la description en français ou dans
+
+283
+00:29:28,360 --> 00:29:34,440
+toute l'autre langue que vous voulez et vous retrouvez avec un élément vide sur lequel vous
+
+284
+00:29:34,440 --> 00:29:39,240
+pouvez ajouter des informations comme je vous ai montré à l'instant rien de très particulier là dessus
+
+285
+00:29:39,240 --> 00:29:47,080
+ça c'est la méthode manuelle et on peut le faire et c'est important d'ailleurs il y a beaucoup de
+
+286
+00:29:47,080 --> 00:29:50,400
+contributeurs sur Wikidata qu'ils font de façon manuelle si je regarde ici par exemple dans la
+
+287
+00:29:50,400 --> 00:30:02,280
+modification récente vous avez voir on trouve que chaque minute il y a des êtres mains qui vérifient
+
+288
+00:30:02,280 --> 00:30:07,680
+des choses qui précisent des choses qui voilà des corrections voilà il y a différentes façons de
+
+289
+00:30:07,680 --> 00:30:13,320
+le faire donc là vous voyez que à 17h13 aujourd'hui vous trouvez tous ce genre d'informations
+
+290
+00:30:13,320 --> 00:30:22,520
+avec des ajouts des retraits aussi parfois quelqu'un a tiré une information ici des
+
+291
+00:30:22,520 --> 00:30:26,280
+ajouts aussi divers que variés donc là par exemple hôtel il y a eu deux modifications
+
+292
+00:30:26,280 --> 00:30:32,120
+on peut les voir on peut aller dans l'historique comme on peut aller dans un historique dans Wikidata
+
+293
+00:30:32,120 --> 00:30:37,720
+et on peut retrouver qui a fait quelle information donc là vous voyez que c'est le pseudonyme
+
+294
+00:30:37,720 --> 00:30:46,160
+Tadej M qui a ajouté un libellé une description dans ce qui ressemble à du sloven mais vous voyez
+
+295
+00:30:46,160 --> 00:30:49,720
+qu'avant ça il y a beaucoup de personnes qui sont passées chacune les uns après les autres
+
+296
+00:30:49,720 --> 00:30:58,360
+ajouter des informations là ça a l'air d'être beaucoup d'informations manuelles vous imaginez
+
+297
+00:30:58,360 --> 00:31:04,280
+bien quand même que pour atteindre en une dizaine d'années 113 millions d'éléments tout n'est pas
+
+298
+00:31:04,280 --> 00:31:09,160
+fait à la main on peut pas toujours tout faire à la main donc c'est pour ça que dans Wikidata on
+
+299
+00:31:09,160 --> 00:31:16,520
+possède tout un tas d'outils qui permettent de nous faciliter la vie et qui permettent de
+
+300
+00:31:16,520 --> 00:31:23,080
+faire des remplacements en masse des imports de données en masse ou simplement repérer des problèmes
+
+301
+00:31:23,080 --> 00:31:32,240
+parce que chaque élément est séparé mais parfois on veut regarder avoir une vue d'ensemble et
+
+302
+00:31:32,240 --> 00:31:41,840
+donne moi tous les auteurs nés en suisse avant 1950 et on va vérifier qu'ils ont tous un article
+
+303
+00:31:41,840 --> 00:31:45,160
+qui pédia par exemple si on s'entraîne à créer des articles qui pédia sur tous les auteurs
+
+304
+00:31:45,160 --> 00:31:50,760
+d'un pays ou ce genre de choses pour faire ça on a un outil enfin plusieurs outils mais celui qui est
+
+305
+00:31:50,760 --> 00:31:53,720
+le plus souvent utilisé que je vais vous montrer c'est celui qu'on appelle le service de requête
+
+306
+00:31:53,720 --> 00:32:00,680
+service de requête sparkle puisque sparkle est le langage qu'on utilise je n'ai pas le temps de
+
+307
+00:32:00,680 --> 00:32:06,400
+m'appesantir là dessus je vais vous faire une rapide démonstration on tape ici un code un code
+
+308
+00:32:06,400 --> 00:32:12,680
+informatique qu'il faut assez pas toujours évident on n'est plus il faut apprendre je vais juste vous
+
+309
+00:32:12,680 --> 00:32:19,240
+montrer un exemple par exemple une requête de chat vous n'intéressez pas pour l'instant au code
+
+310
+00:32:19,240 --> 00:32:25,840
+il y a d'autres tutoriels en ligne qui existent pour ceux qui voudraient avoir des détails donc
+
+311
+00:32:25,840 --> 00:32:30,080
+il y a un code et on fait ici avec le bouton bleu on lance et on a une liste de résultats donc là
+
+312
+00:32:30,080 --> 00:32:34,800
+en l'occurrence on a une liste de 214 résultats qui correspondent au code qu'on a demandé donc là
+
+313
+00:32:34,800 --> 00:32:40,400
+le code il est assez simple c'est qu'on veut juste les chats qui sont connus dans wikidata avec
+
+314
+00:32:40,400 --> 00:32:48,480
+leurs mots voilà on a des chats si si moeza orangie mr. shipy sa m'insume merci etc et si je voulais
+
+315
+00:32:48,480 --> 00:32:53,760
+ici je peux changer et au lieu de mettre chat je peux mettre chien et j'obtiens la liste de tous les
+
+316
+00:32:53,760 --> 00:33:02,160
+chiens et là voilà on voit qu'il y a plus de chien il y a 497 chien dans wikidata alors le code là
+
+317
+00:33:02,160 --> 00:33:06,400
+c'est quelque chose qu'il faut apprendre il y a des boutons d'aide ici où il y a des manuels des
+
+318
+00:33:06,400 --> 00:33:12,520
+choses comme ça qui veulent vous aider j'ai pas le temps de vous présenter tout et en plus je vais
+
+319
+00:33:12,520 --> 00:33:16,760
+juste vous présenter ce qu'on appelle le constructeur de requête qui est en fait un petit assistant
+
+320
+00:33:17,760 --> 00:33:25,760
+où on peut de façon assez visuelle et assez un peu limitée mais plus simple pour commencer on
+
+321
+00:33:25,760 --> 00:33:30,000
+peut commencer donc là par exemple vous pourrez demander tout ce qu'il y a pour nature ce qu'on a
+
+322
+00:33:30,000 --> 00:33:35,400
+vu tout à l'heure qui se trouvait de base au début c'est un élément nature de l'élément correspond
+
+323
+00:33:35,400 --> 00:33:42,280
+à chat par exemple et j'ai tous les chats domestiques et je peux exécuter la requête
+
+324
+00:33:42,280 --> 00:33:49,040
+il a mangé 234 résultats comme tout à l'heure alors c'est pas les mêmes parce qu'ils sont pas
+
+325
+00:33:49,040 --> 00:33:56,360
+dans ma morde mais c'est de nouveaux des chats ce qu'on peut faire plutôt que de demander des chats
+
+326
+00:33:56,360 --> 00:34:03,120
+c'est demander des êtres humains voilà êtres humains et aller un peu plus loin on peut ajouter
+
+327
+00:34:03,120 --> 00:34:11,400
+une condition par exemple pays de nationalité correspond à ce que je disais tout à l'heure
+
+328
+00:34:11,400 --> 00:34:19,800
+de suisse par exemple et je veux aussi qu'ils aient une profession alors c'est pas profession c'est
+
+329
+00:34:19,800 --> 00:34:24,480
+occupation mais c'est bien la même chose métier activité professionnelle c'est ce qui est écrit
+
+330
+00:34:24,480 --> 00:34:32,360
+ici et d'être poète par exemple poète ou poétesse donc là voilà je peux ajouter comme ça des
+
+331
+00:34:32,360 --> 00:34:37,880
+conditions les unes après les autres et puis tiens tout le temps qu'on y est je veux pas poète ou
+
+332
+00:34:37,880 --> 00:34:43,240
+poétesse mais je veux que les poètes test par exemple là je peux ajouter que son genre on sexe
+
+333
+00:34:43,240 --> 00:34:51,480
+correspond à féminin donc c'est pas féminin le genre grammatical c'est bien personne a été
+
+334
+00:34:51,480 --> 00:34:57,640
+personne féminine à utiliser avec sexe ou genre et ici vous voyez parfois vous là je vais un peu
+
+335
+00:34:57,640 --> 00:35:03,240
+vite mais vous pouvez regarder dans les prendre le temps de voir les mots pour trouver des choses
+
+336
+00:35:03,960 --> 00:35:07,800
+donc là voilà je suis content je ne joue pas d'autres je pourrais ajouter autant de conditions
+
+337
+00:35:07,800 --> 00:35:13,320
+que je veux plus je vais ajouter des conditions moi j'aurai de résultats et je peux juste exécuter
+
+338
+00:35:13,320 --> 00:35:19,160
+la raquette et donc là voilà je vais avoir normalement en quelques secondes une liste de poétesse
+
+339
+00:35:19,960 --> 00:35:27,160
+qu'est ce que j'ai demandé exactement des êtres humains de naissoyetés suisse qui sont occupation
+
+340
+00:35:27,240 --> 00:35:34,520
+poète ou poétesse mais avec uniquement les femmes voilà j'ai une liste de femmes poétesse suisse
+
+341
+00:35:36,200 --> 00:35:40,760
+et je peux ajouter des conditions comme ça et obtenir beaucoup beaucoup de choses
+
+342
+00:35:41,720 --> 00:35:44,920
+pour préparer des contributions diverses et variées
+
+343
+00:35:47,480 --> 00:35:54,680
+voilà si vous vous intéresse le sparkle ou le le wikidata quai builder
+
+344
+00:35:55,640 --> 00:36:00,440
+je vous engage à rechercher par vous même à regarder alors si je retourne
+
+345
+00:36:00,440 --> 00:36:05,560
+azut j'ai été un peu trop vite service de requêtes ici vous avez le bouton d'aide
+
+346
+00:36:05,560 --> 00:36:08,920
+vous avez beaucoup de choses pour vous aider énormément vous avez ici vous pouvez cliquer
+
+347
+00:36:08,920 --> 00:36:16,280
+sur demander une requête ou vous avez une page spéciale dans wikidata vous pouvez demander à
+
+348
+00:36:16,280 --> 00:36:20,760
+d'autres personnes de construire une requête pour vous et donc là il y a des gens qui vont vous
+
+349
+00:36:20,840 --> 00:36:24,360
+exploser quelle est votre question qui a votre problème souvent les gens font en anglais mais
+
+350
+00:36:24,360 --> 00:36:29,800
+vous pouvez le faire en français dans d'autres langues il y a un groupe de bénévoles qui
+
+351
+00:36:29,800 --> 00:36:34,200
+passent régulièrement sur ces pages là qui pourra vous répondre dans votre langue et qui disent
+
+352
+00:36:34,200 --> 00:36:40,360
+bah voilà moi je veux une requête pour faire ça voilà par exemple celle là une liste d'endroits
+
+353
+00:36:40,360 --> 00:36:46,760
+encore noybre britannique avec à la fois l'anglais le corne qui est la langue locale donc là il y a
+
+354
+00:36:46,760 --> 00:36:50,360
+une personne qui dit j'ai essayé mais j'ai pas réussi à faire la requête est-ce que quelqu'un
+
+355
+00:36:50,360 --> 00:36:57,000
+peut faire et voilà il y a quelqu'un qui a proposé plusieurs solutions et qui l'a aidé du coup
+
+356
+00:36:58,520 --> 00:37:04,360
+voilà cette page qu'on trouvait dans l'utilité request query demander une requête en français
+
+357
+00:37:04,920 --> 00:37:08,440
+c'est un outil qui est très pratique notamment pour les personnes débutantes
+
+358
+00:37:08,440 --> 00:37:18,600
+voilà il reste encore quelques minutes je voulais juste vous présenter aussi d'autres outils
+
+359
+00:37:18,600 --> 00:37:26,600
+alors évidemment je vais pas retrouver la page excusez-moi on va aller ici présentation de
+
+360
+00:37:26,760 --> 00:37:38,440
+data est-ce qu'on a un lien direct vers les outils non bon alors je vais taper à la main oui qui date
+
+361
+00:37:38,440 --> 00:37:47,640
+deux points tools là ici évidemment parce que je vais c'était pas je vous dis à ta
+
+362
+00:37:51,240 --> 00:37:56,120
+voilà qui date à tools par défaut là il m'a envoyé en anglais mais je peux cliquer ici pour
+
+363
+00:37:56,120 --> 00:38:01,560
+repasser en français et donc ça c'est une page qui liste tous les outils qui existent autour de
+
+364
+00:38:01,560 --> 00:38:06,360
+wikidata et il y en a plusieurs milliers c'est pour ça que j'ai pas le temps de tous vous les montrer
+
+365
+00:38:07,480 --> 00:38:12,840
+on peut les regrouper de façon assez synthétique par différents types d'outils
+
+366
+00:38:13,720 --> 00:38:19,400
+il y a les outils qui aident à modifier les éléments des outils d'écriture plutôt il y a
+
+367
+00:38:19,400 --> 00:38:23,800
+des outils pour interroger les données donc récupérer les lire mieux wikidata finalement
+
+368
+00:38:24,760 --> 00:38:28,760
+c'est le cas du sparkle que je vous ai montré mais si vous cliquez là vous allez voir que vous
+
+369
+00:38:28,760 --> 00:38:35,480
+allez sur une soupage vous allez voir beaucoup beaucoup d'autres outils qui existent et qui
+
+370
+00:38:35,480 --> 00:38:39,880
+permettent de récupérer des informations de wikidata d'une façon ou d'une autre qui permet parfois
+
+371
+00:38:39,880 --> 00:38:45,320
+de récupérer des informations très spécifiques qui permet de faire des jolies graves de coubleurs
+
+372
+00:38:45,320 --> 00:38:48,200
+ou ce genre de choses donc là vous voyez qu'il y a beaucoup beaucoup d'outils
+
+373
+00:38:49,000 --> 00:38:56,520
+des outils pour s'améliorer son interface mais vous avez peut-être fait attention à certains
+
+374
+00:38:56,520 --> 00:39:01,800
+moments dans mon interface sur wikidata j'ai deux trois trucs qui peuvent m'aider à contribuer
+
+375
+00:39:03,720 --> 00:39:06,520
+c'est pas nécessaire par défaut mais ça peut faciliter la vie
+
+376
+00:39:07,560 --> 00:39:11,560
+des outils de visualisation des données la liste de toutes les propriétés éventuellement
+
+377
+00:39:11,560 --> 00:39:15,160
+puis après des outils éventuellement même si vous êtes à l'aise avec l'informatique
+
+378
+00:39:15,160 --> 00:39:23,640
+des outils pour les développer juste je vais mentionner ici c'est quoi c'est sur modifié
+
+379
+00:39:26,840 --> 00:39:28,280
+évidemment je vais pas retrouver ici
+
+380
+00:39:32,360 --> 00:39:38,280
+des outils pour contribuer en masse ah bah tiens c'est milléaire un outil que moi personnellement
+
+381
+00:39:38,280 --> 00:39:44,200
+j'utilise beaucoup c'est open refine qui est un outil qui ressemble à un tableur comme calque
+
+382
+00:39:44,840 --> 00:39:52,360
+de libre fils ou excel vous mettez des données dans un tableau et grâce à open refine et pas
+
+383
+00:39:52,360 --> 00:39:57,240
+mal de temps pour traiter et manipuler vos données vous assurez qu'elle soit compatible avec wikidata
+
+384
+00:39:58,600 --> 00:40:01,880
+déjà sur la licence également mais surtout dans leur formatage
+
+385
+00:40:03,400 --> 00:40:08,600
+grâce à open refine bah vous pouvez envoyer énormément de données d'un coup que ce soit
+
+386
+00:40:08,600 --> 00:40:12,680
+créer des nouveaux éléments faites attention avant de créer des nouveaux éléments ou ajouter des
+
+387
+00:40:12,680 --> 00:40:18,600
+informations sur des éléments existants par exemple si vous avez une un tableur d'un gouvernement
+
+388
+00:40:18,600 --> 00:40:24,440
+qui vous donne les populations d'une de toutes les communes d'un pays bah vous pouvez récupérer
+
+389
+00:40:24,440 --> 00:40:30,360
+ce tableau, l'insérer, l'ouvrir avec open refine et grâce à open refine un peu de traitement de
+
+390
+00:40:30,360 --> 00:40:35,880
+données renvoyer toutes ces données et ajouter toutes les populations à jour dans wikidata ça c'est
+
+391
+00:40:35,880 --> 00:40:42,680
+genre de choses qui se fait régulièrement qui est très pratique d'autres outils qui requiert du code
+
+392
+00:40:42,680 --> 00:40:48,440
+et puis je voulais juste quick statement ce que je vais le retrouver ici qui était plus bas
+
+393
+00:40:48,440 --> 00:40:53,480
+quick statement ça c'est un autre outil qui ressemble un petit peu à open refine je vais l'ouvrir
+
+394
+00:40:53,480 --> 00:41:02,200
+rapidement pour vous montrer que on peut voilà je vais chercher la page dette surtout on peut rentrer
+
+395
+00:41:02,280 --> 00:41:08,040
+des informations sous une forme un peu particulière on n'est pas pour apprendre ce genre de choses là la
+
+396
+00:41:08,040 --> 00:41:12,920
+couleur c'est juste pour l'aide on n'a pas besoin de la couleur et vous mettez les données et ça
+
+397
+00:41:12,920 --> 00:41:19,080
+correspond à quelque chose qui va pouvoir être ajouté en masse dans wikidata après si vous en
+
+398
+00:41:19,080 --> 00:41:25,320
+avez déjà arrivé à ce niveau de aide de besoin de enfin ce niveau de besoin pour ajouter des
+
+399
+00:41:25,320 --> 00:41:31,480
+informations dans wikidata faut pas hésiter à me recontacter moi ou n'importe qui dans la communauté
+
+400
+00:41:31,480 --> 00:41:34,760
+pour demander de l'aide il y a beaucoup de personnes qui sont disponibles il y a des tutoriels
+
+401
+00:41:34,760 --> 00:41:41,720
+qui existent en ligne ce genre de choses je ne l'ai pas mis en français mais il existe et là je vous
+
+402
+00:41:41,720 --> 00:41:46,120
+en présente deux que qui sont très souvent utilisés et que moi je j'aime bien personnellement
+
+403
+00:41:47,480 --> 00:41:51,720
+qui sont parmi les plus faciles mais il y en a plein d'autres outils qui existent
+
+404
+00:41:53,160 --> 00:41:57,640
+voilà un outil là par exemple pour positionner sur une image pour dire qui sont les personnes
+
+405
+00:41:57,640 --> 00:42:08,680
+représentées pour suivre excusez moi pour suivre différentes informations et juste pour pas durer
+
+406
+00:42:08,680 --> 00:42:16,360
+trop trop longtemps vous avez la page donc wikichutmi qui est une façon d'améliorer wikidata de façon
+
+407
+00:42:16,360 --> 00:42:21,240
+cartographique donc il va vous donner une carte alors de moi il vous demande votre coordonnée donc
+
+408
+00:42:21,240 --> 00:42:26,760
+là vous voyez qu'il vous montre reine où j'habite et chaque point sur la carte alors je vais enlever
+
+409
+00:42:26,760 --> 00:42:33,080
+les points bleus et blancs pour l'instant chaque point sur la carte c'est un événement wikidata
+
+410
+00:42:33,080 --> 00:42:37,480
+vous voyez qu'un reine on a mis beaucoup d'informations dans wikidata et en fait si je clique dessus à chaque
+
+411
+00:42:37,480 --> 00:42:44,920
+fois on voit de quoi il s'agit donc là par exemple c'est des anciens bains il doit y avoir des rues aussi
+
+412
+00:42:44,920 --> 00:42:50,200
+un boulevard et s'il y a une photo ou pas donc si le point est vert ça veut dire qu'il y a une photo
+
+413
+00:42:50,200 --> 00:42:55,640
+si le point est rouge là par exemple c'est une école primaire bah cette école elle n'a pas de photo
+
+414
+00:42:55,720 --> 00:43:00,040
+vous voyez d'ailleurs qu'à reine dans le centre qu'on a fait beaucoup de photos et puis plus on s'éloigne
+
+415
+00:43:00,040 --> 00:43:04,520
+plus on va dans un coin comme ça là alors parfois il a un peu de mal à s'afficher mais
+
+416
+00:43:04,520 --> 00:43:08,120
+bah là personne n'a encore à aller faire des photos ici mais ça par exemple si vous voulez
+
+417
+00:43:08,120 --> 00:43:13,160
+organiser une sortie photo de quoi j'ai besoin de prendre des photos pour commons wikipedia et
+
+418
+00:43:13,160 --> 00:43:19,000
+par wikidata aussi bah vous pouvez le faire un premier repérage avec wikidata et j'aime beaucoup
+
+419
+00:43:19,000 --> 00:43:24,680
+c'est tout d'ailleurs il ne fonctionne pas que sur wikidata si je désactive wikidata et que
+
+420
+00:43:24,760 --> 00:43:30,760
+je mets que wikipedia il vous donne chaque point blanc ici c'est des articles de wikipedia
+
+421
+00:43:32,120 --> 00:43:37,880
+voilà donc là le diocèse le parlement de reine l'opéra de reine
+
+422
+00:43:39,880 --> 00:43:45,720
+l'attaque à reine ok qui était situé ici la cathédrale de reine etc etc à chaque fois le
+
+423
+00:43:45,720 --> 00:43:53,720
+jardin botanique d'abord le jardin botanique et ça permet au fil de faire du repérage comme ça
+
+424
+00:43:53,800 --> 00:43:59,880
+et le dernier bouton que c'était les images commons ça ça vous dit où sont les images
+
+425
+00:43:59,880 --> 00:44:03,640
+un problème c'est que si je suis trop désommé il y a trop de trucs mais là voilà il vous dit où
+
+426
+00:44:03,640 --> 00:44:09,080
+des photos ont-elles été prises à reine et voilà il vous situe toutes les photos donc si vous avez
+
+427
+00:44:09,080 --> 00:44:12,440
+un point qui est sans photo bah vous savez déjà que les photos ici ont été prises et vous voyez
+
+428
+00:44:12,440 --> 00:44:16,040
+qu'il y a toute une série de photos qui a été prises ici en ligne et dans les rues les différents
+
+429
+00:44:16,040 --> 00:44:23,400
+bâtiments comme je disais j'ai pas le temps de montrer tous les outils il y en a beaucoup
+
+430
+00:44:23,400 --> 00:44:28,200
+des nouveaux outils en plus il y en a réellement des nouveaux qui sont créés des anciens qui
+
+431
+00:44:28,200 --> 00:44:33,480
+malheureusement sont en panne sont plus utilisables ça varie un peu en fonction du temps ceux que
+
+432
+00:44:33,480 --> 00:44:37,240
+je vous ai montré c'est des outils qui sont assez stables ils sont là depuis longtemps ils devraient
+
+433
+00:44:37,240 --> 00:44:41,560
+rester depuis longtemps il n'y a pas de problème à l'utiliser normalement mais après pour d'autres
+
+434
+00:44:41,560 --> 00:44:48,600
+outils ça peut dépendre de vos besoins très spécifiques juste du coup je vais conclure cette
+
+435
+00:44:48,600 --> 00:44:56,600
+heure de présentation en vous parlant des espaces de discussion vous pouvez contacter des personnes
+
+436
+00:44:56,600 --> 00:45:01,080
+d'abord comme sur wikipedia vous pouvez cliquer je vous montrais ma page mais vous pouvez prendre
+
+437
+00:45:01,080 --> 00:45:05,560
+la page de n'importe qui donc là ça c'est ma page par exemple et vous pouvez aller sur discussion
+
+438
+00:45:06,280 --> 00:45:11,640
+et entamer une discussion me dire bonjour pourquoi qu'est-ce qui se passe etc là par exemple
+
+439
+00:45:11,640 --> 00:45:16,360
+c'est exactement ce qui s'est passé quelqu'un qui comprend pas pourquoi j'avais retiré quelques
+
+440
+00:45:16,360 --> 00:45:21,400
+sous dans wikidata et je lui ai répondu voilà par exemple promé oui juliette quelqu'un aussi qui
+
+441
+00:45:21,400 --> 00:45:28,360
+est passé ici ajouté des informations etc et donc chacun peut discuter comme ça c'est important
+
+442
+00:45:28,360 --> 00:45:33,080
+parce que surtout pour des personnes débutantes les bouts et pas sûr de qu'est ce qui s'est passé
+
+443
+00:45:33,160 --> 00:45:38,920
+pourquoi vous pouvez interagir avec les autres personnes et puis plus mieux comprendre et puis
+
+444
+00:45:38,920 --> 00:45:43,080
+d'abord apprendre les uns des autres comment se passent les choses donc ça c'est si vous avez un
+
+445
+00:45:43,080 --> 00:45:48,440
+besoin très particulier si vous avez repéré une personne que vous connaissez déjà ou qui vous
+
+446
+00:45:48,440 --> 00:45:52,360
+savez qui peut vous aider bah vous voulez contacter directement c'est pour ça que là en l'occurrence
+
+447
+00:45:52,360 --> 00:45:56,840
+moi je peux être un point de contact et n'hésitez pas à me contacter je suis relativement disponible
+
+448
+00:45:57,800 --> 00:46:01,160
+sinon de façon plus générale le lien à gauche qui est présent ici
+
+449
+00:46:02,200 --> 00:46:08,840
+c'est le lien bistrou où on peut discuter tous ensemble c'est une page générale de discussion
+
+450
+00:46:08,840 --> 00:46:14,280
+où il y a plusieurs personnes qui arrivent et puis qui chacun apporte un bout de réponses là par
+
+451
+00:46:14,280 --> 00:46:18,200
+exemple ma quick statement dont je viens de vous parler à l'instant il y avait quelqu'un qui
+
+452
+00:46:18,200 --> 00:46:21,480
+a essayé de l'utiliser mais qui avait une erreur il avait rentré ses instructions puis ça passait pas
+
+453
+00:46:22,440 --> 00:46:27,640
+et en l'occurrence voilà il y avait des choses qui étaient unknown qui m'avaient séparé moi je
+
+454
+00:46:27,640 --> 00:46:31,000
+connaissais tout y j'ai pu répondre et dire ma qu'est ce qui marchait qu'est ce qui marchait pas
+
+455
+00:46:32,120 --> 00:46:35,960
+d'autres questions voilà des personnes qui tien c'est étrange il y a deux éléments est-ce que
+
+456
+00:46:35,960 --> 00:46:43,080
+c'est un doublon même pas donc là voilà faut pas les utiliser à l'utiliser pour poser des questions
+
+457
+00:46:43,080 --> 00:46:47,320
+pour mieux apprendre qui data ou si vous avez essayé de faire quelque chose mais vous êtes pas sûr
+
+458
+00:46:48,040 --> 00:46:54,920
+si vous êtes bloqué à un endroit ce genre de choses si vous voulez de l'aide pour oh j'ai envie de
+
+459
+00:46:54,920 --> 00:46:59,320
+faire ça mais je sais pas comment vous prendre aussi avant de commencer à éditer wikidata vous
+
+460
+00:46:59,320 --> 00:47:04,520
+pouvez venir ici poser toutes les questions vous voulez en plus le bistro c'est vraiment uniquement
+
+461
+00:47:04,520 --> 00:47:07,400
+une page qui est que en français oui qu'il y a une page qui existe dans toutes les langues par
+
+462
+00:47:07,400 --> 00:47:11,880
+exemple si je clique ici je peux avoir une page de discussion en anglais qui est la plus grande et la
+
+463
+00:47:11,880 --> 00:47:19,320
+plus active oui qu'il y a beaucoup plus de discussions ici où chacun discute du coup là c'est
+
+464
+00:47:19,320 --> 00:47:25,720
+en anglais et dans d'autres langues elle existe plus ou moins active mais ça peut être aussi
+
+465
+00:47:26,520 --> 00:47:30,440
+si vous parlez une langue particuliers si vous avez une question qui est propre à une langue
+
+466
+00:47:30,440 --> 00:47:37,000
+qu'un comment je dis tel concept comment je le traduis dans ma langue ça peut être intéressant
+
+467
+00:47:37,000 --> 00:47:48,520
+d'aller sur la langue spécifique voilà c'était un rapide premier tour de wikidata on pourrait
+
+468
+00:47:48,520 --> 00:47:53,160
+en dire beaucoup de choses il existe beaucoup de ressources en ligne qu'il faut pas hésiter à
+
+469
+00:47:53,160 --> 00:47:58,120
+consulter je suis passé un peu rapidement mais là vous voyez que sur la page d'accueil de wikidata
+
+470
+00:47:58,120 --> 00:48:04,920
+si vous descendez un peu ici dans l'onglet rouge participer vous avez des guides d'aide qu'est-ce
+
+471
+00:48:04,920 --> 00:48:11,080
+que wikibetien la page de présentation etc initiez vous requête sparkle dont j'ai parlé vous avez
+
+472
+00:48:11,080 --> 00:48:14,280
+des ce qu'on appelle des visites guidées vous pouvez rejoindre des projets pour si vous êtes
+
+473
+00:48:14,280 --> 00:48:21,480
+plusieurs personnes à contribuer sur un sujet vous pouvez faire le portail il y a des événements
+
+474
+00:48:21,480 --> 00:48:25,800
+wikidata aussi en ligne ou en présentiel qui existe régulièrement faut pas hésiter à venir
+
+475
+00:48:25,800 --> 00:48:31,960
+les rejoindre je ne l'ai pas précisé mais c'est toujours bien se créer un compte si vous avez déjà
+
+476
+00:48:32,040 --> 00:48:38,280
+un compte wikipedia votre compte wikipedia peut servir sur wikidata mais si vous n'avez pas vous
+
+477
+00:48:38,280 --> 00:48:44,440
+pouvez créer un compte ici et le bistro dont je parlais et aussi tous les liens de discussion
+
+478
+00:48:45,320 --> 00:48:51,400
+sur les réseaux sociaux alors il y en a un peu partout mais l'endroit je trouve le plus efficace
+
+479
+00:48:51,400 --> 00:48:55,320
+si vous avez une question que vous voulez une réponse tout de suite c'est plutôt le groupe
+
+480
+00:48:55,320 --> 00:49:00,040
+télégare alors le groupe télégare mais il est très anglophone il y a quelques francophones qui
+
+481
+00:49:00,120 --> 00:49:04,360
+seront disponibles pour vous répondre éventuellement mais peut-être pas aussi vite mais en tout cas
+
+482
+00:49:04,360 --> 00:49:10,120
+il est toujours là et vous avez un besoin particulier ça peut être utile et puis beaucoup d'autres
+
+483
+00:49:10,120 --> 00:49:15,720
+choses donc faut pas hésiter à cliquer pour apprendre par vous même qui vous intéresse
+
+484
+00:49:16,920 --> 00:49:23,400
+voilà différentes informations on a eu plus de 2 milliards d'éditions sur wikidata le mois dernier
+
+485
+00:49:24,200 --> 00:49:27,560
+ou je vais parler rapidement des wikiprojects mais il y a un sourire qui est mis en page d'accueil
+
+486
+00:49:27,560 --> 00:49:33,800
+ici par exemple le wikiproject music qui est là pour dire tiens je m'intéresse à entrer des
+
+487
+00:49:33,800 --> 00:49:39,800
+chanteurs ou des albums de musique dans wikidata bah il y a le projet music qui existe qui est aussi
+
+488
+00:49:39,800 --> 00:49:48,440
+un moyen de discuter les uns avec les autres pour pour ce corps donné et puis pour être cohérent
+
+489
+00:49:48,440 --> 00:50:01,640
+dans les informations qu'on ajoute dans wikidata donc voilà il définit un petit peu rapidement
+
+490
+00:50:01,640 --> 00:50:07,560
+les les les objectifs de ce projet une vue d'ensemble qu'est ce qui comprend et vous voyez
+
+491
+00:50:07,560 --> 00:50:12,520
+que vous avez typiquement les informations qui existent il n'y a pas les informations excuse-moi
+
+492
+00:50:13,080 --> 00:50:18,280
+les propriétés les différentes propriétés sont toutes visibles ici les unes après les autres
+
+493
+00:50:18,280 --> 00:50:23,400
+donc les propriétés spécifiques ou une personne on s'attend à trouver alors pas toujours parfois
+
+494
+00:50:23,400 --> 00:50:29,080
+ça correspond pas mais on peut proposer voilà ces suggestions toutes ces parties ces propriétés
+
+495
+00:50:29,080 --> 00:50:35,400
+pour un groupe de musique leurs discographies qui sont les membres par exemple Paul McCartney
+
+496
+00:50:35,400 --> 00:50:40,920
+et membre des Beatles à quelle date le groupe a été créé les Beatles créant 1960 etc
+
+497
+00:50:41,560 --> 00:50:45,800
+même chose pour des groupes et personnes pour des albums de musique
+
+498
+00:50:47,560 --> 00:50:52,120
+les compositions musicales les pistes audio etc etc les labels
+
+499
+00:50:54,360 --> 00:50:56,200
+dans l'archistre voilà il y a beaucoup de choses comme ça
+
+500
+00:50:58,360 --> 00:51:04,760
+ça fait quasiment une heure je vais m'arrêter là pour aujourd'hui cette vidéo sera disponible
+
+501
+00:51:04,760 --> 00:51:10,280
+sur commons et donc vous la voyez au moment où vous voulez peut-être avec les sous-titres
+
+502
+00:51:11,640 --> 00:51:16,360
+et vous pouvez aussi tout le moment me contacter si vous avez des questions
+
+503
+00:51:18,120 --> 00:51:21,320
+j'espère que cette première introduction vous avez été utile
+
+504
+00:51:22,680 --> 00:51:27,000
+et après faut pas hésiter à rechercher aussi tout simplement sur un moteur de recherche
+
+505
+00:51:27,000 --> 00:51:33,480
+vous tapez les tutoriels Wikidata et éventuellement votre sujet suisse poétés suisse c'est ce que
+
+506
+00:51:33,480 --> 00:51:36,760
+quelqu'un a déjà essayé de faire des choses autour de poétés suisse il y a quelqu'un qui
+
+507
+00:51:36,840 --> 00:51:42,360
+sera disponible vous trouverez une page qui est parce que déjà des gens ont fait
+
+508
+00:51:43,160 --> 00:51:45,480
+des tutoriels sur de nombreux très nombreux sujets
+
+509
+00:51:48,200 --> 00:51:52,760
+voilà comme je le disais encore une fois n'hésitez pas à me contacter à regarder
+
+510
+00:51:52,760 --> 00:51:58,520
+cette vidéo et à regarder par vous même les différentes pages d'aide et j'espère que
+
+511
+00:51:59,320 --> 00:52:03,880
+ça vous a intéressé que ça vous a plu et que ça vous a donné un petit peu envie de
+
+512
+00:52:04,600 --> 00:52:08,360
+mieux découvrir Wikidata ou voir même carrément d'y participer
+
+513
+00:52:09,160 --> 00:52:16,600
+je serais très heureux de vous voir tous prendre part à ce magnifique projet merci beaucoup bonne
+
+514
+00:52:16,600 --> 00:52:18,440
+journal

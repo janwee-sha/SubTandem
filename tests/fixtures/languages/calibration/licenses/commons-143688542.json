@@ -1,0 +1,97 @@
+{
+  "acquiredAt": "2026-09-09",
+  "subtitle": {
+    "pageId": 143688542,
+    "title": "TimedText:1961-04-13 Tale Of Century - Eichmann Tried For War Crimes.ogv.he.srt",
+    "revision": 839608312,
+    "timestamp": "2024-01-08T17:59:25Z",
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=839608312",
+    "contributors": "https://commons.wikimedia.org/w/index.php?curid=143688542&action=history",
+    "revisionComment": "[[Special:MyLanguage/COM:AES|←]]Created page with ' 00:00:05,830 --> 00:00:09,712 סיפור שהיה לו הקדמה קודרת באימת מחנות הריכוז הנאצים  2 00:00:09,747 --> 00:00:12,489 מגיע לסוף עגום לא פחות בישראל,  3 00:00:12,535 --> 00:00:16,760 כפי שנידון אדולף אייכמן על הפשעים שלו נגד האנושות.  4 00:00:16,760 --> 00:00:19,680 עורך הדין רוברט סרוואטיוס יערער אוטומ...'"
+  },
+  "textPolicy": {
+    "file": "commons-text-policy.json",
+    "sha256": "829bb2b3f8cdb2e111557a29b8735535c82cb06349a886676325b84443d00236",
+    "license": "CC-BY-SA-4.0"
+  },
+  "originalWork": {
+    "pageId": 125420,
+    "title": "File:1961-04-13 Tale Of Century - Eichmann Tried For War Crimes.ogv",
+    "revision": 1101654840,
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=1101654840",
+    "metadata": {
+      "DateTime": {
+        "value": "2017-05-08 00:45:51",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "1961-04-13 Tale Of Century - Eichmann Tried For War Crimes",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "Adolf Eichmann's trial|Featured media|Featured pictures on Wikipedia, English|Videos from Israel|Media of the day|PD-copyright holder|Files with derivative versions|Ogv videos|Files with closed captioning in English|Videos of 1961|Black and white videos|Video display resolution 400 x 288|Universal Newsreel|Universal Newsreel, 1961|Files with closed captioning in Spanish|Files with Assessments template missing SDC Commons no value quality assessment|Files with closed captioning in Hebrew|Files with closed captioning in Italian|Featured media of historical videos|Featured media uploaded by Brian0918|Files with closed captioning in Finnish|Files with closed captioning in Portuguese|Files with closed captioning in Romanian|Videos of courts",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "Universal-International News<br><b>Guilty!</b><br>Eichmann to Hang<br>Voice: Ed Herlihy<br><i>Dramatized US news story on the trial of Adolf Eichmann.</i>",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "1961-12",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "Newsreel clip from the Motion Picture Division of the U.S. National Archives",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "Universal-International News",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "Public domain",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Public domain",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "false",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Copyrighted": {
+        "value": "False",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "pd",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "permissionWikitext": "== {{int:filedesc}} ==\n{{Information\n|Description= {{en|Universal-International News<br/>'''Guilty!'''<br/>Eichmann to Hang<br/>Voice: Ed Herlihy<br/>''Dramatized US news story on the trial of Adolf Eichmann.''}}\n|Source= Newsreel clip from the Motion Picture Division of the U.S. National Archives\n|Date=1961-12\n|Author=Universal-International News\n|Permission=\n|other_versions={{Derivative versions|Adolf Eichmann.jpg}}\n}}\n{{Closed captions}}\n\n== {{int:license-header}} ==\n{{PD-Universal Newsreel}}\n\n== {{Assessment}} ==\n{{FM promoted}}\n{{Media of the day|year=2009|month=07|day=02}}\n{{Assessments|enwiki=1|enwiki-nom=Eichmann trial news story.ogg}}\n\n{{DEFAULTSORT:Universal Newsreels 1961-04-13}}\n[[Category:Adolf Eichmann's trial]]\n[[Category:Videos of courts]]\n[[Category:Videos of 1961]]\n[[Category:Videos from Israel]]\n[[Category:Ogv videos]]\n[[Category:Video display resolution 400 x 288]]\n[[Category:Black and white videos]]\n[[Category:Universal Newsreel, 1961]]\n[[Category:Featured media uploaded by Brian0918]]\n[[Category:Featured media of historical videos]]"
+  },
+  "changes": "原件为固定修订正文；自然片段只截取连续原始 cue，原文和时间不改写；派生变体另行登记。",
+  "audit": "已检查 Commons 正文许可及原作品许可字段；该记录不是字幕语言真值的人工核对。"
+}

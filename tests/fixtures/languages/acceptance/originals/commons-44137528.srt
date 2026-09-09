@@ -1,0 +1,331 @@
+0
+00:00:00,333 --> 00:00:04,504
+Bu video, viki biçimlendimesine dair bazı kullanım talimatlarının üzerinden geçer:
+
+1
+00:00:04,504 --> 00:00:06,606
+metni nasıl koyulaştırılır
+
+2
+00:00:06,606 --> 00:00:08,908
+ve diğer viki sayfalarına bağlantı veririz.
+
+3
+00:00:08,908 --> 00:00:11,845
+Bu videodaki her şeyi kendi 
+
+4
+00:00:11,845 --> 00:00:14,514
+kullanıcı deneme tahtanızda deneyebilirsiniz.
+
+5
+00:00:14,514 --> 00:00:17,083
+Eğer bir deneme tahtanız yoksa,
+
+6
+00:00:17,083 --> 00:00:20,587
+Vikipedi arama kutusuna 
+
+7
+00:00:20,587 --> 00:00:22,956
+"Help:Sandbox tutorial" yazın
+
+8
+00:00:22,956 --> 00:00:26,259
+O sayfada deneme tahtası oluşturma talimatları var.
+
+9
+00:00:26,259 --> 00:00:31,097
+Başlamak için deneme tahtanızda "Değiştir" butonuna basın.
+
+10
+00:00:31,097 --> 00:00:33,266
+Böylece bu alıştırmalara başlayabileceğiniz 
+
+11
+00:00:33,266 --> 00:00:35,802
+bir düzenleme penceresi açılacaktır.
+
+12
+00:00:35,802 --> 00:00:38,171
+En temelden başlayaycağız:
+
+13
+00:00:38,171 --> 00:00:39,739
+bold.
+
+14
+00:00:39,739 --> 00:00:44,092
+Ansiklopedi maddelerinin çoğunun başında maddenin konusunu belirtmek için
+
+15
+00:00:44,092 --> 00:00:46,146
+koyu yazılmış metin görülür.
+
+16
+00:00:46,146 --> 00:00:48,882
+Bu nedenle bu, öğreneceğiniz ilk şeylerden biridir.
+
+17
+00:00:48,882 --> 00:00:50,784
+Metni koyulaştırmayı farenizle
+
+18
+00:00:50,784 --> 00:00:52,652
+orayı işaretleyip sonra araç çubuğunda
+
+19
+00:00:52,652 --> 00:00:54,854
+"B"  butonuna (Türkçe Vikipedi'de kalın "'''A'''"
+
+20
+00:00:54,854 --> 00:00:56,489
+butonuna) basarak yaparsınız.
+
+21
+00:00:56,489 --> 00:00:59,325
+Bu işlem koyulaştırmak istediğiniz yerin başına 
+
+22
+00:00:59,325 --> 00:01:01,695
+3 tek tırnak işaretini
+
+23
+00:01:01,695 --> 00:01:04,764
+ve bitişine de yine 3 tırnak işareti ekler.
+
+24
+00:01:04,764 --> 00:01:06,866
+Hadi, nasıl görüneceğine bakalm.
+
+25
+00:01:06,866 --> 00:01:09,135
+Düzenleme penceresine sonuna gidin,
+
+26
+00:01:09,135 --> 00:01:12,772
+değişikliğinizi açıklayan kısa birözet yazın,
+
+27
+00:01:12,772 --> 00:01:14,741
+Ve "Sayfayı Kaydet" butonuna basın.
+
+28
+00:01:14,741 --> 00:01:16,081
+Her değişikliğinizde değişiklik özetini yazma alışkanlığı 
+
+29
+00:01:16,081 --> 00:01:19,946
+edinmeniz iyi olur.
+
+30
+00:01:19,946 --> 00:01:22,382
+Yaptıklarınzı takip etmede işinize yarayacağı gibi,
+
+31
+00:01:22,382 --> 00:01:25,485
+Başkaları ile işbirliği yapmayı da kolaylaştırır.
+
+32
+00:01:25,485 --> 00:01:30,019
+Artık sayfanızda koyu yazılmış bir parça metin oldu herhalde. 
+
+33
+00:01:30,019 --> 00:01:33,526
+“Kaynağı değiştir” butonua basın ve devam edelim. 
+
+34
+00:01:33,526 --> 00:01:36,463
+Bu sefer vikibağlantılar (iç bağlantı) yapacağız.
+
+35
+00:01:36,463 --> 00:01:41,167
+Bu bağlantılar Vikipedi’de bir sayfadan diğerine 
+
+36
+00:01:41,167 --> 00:01:42,435
+giden bağlardır.
+
+37
+00:01:42,435 --> 00:01:44,571
+Hadi "bold" (koyu) sözcüğü ile başlayalım.
+
+38
+00:01:44,571 --> 00:01:47,024
+Bir vikibağlantı yaratmak için,
+
+39
+00:01:47,024 --> 00:01:48,742
+sözcüğü işaretleyin,
+
+40
+00:01:48,742 --> 00:01:51,544
+Sonra düzenleme araç çubuğundaki bağlantı ikonuna tıklayın.
+
+41
+00:01:51,544 --> 00:01:55,115
+Bu “Bağlantı ekle” diyalog kutusunu getirir.
+
+42
+00:01:55,115 --> 00:01:57,035
+“Bağlantı ekle” butonuna tıklamak
+
+43
+00:01:57,035 --> 00:02:00,186
+vikibağlantı linkini ekleyecektir:
+
+44
+00:02:00,186 --> 00:02:02,422
+İki açılış köşeli parantezi, 
+
+45
+00:02:02,422 --> 00:02:05,125
+ardından link vermek istediğiniz madde
+
+46
+00:02:05,125 --> 00:02:06,086
+--bu örnekte, "bold" --
+
+47
+00:02:06,086 --> 00:02:10,003
+ve sonra iki kapanış köşeli parantezi.
+
+48
+00:02:10,003 --> 00:02:12,699
+Şimdi bir değişiklik özeti girip kaydedin.
+
+49
+00:02:12,699 --> 00:02:15,702
+Artık "bold"  kelimesi mavi görünür ve
+
+50
+00:02:15,702 --> 00:02:18,505
+(İngilizce vikipedi’deki) “bold” maddesine bağlantı sağlar.
+
+51
+00:02:18,505 --> 00:02:20,473
+Aslında koyu maddesinin başlığı
+
+52
+00:02:20,473 --> 00:02:23,243
+"Emhpahis (typography) "  -Vurgu  (tipografi) – şeklinde ve
+
+53
+00:02:23,243 --> 00:02:25,478
+bağlantı bizi oraya yönlendiriyor.
+
+54
+00:02:25,478 --> 00:02:29,416
+Fakat bağlantı vermek istediğiniz yer orası değilse ne olacak?
+
+55
+00:02:29,416 --> 00:02:31,885
+Aslında kastettiğiniz “boldness” (koyuluk),
+
+56
+00:02:31,885 --> 00:02:33,853
+(İngilizce’de) utangaçlığın tersi olan küstahlık anlamındaki kelime ise?
+
+57
+00:02:33,853 --> 00:02:36,056
+Hadi sayfayı yeniden değiştirelim.
+
+58
+00:02:36,056 --> 00:02:38,792
+Bu sefer, “bağlantı ekle” diyalog kutusunda
+
+59
+00:02:38,792 --> 00:02:41,728
+"Hedef sayfa ya da URL"  bölümünde
+
+60
+00:02:41,728 --> 00:02:44,397
+"bold" yerine  "boldness" yazın
+
+61
+00:02:44,397 --> 00:02:47,667
+Şimdi, “Bağlantı ekle” butonuna basmak
+
+62
+00:02:47,667 --> 00:02:49,836
+Bir “pipe” bağlantı yaratır,
+
+63
+00:02:49,836 --> 00:02:52,205
+- işaret ettiği maddenin adından farklı bir metni olan 
+
+64
+00:02:52,205 --> 00:02:56,142
+bağlantı demektir-
+
+65
+00:02:56,142 --> 00:02:59,679
+Tıpkı düz bağlantı gibi iki 
+
+66
+00:02:59,679 --> 00:03:00,098
+açılış köşeli parantezinden sonra
+
+67
+00:03:00,098 --> 00:03:03,917
+Bağlantı vermek istediğiniz madde adı gelir.
+
+68
+00:03:03,917 --> 00:03:05,352
+--“boldness”—(koyuluk)
+
+69
+00:03:05,352 --> 00:03:06,953
+Sonra “pipe” bölümü gelir.
+
+70
+00:03:06,953 --> 00:03:10,156
+-Çoğu klavyede "shift+backslash"’a
+
+71
+00:03:10,156 --> 00:03:12,192
+basarak ekleyebilirsiniz -
+
+72
+00:03:12,192 --> 00:03:14,227
+madde adından sonra,
+
+73
+00:03:14,227 --> 00:03:16,629
+Ardından bağlantı için istediğiniz metni yazarsınız.
+ 
+74
+00:03:16,629 --> 00:03:17,864
+--bold—(koyu)
+
+75
+00:03:17,864 --> 00:03:20,467
+Sonra iki kapanış köşeli parantezi konur.
+
+76
+00:03:20,467 --> 00:03:24,337
+Genelde *böyle* olur.
+
+77
+00:03:24,337 --> 00:03:26,005
+Eğer değişikliklerinizi kaydederseniz 
+
+78
+00:03:26,005 --> 00:03:27,674
+sonucu görürsünüz.
+
+79
+00:03:27,674 --> 00:03:29,442
+Bağlantı  "bold" (koyu) der,
+
+80
+00:03:29,442 --> 00:03:30,844
+ve tıkladığınızda,
+
+81
+00:03:30,844 --> 00:03:33,279
+"boldness" (Küstahlık) maddesine gidersiniz.
+
+82
+00:03:33,279 --> 00:03:35,248
+Öyleyse ne duruyorsunuz, sayfa düzenlemeye başlayın!

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "status": "frozen",
+  "frozenAt": "2026-09-09T18:09:30.024Z",
+  "parameters": {
+    "totalLetterBudget": 4096,
+    "spanLetterBudget": 256,
+    "contextLimit": 512,
+    "unsupportedMargin": 0.02,
+    "minLength": 0
+  },
+  "files": {
+    "package.json": "ebc72d638fa874eb5bed493a7f1975a2d8ad8e087ff4c88a802d0b219b766f4c",
+    "package-lock.json": "532aca3c8876c353128ec398be95ffb92b3056d0e4281f1543a12e875b23c525",
+    "src/subtitles/language-detection.ts": "1e9a16fa3e27548601b3b5144107f0d4f3f1aaf09ffb9dde53e9670d5d06b30a",
+    "src/subtitles/language-model.ts": "cc189abd56cceb8fda11bc71b87e4bb7c414211ed426bcfb7df6722d10ca2d43",
+    "src/app/language-detection.ts": "b27e67b10ee6fdc23783ddc9f6dbac5e4d7fd7ad483a169755a7190b43bf0b90",
+    "src/main.ts": "6f5b699e291a7049e8ca8e985216e7c1f4890f772263dce3004415f274a71764",
+    "src/entry.ts": "3a71d29c354236046a50d0a102ac265f5bf16c75c594cf196a1558079f38c8bf",
+    "src/app/controller.ts": "07047e73554b49616e09a582f0bee9fe7b0ac4fba42ce4e940f8988dbfb55393",
+    "src/domain/source-languages.ts": "a35d28589a77f150a098c0c9dc720d7f65ff5134a765eefc8ed1db2f707a045b",
+    "tests/fixtures/languages/freeze.json": "331e1afc2b35094e0f760ccd0b7bf8b20a485a512b0f4a1be88e437932c51047",
+    "docs/validation/language-calibration-grid.json": "e5db6d8711511c2b5fb1f28e028a51f5bf1583c3d5679848d8c4454fd0b8c620",
+    "docs/validation/language-detection-calibration.json": "2ed3fdf632a71bbc615def76658e4951112782a9cfbfaf5868f20fe64a3ce492",
+    "docs/validation/language-detection-node.json": "ac93776937959a1bad91e9849f1b0e6ce55c72de3979019f11a6e3eb8ec11d67"
+  },
+  "models": {
+    "franc-all": "fea38fa2a7a0ce2dc11a5ec2689b573e33d1ba1448548582ae1badc3bb6712c7",
+    "franc-all/data.js": "59955ebea9ec4c1e23e9d684fb3d34677a272261860ed656d4c851ffe7a66beb",
+    "franc-all/expressions.js": "766b1bf021db99e427f06ff3c3490a10e4f31c3d8a84dde7cd714b0b834618c3",
+    "trigram-utils": "684ed4701fcc87a03c7b9f62e486b23bbd57a643928b2d0713bb4c5c9a2188c2",
+    "collapse-white-space": "8556c235f90235b036ab86ebcea0dd6f17b043bfb6f0d21b22f246d6057377f3",
+    "n-gram": "233b785c903a4636539e8fb17d59ceee3598b80351b260760ffc93643ef8b3a3"
+  },
+  "calibrationReport": "docs/validation/language-calibration.json",
+  "calibrationReportSha256": "1ecc3614290d45c893902d723fcbb260fb25b3594e841b3ade9428905e81bd10"
+}

@@ -128,8 +128,11 @@ describe("IINA sidebar lifecycle contract", () => {
 
   it("keeps the in-memory tick alive when IINA reuses a closed player context", () => {
     expect(mainSource).toContain("clearTimeout(sourceSelectionTimer)");
-    const closeStart = mainSource.indexOf('runtime.event.on("iina.window-will-close"');
-    const closeSource = mainSource.slice(closeStart);
+    const closeStart = mainSource.indexOf("const closePlayer = (): void => {");
+    const closeSource = mainSource.slice(
+      closeStart,
+      mainSource.indexOf('runtime.event.on("iina.window-will-close"', closeStart),
+    );
     expect(closeSource).toContain("closeOverlayRegion()");
     expect(closeSource).toContain("controller.endFile()");
     expect(closeSource).toContain("controller.clearProviderSelection()");
@@ -161,16 +164,19 @@ describe("IINA sidebar lifecycle contract", () => {
   });
 
   it("waits for IINA's player window before loading the sidebar webview", () => {
-    expect(mainSource).toContain("iina.core.window.loaded");
-    expect(mainSource).toContain('iina.event.on("iina.window-loaded", scheduleInitializePlayer)');
+    const entrySource = readFileSync(new URL("../../src/entry.ts", import.meta.url), "utf8");
+    expect(entrySource).toContain("iina.core.window.loaded");
+    expect(entrySource).toContain('iina.event.on("iina.window-loaded", scheduleInitializePlayer)');
     expect(
-      mainSource.indexOf('iina.event.on("iina.window-loaded", scheduleInitializePlayer)'),
-    ).toBeLessThan(mainSource.lastIndexOf("scheduleInitializePlayer();"));
-    expect(mainSource).toContain("setTimeout(initializePlayer, 100)");
+      entrySource.indexOf('iina.event.on("iina.window-loaded", scheduleInitializePlayer)'),
+    ).toBeLessThan(entrySource.lastIndexOf("scheduleInitializePlayer();"));
+    expect(entrySource).toContain("setTimeout(initializePlayer, 100)");
   });
 
   it("initializes a normal player without waiting for a global registration reply", () => {
-    expect(mainSource).toContain("wirePlayer(iina, `player-${Date.now()}`)");
+    expect(readFileSync(new URL("../../src/entry.ts", import.meta.url), "utf8")).toContain(
+      "wirePlayer(iina, `player-${Date.now()}`)",
+    );
     expect(mainSource).not.toContain('onMessage("main:registered"');
   });
 
@@ -400,7 +406,7 @@ describe("IINA sidebar lifecycle contract", () => {
     const shutdownBlock = mainSource.slice(shutdownStart, shutdownEnd);
     expect(shutdownBlock).toContain("clearInterval(overlayRegionTimer)");
     expect(shutdownBlock).toContain("overlayRegion.close()");
-    const closeStart = mainSource.indexOf('runtime.event.on("iina.window-will-close"');
+    const closeStart = mainSource.indexOf("const closePlayer = (): void => {");
     const closeEnd = mainSource.indexOf("});", closeStart);
     const closeBlock = mainSource.slice(closeStart, closeEnd);
     expect(closeBlock).toContain("closeOverlayRegion()");
@@ -481,10 +487,7 @@ describe("System color picker lifecycle contract", () => {
     "utf8",
   );
   const serverSource = readFileSync(
-    new URL(
-      "../../native/style-picker/Sources/SubTandemStylePicker/Server.swift",
-      import.meta.url,
-    ),
+    new URL("../../native/style-picker/Sources/SubTandemStylePicker/Server.swift", import.meta.url),
     "utf8",
   );
 

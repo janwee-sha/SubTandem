@@ -1,0 +1,101 @@
+{
+  "acquiredAt": "2026-09-09",
+  "subtitle": {
+    "pageId": 192911638,
+    "title": "TimedText:Sakura Sakura.song.ogg.fr.srt",
+    "revision": 1221545590,
+    "timestamp": "2026-05-28T06:36:45Z",
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=1221545590",
+    "contributors": "https://commons.wikimedia.org/w/index.php?curid=192911638&action=history",
+    "revisionComment": "[[Special:MyLanguage/COM:AES|←]]Created page with '1 00:00:00,000 --> 00:00:04,500 Cerisiers en fleurs... Cerisiers en fleurs, 【sakura　sakura】  2 00:00:04,550 --> 00:00:08,500 Dans le ciel de mars, 【yayoi no sora wa】  3 00:00:08,550 --> 00:00:12,500 À perte de vue. 【mi-watasu kagiri】  4 00:00:12,550 --> 00:00:16,500 Brume ? Nuages ? 【kasumi ka kumo ka】  5 00:00:16,550 --> 00:00:20,500 Des parfums s'élèvent. 【nioi zo izuru】  6 00:00:20,550 --> 00:00:24,500 Venez,...'"
+  },
+  "textPolicy": {
+    "file": "commons-text-policy.json",
+    "sha256": "829bb2b3f8cdb2e111557a29b8735535c82cb06349a886676325b84443d00236",
+    "license": "CC-BY-SA-4.0"
+  },
+  "originalWork": {
+    "pageId": 8149538,
+    "title": "File:Sakura Sakura.song.ogg",
+    "revision": 987779865,
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=987779865",
+    "metadata": {
+      "DateTime": {
+        "value": "2009-10-20 20:15:33",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "Sakura Sakura.song",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "Sakura Sakura|GFDL|Vocaloids|License migration redundant|Audio files of music|Self-published work|Audio files of songs of Japan|Singing synthesis sounds",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "Traditional Japanese song \"<a href=\"https://en.wikipedia.org/wiki/Sakura_Sakura\" class=\"extiw\" title=\"en:Sakura Sakura\">Sakura Sakura</a>\".",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "2009-10-21",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "<ul><li>楽曲「さくらさくら」の<a href=\"https://ja.wikipedia.org/wiki/%E3%83%A1%E3%83%AD%E3%83%87%E3%82%A3\" class=\"extiw\" title=\"ja:メロディ\">メロディ</a>と<a href=\"https://ja.wikipedia.org/wiki/%E6%AD%8C%E8%A9%9E\" class=\"extiw\" title=\"ja:歌詞\">歌詞</a>は著作権保護期間を満了し、<a href=\"https://ja.wikipedia.org/wiki/%E3%83%91%E3%83%96%E3%83%AA%E3%83%83%E3%82%AF%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3\" class=\"extiw\" title=\"ja:パブリックドメイン\">パブリックドメイン</a>となっています。</li>\n<li><a href=\"https://ja.wikipedia.org/wiki/%E6%A5%BD%E8%AD%9C\" class=\"extiw\" title=\"ja:楽譜\">楽譜</a>と歌詞の把握には<a href=\"//commons.wikimedia.org/wiki/File:Sakura.song.png\" title=\"File:Sakura.song.png\">File:Sakura.song.png</a> <a class=\"external text\" data-mw-original-href=\"//commons.wikimedia.org/w/index.php?title=File:Sakura.song.png&amp;oldid=29620925\" href=\"https://commons.wikimedia.org/w/index.php?title=File:Sakura.song.png&amp;oldid=29620925\">12:57, 2 October 2009 (UTC)</a> の版（主執筆者<a href=\"//commons.wikimedia.org/w/index.php?title=User:Sakurambo&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Sakurambo (page does not exist)\">Sakurambo</a>）を参考にしました。</li>\n<li>本演奏データには<a href=\"https://ja.wikipedia.org/wiki/%E3%83%9C%E3%83%BC%E3%82%AB%E3%83%AB\" class=\"extiw\" title=\"ja:ボーカル\">ボーカル</a>の音源にソフトウェアによる<a href=\"https://ja.wikipedia.org/wiki/%E9%9F%B3%E5%A3%B0%E5%90%88%E6%88%90\" class=\"extiw\" title=\"ja:音声合成\">合成音声</a>（<a href=\"https://en.wikipedia.org/wiki/Voice_synthesizer\" class=\"extiw\" title=\"en:Voice synthesizer\">Voice synthesizer</a>）を用いています。演奏に用いた合成音声ソフトウェアのエンドユーザー使用許諾契約書では、演奏データを商用利用可能な形で配布する際に、発売元の許可なくソフトウェアの名称（商品名等）を明示することが禁じられているため、本演奏データのボーカルは著作権法19条1項に基づき、匿名（anonymous）の著作者として扱います。本データがCC BY-SAまたはGFDLのデータとして扱われる限り、この匿名表示は改変されず、ソフトウェアの著作者の意思に反して名称を明示されることがないものと考えます。ボーカルを匿名として扱う限り、本演奏データの商用利用は、合成音声ソフトウェアのエンドユーザー使用許諾契約書において許可されています。</li>\n<li><a href=\"https://ja.wikipedia.org/wiki/%E6%BC%94%E5%A5%8F\" class=\"extiw\" title=\"ja:演奏\">演奏</a>（合成音声ソフトウェアへの入力）は<a href=\"//commons.wikimedia.org/wiki/User:Kanohara\" title=\"User:Kanohara\">Kanohara</a> (<a href=\"//commons.wikimedia.org/wiki/User_talk:Kanohara\" title=\"User talk:Kanohara\"><span class=\"signature-talk\">talk</span></a>)が行いました。</li></ul>",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC BY-SA 3.0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Attribution-Share Alike 3.0",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "true",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "https://creativecommons.org/licenses/by-sa/3.0",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc-by-sa-3.0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "permissionWikitext": "== {{int:filedesc}} ==\n{{Information\n|Description={{en|1=Traditional Japanese song \"[[:en:Sakura Sakura|Sakura Sakura]]\".}}\n{{ja|1=日本の伝統的な歌曲「[[:ja:さくらさくら|さくらさくら]]」。}}{{ro|1=Cântecul folcloric japonez „[[:ro:Sakura sakura|Sakura sakura]]” („Flori de cireș, flori de cireș”).}}\n{{ru|1=Японская народная песня \"[[:ru:Сакура (песня)|Сакура]]\".}}\n{{zh|1=日本傳統歌曲 「[[:zh:櫻花 (民謠) |櫻花 (民謠)]]」。}}\n|Source={{Own}}\n|Author=*楽曲「さくらさくら」の[[:ja:メロディ|メロディ]]と[[:ja:歌詞|歌詞]]は著作権保護期間を満了し、[[:ja:パブリックドメイン|パブリックドメイン]]となっています。\n*[[:ja:楽譜|楽譜]]と歌詞の把握には[[:File:Sakura.song.png]] [{{fullurl:File:Sakura.song.png|oldid=29620925}} 12:57, 2 October 2009 (UTC)] の版（主執筆者[[User:Sakurambo|Sakurambo]]）を参考にしました。\n*本演奏データには[[:ja:ボーカル|ボーカル]]の音源にソフトウェアによる[[:ja:音声合成|合成音声]]（[[:en:Voice synthesizer|Voice synthesizer]]）を用いています。演奏に用いた合成音声ソフトウェアのエンドユーザー使用許諾契約書では、演奏データを商用利用可能な形で配布する際に、発売元の許可なくソフトウェアの名称（商品名等）を明示することが禁じられているため、本演奏データのボーカルは著作権法19条1項に基づき、匿名（anonymous）の著作者として扱います。本データがCC BY-SAまたはGFDLのデータとして扱われる限り、この匿名表示は改変されず、ソフトウェアの著作者の意思に反して名称を明示されることがないものと考えます。ボーカルを匿名として扱う限り、本演奏データの商用利用は、合成音声ソフトウェアのエンドユーザー使用許諾契約書において許可されています。\n*[[:ja:演奏|演奏]]（合成音声ソフトウェアへの入力）は[[User:Kanohara|Kanohara]] ([[User talk:Kanohara|<span class=\"signature-talk\">talk</span>]])が行いました。\n|Date=2009-10-21\n|Permission=\n|other_versions=\n}}\n\n== {{int:license-header}} ==\n{{self|GFDL|cc-by-sa-3.0}}\n\n[[Category:Audio files of music]]\n[[Category:Audio files of songs of Japan]]\n[[Category:Vocaloids]]\n[[Category:Singing synthesis sounds]]\n[[Category:Sakura Sakura]]"
+  },
+  "changes": "原件为固定修订正文；自然片段只截取连续原始 cue，原文和时间不改写；派生变体另行登记。",
+  "audit": "已检查 Commons 正文许可及原作品许可字段；该记录不是字幕语言真值的人工核对。"
+}

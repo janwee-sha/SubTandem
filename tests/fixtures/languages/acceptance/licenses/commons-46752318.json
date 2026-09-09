@@ -1,0 +1,102 @@
+{
+  "acquiredAt": "2026-09-09",
+  "subtitle": {
+    "pageId": 46752318,
+    "title": "TimedText:Kimigayo vocal 1930.ogg.ja.srt",
+    "revision": 1212073796,
+    "timestamp": "2026-05-11T03:01:01Z",
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=1212073796",
+    "contributors": "https://commons.wikimedia.org/w/index.php?curid=46752318&action=history",
+    "revisionComment": ""
+  },
+  "textPolicy": {
+    "file": "commons-text-policy.json",
+    "sha256": "829bb2b3f8cdb2e111557a29b8735535c82cb06349a886676325b84443d00236",
+    "license": "CC-BY-SA-4.0"
+  },
+  "originalWork": {
+    "pageId": 2470264,
+    "title": "File:Kimigayo vocal 1930.ogg",
+    "revision": 926635341,
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=926635341",
+    "metadata": {
+      "DateTime": {
+        "value": "2007-10-21 09:14:53",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "Kimigayo vocal 1930",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "PD-Japan|PD US record|PD-old missing SDC copyright status|Audio files with closed captioning in Hindi|Audio files with closed captioning in Chinese|Audio files with closed captioning in English|Audio files with closed captioning in Japanese|Audio files with closed captioning in Polish|Audio files with closed captioning in Russian|Audio files of Kimigayo|Audio files with closed captioning in Serbian|Audio files with closed captioning in Okinawan|Audio files with closed captioning in Sanskrit",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "The Japanese anthem <a href=\"https://en.wikipedia.org/wiki/Kimigayo\" class=\"extiw\" title=\"en:Kimigayo\">en:Kimigayo</a> being performed in 1930. The author is unknown and the source of the record is my personal collection. The record plate is number K1-A from Polyfar Recording. (Note, some editing has been done by the uploader to reduce noise, crackling and to fix the bitrate of the recording).",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "26 July 2007 (original upload date)",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "<bdi lang=\"en\" dir=\"ltr\">Transferred from <span class=\"plainlinks\"><a class=\"external text\" data-mw-original-href=\"//en.wikipedia.org\" href=\"https://en.wikipedia.org\">en.wikipedia</a></span> to Commons.</bdi>",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "The original uploader was <a href=\"https://en.wikipedia.org/wiki/User:Zscout370\" class=\"extiw\" title=\"wikipedia:User:Zscout370\">Zscout370</a> at <a href=\"https://en.wikipedia.org/wiki/\" class=\"extiw\" title=\"wikipedia:\">English Wikipedia</a>.",
+        "source": "commons-desc-page"
+      },
+      "Permission": {
+        "value": "PD-JAPAN. (Article 5.  Copyright in an anonymous or pseudonymous work shall endure for thirty years from the time of publication or public performance; provided, however, that the provisions of Article 3 shall apply if the author has his true name registered within that period.)",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseShortName": {
+        "value": "Public domain",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Public domain",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "false",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Copyrighted": {
+        "value": "False",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "pd",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "permissionWikitext": "== {{int:filedesc}} ==\n{{Information\n|Description=The Japanese anthem [[:en:Kimigayo]] being performed in 1930. The author is unknown and the source of the record is my personal collection. The record plate is number K1-A from Polyfar Recording. (Note, some editing has been done by the uploader to reduce noise, crackling and to fix the bitrate of the recording).\n|Source={{Transferred from|en.wikipedia}}\n|Date={{original upload date|2007-07-26}}\n|Author={{original uploader|Zscout370|wikipedia|en}}\n|Permission=PD-JAPAN. (Article 5.  Copyright in an anonymous or pseudonymous work shall endure for thirty years from the time of publication or public performance; provided, however, that the provisions of Article 3 shall apply if the author has his true name registered within that period.)\n|other_versions=\n}}\n{{closed captions}}\n\n== {{int:license-header}} ==\n{{PD-Japan}}\n{{PD-US-record}}\n\n== {{original upload log}} ==\n{{original description page|en.wikipedia|Kimigayo_vocal_1930.ogg}}\n* 2007-07-28 04:11 [[:en:User:Zscout370|Zscout370]] 0×0×0 (605078 bytes) ''<nowiki>Better version (by just a tad)</nowiki>''\n* 2007-07-26 23:16 [[:en:User:Zscout370|Zscout370]] 0×0×0 (604800 bytes) ''<nowiki>The Japanese anthem [[Kimigayo]] being performed in 1930. The author is unknown and the source of the record is my personal collection. {{PD-Japan}}</nowiki>''\n\n[[Category:Audio files of Kimigayo]]"
+  },
+  "changes": "原件为固定修订正文；自然片段只截取连续原始 cue，原文和时间不改写；派生变体另行登记。",
+  "audit": "已检查 Commons 正文许可及原作品许可字段；该记录不是字幕语言真值的人工核对。"
+}

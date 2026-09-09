@@ -1,0 +1,1027 @@
+1
+00:00:10,010 --> 00:00:14,981
+Becky Burr, who was formally with NTIA, now an ICANN Board member.
+
+2
+00:00:14,981 --> 00:00:17,984
+Becky, thank you for taking the time to talk to us.
+
+3
+00:00:17,984 --> 00:00:22,989
+If Vint Cerf is considered the father of the Internet, I’ve heard you refer to as the mother of the Internet,
+
+4
+00:00:22,989 --> 00:00:30,997
+what was it like in those early years working with Ira Magaziner to get ICANN going?
+
+5
+00:00:30,997 --> 00:00:35,001
+So, first of all, I have been called the godmother of ICANN,
+
+6
+00:00:35,001 --> 00:00:38,004
+but I’m not going to take credit for the Internet.
+
+7
+00:00:38,004 --> 00:00:45,979
+The early years were very exciting in the following way.
+
+8
+00:00:45,979 --> 00:00:58,992
+There was a problem, funding for the IANA functions had been stopped by the National Science Foundation.
+
+9
+00:00:58,992 --> 00:01:08,001
+There was need to sort of secure a firm foundation on which to continue the DNS work.
+
+10
+00:01:08,001 --> 00:01:17,977
+There was, you know, talk about moving it into a more international organization kind of UN agency.
+
+11
+00:01:17,977 --> 00:01:19,979
+And a lot of people were very concerned about it.
+
+12
+00:01:19,979 --> 00:01:24,984
+And a lot of people were very concerned about it from many, many different focuses.
+
+13
+00:01:24,984 --> 00:01:32,992
+From keeping the Internet being able to continue to move at Internet speed,
+
+14
+00:01:32,992 --> 00:01:35,995
+not having a heavy governmental overlay,
+
+15
+00:01:35,995 --> 00:01:42,001
+allowing the sort of creativity that comes from private sector, or at large management.
+
+16
+00:01:42,001 --> 00:01:48,007
+And so, in order to figure out what to do,
+
+17
+00:01:48,007 --> 00:01:57,984
+we conducted a very extensive sort of talking couple of months, where dozens and dozens, hundreds of people,
+
+18
+00:01:57,984 --> 00:02:05,992
+came in and talked to us about what it was they needed to see going forward,
+
+19
+00:02:05,992 --> 00:02:09,996
+what their problems with the way things were running then.
+
+20
+00:02:09,996 --> 00:02:14,000
+There was a lot of disputes, trademark disputes,
+
+21
+00:02:14,000 --> 00:02:19,005
+other kinds of disputes that had been kind of building up.
+
+22
+00:02:19,005 --> 00:02:27,981
+And so we got an enormous amount of input from speaking with people, and this was around the world.
+
+23
+00:02:27,981 --> 00:02:29,983
+So, it wasn’t just the U.S.
+
+24
+00:02:29,983 --> 00:02:33,987
+And then we sort of crafted the Green Paper,
+
+25
+00:02:33,987 --> 00:02:37,991
+which we wanted to throw out there and see what’s coming back at us.
+
+26
+00:02:37,991 --> 00:02:44,998
+We sort of put it out there, and we got thousands of comments,
+
+27
+00:02:44,998 --> 00:02:49,002
+and thousands of comments, they were online comments, from around the world,
+
+28
+00:02:49,002 --> 00:02:56,976
+which was, I think, in, this was 1997, it was probably a first in terms of online comments
+
+29
+00:02:56,976 --> 00:02:59,979
+globally from the U.S. government perspective.
+
+30
+00:02:59,979 --> 00:03:07,987
+So, then we did more talking, more talking around the world, more talking with people and produced the White Paper.
+
+31
+00:03:07,987 --> 00:03:10,990
+There was a huge amount of excitement about it.
+
+32
+00:03:10,990 --> 00:03:14,994
+There was an enormous amount of energy.
+
+33
+00:03:14,994 --> 00:03:16,996
+Was there trepidation as well?
+
+34
+00:03:16,996 --> 00:03:24,003
+Well, of course there were some people that were saying that it wasn’t going to work,
+
+35
+00:03:24,003 --> 00:03:28,007
+or that it should be managed by the ITU.
+
+36
+00:03:28,007 --> 00:03:30,977
+But in fact, it was a pretty small number.
+
+37
+00:03:30,977 --> 00:03:42,989
+There was very strong global consensus for allowing this to move into a non-governmental setting.
+
+38
+00:03:42,989 --> 00:03:48,995
+And in fact, it was really trying to replicate, or preserve, as much of what had been going on,
+
+39
+00:03:48,995 --> 00:03:52,999
+because while DARPA had been funding the work that Jon [Postel] did,
+
+40
+00:03:52,999 --> 00:03:57,003
+it was with a very light touch, and he was really running it.
+
+41
+00:03:57,003 --> 00:04:02,008
+So, there was…  It sounds like there was pretty much universal acceptance that the DNS,
+
+42
+00:04:02,008 --> 00:04:08,982
+management of the DNS, would at least go toward a private model
+
+43
+00:04:08,982 --> 00:04:10,984
+instead of a government model.  Right?
+
+44
+00:04:10,984 --> 00:04:12,485
+Yes. Yes, there was.
+
+45
+00:04:12,485 --> 00:04:18,992
+And just to put this in context, that was a time in which there was enormous amount
+
+46
+00:04:18,992 --> 00:04:23,997
+of optimism and awareness about what the Internet was doing.
+
+47
+00:04:23,997 --> 00:04:31,004
+The U.S. government produced a paper on a framework for global Internet commerce,
+
+48
+00:04:31,004 --> 00:04:34,007
+that called for a very light regulatory touch.
+
+49
+00:04:34,007 --> 00:04:38,978
+The European Union produced one.  There was one produced by Japan,
+
+50
+00:04:38,978 --> 00:04:45,985
+and there were big international conferences where people were very focused on
+
+51
+00:04:45,985 --> 00:04:51,991
+not imposing a heavy governmental regulatory regime on the Internet.
+
+52
+00:04:51,991 --> 00:04:54,994
+And there was that little bit of a sense of, you know, what if everyone did?
+
+53
+00:04:54,994 --> 00:04:58,998
+So, you know, if you pass a regulation.
+
+54
+00:04:58,998 --> 00:05:08,007
+So, ICANN grew up in the midst of a very vibrant global discussion about
+
+55
+00:05:08,007 --> 00:05:14,981
+allowing the Internet to be the Internet, and a sort of light-handed regulatory approach to it.
+
+56
+00:05:14,981 --> 00:05:22,989
+So, you know, some of the things that we have seen in more recent years, were really not there.
+
+57
+00:05:22,989 --> 00:05:30,997
+The whole concept, ICANN is such an unusual beast in this sort of bottom-up policy formation system,
+
+58
+00:05:30,997 --> 00:05:37,003
+with multiple inputs, unlike traditional organizations where it goes from the top-down.
+
+59
+00:05:37,003 --> 00:05:38,004
+Where did that come from?
+
+60
+00:05:38,004 --> 00:05:43,009
+It came from the…
+
+61
+00:05:43,009 --> 00:05:49,982
+What we were saying was, the whole notion all along was private sector leadership.
+
+62
+00:05:49,982 --> 00:05:55,988
+Now, today we wouldn’t call that, we wouldn’t say private sector leadership, we would say multistakeholder.
+
+63
+00:05:55,988 --> 00:05:58,991
+We didn’t mean just business or anything like that,
+
+64
+00:05:58,991 --> 00:06:04,997
+but stakeholders who were a part of it would be involved.
+
+65
+00:06:04,997 --> 00:06:08,000
+That had always been the case.
+
+66
+00:06:08,000 --> 00:06:14,006
+Jon Postel worked very closely with the ITF and with the ccNSO managers and the like.
+
+67
+00:06:14,006 --> 00:06:19,979
+There was a need in that transition to expand the definition of stakeholder.
+
+68
+00:06:19,979 --> 00:06:25,985
+There were more stakeholders. There were end users. There were business users of the Internet.
+
+69
+00:06:25,985 --> 00:06:30,990
+The pot was getting bigger. The stakeholder group was getting bigger.
+
+70
+00:06:30,990 --> 00:06:35,995
+But what we wanted to do was really preserve what was going on
+
+71
+00:06:35,995 --> 00:06:42,001
+and what had traditionally been the basis of DNS management,
+
+72
+00:06:42,001 --> 00:06:46,005
+which is sort of consensus among the stakeholders,
+
+73
+00:06:46,005 --> 00:06:50,977
+but recognize that the group of stakeholders had gotten much bigger,
+
+74
+00:06:50,977 --> 00:06:52,979
+and much more diverse, and much more global.
+
+75
+00:06:52,979 --> 00:06:55,982
+Help me understand the timeframe. Were you at NTIA then?
+
+76
+00:06:55,982 --> 00:07:00,987
+I moved to NTIA on June 1st of 1997,
+
+77
+00:07:00,987 --> 00:07:09,996
+and we published the first request for comment on June 2nd, or something like that.
+
+78
+00:07:09,996 --> 00:07:11,998
+What was it like working with Magaziner on this endeavor?
+
+79
+00:07:11,998 --> 00:07:20,006
+So, Ira was great. He had a group of people from all over the U.S. government
+
+80
+00:07:20,006 --> 00:07:23,976
+working on the framework for Global Electronic Commerce.
+
+81
+00:07:23,976 --> 00:07:27,980
+And I was working on privacy and Internet governance.
+
+82
+00:07:27,980 --> 00:07:34,987
+There were people from the U.S. trade rep, talking about tariffs.
+
+83
+00:07:34,987 --> 00:07:38,991
+There were people from all over the government, putting together the sort of…
+
+84
+00:07:38,991 --> 00:07:50,002
+If we want to enable us, to take advantage of the opportunity
+
+85
+00:07:50,002 --> 00:07:54,006
+that the Internet represented from an economic growth perspective,
+
+86
+00:07:54,006 --> 00:07:57,009
+what structure would we need to have in place.
+
+87
+00:07:57,009 --> 00:08:05,985
+And so, this DNS management piece came directly out of the e-commerce.
+
+88
+00:08:05,985 --> 00:08:09,989
+To that point, Magaziner told us, he said, you know,
+
+89
+00:08:09,989 --> 00:08:15,995
+when he finished with the failed Clinton health care initiative, and he was going into this,
+
+90
+00:08:15,995 --> 00:08:21,000
+he said a primary driver of this was we wanted a long-term economic growth model.
+
+91
+00:08:21,000 --> 00:08:28,007
+Was the economic viability of the Internet recognized by everybody at those very early stages?
+
+92
+00:08:28,007 --> 00:08:36,983
+We were talking about what percentage of the global economy was already the,
+
+93
+00:08:36,983 --> 00:08:41,988
+sort of, riding on the Internet, and how that would grow over time.
+
+94
+00:08:41,988 --> 00:08:50,997
+So, there was a clear recognition that the Internet was the growth engine of the future,
+
+95
+00:08:50,997 --> 00:08:53,499
+and that we needed to get it right.
+
+96
+00:08:53,499 --> 00:08:54,500
+People got it.
+
+97
+00:08:55,001 --> 00:08:57,003
+Yeah.  People definitely got it.
+
+98
+00:08:57,003 --> 00:09:01,007
+Now, some…  I think actually, our numbers were probably quite low
+
+99
+00:09:01,007 --> 00:09:06,979
+in terms of what we thought would be happening five years down the road.
+
+100
+00:09:06,979 --> 00:09:17,990
+But globally, people understood that this was a paradigm shift like the Industrial Revolution in a way.
+
+101
+00:09:17,990 --> 00:09:21,994
+Was there across the board acceptance in,
+
+102
+00:09:21,994 --> 00:09:24,997
+throughout the U.S. government, in the other agencies?
+
+103
+00:09:24,997 --> 00:09:31,003
+Or was there… Did you have to argue this sort of, for lack of a better phrase,
+
+104
+00:09:31,003 --> 00:09:34,006
+we built it, we sort of own it, attitude?
+
+105
+00:09:34,006 --> 00:09:38,978
+There was remarkably little of that in the administration.
+
+106
+00:09:38,978 --> 00:09:44,984
+Certainly the science agencies that had been part of it never had that attitude.
+
+107
+00:09:44,984 --> 00:09:52,992
+I mean, they had gone global, although in a, you know, university and research institute model.
+
+108
+00:09:52,992 --> 00:10:01,000
+Interestingly enough, there was a little more resistance to sort of commercialization,
+
+109
+00:10:01,000 --> 00:10:11,978
+but you know, you heard it once in a while, but not at all the executive order that President Clinton signed
+
+110
+00:10:11,978 --> 00:10:18,985
+included moving this into... out of the government and the private sector.
+
+111
+00:10:18,985 --> 00:10:21,988
+So, you know, every once in a while, you’d hear it, but.
+
+112
+00:10:21,988 --> 00:10:24,991
+How about Capitol Hill, was there acceptance there?
+
+113
+00:10:24,991 --> 00:10:35,001
+Well, there was. First of all, it’s pretty complex and what we were proposing to do was pretty unique.
+
+114
+00:10:35,001 --> 00:10:43,976
+We couldn’t point precisely to a model of what we were doing, because we were building something.
+
+115
+00:10:43,976 --> 00:10:49,982
+Some people on the Hill understood that.
+
+116
+00:10:49,982 --> 00:10:58,991
+There were, of course, some economic issues that created some lobbying on Capitol Hill.
+
+117
+00:10:58,991 --> 00:11:06,999
+We were changing the competitive landscape in a pretty fundamental way.
+
+118
+00:11:06,999 --> 00:11:15,007
+And the current winners in the economic landscape of the DNS
+
+119
+00:11:15,007 --> 00:11:20,980
+were resistant a little bit, and they had some, got some traction on Capitol Hill.
+
+120
+00:11:20,980 --> 00:11:25,985
+So, we had, you know, a series of hearings, and a series of investigations,
+
+121
+00:11:25,985 --> 00:11:28,988
+to make sure that we were doing it right.
+
+122
+00:11:28,988 --> 00:11:36,996
+What was the reaction…?  Throughout ICANN’s history, there have always been Congressional hearings about some aspect,
+
+123
+00:11:36,996 --> 00:11:42,001
+whether it was the New gTLD Program, whether it was the IANA stewardship transition.
+
+124
+00:11:42,001 --> 00:11:50,009
+What was the reaction both within the administration, multiple administrations, I guess,
+
+125
+00:11:50,009 --> 00:11:56,982
+and globally for ICANN being called up to the legislative branch and being asked to explain this or that?
+
+126
+00:11:56,982 --> 00:12:06,992
+Well, so frankly, I think, it’s not clear but for the change in VeriSign’s position in this.
+
+127
+00:12:06,992 --> 00:12:11,997
+That it’s not clear to me how much Capitol Hill interests there would have been.
+
+128
+00:12:11,997 --> 00:12:13,999
+I think that, honestly, generated the…
+
+129
+00:12:13,999 --> 00:12:15,501
+You think that drove it?
+
+130
+00:12:15,501 --> 00:12:24,977
+I think that there were… I know that there were concerted efforts to get Congress interested in this.
+
+131
+00:12:24,977 --> 00:12:27,980
+Now, that’s fair game. I just want to make sure… People do it all of the time.
+
+132
+00:12:27,980 --> 00:12:29,482
+But I want to make sure I understand what you’re saying.
+
+133
+00:12:29,482 --> 00:12:31,484
+So, you’re saying VeriSign drove that interest.
+
+134
+00:12:31,484 --> 00:12:35,488
+Yeah. And that happens all the time.
+
+135
+00:12:35,488 --> 00:12:40,493
+And you would expect, you know, a publicly traded company,
+
+136
+00:12:40,493 --> 00:12:42,995
+that has an obligation to maximize shareholder value,
+
+137
+00:12:42,995 --> 00:12:50,002
+would take the steps that it could to retain its position.
+
+138
+00:12:50,002 --> 00:12:55,007
+Had there not been that lobbying push, there would not have been as great an interest as there was?
+
+139
+00:12:55,007 --> 00:12:57,009
+There would not have been as great an interest.
+
+140
+00:12:57,009 --> 00:13:01,981
+There clearly would have been interest from the science committees.
+
+141
+00:13:01,981 --> 00:13:05,985
+You know, the commerce committee would have looked at it,
+
+142
+00:13:05,985 --> 00:13:15,995
+but we also had the judiciary committees looking at it from a trademark, an IP perspective.
+
+143
+00:13:15,995 --> 00:13:21,000
+So, there were enough issues going on that I think that there would have been some hearings.
+
+144
+00:13:21,000 --> 00:13:25,004
+I suspect that they would not have been quite as hostile,
+
+145
+00:13:25,004 --> 00:13:32,978
+but we did have a Democratic administration, and a Republican Congress at that time,
+
+146
+00:13:32,978 --> 00:13:38,984
+so there would have been some of the natural partisan politics.
+
+147
+00:13:38,984 --> 00:13:45,991
+Whenever ICANN was called up to the Hill, it always appeared to me that it was never truly understood.
+
+148
+00:13:45,991 --> 00:13:49,995
+That whenever there was a hearing, even right up to the end,
+
+149
+00:13:49,995 --> 00:13:52,998
+when the final Cruz hearing on the transition.
+
+150
+00:13:52,998 --> 00:13:58,003
+There was a sort of underlying current that a lot of members just didn’t quite get ICANN.
+
+151
+00:13:58,003 --> 00:14:04,009
+Well, I think that’s right.  They didn’t get the DNS, right?
+
+152
+00:14:04,009 --> 00:14:07,980
+So, you have to understand the DNS to begin with,
+
+153
+00:14:07,980 --> 00:14:13,986
+and then you have to understand how the management is dispersed,
+
+154
+00:14:13,986 --> 00:14:21,994
+and how there really isn’t a kind of central, other than the coordination role that ICANN plays.
+
+155
+00:14:21,994 --> 00:14:25,998
+It’s not a single monolithic… It’s not a thing.
+
+156
+00:14:25,998 --> 00:14:36,008
+It’s a, you know, vast network of networks managed by the DNS system, or navigated by the DNS system.
+
+157
+00:14:36,008 --> 00:14:42,982
+It’s complicated. We’ve gotten better about explaining it.
+
+158
+00:14:42,982 --> 00:14:47,987
+The other thing is that, to the extent there was a "we built it, we own it"
+
+159
+00:14:47,987 --> 00:14:56,996
+that was based on this fundamental misunderstanding about what it meant to be the authoritative root, right?
+
+160
+00:14:56,996 --> 00:15:06,005
+And Jon tried to demonstrate that one night, by directing the root server system to point to another authoritative root.
+
+161
+00:15:06,005 --> 00:15:10,976
+That could have been, for those of us who understood what he was doing,
+
+162
+00:15:10,976 --> 00:15:16,982
+it was clearly Jon saying, "you guys are just confused. Here is how it works."
+
+163
+00:15:16,982 --> 00:15:21,987
+It wasn’t Jon pushing back about the government, it was Jon trying to…
+
+164
+00:15:21,987 --> 00:15:22,988
+Well…
+
+165
+00:15:22,988 --> 00:15:23,989
+I’ve heard both.
+
+166
+00:15:23,989 --> 00:15:32,998
+No, I do not… I think it was a moment in which Jon was trying to demonstrate
+
+167
+00:15:32,998 --> 00:15:37,002
+that some of the arguments were quite silly.
+
+168
+00:15:37,002 --> 00:15:48,981
+And taking the opportunity to, in a very tangible way, demonstrate where control lay
+
+169
+00:15:48,981 --> 00:15:53,986
+and how control could move from place to place.
+
+170
+00:15:53,986 --> 00:16:00,993
+Now, that’s the way I always interpret it.
+
+171
+00:16:00,993 --> 00:16:08,000
+There were multiple administrations, the Bush administration, the Clinton administration, and so on.
+
+172
+00:16:08,000 --> 00:16:17,977
+Could you ascertain a difference in the way that ICANN was handled or dealt with,
+
+173
+00:16:17,977 --> 00:16:20,980
+from administration to administration?  Was there a difference?
+
+174
+00:16:20,980 --> 00:16:33,993
+So, you know, the Clinton administration ended in 2000, and it was still really in its infancy.
+
+175
+00:16:33,993 --> 00:16:42,001
+We clearly had the commitment to complete the transition and move it forward.
+
+176
+00:16:42,001 --> 00:16:52,978
+I think that that could have been... that might have been the way subsequent administrations would have proceeded.
+
+177
+00:16:52,978 --> 00:17:00,986
+It took ICANN a while to get sort of stable, and we had the 2003, 2004 evolution and reform committee,
+
+178
+00:17:00,986 --> 00:17:03,989
+but what really changed things was September 11th.
+
+179
+00:17:03,989 --> 00:17:18,003
+At that moment, there was a sort of, where are all of the potential control, safety kinds of places.
+
+180
+00:17:18,003 --> 00:17:24,009
+And I think that for a while the intelligence community was pretty convinced
+
+181
+00:17:24,009 --> 00:17:30,983
+that there was an important reason to control the authoritative root.
+
+182
+00:17:30,983 --> 00:17:36,989
+That changed by the end of the Bush administration.
+
+183
+00:17:36,989 --> 00:17:41,994
+And they had sort of worked through the evaluation
+
+184
+00:17:41,994 --> 00:17:46,999
+and understood the system had gotten much more robust, and much more dispersed, and all of those things.
+
+185
+00:17:46,999 --> 00:17:53,005
+And so, while there was always this commitment to transfer,
+
+186
+00:17:53,005 --> 00:18:00,979
+ultimately it happened that there was a period of time where there was increasing anxiety
+
+187
+00:18:00,979 --> 00:18:06,985
+about what would happen if we didn’t have this sort of back stop control over the root,
+
+188
+00:18:06,985 --> 00:18:14,993
+and ICANN was... It was hard work to sort of get to a stable period.
+
+189
+00:18:14,993 --> 00:18:19,998
+So, that kind of supported allowing this time to pass.
+
+190
+00:18:19,998 --> 00:18:24,002
+But by the end of the Bush administration, it was pretty clear that
+
+191
+00:18:24,002 --> 00:18:34,980
+people had understood that this wasn’t a sort of national security tool.
+
+192
+00:18:34,980 --> 00:18:42,988
+And so that paved the way in the Obama administration for finishing the transition.
+
+193
+00:18:42,988 --> 00:18:46,992
+Let me ask you about another issue, and you were involved in this one, which was .xxx.
+
+194
+00:18:46,992 --> 00:18:52,998
+Was this a case…?  Because it’s often pointed to as this is a case where the government did try to influence ICANN.
+
+195
+00:18:52,998 --> 00:19:04,977
+So, we did do FOIAs and we... I don’t think that there is anything in the written record
+
+196
+00:19:04,977 --> 00:19:10,983
+that proves that the U.S. government intervened.
+
+197
+00:19:10,983 --> 00:19:19,992
+I had conversations with people who were directly in that line.
+
+198
+00:19:19,992 --> 00:19:23,996
+The U.S. government did intervene in the .xxx decision.
+
+199
+00:19:23,996 --> 00:19:31,003
+And it was sort of after the fact, because we had been working very closely with NTIA
+
+200
+00:19:31,003 --> 00:19:36,008
+to make sure they understood what the TLD was about, what was going on.
+
+201
+00:19:36,008 --> 00:19:41,980
+It was all fine until after ICANN Board had actually already approved it,
+
+202
+00:19:41,980 --> 00:19:49,988
+and at that moment, there was a political, a very strong political pushback,
+
+203
+00:19:49,988 --> 00:19:56,995
+somebody reaching, conservative organizations reaching back into the Bush administration at the highest level,
+
+204
+00:19:56,995 --> 00:20:00,999
+which resulted in really a sea change, from NTIA’s perspective.
+
+205
+00:20:00,999 --> 00:20:04,002
+How would you characterize…?  I asked Vint Cerf this question.
+
+206
+00:20:04,002 --> 00:20:10,008
+I said, how would you characterize, historically, the USG’s relationship with ICANN?
+
+207
+00:20:10,008 --> 00:20:14,980
+And he said problematic and not very supportive.  How would you characterize it?
+
+208
+00:20:14,980 --> 00:20:23,989
+Well, I think that there was support initially.
+
+209
+00:20:23,989 --> 00:20:33,999
+There was a great deal of frustration on the part of NTIA in the early years.
+
+210
+00:20:33,999 --> 00:20:41,006
+The IANA functions were not delivered in the best way. They were not…
+
+211
+00:20:41,006 --> 00:20:44,009
+There were delays, it took a long time.
+
+212
+00:20:44,009 --> 00:20:47,980
+They got lots and lots and lots of complaints from the direct consumers,
+
+213
+00:20:47,980 --> 00:20:54,987
+that just serving the IANA functions was difficult.
+
+214
+00:20:54,987 --> 00:21:02,995
+There were some kind of heavy handed moves to try to get country code top level domains
+
+215
+00:21:02,995 --> 00:21:11,003
+to enter into contracts that were well-intended, but seriously backfired.
+
+216
+00:21:11,003 --> 00:21:17,976
+And so, there was a great deal of frustration in the early days
+
+217
+00:21:17,976 --> 00:21:22,981
+with performance and sort of heavy handed tactics.
+
+218
+00:21:22,981 --> 00:21:26,985
+And I think that the government pushed back on that.
+
+219
+00:21:26,985 --> 00:21:38,997
+And then after that, until Larry Strickling sort of got fully up to speed about it,
+
+220
+00:21:38,997 --> 00:21:42,000
+I would imagine it could have been difficult.
+
+221
+00:21:42,000 --> 00:21:51,977
+I think that Larry was fully supportive of ICANN throughout,
+
+222
+00:21:51,977 --> 00:21:57,983
+but I think there was probably frustration on both sides, right up to the end.
+
+223
+00:21:57,983 --> 00:22:00,986
+Did you think the transition was going to fly?
+
+224
+00:22:00,986 --> 00:22:10,996
+I was really happy on October 1st, I just have to say. I think it was touch and go.
+
+225
+00:22:10,996 --> 00:22:17,002
+But between the announcement in 2014, and when it finally happened in October of 2016,
+
+226
+00:22:17,002 --> 00:22:24,009
+were there points where you’re going, "I don’t think this is going to work"?
+
+227
+00:22:24,009 --> 00:22:26,978
+Well, I think that until the community…
+
+228
+00:22:26,978 --> 00:22:29,981
+The community came together right after the announcement,
+
+229
+00:22:29,981 --> 00:22:36,988
+in which the announcement was really focused on the IANA functions technical transition.
+
+230
+00:22:36,988 --> 00:22:45,997
+And the community stood up and said, in a kind of astonishing unity, that never before seen, "that’s not good enough."
+
+231
+00:22:45,997 --> 00:22:50,001
+"We need these accountability fixes. This is the moment to do this."
+
+232
+00:22:50,001 --> 00:22:58,009
+And ICANN resisted.  And frankly, so did NTIA, didn't really understand why we needed this.
+
+233
+00:22:58,009 --> 00:23:11,990
+So, we did both complicate the transition process by demanding a more robust review and change to get there.
+
+234
+00:23:11,990 --> 00:23:20,999
+And I was very worried about it until ICANN finally acknowledged the community’s views on this,
+
+235
+00:23:20,999 --> 00:23:28,006
+and worked to put together the CCWG, the Cross Community Working Group on Accountability.
+
+236
+00:23:28,006 --> 00:23:31,009
+After that, I felt pretty good about it.
+
+237
+00:23:31,009 --> 00:23:36,481
+There were, you know, moments in between now and then, and it was…
+
+238
+00:23:36,481 --> 00:23:40,986
+It obviously took a lot longer than anybody had hoped that it would. But…
+
+239
+00:23:40,986 --> 00:23:46,992
+You have had a unique perspective in that you were at NTIA, you were an attorney
+
+240
+00:23:46,992 --> 00:23:50,996
+involved in the dot triple X case, and now you’re an ICANN Board member.
+
+241
+00:23:50,996 --> 00:23:53,999
+So, you’ve been along the entire continuum.
+
+242
+00:23:53,999 --> 00:23:58,003
+Well so, actually, it’s a little more complicated than that.
+
+243
+00:23:58,003 --> 00:24:02,007
+I was at NTIA, but I was also the GAC representative from the United States
+
+244
+00:24:02,007 --> 00:24:04,976
+to the GAC for the first couple of years.
+
+245
+00:24:04,976 --> 00:24:06,978
+And then, I was a lawyer in private practice,
+
+246
+00:24:06,978 --> 00:24:11,983
+but I was also on the Country Code Name Supporting Organization Council for many years.
+
+247
+00:24:11,983 --> 00:24:16,988
+So, I have had a kind of nice…
+
+248
+00:24:16,988 --> 00:24:22,994
+So, my question, given that broad range of experience, how has that shaped your perception of ICANN?
+
+249
+00:24:22,994 --> 00:24:36,007
+Well, I think I have a pretty good view of sort of what the drivers are across the organization.
+
+250
+00:24:36,007 --> 00:24:41,980
+I think I understand and share the concerns, have a sort of…
+
+251
+00:24:41,980 --> 00:24:46,985
+I have many, many different perspectives. I can look at it and say,
+
+252
+00:24:46,985 --> 00:24:51,990
+as a country code manager, you know, here are the issues at stake.
+
+253
+00:24:51,990 --> 00:24:57,996
+As a business participant, as an industry participant in the DNS industry, here are the concerns.
+
+254
+00:24:57,996 --> 00:25:00,999
+As a government, here are the concerns.
+
+255
+00:25:00,999 --> 00:25:09,007
+And as a, you know, member of the Board, here are the concerns, you put them together and figure it out.
+
+256
+00:25:09,007 --> 00:25:12,978
+Great. Becky Burr, thank you very much. Appreciate you taking the time to talk to us.
+
+257
+00:25:12,978 --> 00:25:14,479
+It’s a pleasure.

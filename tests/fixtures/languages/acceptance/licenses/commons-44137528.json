@@ -1,0 +1,101 @@
+{
+  "acquiredAt": "2026-09-09",
+  "subtitle": {
+    "pageId": 44137528,
+    "title": "TimedText:Boldness and links tutorial.ogv.tr.srt",
+    "revision": 175409817,
+    "timestamp": "2015-10-12T13:21:04Z",
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=175409817",
+    "contributors": "https://commons.wikimedia.org/w/index.php?curid=44137528&action=history",
+    "revisionComment": "61-82 translated"
+  },
+  "textPolicy": {
+    "file": "commons-text-policy.json",
+    "sha256": "829bb2b3f8cdb2e111557a29b8735535c82cb06349a886676325b84443d00236",
+    "license": "CC-BY-SA-4.0"
+  },
+  "originalWork": {
+    "pageId": 11769969,
+    "title": "File:Boldness and links tutorial.ogv",
+    "revision": 1234803550,
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=1234803550",
+    "metadata": {
+      "DateTime": {
+        "value": "2010-10-13 00:19:48",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "Boldness and links tutorial",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "GFDL|License migration redundant|Self-published work|Files with closed captioning in English|Files with closed captioning in Spanish|Files with closed captioning in Chinese|Files with closed captioning in Turkish|Be Bold|Files with closed captioning in Vietnamese|Instructional videos on using Wikipedia in English|Files with closed captioning in Japanese|Files with closed captioning in Arabic|Files with closed captioning in Burmese|Files with closed captioning in Hindi|Files with closed captioning in Sardinian",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "A tutorial video explaining how to make bold text and wikilinks, with an exhortation to be bold.  <a href=\"https://en.wikipedia.org/wiki/User:Sross_(Public_Policy)/Editing_basics_script\" class=\"extiw\" title=\"w:User:Sross (Public Policy)/Editing basics script\">Script here</a>, OpenOffice slideshow available on request.",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "2010-10-12",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "<a href=\"//commons.wikimedia.org/wiki/User:Sross_(Public_Policy)\" title=\"User:Sross (Public Policy)\">Sross (Public Policy)</a>",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC BY-SA 3.0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Attribution-Share Alike 3.0",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "true",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "https://creativecommons.org/licenses/by-sa/3.0",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc-by-sa-3.0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "permissionWikitext": "== {{int:filedesc}} ==\n{{Information\n|Description={{en|1=A tutorial video explaining how to make bold text and wikilinks, with an exhortation to be bold.  [[w:User:Sross (Public Policy)/Editing basics script|Script here]], OpenOffice slideshow available on request.}}\n|Source={{own}}\n|Author=[[User:Sross (Public Policy)|Sross (Public Policy)]]\n|Date=2010-10-12\n|Permission=\n|other_versions=\n}}\n{{Closed captions}}\n\n== {{int:license-header}} ==\n{{self|cc-by-sa-3.0|GFDL}}\n\n[[Category:Instructional videos on using Wikipedia in English]]\n[[Category:Be Bold]]"
+  },
+  "changes": "原件为固定修订正文；自然片段只截取连续原始 cue，原文和时间不改写；派生变体另行登记。",
+  "audit": "已检查 Commons 正文许可及原作品许可字段；该记录不是字幕语言真值的人工核对。"
+}

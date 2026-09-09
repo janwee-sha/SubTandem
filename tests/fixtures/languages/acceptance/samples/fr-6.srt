@@ -1,0 +1,25 @@
+1
+00:00:02,441 --> 00:00:04,989
+Voici votre télescope.
+
+2
+00:00:05,282 --> 00:00:07,360
+Une merveille d'ingénierie.
+
+3
+00:00:07,513 --> 00:00:09,916
+Une machine à explorer.
+
+4
+00:00:10,259 --> 00:00:12,515
+Utilisez-le pour remonter le temps
+
+5
+00:00:12,545 --> 00:00:16,825
+et explorer les premières galaxies
+qui se sont formées après le Big Bang;
+
+6
+00:00:17,782 --> 00:00:21,556
+pour scruter les atmosphères des planètes 
+en orbite autour des étoiles.

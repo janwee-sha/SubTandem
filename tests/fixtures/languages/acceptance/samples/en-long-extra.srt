@@ -1,0 +1,123 @@
+64
+00:05:58,991 --> 00:06:04,997
+but stakeholders who were a part of it would be involved.
+
+65
+00:06:04,997 --> 00:06:08,000
+That had always been the case.
+
+66
+00:06:08,000 --> 00:06:14,006
+Jon Postel worked very closely with the ITF and with the ccNSO managers and the like.
+
+67
+00:06:14,006 --> 00:06:19,979
+There was a need in that transition to expand the definition of stakeholder.
+
+68
+00:06:19,979 --> 00:06:25,985
+There were more stakeholders. There were end users. There were business users of the Internet.
+
+69
+00:06:25,985 --> 00:06:30,990
+The pot was getting bigger. The stakeholder group was getting bigger.
+
+70
+00:06:30,990 --> 00:06:35,995
+But what we wanted to do was really preserve what was going on
+
+71
+00:06:35,995 --> 00:06:42,001
+and what had traditionally been the basis of DNS management,
+
+72
+00:06:42,001 --> 00:06:46,005
+which is sort of consensus among the stakeholders,
+
+73
+00:06:46,005 --> 00:06:50,977
+but recognize that the group of stakeholders had gotten much bigger,
+
+74
+00:06:50,977 --> 00:06:52,979
+and much more diverse, and much more global.
+
+75
+00:06:52,979 --> 00:06:55,982
+Help me understand the timeframe. Were you at NTIA then?
+
+76
+00:06:55,982 --> 00:07:00,987
+I moved to NTIA on June 1st of 1997,
+
+77
+00:07:00,987 --> 00:07:09,996
+and we published the first request for comment on June 2nd, or something like that.
+
+78
+00:07:09,996 --> 00:07:11,998
+What was it like working with Magaziner on this endeavor?
+
+79
+00:07:11,998 --> 00:07:20,006
+So, Ira was great. He had a group of people from all over the U.S. government
+
+80
+00:07:20,006 --> 00:07:23,976
+working on the framework for Global Electronic Commerce.
+
+81
+00:07:23,976 --> 00:07:27,980
+And I was working on privacy and Internet governance.
+
+82
+00:07:27,980 --> 00:07:34,987
+There were people from the U.S. trade rep, talking about tariffs.
+
+83
+00:07:34,987 --> 00:07:38,991
+There were people from all over the government, putting together the sort of…
+
+84
+00:07:38,991 --> 00:07:50,002
+If we want to enable us, to take advantage of the opportunity
+
+85
+00:07:50,002 --> 00:07:54,006
+that the Internet represented from an economic growth perspective,
+
+86
+00:07:54,006 --> 00:07:57,009
+what structure would we need to have in place.
+
+87
+00:07:57,009 --> 00:08:05,985
+And so, this DNS management piece came directly out of the e-commerce.
+
+88
+00:08:05,985 --> 00:08:09,989
+To that point, Magaziner told us, he said, you know,
+
+89
+00:08:09,989 --> 00:08:15,995
+when he finished with the failed Clinton health care initiative, and he was going into this,
+
+90
+00:08:15,995 --> 00:08:21,000
+he said a primary driver of this was we wanted a long-term economic growth model.
+
+91
+00:08:21,000 --> 00:08:28,007
+Was the economic viability of the Internet recognized by everybody at those very early stages?
+
+92
+00:08:28,007 --> 00:08:36,983
+We were talking about what percentage of the global economy was already the,
+
+93
+00:08:36,983 --> 00:08:41,988
+sort of, riding on the Internet, and how that would grow over time.
+
+94
+00:08:41,988 --> 00:08:50,997
+So, there was a clear recognition that the Internet was the growth engine of the future,

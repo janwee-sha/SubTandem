@@ -1,0 +1,106 @@
+{
+  "acquiredAt": "2026-09-09",
+  "subtitle": {
+    "pageId": 181435031,
+    "title": "TimedText:How smoke detectors work.webm.zh-hant.srt",
+    "revision": 1144008324,
+    "timestamp": "2026-01-08T01:40:26Z",
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=1144008324",
+    "contributors": "https://commons.wikimedia.org/w/index.php?curid=181435031&action=history",
+    "revisionComment": "Import subtitles for [[File:How smoke detectors work.webm]]"
+  },
+  "textPolicy": {
+    "file": "commons-text-policy.json",
+    "sha256": "829bb2b3f8cdb2e111557a29b8735535c82cb06349a886676325b84443d00236",
+    "license": "CC-BY-SA-4.0"
+  },
+  "originalWork": {
+    "pageId": 120960864,
+    "title": "File:How smoke detectors work.webm",
+    "revision": 1033281505,
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=1033281505",
+    "metadata": {
+      "DateTime": {
+        "value": "2022-07-23 15:11:50",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "How smoke detectors work",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "Media from YouTube|Smoke detectors|License review needed (video)|Uploaded with video2commons|Videos from YouTube by channel (assorted)",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "Bill takes apart a smoke detector and shows how it uses a radioactive source to generate a tiny current which is disrupted when smoke flows through the sensor. He describes how a special transistor called a MOSFET can be used to detect the tiny current changes.",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "2011-03-06",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "<bdi lang=\"en\" dir=\"ltr\"><a href=\"//commons.wikimedia.org/wiki/Commons:YouTube_files\" title=\"Commons:YouTube files\">YouTube</a>: <a rel=\"nofollow\" class=\"external text\" href=\"https://www.youtube.com/watch?v=oFUUQcpGR3k\"><bdi lang=\"\">How smoke detectors work</bdi></a> – View/save archived versions on <a rel=\"nofollow\" class=\"external text\" href=\"https://web.archive.org/web/*/https://www.youtube.com/watch?v=oFUUQcpGR3k\">archive.org</a></bdi>",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.youtube.com/user/engineerguyvideo\">engineerguy</a>",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC BY 3.0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Attribution 3.0",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "true",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Attribution": {
+        "value": "engineerguy",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "https://creativecommons.org/licenses/by/3.0",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc-by-3.0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "permissionWikitext": "=={{int:filedesc}}==\n{{Information\n|description={{en|1=Bill takes apart a smoke detector and shows how it uses a radioactive source to generate a tiny current which is disrupted when smoke flows through the sensor. He describes how a special transistor called a MOSFET can be used to detect the tiny current changes.}}\n|date=2011-03-06\n|source={{From YouTube|1=oFUUQcpGR3k|2=How smoke detectors work}}\n|author=[https://www.youtube.com/user/engineerguyvideo engineerguy]\n|permission=\n|other_versions=\n|other_fields=\n}}\n\n=={{int:license-header}}==\n{{YouTube CC-BY|engineerguy}}\n{{LicenseReview}}\n\n[[Category:Uploaded with video2commons]]\n[[Category:Smoke detectors]]\n[[Category:Videos from YouTube by channel (assorted)]]"
+  },
+  "changes": "原件为固定修订正文；自然片段只截取连续原始 cue，原文和时间不改写；派生变体另行登记。",
+  "audit": "已检查 Commons 正文许可及原作品许可字段；该记录不是字幕语言真值的人工核对。"
+}

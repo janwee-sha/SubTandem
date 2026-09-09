@@ -1,0 +1,101 @@
+{
+  "acquiredAt": "2026-09-09",
+  "subtitle": {
+    "pageId": 59543994,
+    "title": "TimedText:Alzheimer disease video.webm.he.srt",
+    "revision": 246416060,
+    "timestamp": "2017-06-02T22:27:11Z",
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=246416060",
+    "contributors": "https://commons.wikimedia.org/w/index.php?curid=59543994&action=history",
+    "revisionComment": ""
+  },
+  "textPolicy": {
+    "file": "commons-text-policy.json",
+    "sha256": "829bb2b3f8cdb2e111557a29b8735535c82cb06349a886676325b84443d00236",
+    "license": "CC-BY-SA-4.0"
+  },
+  "originalWork": {
+    "pageId": 47690624,
+    "title": "File:Alzheimer disease video.webm",
+    "revision": 851158645,
+    "url": "https://commons.wikimedia.org/w/index.php?oldid=851158645",
+    "metadata": {
+      "DateTime": {
+        "value": "2016-03-22 21:04:12",
+        "source": "mediawiki-metadata",
+        "hidden": ""
+      },
+      "ObjectName": {
+        "value": "Alzheimer disease video",
+        "source": "mediawiki-metadata"
+      },
+      "CommonsMetadataExtension": {
+        "value": 1.2,
+        "source": "extension",
+        "hidden": ""
+      },
+      "Categories": {
+        "value": "Files from external sources with reviewed licenses|Videos of Alzheimer's disease|Videos from Osmosis",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "Assessments": {
+        "value": "",
+        "source": "commons-categories",
+        "hidden": ""
+      },
+      "ImageDescription": {
+        "value": "What is Alzheimer's disease? Alzeimer's (Alzheimer) disease is a neurodegenerative disease that leads to symptoms of dementia. Progression of Alzheimer's disease is thought to involve an accumulation of beta-amyloid plaque and neurofibrillary tangles in the brain. This video covers the mechanisms and pathophysiology thought to contribute to Alzheimer's disease, including a definitions of sporadic as well as familial Alzheimer's, common signs and symptoms, and diagnosis.\nThis video, however, misled the process of non-amyloidogenic pathway and amyloidogenic pathway of APP protein by showing the wrong way of how α-secretase, β-secretase and γ-secretase works.",
+        "source": "commons-desc-page"
+      },
+      "DateTimeOriginal": {
+        "value": "2016-03-22",
+        "source": "commons-desc-page"
+      },
+      "Credit": {
+        "value": "open.osmosis.org",
+        "source": "commons-desc-page"
+      },
+      "Artist": {
+        "value": "Osmosis",
+        "source": "commons-desc-page"
+      },
+      "LicenseShortName": {
+        "value": "CC BY-SA 4.0",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "UsageTerms": {
+        "value": "Creative Commons Attribution-Share Alike 4.0",
+        "source": "commons-desc-page"
+      },
+      "AttributionRequired": {
+        "value": "true",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "LicenseUrl": {
+        "value": "https://creativecommons.org/licenses/by-sa/4.0",
+        "source": "commons-desc-page"
+      },
+      "Copyrighted": {
+        "value": "True",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "Restrictions": {
+        "value": "",
+        "source": "commons-desc-page",
+        "hidden": ""
+      },
+      "License": {
+        "value": "cc-by-sa-4.0",
+        "source": "commons-templates",
+        "hidden": ""
+      }
+    },
+    "permissionWikitext": "=={{int:filedesc}}==\n{{Information\n|author=Osmosis\n|date=2016-03-22\n|description={{en|1=What is Alzheimer's disease? Alzeimer's (Alzheimer) disease is a neurodegenerative disease that leads to symptoms of dementia. Progression of Alzheimer's disease is thought to involve an accumulation of beta-amyloid plaque and neurofibrillary tangles in the brain. This video covers the mechanisms and pathophysiology thought to contribute to Alzheimer's disease, including a definitions of sporadic as well as familial Alzheimer's, common signs and symptoms, and diagnosis.\nThis video, however, misled the process of non-amyloidogenic pathway and amyloidogenic pathway of APP protein by showing the wrong way of how α-secretase, β-secretase and γ-secretase works. }}\n|other versions=\n|permission=\n|source=open.osmosis.org\n}}\n\n=={{int:license-header}}==\n{{cc-by-sa-4.0}}\n{{LicenseReview|site=open.osmosis.org|user=1989|date=2017-01-11}}\n\n[[Category:Videos of Alzheimer's disease]]\n[[Category:Videos from Osmosis]]"
+  },
+  "changes": "原件为固定修订正文；自然片段只截取连续原始 cue，原文和时间不改写；派生变体另行登记。",
+  "audit": "已检查 Commons 正文许可及原作品许可字段；该记录不是字幕语言真值的人工核对。"
+}

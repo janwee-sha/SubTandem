@@ -1,0 +1,47 @@
+20
+00:00:50,200 --> 00:00:51,760
+Wenn ihr euch die ganzen Zahlen,
+
+21
+00:00:51,800 --> 00:00:57,320
+also -2, -1, 0, 1, 2 usw. vorstellt,
+
+22
+00:00:57,360 --> 00:01:00,280
+dann macht ihr das
+ziemlich sicher als Gerade.
+
+23
+00:01:00,760 --> 00:01:02,240
+Ich mache das jedenfalls so.
+
+24
+00:01:02,720 --> 00:01:05,280
+Das heißt die -2 liegt vor der -1
+
+25
+00:01:05,320 --> 00:01:08,600
+und die liegt vor der Null
+und vor der 1 und immer so weiter.
+
+26
+00:01:09,560 --> 00:01:13,360
+Jeder Punkt auf dieser Gerade
+hat eine bestimmte Koordinate,
+
+27
+00:01:13,480 --> 00:01:15,680
+also einen bestimmten Zahlenwert.
+
+28
+00:01:15,960 --> 00:01:17,120
+Wenn man auch
+
+29
+00:01:17,160 --> 00:01:20,600
+den Punkten in der Ebene
+Koordinaten zuordnen will,
+
+30
+00:01:20,640 --> 00:01:22,720
+braucht man jeweils zwei Zahlen.

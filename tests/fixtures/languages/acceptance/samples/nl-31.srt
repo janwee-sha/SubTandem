@@ -1,0 +1,123 @@
+26
+00:01:44,968 --> 00:01:48,288
+zijn slechts twee van de vele astronomische puzzels
+
+27
+00:01:48,288 --> 00:01:51,688
+die wetenschappers graag zouden willen oplossen.
+
+28
+00:01:51,988 --> 00:01:54,601
+De weg naar antwoorden is alleen mogelijk
+
+29
+00:01:54,601 --> 00:01:56,034
+door het in kaart brengen van de emissie
+
+30
+00:01:56,034 --> 00:01:58,596
+die van alle verschillende spelers komt:
+
+31
+00:01:58,596 --> 00:02:01,209
+sterren, stof en gas.
+
+32
+00:02:02,000 --> 00:02:05,898
+Ieder laat zijn stempel achter in verschillende golflengten:
+
+33
+00:02:07,779 --> 00:02:10,724
+Bijvoorbeeld, hetzelfde stukje ruimte
+
+34
+00:02:10,724 --> 00:02:13,216
+dat Hubble bestuurdeert kan ook bestuudeerd worden
+
+35
+00:02:13,216 --> 00:02:15,353
+door de instrumenten die
+
+36
+00:02:15,353 --> 00:02:18,010
+de Chandra X-ray space observatory aan boord heeft.
+
+37
+00:02:21,353 --> 00:02:23,780
+Hubble en Chandra hebben in het verleden
+
+38
+00:02:23,780 --> 00:02:25,855
+al vaak samengewerkt.
+
+39
+00:02:25,865 --> 00:02:27,987
+Een voorbeeld daarvan is deze opname
+
+40
+00:02:27,987 --> 00:02:33,641
+van het spiraalstelsel ESO 137-001.
+
+41
+00:02:34,372 --> 00:02:36,187
+Dankzij de bijdrage van Hubble
+
+42
+00:02:36,287 --> 00:02:40,327
+zijn de sterren en nevels in het sterrenstelsel zichtbaar gemaakt.
+
+43
+00:02:40,594 --> 00:02:42,397
+Daarentegen kan Chandra
+
+44
+00:02:42,397 --> 00:02:45,047
+de hete gasstromen laten zien
+
+45
+00:02:45,047 --> 00:02:49,279
+die alleen zichtbaar zijn in het X-ray deel van het spectrum.
+
+46
+00:02:55,200 --> 00:03:00,000
+Maar Hubble werkt niet alleen samen met andere ruimtetelescopen;
+
+47
+00:03:00,000 --> 00:03:03,296
+het werkt ook samen met grondtelescopen —
+
+48
+00:03:03,621 --> 00:03:06,790
+en terwijl ruimtetelescopen het voordeel hebben
+
+49
+00:03:06,790 --> 00:03:10,014
+dat ze immuun zijn tegen atmosferische turbulentie,
+
+50
+00:03:10,070 --> 00:03:14,549
+kunnen instrumenten van grondtelescopen voortdurend worden geüpdatet
+
+51
+00:03:14,599 --> 00:03:17,549
+en vertonen vaak een groter gezichtsveld.
+
+52
+00:03:18,428 --> 00:03:22,000
+Een goed voorbeeld hiervan is ESO's Very Large Telescope
+
+53
+00:03:22,000 --> 00:03:26,481
+op Cerro Paranal, in de chileense Atacama woestijn.
+
+54
+00:03:35,438 --> 00:03:39,199
+In het cluster Abell 2744
+
+55
+00:03:39,199 --> 00:03:41,825
+— bijgenaamd Pandora’s Cluster —
+
+56
+00:03:41,975 --> 00:03:45,685
+werd met deze twee heel verschillende optieken geobserveerd.

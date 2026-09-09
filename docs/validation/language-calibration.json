@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "status": "qualified",
+  "parameters": {
+    "totalLetterBudget": 4096,
+    "spanLetterBudget": 256,
+    "contextLimit": 512,
+    "unsupportedMargin": 0.02,
+    "minLength": 0
+  },
+  "evidence": [
+    {
+      "file": "docs/validation/language-calibration-grid.json",
+      "sha256": "e5db6d8711511c2b5fb1f28e028a51f5bf1583c3d5679848d8c4454fd0b8c620"
+    },
+    {
+      "file": "docs/validation/language-detection-calibration.json",
+      "sha256": "2ed3fdf632a71bbc615def76658e4951112782a9cfbfaf5868f20fe64a3ce492"
+    },
+    {
+      "file": "docs/validation/language-detection-node.json",
+      "sha256": "ac93776937959a1bad91e9849f1b0e6ce55c72de3979019f11a6e3eb8ec11d67"
+    }
+  ],
+  "selectedRank": 1,
+  "behaviorQualifiedCount": 12
+}

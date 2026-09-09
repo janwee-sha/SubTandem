@@ -1,0 +1,75 @@
+7
+00:00:38,004 --> 00:00:45,979
+The early years were very exciting in the following way.
+
+8
+00:00:45,979 --> 00:00:58,992
+There was a problem, funding for the IANA functions had been stopped by the National Science Foundation.
+
+9
+00:00:58,992 --> 00:01:08,001
+There was need to sort of secure a firm foundation on which to continue the DNS work.
+
+10
+00:01:08,001 --> 00:01:17,977
+There was, you know, talk about moving it into a more international organization kind of UN agency.
+
+11
+00:01:17,977 --> 00:01:19,979
+And a lot of people were very concerned about it.
+
+12
+00:01:19,979 --> 00:01:24,984
+And a lot of people were very concerned about it from many, many different focuses.
+
+13
+00:01:24,984 --> 00:01:32,992
+From keeping the Internet being able to continue to move at Internet speed,
+
+14
+00:01:32,992 --> 00:01:35,995
+not having a heavy governmental overlay,
+
+15
+00:01:35,995 --> 00:01:42,001
+allowing the sort of creativity that comes from private sector, or at large management.
+
+16
+00:01:42,001 --> 00:01:48,007
+And so, in order to figure out what to do,
+
+17
+00:01:48,007 --> 00:01:57,984
+we conducted a very extensive sort of talking couple of months, where dozens and dozens, hundreds of people,
+
+18
+00:01:57,984 --> 00:02:05,992
+came in and talked to us about what it was they needed to see going forward,
+
+19
+00:02:05,992 --> 00:02:09,996
+what their problems with the way things were running then.
+
+20
+00:02:09,996 --> 00:02:14,000
+There was a lot of disputes, trademark disputes,
+
+21
+00:02:14,000 --> 00:02:19,005
+other kinds of disputes that had been kind of building up.
+
+22
+00:02:19,005 --> 00:02:27,981
+And so we got an enormous amount of input from speaking with people, and this was around the world.
+
+23
+00:02:27,981 --> 00:02:29,983
+So, it wasn’t just the U.S.
+
+24
+00:02:29,983 --> 00:02:33,987
+And then we sort of crafted the Green Paper,
+
+25
+00:02:33,987 --> 00:02:37,991
+which we wanted to throw out there and see what’s coming back at us.

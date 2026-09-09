@@ -1,0 +1,6874 @@
+{
+  "schemaVersion": 1,
+  "corpusVersion": "commons-2026-09-09-v1",
+  "calibrationHashes": {
+    "sources": "214e13aefe7379a4ffe01b066be90bc8cce346d7799d9e25ae4042d0f0c1059c",
+    "groups": "6f5d6a339043a48c06c03ddd4775c3361175ce20f6b61406b938145b0fefa239",
+    "samples": "31697564e6af70d8e729d06a511ffdbbefd30b255f79d7d7beee6a82cb5d7a7a",
+    "truth": "236d4025ec2806ffb172e194450d5b908d0c6154ec7f4d918994eecd5ce0f811",
+    "strata": "e9450e11f5cbab0bcf6a2b505b74f68e675be2b975221fed5119f844f81947c0",
+    "units": "15136ab8808411c639105ebfb8b238749fd22828ba3903f133e67205e68b51f7"
+  },
+  "configurationCount": 81,
+  "behaviorQualifiedCount": 12,
+  "preferredParameters": {
+    "totalLetterBudget": 4096,
+    "spanLetterBudget": 256,
+    "contextLimit": 512,
+    "unsupportedMargin": 0.02,
+    "minLength": 0
+  },
+  "candidates": [
+    {
+      "totalLetterBudget": 4096,
+      "spanLetterBudget": 256,
+      "contextLimit": 512,
+      "unsupportedMargin": 0.02,
+      "minLength": 0
+    },
+    {
+      "totalLetterBudget": 4096,
+      "spanLetterBudget": 256,
+      "contextLimit": 512,
+      "unsupportedMargin": 0.05,
+      "minLength": 0
+    },
+    {
+      "totalLetterBudget": 4096,
+      "spanLetterBudget": 256,
+      "contextLimit": 1024,
+      "unsupportedMargin": 0.02,
+      "minLength": 0
+    },
+    {
+      "totalLetterBudget": 4096,
+      "spanLetterBudget": 256,
+      "contextLimit": 1024,
+      "unsupportedMargin": 0.05,
+      "minLength": 0
+    },
+    {
+      "totalLetterBudget": 8192,
+      "spanLetterBudget": 256,
+      "contextLimit": 512,
+      "unsupportedMargin": 0.02,
+      "minLength": 0
+    },
+    {
+      "totalLetterBudget": 8192,
+      "spanLetterBudget": 256,
+      "contextLimit": 512,
+      "unsupportedMargin": 0.05,
+      "minLength": 0
+    },
+    {
+      "totalLetterBudget": 8192,
+      "spanLetterBudget": 256,
+      "contextLimit": 1024,
+      "unsupportedMargin": 0.02,
+      "minLength": 0
+    },
+    {
+      "totalLetterBudget": 8192,
+      "spanLetterBudget": 256,
+      "contextLimit": 1024,
+      "unsupportedMargin": 0.05,
+      "minLength": 0
+    },
+    {
+      "totalLetterBudget": 16384,
+      "spanLetterBudget": 256,
+      "contextLimit": 512,
+      "unsupportedMargin": 0.02,
+      "minLength": 0
+    },
+    {
+      "totalLetterBudget": 16384,
+      "spanLetterBudget": 256,
+      "contextLimit": 512,
+      "unsupportedMargin": 0.05,
+      "minLength": 0
+    },
+    {
+      "totalLetterBudget": 16384,
+      "spanLetterBudget": 256,
+      "contextLimit": 1024,
+      "unsupportedMargin": 0.02,
+      "minLength": 0
+    },
+    {
+      "totalLetterBudget": 16384,
+      "spanLetterBudget": 256,
+      "contextLimit": 1024,
+      "unsupportedMargin": 0.05,
+      "minLength": 0
+    }
+  ],
+  "configurations": [
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 128,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 128,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 128,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.2
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 128,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 128,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 128,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.2
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 128,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 128,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 128,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.2
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 256,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 1
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 256,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 1
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 256,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.6
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 256,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 1
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 256,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 1
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 256,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.6
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 256,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.8
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 256,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.8
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 256,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 512,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 512,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 512,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 512,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-mixed-40-35-25:required-accuracy",
+        "calibration-mixed-over-budget:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.8
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 512,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-mixed-40-35-25:required-accuracy",
+        "calibration-mixed-over-budget:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.8
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 512,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-40-35-25:required-accuracy",
+        "calibration-mixed-over-budget:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 512,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-mixed-40-35-25:required-accuracy",
+        "calibration-unsupported-mixed:behavior",
+        "calibration-mixed-over-budget:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.6
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 512,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-mixed-40-35-25:required-accuracy",
+        "calibration-unsupported-mixed:behavior",
+        "calibration-mixed-over-budget:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.6
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 4096,
+        "spanLetterBudget": 512,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-40-35-25:required-accuracy",
+        "calibration-unsupported-mixed:behavior",
+        "calibration-mixed-over-budget:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.2
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 128,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 128,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 128,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.2
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 128,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 128,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 128,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.2
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 128,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 128,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 128,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.2
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 256,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 1
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 256,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 1
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 256,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.6
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 256,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 1
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 256,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 1
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 256,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.6
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 256,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.8
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 256,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.8
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 256,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 512,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 512,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 512,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 512,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-mixed-40-35-25:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.8
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 512,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-mixed-40-35-25:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.8
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 512,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-40-35-25:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 512,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-mixed-40-35-25:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.6
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 512,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-mixed-40-35-25:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.6
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 8192,
+        "spanLetterBudget": 512,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-40-35-25:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.2
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 128,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 128,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 128,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.2
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 128,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 128,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 128,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.2
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 128,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 128,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 128,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-ru-6:required-accuracy",
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-unsupported-majority:required-accuracy",
+        "calibration-mixed-small-supported:required-accuracy",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 63,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.984375,
+            "incorrect": 0.015625,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 23,
+            "incorrect": 1,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 0.9583333333333334,
+            "incorrect": 0.041666666666666664,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 0.9583333333333334,
+      "overallAccuracy": 0.984375,
+      "outsideAccuracy": 0.2
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 256,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 1
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 256,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 1
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 256,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.6
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 256,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 1
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 256,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 1
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 256,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.6
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 256,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.8
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 256,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.8
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 256,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-unsupported-mixed:behavior"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 512,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-over-budget:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 512,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-over-budget:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 512,
+        "contextLimit": 512,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-over-budget:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 512,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-mixed-40-35-25:required-accuracy",
+        "calibration-mixed-over-budget:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.8
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 512,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-mixed-40-35-25:required-accuracy",
+        "calibration-mixed-over-budget:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.8
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 512,
+        "contextLimit": 1024,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-40-35-25:required-accuracy",
+        "calibration-mixed-over-budget:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.4
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 512,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.02,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-mixed-40-35-25:required-accuracy",
+        "calibration-unsupported-mixed:behavior",
+        "calibration-mixed-over-budget:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.6
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 512,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.05,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-mixed-40-35-25:required-accuracy",
+        "calibration-unsupported-mixed:behavior",
+        "calibration-mixed-over-budget:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.6
+    },
+    {
+      "parameters": {
+        "totalLetterBudget": 16384,
+        "spanLetterBudget": 512,
+        "contextLimit": 2048,
+        "unsupportedMargin": 0.1,
+        "minLength": 0
+      },
+      "failures": [
+        "calibration-unsupported-fi:behavior",
+        "calibration-unsupported-no:behavior",
+        "calibration-unsupported-ia:behavior",
+        "calibration-mixed-40-35-25:required-accuracy",
+        "calibration-unsupported-mixed:behavior",
+        "calibration-mixed-over-budget:required-accuracy"
+      ],
+      "positiveGroups": [
+        {
+          "stratum": "positive",
+          "denominator": 64,
+          "counts": {
+            "correct": 64,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:short",
+          "denominator": 24,
+          "counts": {
+            "correct": 24,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:medium",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        },
+        {
+          "stratum": "positive:long",
+          "denominator": 20,
+          "counts": {
+            "correct": 20,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          },
+          "rates": {
+            "correct": 1,
+            "incorrect": 0,
+            "unknown": 0,
+            "unsupported": 0
+          }
+        }
+      ],
+      "worstLengthAccuracy": 1,
+      "overallAccuracy": 1,
+      "outsideAccuracy": 0.2
+    }
+  ]
+}

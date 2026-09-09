@@ -1,0 +1,141 @@
+1
+00:00:00,000 --> 00:00:03,640
+Hallo und willkommen
+bei kolleg24 Mathematik.
+
+2
+00:00:04,280 --> 00:00:06,960
+In diesem Video geht es
+um die Binomischen Formeln.
+
+3
+00:00:07,640 --> 00:00:09,640
+Wer jetzt sagt: "Bino - was?",
+
+4
+00:00:09,680 --> 00:00:12,280
+der sollte sich dieses
+Video auf jeden Fall anschauen.
+
+5
+00:00:13,000 --> 00:00:16,600
+Denn die Binomischen Formeln,
+so seltsam ihr Name auch klingt,
+
+6
+00:00:16,800 --> 00:00:19,560
+können Rechenoperationen
+extrem erleichtern.
+
+7
+00:00:20,680 --> 00:00:22,440
+Binomische Formeln braucht ihr,
+
+8
+00:00:22,520 --> 00:00:24,840
+um die Produkte
+aus Binomen umzuformen.
+
+9
+00:00:25,320 --> 00:00:26,840
+Sie erleichtern außerdem
+
+10
+00:00:26,880 --> 00:00:30,880
+das Ausmultiplizieren von
+Klammerausdrücken und umgekehrt.
+
+11
+00:00:32,040 --> 00:00:34,760
+Aber was ist überhaupt ein Binom?
+
+12
+00:00:35,600 --> 00:00:39,040
+Ein Binom ist ein Term
+mit zwei Gliedern.
+
+13
+00:00:39,360 --> 00:00:40,920
+Zum Beispiel:
+
+14
+00:00:44,640 --> 00:00:46,200
+Oder genauso:
+
+15
+00:00:54,160 --> 00:00:56,960
+Das Wichtige ist,
+dass es immer zwei Glieder sind.
+
+16
+00:00:59,280 --> 00:01:02,520
+Wenn wir das Quadrat
+eines solchen Binoms haben,
+
+17
+00:01:08,880 --> 00:01:10,960
+können wir das einfach ausrechnen.
+
+18
+00:01:11,840 --> 00:01:15,640
+Dann schreiben wir
+das zunächst als Produkt.
+
+19
+00:01:21,400 --> 00:01:25,040
+Wenn wir das ausrechnen wollen,
+müssen wir das ausmultiplizieren.
+
+20
+00:01:26,120 --> 00:01:29,040
+Das ist
+erster Wert mal erster Wert,
+
+21
+00:01:30,120 --> 00:01:32,560
+plus erster Wert mal zweiter Wert,
+
+22
+00:01:34,760 --> 00:01:38,480
+plus zweiter Wert mal erster Wert,
+
+23
+00:01:40,920 --> 00:01:46,320
+plus zweiter Wert mal zweiter Wert.
+
+24
+00:01:47,920 --> 00:01:50,480
+Das können wir noch vereinfachen.
+
+25
+00:01:51,280 --> 00:01:52,680
+Das ist dann:
+
+26
+00:01:56,200 --> 00:02:01,120
+a mal b ist das Gleiche wie b mal a,
+laut Kommutativgesetz.
+
+27
+00:02:01,240 --> 00:02:04,760
+Das können wir einfach vertauschen,
+dann erhalten wir:
+
+28
+00:02:10,320 --> 00:02:13,440
+Das ist schon
+die 1. Binomische Formel.
+
+29
+00:02:14,160 --> 00:02:15,400
+Die lautet nämlich:
+
+30
+00:02:23,840 --> 00:02:26,400
+Damit ihr das nicht
+jedes Mal ausrechnen müsst,
+
+31
+00:02:26,560 --> 00:02:29,360
+ist es sinnvoll,
+euch diese Formel zu merken.

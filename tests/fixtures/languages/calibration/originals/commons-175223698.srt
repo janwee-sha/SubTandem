@@ -1,0 +1,379 @@
+1
+00:00:00,000 --> 00:00:04,040
+Hallo und willkommen
+zu kolleg24 Mathematik.
+
+2
+00:00:04,240 --> 00:00:05,320
+In diesem Video
+
+3
+00:00:05,360 --> 00:00:07,240
+geht es ums Koordinatensystem.
+
+4
+00:00:07,400 --> 00:00:08,440
+Genauer gesagt darum,
+
+5
+00:00:08,480 --> 00:00:10,960
+was ein kartesisches
+Koordinatensystem ist
+
+6
+00:00:11,040 --> 00:00:13,000
+und wie man darin Punkte abliest.
+
+7
+00:00:13,760 --> 00:00:14,960
+Außerdem zeige ich euch,
+
+8
+00:00:15,000 --> 00:00:19,160
+was die vier Quadranten
+eines Koordinatensystems sind.
+
+9
+00:00:19,680 --> 00:00:21,560
+Jetzt aber erst mal zu den Basics.
+
+10
+00:00:23,080 --> 00:00:25,240
+In der Ebene werden einem Punkt
+
+11
+00:00:25,320 --> 00:00:27,720
+zwei Koordinaten zugeordnet.
+
+12
+00:00:28,280 --> 00:00:29,400
+Hier zum Beispiel
+
+13
+00:00:29,440 --> 00:00:32,440
+dem Punkt A die Koordinaten 3 und 2.
+
+14
+00:00:33,640 --> 00:00:36,200
+Die Längen- und Breitengrade
+unserer Erde
+
+15
+00:00:36,280 --> 00:00:37,640
+machen nichts anderes
+
+16
+00:00:37,680 --> 00:00:41,720
+und bilden so auch
+ein riesiges Koordinatensystem.
+
+17
+00:00:42,720 --> 00:00:44,680
+Das einfachste Koordinatensystem
+
+18
+00:00:44,720 --> 00:00:45,960
+ist eindimensional,
+
+19
+00:00:46,360 --> 00:00:49,840
+sieht so aus und heißt Zahlengerade.
+
+20
+00:00:50,200 --> 00:00:51,760
+Wenn ihr euch die ganzen Zahlen,
+
+21
+00:00:51,800 --> 00:00:57,320
+also -2, -1, 0, 1, 2 usw. vorstellt,
+
+22
+00:00:57,360 --> 00:01:00,280
+dann macht ihr das
+ziemlich sicher als Gerade.
+
+23
+00:01:00,760 --> 00:01:02,240
+Ich mache das jedenfalls so.
+
+24
+00:01:02,720 --> 00:01:05,280
+Das heißt die -2 liegt vor der -1
+
+25
+00:01:05,320 --> 00:01:08,600
+und die liegt vor der Null
+und vor der 1 und immer so weiter.
+
+26
+00:01:09,560 --> 00:01:13,360
+Jeder Punkt auf dieser Gerade
+hat eine bestimmte Koordinate,
+
+27
+00:01:13,480 --> 00:01:15,680
+also einen bestimmten Zahlenwert.
+
+28
+00:01:15,960 --> 00:01:17,120
+Wenn man auch
+
+29
+00:01:17,160 --> 00:01:20,600
+den Punkten in der Ebene
+Koordinaten zuordnen will,
+
+30
+00:01:20,640 --> 00:01:22,720
+braucht man jeweils zwei Zahlen.
+
+31
+00:01:23,200 --> 00:01:26,080
+Man braucht also auch
+zwei Zahlengeraden.
+
+32
+00:01:26,480 --> 00:01:27,520
+Man nennt so ein
+
+33
+00:01:27,560 --> 00:01:30,360
+zweidimensionales Koordinatensystem,
+wie ihr hier seht,
+
+34
+00:01:30,400 --> 00:01:32,200
+kartesisches Koordinatensystem.
+
+35
+00:01:32,840 --> 00:01:34,160
+Wichtig ist dabei,
+
+36
+00:01:34,200 --> 00:01:36,680
+dass die Achsen
+senkrecht aufeinander stehen
+
+37
+00:01:36,880 --> 00:01:39,000
+und dass die Skala bei x und y-Achse
+
+38
+00:01:39,040 --> 00:01:40,240
+jeweils gleich ist.
+
+39
+00:01:40,560 --> 00:01:42,200
+Darauf gehe ich später noch ein.
+
+40
+00:01:43,000 --> 00:01:47,840
+Den Schnittpunkt der beiden
+Zahlengeraden nennt man Ursprung.
+
+41
+00:01:47,920 --> 00:01:49,720
+Die beiden Geraden
+
+42
+00:01:49,760 --> 00:01:51,120
+nennt man jetzt Achsen.
+
+43
+00:01:51,960 --> 00:01:53,280
+Um sie zu unterscheiden,
+
+44
+00:01:53,320 --> 00:01:56,080
+muss man ihnen natürlich
+unterschiedliche Namen geben.
+
+45
+00:01:56,800 --> 00:01:59,120
+Die waagerechte Zahlengerade
+
+46
+00:01:59,160 --> 00:02:02,560
+heißt x-Achse, oder Abszissenachse.
+
+47
+00:02:02,600 --> 00:02:05,640
+Und die senkrechte Zahlengerade
+
+48
+00:02:05,680 --> 00:02:09,120
+heißt y-Achse,
+oder Ordinatenachse.
+
+49
+00:02:10,360 --> 00:02:12,840
+Dadurch kann man jedem Punkt
+in der Ebene
+
+50
+00:02:12,880 --> 00:02:14,360
+ein Zahlenpaar zuordnen.
+
+51
+00:02:15,320 --> 00:02:16,520
+Wie geht das konkret?
+
+52
+00:02:16,880 --> 00:02:19,400
+Schauen wir uns
+das Beispiel von vorhin an.
+
+53
+00:02:20,000 --> 00:02:23,440
+Hier ist der Punkt A
+mit den Koordinaten 3, 2.
+
+54
+00:02:24,360 --> 00:02:26,080
+Den x-Wert lese ich
+
+55
+00:02:26,120 --> 00:02:27,600
+auf der x-Achse ab,
+
+56
+00:02:27,920 --> 00:02:29,720
+der steht als Erster in der Klammer.
+
+57
+00:02:30,600 --> 00:02:33,920
+Und den y-Wert auf der y-Achse.
+
+58
+00:02:34,720 --> 00:02:36,760
+Dieser Wert
+wird als Zweites notiert.
+
+59
+00:02:37,440 --> 00:02:39,400
+Dazwischen
+schreiben wir einen Strichpunkt
+
+60
+00:02:39,480 --> 00:02:41,800
+oder einen senkrechten Strich.
+
+61
+00:02:41,960 --> 00:02:44,560
+Für negative x- und y-Werte
+
+62
+00:02:44,600 --> 00:02:45,920
+funktioniert das genauso.
+
+63
+00:02:46,800 --> 00:02:51,880
+Hier z.B. für den Punkt B (-3, -2).
+
+64
+00:02:52,920 --> 00:02:56,000
+Jetzt zu den verschiedenen Bereichen
+des Koordinatensystems.
+
+65
+00:02:57,240 --> 00:02:59,160
+Die werden Quadranten genannt
+
+66
+00:02:59,200 --> 00:03:02,160
+und gegen den Uhrzeigersinn
+durchnummeriert.
+
+67
+00:03:03,240 --> 00:03:04,840
+Das hier ist der erste Quadrant.
+
+68
+00:03:04,880 --> 00:03:06,560
+Da sind sowohl die x-Werte
+
+69
+00:03:06,600 --> 00:03:08,800
+wie auch die y-Werte positiv.
+
+70
+00:03:09,880 --> 00:03:11,480
+Das ist der zweite Quadrant.
+
+71
+00:03:11,520 --> 00:03:13,480
+Da sind die x-Werte negativ
+
+72
+00:03:13,520 --> 00:03:15,520
+und die y-Werte positiv.
+
+73
+00:03:16,840 --> 00:03:18,480
+Das hier ist der dritte Quadrant.
+
+74
+00:03:18,520 --> 00:03:21,400
+Da sind die x- und y-Werte negativ.
+
+75
+00:03:22,120 --> 00:03:24,360
+Und das ist der vierte Quadrant.
+
+76
+00:03:24,640 --> 00:03:26,320
+Da sind die x-Werte positiv
+
+77
+00:03:26,360 --> 00:03:28,280
+und die y-Werte negativ.
+
+78
+00:03:29,200 --> 00:03:31,440
+Wenn ihr so ein Koordinatensystem
+
+79
+00:03:31,480 --> 00:03:32,680
+selbst zeichnet,
+
+80
+00:03:32,720 --> 00:03:34,520
+immer gleich die Achsen beschriften,
+
+81
+00:03:34,600 --> 00:03:36,560
+damit ihr nicht durcheinander kommt.
+
+82
+00:03:36,960 --> 00:03:39,560
+Der Abstand zwischen den x-Werten
+
+83
+00:03:39,600 --> 00:03:40,840
+muss gleich lang sein.
+
+84
+00:03:41,000 --> 00:03:42,880
+Genauso wie zwischen den y-Werten.
+
+85
+00:03:44,080 --> 00:03:45,280
+Auf karierten Blättern
+
+86
+00:03:45,320 --> 00:03:48,840
+nimmt man meist zwei Kästchen
+oder 1 cm.
+
+87
+00:03:50,720 --> 00:03:53,200
+Jetzt wisst ihr,
+was ein Koordinatensystem ist
+
+88
+00:03:53,240 --> 00:03:54,640
+und wie man damit arbeitet.
+
+89
+00:03:54,760 --> 00:03:55,800
+Bis bald.

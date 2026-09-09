@@ -1,0 +1,4750 @@
+1
+00:00:03,101 --> 00:00:03,471
+Perché non va bene bene, bene.
+
+2
+00:00:03,471 --> 00:00:05,391
+Bene, bene, bene allora Eh,
+prima cosa.
+
+3
+00:00:05,391 --> 00:00:07,831
+Allora prima cosa?
+
+4
+00:00:07,831 --> 00:00:07,861
+Grazie dell'invito, grazie del
+DI questa magnifica ambiente,
+
+5
+00:00:07,861 --> 00:00:09,141
+Grazie dell'invito.
+
+6
+00:00:09,151 --> 00:00:12,611
+Grazie DI di questa magnifica
+ambiente, diciamo di colleghi
+
+7
+00:00:12,611 --> 00:00:14,207
+diciamo di colleghi, Michel, la
+maggior parte non li conosco,
+
+8
+00:00:14,207 --> 00:00:17,469
+amici, la maggior parte non li
+conosco, però piano piano si
+
+9
+00:00:17,469 --> 00:00:19,264
+però piano piano si aggiunge
+qualche conoscenza in più, è
+
+10
+00:00:19,264 --> 00:00:22,014
+aggiunge qualche conoscenza in
+più, è vedete?
+
+11
+00:00:22,014 --> 00:00:23,181
+vedete chi sono vicedirettore di
+una biblioteca ecclesiastica che
+
+12
+00:00:23,181 --> 00:00:27,186
+E chi sono vicedirettore di una
+biblioteca ecclesiastica che fa
+
+13
+00:00:27,186 --> 00:00:27,791
+fa parte di un gruppo più ampio
+che si chiama Urbe.
+
+14
+00:00:27,791 --> 00:00:31,271
+parte di un gruppo più ampio che
+si chiama Urbe.
+
+15
+00:00:31,271 --> 00:00:31,331
+Poi lo vediamo un po un pochino
+meglio dopo e con dei colleghi
+
+16
+00:00:31,331 --> 00:00:36,823
+Poi lo vediamo un po un pochino
+meglio dopo e con dei colleghi.
+
+17
+00:00:36,823 --> 00:00:37,161
+EA dirle anche due sono qua e
+che veramente stanno piano col
+
+18
+00:00:37,161 --> 00:00:42,199
+E aggiunge, anche, due sono qua
+EE veramente stanno piano col
+
+19
+00:00:42,199 --> 00:00:42,228
+tempo nel rendersi conto di
+quanto si possa fare con
+
+20
+00:00:42,228 --> 00:00:46,870
+tempo rendersi conto di quanto
+si possa fare con wikidata dopo
+
+21
+00:00:46,870 --> 00:00:47,377
+wikidata dopo che hanno diciamo
+toccato con mano quanto non si
+
+22
+00:00:47,377 --> 00:00:52,423
+che hanno diciamo toccato con
+mano quanto non si può fare con
+
+23
+00:00:52,423 --> 00:00:52,444
+può fare con viaf lì dove viaf
+fallisce Eh.
+
+24
+00:00:52,444 --> 00:00:54,651
+viaf lì dove viaf fallisce.
+
+25
+00:00:54,911 --> 00:00:57,631
+Eh sì, sì.
+
+26
+00:00:57,631 --> 00:00:59,431
+E esatto.
+
+27
+00:00:59,431 --> 00:00:59,971
+Esatto, è stato.
+
+28
+00:00:59,971 --> 00:01:00,911
+E questo lo dirò fra poco.
+
+29
+00:01:00,911 --> 00:01:02,151
+Dirò a fra poco tramite viaf ci
+siamo, abbiamo ho conosciuto
+
+30
+00:01:02,151 --> 00:01:05,181
+Tramite vias siamo abbiamo ho
+conosciuto tutto il giro
+
+31
+00:01:05,181 --> 00:01:06,052
+tutto il giro wikidata è quello
+che succede in queste.
+
+32
+00:01:06,052 --> 00:01:08,961
+wikidata è quello che succede in
+queste.
+
+33
+00:01:08,971 --> 00:01:09,071
+In questa diciamo presentazione
+quello che vorrei spiegare di
+
+34
+00:01:09,071 --> 00:01:12,343
+In questa diciamo presentazione
+quello che vorrei far spiegare
+
+35
+00:01:12,343 --> 00:01:12,460
+più in questa presentazione è il
+rapporto tra Coco e wikidata,
+
+36
+00:01:12,460 --> 00:01:15,770
+di più in questa presentazione è
+il rapporto tra Coco e ukido,
+
+37
+00:01:15,770 --> 00:01:15,849
+che sono i due ambienti in cui
+mi sto muovendo.
+
+38
+00:01:15,849 --> 00:01:18,431
+che sono i due ambienti in cui
+mi sto muovendo.
+
+39
+00:01:18,771 --> 00:01:18,851
+Il primo è l'ambiente della
+catalogazione, il secondo,
+
+40
+00:01:18,851 --> 00:01:22,197
+Il primo è l'ambiente della
+catalogazione, il secondo,
+
+41
+00:01:22,197 --> 00:01:22,270
+ovviamente quello che conoscete
+e per me è stata veramente una
+
+42
+00:01:22,270 --> 00:01:26,122
+ovviamente quello che conoscete
+e per me è stata veramente una
+
+43
+00:01:26,122 --> 00:01:26,187
+sorpresa di come si siano,
+diciamo capiti.
+
+44
+00:01:26,187 --> 00:01:28,811
+sorpresa di come si siano,
+diciamo capiti.
+
+45
+00:01:28,811 --> 00:01:28,871
+I due sistemi faro perlomeno
+dico come puoi farli capire e
+
+46
+00:01:28,871 --> 00:01:33,178
+I due sistemi faro perlomeno
+dico come puoi farli capire e
+
+47
+00:01:33,178 --> 00:01:33,267
+interagire tra di loro?
+
+48
+00:01:33,267 --> 00:01:34,981
+interagire tra di loro.
+
+49
+00:01:36,471 --> 00:01:36,491
+Che cos'è coach?
+
+50
+00:01:36,491 --> 00:01:37,591
+Che cos'è coach?
+
+51
+00:01:37,601 --> 00:01:37,701
+Scusate, magari i più lontani
+vedono meno bene queste questo
+
+52
+00:01:37,701 --> 00:01:41,761
+Scusate, magari i più lontani
+vedono meno bene queste questo
+
+53
+00:01:41,761 --> 00:01:41,852
+testo.
+
+54
+00:01:41,852 --> 00:01:42,181
+testo.
+
+55
+00:01:42,181 --> 00:01:42,271
+Però comunque coa che tutti in
+tutto il mondo si pronuncia koa
+
+56
+00:01:42,271 --> 00:01:46,580
+Però comunque coa che tutti in
+tutto il mondo si pronuncia coa
+
+57
+00:01:46,580 --> 00:01:47,267
+però gli italiani non c'e la
+facciamo a fare la H spirata e
+
+58
+00:01:47,267 --> 00:01:50,770
+però italiani non c'e la
+facciamo a fare la h aspirata e
+
+59
+00:01:50,770 --> 00:01:51,787
+lo qui ci sono degli
+interferenze di qualche tipo EE
+
+60
+00:01:51,787 --> 00:01:54,470
+lo ci sono degli interferenze di
+qualche tipo EE un sistema
+
+61
+00:01:54,470 --> 00:01:56,545
+un sistema integrato di gestione
+di biblioteche e che quindi ti
+
+62
+00:01:56,545 --> 00:01:58,940
+integrato di gestione di
+biblioteche e quindi ti dà
+
+63
+00:01:58,940 --> 00:02:00,668
+dà praticamente tutte le
+possibilità e le necessità che
+
+64
+00:02:00,668 --> 00:02:02,850
+praticamente tutte le
+possibilità e necessità che hai
+
+65
+00:02:02,850 --> 00:02:04,951
+hai per gestire una biblioteca
+ha una diffusione molto forte, è
+
+66
+00:02:04,951 --> 00:02:07,319
+per gestire una biblioteca a una
+diffusione molto forte.
+
+67
+00:02:07,319 --> 00:02:09,861
+quello che ha dato moltissimo al
+terzo mondo proprio perché
+
+68
+00:02:09,861 --> 00:02:11,509
+È quello che ha dato moltissimo
+al terzo mondo proprio perché,
+
+69
+00:02:11,509 --> 00:02:13,364
+essendo open source,
+praticamente il terzo mondo non
+
+70
+00:02:13,364 --> 00:02:15,210
+essendo open source,
+praticamente il terzo mondo non
+
+71
+00:02:15,210 --> 00:02:16,310
+si poteva permettere
+assolutamente nessun altro tipo
+
+72
+00:02:16,310 --> 00:02:18,911
+si poteva permettere
+assolutamente nessun altro tipo
+
+73
+00:02:18,911 --> 00:02:19,257
+di gestore di modello con
+modello commerciale ed è anche.
+
+74
+00:02:19,257 --> 00:02:21,871
+di gestore di modello con
+modello commerciale.
+
+75
+00:02:22,421 --> 00:02:23,011
+Ed è anche l'unico e consente di
+fare formazione, vale a dire Eh
+
+76
+00:02:23,011 --> 00:02:27,169
+L'unico che consente di fare
+formazione, vale a dire Eh in
+
+77
+00:02:27,169 --> 00:02:27,279
+potete immaginare una scuola di
+bioeconomia che che paghi
+
+78
+00:02:27,279 --> 00:02:29,671
+in potete immaginare un ascolto.
+
+79
+00:02:29,681 --> 00:02:31,257
+Bioeconomia che si che paghi
+licenze, magari il numero
+
+80
+00:02:31,257 --> 00:02:33,584
+licenze, magari in numero
+indeterminato perché non sa
+
+81
+00:02:33,584 --> 00:02:35,063
+indeterminato perché non sa
+quante persone avrebbe, avrà in
+
+82
+00:02:35,063 --> 00:02:37,841
+quante persone sarebbe avrà in
+quel corso dovrebbe scucire una
+
+83
+00:02:37,841 --> 00:02:39,503
+quel corso dovrebbe scucire una
+quantità di soldi tale per cui
+
+84
+00:02:39,503 --> 00:02:42,312
+qualità di soldi tale per cui
+praticamente ogni ogni persona
+
+85
+00:02:42,312 --> 00:02:43,802
+praticamente ogni ogni persona
+dovrebbe, ogni studente dovrà
+
+86
+00:02:43,802 --> 00:02:46,641
+dovrebbe ogni studente dovrebbe
+magari altissime cifre, non
+
+87
+00:02:46,641 --> 00:02:48,031
+anche ad altissime cifre, non
+avendo licenze, e questo è
+
+88
+00:02:48,031 --> 00:02:50,686
+avendo licenze, e questo è
+possibile farlo con coa e con in
+
+89
+00:02:50,686 --> 00:02:52,260
+possibile farlo con coa e in
+particolare la biblioteca
+
+90
+00:02:52,260 --> 00:02:54,589
+particolare la biblioteca
+storica vaticana.
+
+91
+00:02:54,589 --> 00:02:55,811
+storica vaticana, lo adottato da
+diversi anni EE lo sta usando
+
+92
+00:02:55,811 --> 00:02:59,059
+Lo ha adottato da diversi anni e
+lo sta usando proprio così, la
+
+93
+00:02:59,059 --> 00:03:00,719
+proprio così, la Community
+fortissima che ha coa è
+
+94
+00:03:00,719 --> 00:03:02,678
+Community fortissima che ha coa
+è veramente per me è stata
+
+95
+00:03:02,678 --> 00:03:05,243
+veramente per me è stata
+fondamentale per la scelta di
+
+96
+00:03:05,243 --> 00:03:06,581
+fondamentale per la scelta di
+questo, di questo software dove
+
+97
+00:03:06,581 --> 00:03:09,998
+questo, di questo software dove
+sviluppatori e utilizzatori
+
+98
+00:03:09,998 --> 00:03:10,839
+sviluppatori e utilizzatori
+bibliotecari sono molto ben
+
+99
+00:03:10,839 --> 00:03:13,891
+bibliotecari sono molto ben
+legati tra di.
+
+100
+00:03:13,961 --> 00:03:14,293
+Loro e solo una lista velocità
+dell'amp che rispondono ALVISI,
+
+101
+00:03:14,293 --> 00:03:18,051
+legati tra di loro e non solo
+una mailing lista.
+
+102
+00:03:18,061 --> 00:03:19,563
+Velocità dell'ampio che
+rispondono, ALVISI mente, ma
+
+103
+00:03:19,563 --> 00:03:21,766
+ma anche da eventi di vario tipo
+dove sempre sono mescolati
+
+104
+00:03:21,766 --> 00:03:24,899
+anche da eventi di vario tipo
+dove sempre sono mescolati,
+
+105
+00:03:24,899 --> 00:03:25,821
+sviluppatori e bibliotecari,
+gente che ci lavora, sta per
+
+106
+00:03:25,821 --> 00:03:29,946
+sviluppatori EE bibliotecari,
+gente che ci lavora, sta per
+
+107
+00:03:29,946 --> 00:03:30,058
+National Fondazione interna
+all'Open Library Foundation.
+
+108
+00:03:30,058 --> 00:03:33,941
+nascere la Fondazione interna la
+fondation.
+
+109
+00:03:33,941 --> 00:03:33,981
+Questo mi è parso veramente
+molto importante.
+
+110
+00:03:33,981 --> 00:03:36,561
+Questo mi è parso veramente
+molto importante.
+
+111
+00:03:37,161 --> 00:03:37,271
+Il sito lo trovate a
+community.org e trovate anche
+
+112
+00:03:37,271 --> 00:03:40,224
+Il sito lo trovate a
+community.org e trovate anche
+
+113
+00:03:40,224 --> 00:03:40,354
+delle demo, vale a dire che lì
+sopra potete fare le vostre
+
+114
+00:03:40,354 --> 00:03:43,767
+delle demo, vale a dire che lì
+sopra potete fare le vostre
+
+115
+00:03:43,767 --> 00:03:43,921
+prove dice io sono lavoro in un
+in Marco, io lavoro in March 21.
+
+116
+00:03:43,921 --> 00:03:47,730
+prove dice io sono lavoro in un
+marchi, io lavoro in March 21,
+
+117
+00:03:47,730 --> 00:03:48,201
+entrate il simulata, avete delle
+macchine che ogni giorno vengono
+
+118
+00:03:48,201 --> 00:03:51,721
+Entrate il simulate avete delle
+macchine che ogni giorno vengono
+
+119
+00:03:51,721 --> 00:03:51,901
+ovviamente rimesse azzerate, ma
+potete fare le prove che volete.
+
+120
+00:03:51,901 --> 00:03:55,601
+ovviamente rimesse azzerate, ma
+potete fare le prove che volete.
+
+121
+00:03:56,121 --> 00:03:56,171
+Non solo di catalogazione, ma di
+anche di gestione, che so?
+
+122
+00:03:56,171 --> 00:03:59,261
+Non solo di catalogazione, ma di
+anche di gestione, che so?
+
+123
+00:03:59,261 --> 00:03:59,331
+I prestiti fa simulare tutte
+queste cose, è vero che poi uno
+
+124
+00:03:59,331 --> 00:04:02,962
+I prestiti fa simulare tutte
+queste cose, è vero che poi uno
+
+125
+00:04:02,962 --> 00:04:03,008
+ha bisogno di registrare un
+falso utente?
+
+126
+00:04:03,008 --> 00:04:05,521
+ha bisogno di registrare un
+falso utente?
+
+127
+00:04:05,521 --> 00:04:05,551
+Queste tutte queste cose.
+
+128
+00:04:05,551 --> 00:04:06,401
+Queste tutte queste cose, quindi
+da te, ma comunque ha un suo
+
+129
+00:04:06,401 --> 00:04:09,485
+Quindi una demo 5 comunque ha un
+suo costo nel senso operativo,
+
+130
+00:04:09,485 --> 00:04:11,586
+costo nel senso operativo, ma
+zero costo.
+
+131
+00:04:11,586 --> 00:04:12,161
+ma zero costo in senso di prove,
+di rendersi conto di quale, di
+
+132
+00:04:12,161 --> 00:04:16,770
+Il senso di prove, di rendersi
+conto di quale DI come fatto
+
+133
+00:04:16,770 --> 00:04:17,364
+come è fatto quello strumento,
+la parte diciamo dietro è fatta
+
+134
+00:04:17,364 --> 00:04:21,874
+quello strumento, la parte
+diciamo dietro, è fatta di
+
+135
+00:04:21,874 --> 00:04:22,046
+di standard di vario tipo.
+
+136
+00:04:22,046 --> 00:04:23,991
+standard di vario tipo.
+
+137
+00:04:23,991 --> 00:04:24,051
+Il linguaggio e il perle, ma
+anche il javascript e come
+
+138
+00:04:24,051 --> 00:04:28,671
+Il linguaggio ma anche
+javascript e come server già
+
+139
+00:04:28,671 --> 00:04:29,231
+server già lapacho un service 39
+e 50 per l'auto.
+
+140
+00:04:29,231 --> 00:04:31,821
+lapacho un server 79 e 50.
+
+141
+00:04:32,461 --> 00:04:32,861
+L'auto prestito i database sono
+varie, addio mysql elastic
+
+142
+00:04:32,861 --> 00:04:37,051
+Prestito i database sono Maria
+di biomasse.
+
+143
+00:04:37,314 --> 00:04:37,501
+search e l'indicatore di default
+adesso da poco per le parole,
+
+144
+00:04:37,501 --> 00:04:42,497
+L'elastico search e l'indicatore
+di default adesso da poco per le
+
+145
+00:04:42,497 --> 00:04:42,502
+diciamo le ricerche per parole e
+poi anche altri standard, tutti
+
+146
+00:04:42,502 --> 00:04:46,897
+parole, diciamo le ricerche vere
+parole e poi anche altri
+
+147
+00:04:46,897 --> 00:04:47,844
+standard, tutti standard aperti
+e le api che ovviamente servono
+
+148
+00:04:47,844 --> 00:04:51,747
+standard aperti e le api che
+ovviamente servono a tutte le
+
+149
+00:04:51,747 --> 00:04:52,697
+da tutte le parti.
+
+150
+00:04:52,697 --> 00:04:53,191
+parti.
+
+151
+00:04:54,591 --> 00:04:54,661
+È diffuso così e soprattutto
+biblioteche pubbliche e
+
+152
+00:04:54,661 --> 00:04:58,232
+È diffuso così e soprattutto
+biblioteche pubbliche e
+
+153
+00:04:58,232 --> 00:04:58,559
+accademiche, verde, rosso,
+verde, pardon rosso, si è verde
+
+154
+00:04:58,559 --> 00:05:02,285
+accademiche, rosso, verde,
+pardon rosso, si è verde e
+
+155
+00:05:02,285 --> 00:05:02,531
+e potete trovare questa mappa
+continuamente aggiornata grazie
+
+156
+00:05:02,531 --> 00:05:06,544
+potete trovare questa mappa
+continuamente aggiornata grazie
+
+157
+00:05:06,544 --> 00:05:06,945
+al lavoro di Marshall Breeding
+che è fenomenale.
+
+158
+00:05:06,945 --> 00:05:09,921
+al lavoro di Marshall, Brig
+Estramurale.
+
+159
+00:05:09,921 --> 00:05:09,971
+Non solo per coa ma per
+qualsiasi altro dato di
+
+160
+00:05:09,971 --> 00:05:12,915
+Non solo per coach, ma per
+qualsiasi altro dato di
+
+161
+00:05:12,915 --> 00:05:13,064
+biblioteche nel mondo, a meno di
+quelle che si scrivono.
+
+162
+00:05:13,064 --> 00:05:16,481
+biblioteche nel mondo, a meno di
+quelle che si scrivono.
+
+163
+00:05:16,481 --> 00:05:16,531
+Ma siccome sono iscritte a
+questo sito tantissimi,
+
+164
+00:05:16,531 --> 00:05:19,831
+Ma siccome si sono iscritte a
+questo sito tantissimi,
+
+165
+00:05:19,831 --> 00:05:20,054
+tantissime biblioteche, da tanti
+anni veramente un ottimo
+
+166
+00:05:20,054 --> 00:05:23,376
+tantissime biblioteche, da tanti
+anni è veramente un ottimo
+
+167
+00:05:23,376 --> 00:05:24,258
+strumento per capire la
+situazione, tutto, mettere il
+
+168
+00:05:24,258 --> 00:05:26,676
+strumento per capire la
+situazione.
+
+169
+00:05:26,676 --> 00:05:26,791
+polso alla stazione di
+biblioteche del software
+
+170
+00:05:26,791 --> 00:05:29,257
+Ottenere il polso della
+situazione di biblioteche del
+
+171
+00:05:29,257 --> 00:05:29,609
+software biblioteca.
+
+172
+00:05:29,609 --> 00:05:30,221
+Beautiful.
+
+173
+00:05:30,841 --> 00:05:30,891
+Abbiamo cominciato nel 2011,
+pardon 2010, con un'accettazione
+
+174
+00:05:30,891 --> 00:05:34,844
+Abbiamo cominciato nel 2011 per
+non 2010, con un'accettazione
+
+175
+00:05:34,844 --> 00:05:34,888
+immediata nel mio staff dello
+strumento.
+
+176
+00:05:34,888 --> 00:05:37,501
+immediata del mio staff dello
+strumento.
+
+177
+00:05:37,501 --> 00:05:37,541
+Grazie all'installazione fatta
+in locale e io sono stato
+
+178
+00:05:37,541 --> 00:05:40,498
+Grazie all'installazione fatta
+in locale e io sono stato
+
+179
+00:05:40,498 --> 00:05:40,752
+l'ultimo a decidermi, però ho
+detto va bene ok, lo facciamo
+
+180
+00:05:40,752 --> 00:05:43,653
+l'ultimo a decidermi, però ho
+detto va bene ok, lo facciamo
+
+181
+00:05:43,653 --> 00:05:44,132
+perché per carità, ho dovuto
+fare tutta la migrazione dal
+
+182
+00:05:44,132 --> 00:05:44,301
+eh?
+
+183
+00:05:44,311 --> 00:05:46,703
+Per carità, ho dovuto fare tutta
+la migrazione dal sistema
+
+184
+00:05:46,703 --> 00:05:47,598
+sistema precedente però dove è
+importante dirlo in questa sede
+
+185
+00:05:47,598 --> 00:05:50,016
+precedente, però dove è
+importante dirlo, in questa sede
+
+186
+00:05:50,016 --> 00:05:50,773
+e c'è stata la generazione di
+reclamo autorità, a partire da
+
+187
+00:05:50,773 --> 00:05:53,223
+c'è stata la generazione delle
+autorità, a partire da delle
+
+188
+00:05:53,223 --> 00:05:54,116
+delle intestazioni o punti di
+accesso che dir si voglia.
+
+189
+00:05:54,116 --> 00:05:56,361
+intestazioni o punti di accesso
+al Siviglia coinvolto?
+
+190
+00:05:56,361 --> 00:05:57,431
+Hai voglia a chi ha il tempo non
+si potevano certo ne chiamare
+
+191
+00:05:57,431 --> 00:05:59,802
+Ma a che al tempo non si
+potevano certo ne chiamare punti
+
+192
+00:05:59,802 --> 00:06:00,915
+punti di accesso, né lo erano.
+
+193
+00:06:00,915 --> 00:06:03,411
+di accesso, né lo erano e che
+sono appunto necessarie per
+
+194
+00:06:03,411 --> 00:06:04,399
+Che sono appunto necessari per
+gestire le entità e lavorare.
+
+195
+00:06:04,399 --> 00:06:06,021
+gestire l'entità e lavorare.
+
+196
+00:06:06,021 --> 00:06:06,091
+Quindi il link è data.
+
+197
+00:06:06,091 --> 00:06:07,191
+Quindi il link è data.
+
+198
+00:06:08,021 --> 00:06:08,061
+E siamo entrati in produzione a
+metà 2011 e da lì sono nati
+
+199
+00:06:08,061 --> 00:06:11,976
+E siamo entrati in produzione a
+metà 2011 e da lì sono nati
+
+200
+00:06:11,976 --> 00:06:12,039
+tutti i nuovi servizi,
+personalizzazioni eccetera,
+
+201
+00:06:12,039 --> 00:06:15,339
+tutti i nuovi servizi,
+personalizzazioni eccetera,
+
+202
+00:06:15,339 --> 00:06:15,421
+senza avere, grazie al cielo,
+nessun costo di licenza né di
+
+203
+00:06:15,421 --> 00:06:19,295
+senza avere, grazie al cielo,
+nessun costo di licenza né di
+
+204
+00:06:19,295 --> 00:06:19,400
+manutenzione, dato che la
+manutenzione è praticamente la
+
+205
+00:06:19,400 --> 00:06:22,981
+manutenzione, dato che
+manutenzione è praticamente la
+
+206
+00:06:22,981 --> 00:06:23,053
+riusciamo a fare internamente.
+
+207
+00:06:23,053 --> 00:06:25,031
+riusciamo a fare internamente.
+
+208
+00:06:25,521 --> 00:06:25,561
+Ciò non toglie che se uno non
+riesce a farlo internamente, lo
+
+209
+00:06:25,561 --> 00:06:28,263
+Sono toglie che se uno riesce a
+farlo internamente lo può
+
+210
+00:06:28,263 --> 00:06:28,415
+può chiedere a qualche.
+
+211
+00:06:28,415 --> 00:06:29,351
+chiedere a qualche.
+
+212
+00:06:30,821 --> 00:06:30,891
+Ehm, ditta di software che si
+aggrava di farlo eh, qualcuna in
+
+213
+00:06:30,891 --> 00:06:34,536
+Sì, ditta di software che sia in
+grado di farlo, eh, qualcuna in
+
+214
+00:06:34,536 --> 00:06:34,841
+Italia c'è, come anche
+all'estero e sono anche in grado
+
+215
+00:06:34,841 --> 00:06:37,839
+Italia c'è come all'estero e
+sono anche in grado di fare il
+
+216
+00:06:37,839 --> 00:06:38,487
+di fare il lavoro da remoto.
+
+217
+00:06:38,487 --> 00:06:39,521
+lavoro da remoto.
+
+218
+00:06:40,591 --> 00:06:40,651
+Abbiamo fatto promozione di Coin
+Italia fondamentalmente per i.
+
+219
+00:06:40,651 --> 00:06:43,741
+Abbiamo fatto promozione di Coin
+Italia fondamentalmente per i.
+
+220
+00:06:43,831 --> 00:06:43,891
+Per un motivo, chi ha un
+software open source che deve
+
+221
+00:06:43,891 --> 00:06:47,172
+Per un motivo, chi ha software
+open source che deve portare
+
+222
+00:06:47,172 --> 00:06:47,576
+portare avanti per tanti anni
+deve anche assicurare che
+
+223
+00:06:47,576 --> 00:06:50,575
+avanti per tanti anni deve anche
+assicurare che abbiano
+
+224
+00:06:50,575 --> 00:06:51,016
+abbiano sufficiente diffusione
+in modo tale da poter a poter
+
+225
+00:06:51,016 --> 00:06:54,281
+sufficiente diffusione in modo
+tale da poter da poter sostenere
+
+226
+00:06:54,281 --> 00:06:54,948
+sostenere il suo progetto.
+
+227
+00:06:54,948 --> 00:06:55,871
+il suo progetto.
+
+228
+00:06:55,871 --> 00:06:55,941
+Perché se devi tornare indietro
+poi devi andare a chiedere la
+
+229
+00:06:55,941 --> 00:06:58,255
+Perché se devi tornare indietro
+poi devi andare a chiedere la
+
+230
+00:06:58,255 --> 00:06:58,325
+tua istituzione.
+
+231
+00:06:58,325 --> 00:06:58,911
+tua istituzione.
+
+232
+00:06:58,911 --> 00:06:59,011
+Una cifra, cioè, ti guardano
+storto, no, contentissimi,
+
+233
+00:06:59,011 --> 00:07:01,961
+La cifra che ti guardano storto,
+no?
+
+234
+00:07:01,971 --> 00:07:03,167
+Scontissimi risparmiare però poi
+alla fine se non se non se non
+
+235
+00:07:03,167 --> 00:07:06,639
+risparmiare però poi alla fine,
+se non se non si sostiene,
+
+236
+00:07:06,639 --> 00:07:07,651
+si sostiene, diventa il tuo
+difetto più grosso.
+
+237
+00:07:07,651 --> 00:07:10,311
+diventa il tuo difetto più
+grosso.
+
+238
+00:07:10,701 --> 00:07:10,761
+Abbiamo avuto un Grant da esco
+veramente molto importante per
+
+239
+00:07:10,761 --> 00:07:14,224
+Abbiamo avuto un grande da
+veramente molto importante per
+
+240
+00:07:14,224 --> 00:07:14,781
+introdurre elasticsearch che è
+diventato appunto da poco il
+
+241
+00:07:14,781 --> 00:07:17,633
+introdurre elasticsearch che è
+diventato appunto da poco il
+
+242
+00:07:17,633 --> 00:07:18,940
+sistema di ricerca dentro.
+
+243
+00:07:18,940 --> 00:07:21,141
+sistema di ricerca dentro coa e
+che esiste anche fa parte anche
+
+244
+00:07:21,141 --> 00:07:23,377
+E che esiste anche fa parte
+anche wikidata.
+
+245
+00:07:23,377 --> 00:07:24,001
+wikidata.
+
+246
+00:07:24,491 --> 00:07:24,561
+Abbiamo tentato un'interfaccia
+per SPN Elena, devo dirlo, non
+
+247
+00:07:24,561 --> 00:07:28,606
+Abbiamo tentato un'interfaccia
+per SPN Elena, devo dirlo, non
+
+248
+00:07:28,606 --> 00:07:28,676
+ci siamo riusciti.
+
+249
+00:07:28,676 --> 00:07:29,811
+ci siamo riusciti.
+
+250
+00:07:29,811 --> 00:07:29,881
+Troppo complesso riuscire a
+farlo e quindi in questo momento
+
+251
+00:07:29,881 --> 00:07:34,002
+Troppo complesso, riusciva a
+farlo e quindi in questo momento
+
+252
+00:07:34,002 --> 00:07:34,280
+nessuna biblioteca pubblica di
+fatto USA Coin Italia e quando
+
+253
+00:07:34,280 --> 00:07:38,262
+nessuna biblioteca pubblica di
+fatto USA Coin Italia e quando
+
+254
+00:07:38,262 --> 00:07:38,680
+ha la necessità di
+interfacciarsi con SBN, per cui
+
+255
+00:07:38,680 --> 00:07:41,766
+ha la necessità di
+interfacciarsi con SBN, per cui
+
+256
+00:07:41,766 --> 00:07:42,299
+la diffusione di coa,
+soprattutto in Italia, è legata
+
+257
+00:07:42,299 --> 00:07:43,861
+la diffusione di cosa?
+
+258
+00:07:43,871 --> 00:07:45,476
+Soprattutto in Italia, è legata
+appunto agli ambienti
+
+259
+00:07:45,476 --> 00:07:46,931
+appunto agli ambienti
+accademici, diciamo così
+
+260
+00:07:46,931 --> 00:07:48,705
+accademici, diciamo così,
+privati, nel senso che non hanno
+
+261
+00:07:48,705 --> 00:07:50,274
+privati, nel senso che non hanno
+quella il vincolo è che non
+
+262
+00:07:50,274 --> 00:07:50,671
+quella.
+
+263
+00:07:51,041 --> 00:07:52,897
+Il vincolo è che non hanno un
+volendo lo posso anche far parte
+
+264
+00:07:52,897 --> 00:07:55,590
+l'hanno, volendo lo posso anche
+far parte del sbn.
+
+265
+00:07:55,590 --> 00:07:56,411
+di SBN, per carità, no?
+
+266
+00:07:56,411 --> 00:07:57,181
+Per carità, no?
+
+267
+00:07:57,191 --> 00:07:57,261
+Cioè però, Eh, in questo caso
+chiusa coa è rimasto senza la
+
+268
+00:07:57,261 --> 00:07:57,721
+Cioè però.
+
+269
+00:07:58,211 --> 00:07:59,251
+Eh?
+
+270
+00:07:59,291 --> 00:08:02,767
+In questo caso chiusa coa è
+rimasto senza la possibilità di
+
+271
+00:08:02,767 --> 00:08:04,368
+possibilità di inviare i dati
+ASN.
+
+272
+00:08:04,368 --> 00:08:06,061
+inviare i dati asbl.
+
+273
+00:08:08,301 --> 00:08:08,311
+Santa Croce, Urbe, Wikidata.
+
+274
+00:08:08,311 --> 00:08:10,851
+La Santa Croce, Urbe e Wikidata
+hanno questo un legame che piano
+
+275
+00:08:10,851 --> 00:08:12,565
+E hanno questo un legame piano
+piano è cresciuto in questi
+
+276
+00:08:12,565 --> 00:08:14,538
+piano è cresciuto in questi
+anni.
+
+277
+00:08:14,538 --> 00:08:14,831
+anni.
+
+278
+00:08:14,831 --> 00:08:14,891
+Urbe, Unione norma, biblioteca
+esisti è fatta da quanti siamo
+
+279
+00:08:14,891 --> 00:08:19,951
+Urbe, Unione normale biblioteca
+ecclesiastiche è fatta da quanti
+
+280
+00:08:19,951 --> 00:08:20,762
+siamo Simone 17, 18 Biotechs No
+EE la sorpresa per me è stata la
+
+281
+00:08:20,762 --> 00:08:25,011
+Simone 17, 18 biblioteche no EE
+la sorpresa per me è stata la
+
+282
+00:08:25,011 --> 00:08:26,693
+fine del 2019, quando ho
+scoperto P5731, legata alla
+
+283
+00:08:26,693 --> 00:08:29,136
+fine del 2019, quando ho
+scoperto P5731 legata alla coa
+
+284
+00:08:29,136 --> 00:08:32,050
+coach dell'angelica e
+principesse del 9 fatta in
+
+285
+00:08:32,050 --> 00:08:32,951
+dell'Angelica e Prince.
+
+286
+00:08:32,951 --> 00:08:34,261
+relazione il le autorità nel mio
+catalogo è nata la conoscenza
+
+287
+00:08:34,261 --> 00:08:36,791
+7 del 9 fatta per il.
+
+288
+00:08:37,271 --> 00:08:37,855
+Le autority del mio catalogo.
+
+289
+00:08:37,855 --> 00:08:40,231
+con la Pilotis grazie di Claudia
+perché noi stavamo facendo,
+
+290
+00:08:40,231 --> 00:08:42,604
+È nata la conoscenza con la
+dosis grazie difetti della del
+
+291
+00:08:42,604 --> 00:08:44,127
+abbiamo cominciato a interagire
+con wikidata e buttavamo via I
+
+292
+00:08:44,127 --> 00:08:47,508
+perché noi stavamo facendo,
+abbiamo cominciato a interagire
+
+293
+00:08:47,508 --> 00:08:48,090
+via piccolo, cioè quelli che non
+ci perché c'è ne due via quello
+
+294
+00:08:48,090 --> 00:08:52,317
+con wikidata e buttavamo via i
+via piccoli, cioè quelli che non
+
+295
+00:08:52,317 --> 00:08:52,568
+c'è perché c'è n'è due via.
+
+296
+00:08:52,568 --> 00:08:54,111
+che sembra no, allora abbiamo
+cominciato a ragionare con un
+
+297
+00:08:54,111 --> 00:08:57,239
+Quello che sembra no, allora
+abbiamo cominciato a ragionare
+
+298
+00:08:57,239 --> 00:08:57,911
+utente ignoto, diciamo che non
+aveva un.
+
+299
+00:08:57,911 --> 00:08:59,241
+con un utente ignoto.
+
+300
+00:08:59,251 --> 00:09:00,441
+Diciamo che non aveva un volto,
+ma che diciamo è stato un
+
+301
+00:09:00,441 --> 00:09:02,881
+Volto ma che diciamo?
+
+302
+00:09:02,891 --> 00:09:03,137
+È stato un continuo crescendo
+per riassunto dalla da questo
+
+303
+00:09:03,137 --> 00:09:06,488
+continuo crescendo, ben
+riassunto dalla da questo
+
+304
+00:09:06,488 --> 00:09:06,678
+articolo che ha pubblicato
+Camillo.
+
+305
+00:09:06,678 --> 00:09:08,911
+articolo che ha pubblicato
+Camillo.
+
+306
+00:09:08,911 --> 00:09:08,961
+Poi, se non sbaglio in parallelo
+non hai citato anche più volte
+
+307
+00:09:08,961 --> 00:09:13,268
+Poi, se non sbaglio, in
+parallelo dai citato anche più
+
+308
+00:09:13,268 --> 00:09:13,770
+volte e quindi li si spiega bene
+come abbiamo lavorato insieme e
+
+309
+00:09:13,770 --> 00:09:18,359
+no e quindi li si spiega bene
+come abbiamo lavorato insieme.
+
+310
+00:09:18,359 --> 00:09:18,411
+poi con resto di urbe, dove ci
+sono in questo momento ci
+
+311
+00:09:18,411 --> 00:09:22,823
+E poi con resto di urbe, dove ci
+sono in questo momento ci
+
+312
+00:09:22,823 --> 00:09:22,946
+quattro coach e mi pare un
+quinto in arrivo, eccetera.
+
+313
+00:09:22,946 --> 00:09:27,021
+quattro coa e mi pare un quinto
+in arrivo, eccetera.
+
+314
+00:09:27,471 --> 00:09:27,531
+Esatto, vediamo allora che cosa
+fa wikidata l'università della
+
+315
+00:09:27,531 --> 00:09:32,497
+Esatto, vediamo allora che cosa
+fa wikidata università della
+
+316
+00:09:32,497 --> 00:09:33,314
+Santa croce EI passi essenziali
+sono questi il mix e match per
+
+317
+00:09:33,314 --> 00:09:37,626
+Santa Croce EI passi essenziali
+sono questi il mix e match per
+
+318
+00:09:37,626 --> 00:09:39,157
+I5739 la comprensione di questa
+elemento che è stato veramente
+
+319
+00:09:39,157 --> 00:09:39,621
+5739.
+
+320
+00:09:40,341 --> 00:09:42,755
+La comprensione di questa etc
+che è stato veramente importante
+
+321
+00:09:42,755 --> 00:09:43,651
+importante.
+
+322
+00:09:43,661 --> 00:09:43,921
+Sapere che c'era la possibilità
+di fare del lavoro batch diciamo
+
+323
+00:09:43,921 --> 00:09:47,608
+sapere che c'era la possibilità
+di fare del lavoro batch diciamo
+
+324
+00:09:47,608 --> 00:09:47,616
+per modificare o creare
+soprattutto creare.
+
+325
+00:09:47,616 --> 00:09:50,231
+per i modificare o creare
+soprattutto creare.
+
+326
+00:09:50,241 --> 00:09:50,291
+Abbiamo avuto questa necessità
+di prima ancora in wikidata
+
+327
+00:09:50,291 --> 00:09:53,955
+Abbiamo avuto questa necessità
+di prima ancora in wikidata ho
+
+328
+00:09:53,955 --> 00:09:54,348
+abbiamo studiato le api di
+wikidata, abbiamo cominciato a
+
+329
+00:09:54,348 --> 00:09:57,606
+studiato le api di wikidata,
+abbiamo cominciato a costruire
+
+330
+00:09:57,606 --> 00:09:58,275
+costruire dei gadgets.
+
+331
+00:09:58,275 --> 00:09:59,061
+dei gadgets.
+
+332
+00:09:59,161 --> 00:10:04,205
+Ah, soprattutto in wikidata, il
+via FTP compare quando passi il
+
+333
+00:10:04,205 --> 00:10:07,121
+mouse sopra l'identificatore del
+VR.
+
+334
+00:10:07,201 --> 00:10:07,221
+Abbiamo su idea di Camillo,
+abbiamo fatto morì di tifo e
+
+335
+00:10:07,221 --> 00:10:10,865
+Abbiamo sull'idea di Camillo,
+abbiamo fatto Mori Identifies e
+
+336
+00:10:10,865 --> 00:10:11,097
+Users refer.
+
+337
+00:10:11,097 --> 00:10:11,781
+users ref.
+
+338
+00:10:12,331 --> 00:10:12,361
+Poi la novità di questi giorni e
+Quick desk che non sto a
+
+339
+00:10:12,361 --> 00:10:16,508
+Poi la novità di questi giorni e
+Quick desk che non sto a
+
+340
+00:10:16,508 --> 00:10:16,555
+raccontare.
+
+341
+00:10:16,555 --> 00:10:17,311
+raccontare.
+
+342
+00:10:17,311 --> 00:10:17,361
+Però se conoscete Quick Names
+che qualcuno mi ha detto sì lo
+
+343
+00:10:17,361 --> 00:10:20,288
+Però se conoscete Names che
+qualcuno mi ha detto sì lo sto
+
+344
+00:10:20,288 --> 00:10:20,887
+usando, sto usando.
+
+345
+00:10:20,887 --> 00:10:21,321
+sto usando, ecco Quick desk fa
+un lavoro simile, ti aiuta a
+
+346
+00:10:21,321 --> 00:10:24,405
+Ecco Quick desk fa un lavoro
+simile lo aiuta a costruire le
+
+347
+00:10:24,405 --> 00:10:25,036
+costruire le descrizioni in base
+AP 106 se mi mi dilungo su
+
+348
+00:10:25,036 --> 00:10:27,922
+descrizioni in base AP 106 se mi
+mi dilungo su questo non finiamo
+
+349
+00:10:27,922 --> 00:10:29,123
+questo non finiamo più.
+
+350
+00:10:29,123 --> 00:10:29,371
+più.
+
+351
+00:10:31,281 --> 00:10:31,351
+Poi c'è anche preferences, è
+vero.
+
+352
+00:10:31,351 --> 00:10:33,591
+Poi c'è anche presso rank, è
+vero.
+
+353
+00:10:34,951 --> 00:10:35,031
+Esattamente, e poi i invece i
+gadget che sono lato Santa Croce
+
+354
+00:10:35,031 --> 00:10:40,763
+Esattamente, e poi i invece i
+gadget che sono lato a Santa
+
+355
+00:10:40,763 --> 00:10:41,224
+Croce che sono.
+
+356
+00:10:41,224 --> 00:10:42,121
+che sono.
+
+357
+00:10:42,161 --> 00:10:42,261
+Ci soffermeremo non su quello
+utente che poi in sostanza è
+
+358
+00:10:42,261 --> 00:10:45,764
+Ci soffermeremo non su quello
+utente che poi in sostanza è
+
+359
+00:10:45,764 --> 00:10:45,813
+quasi solo l'autore di box, ma
+su quelli dell'interfaccia staff
+
+360
+00:10:45,813 --> 00:10:49,404
+solo l'autore di box, ma su
+quelli dell'interfaccia staff
+
+361
+00:10:49,404 --> 00:10:49,565
+che nessuno in qualche modo può
+vedere.
+
+362
+00:10:49,565 --> 00:10:51,941
+che nessuno in qualche modo può
+vedere.
+
+363
+00:10:52,091 --> 00:10:52,151
+Salvo i miei colleghi
+ovviamente, e che hanno lo scopo
+
+364
+00:10:52,151 --> 00:10:55,713
+Salvo i miei colleghi
+ovviamente, e che hanno lo scopo
+
+365
+00:10:55,713 --> 00:10:55,748
+appunto di semplificare il
+lavoro perché sarebbe troppo
+
+366
+00:10:55,748 --> 00:10:59,401
+appunto di semplificare il
+lavoro perché sarebbe troppo
+
+367
+00:10:59,401 --> 00:10:59,412
+tecnico doverlo fare
+completamente a mano e quindi
+
+368
+00:10:59,412 --> 00:11:02,748
+tecnico doverlo fare
+completamente a mano e quindi
+
+369
+00:11:02,748 --> 00:11:02,759
+perfettamente Ciao.
+
+370
+00:11:02,759 --> 00:11:04,011
+perfettamente Ciao.
+
+371
+00:11:04,051 --> 00:11:04,061
+Plausibili, tantissimi errori,
+ma Abba però veramente il.
+
+372
+00:11:04,061 --> 00:11:09,297
+Plausibili, tantissimi errori,
+ma Eh, abbattono veramente il la
+
+373
+00:11:09,297 --> 00:11:09,571
+quantità di lavoro e portano
+l'entità più vicino è possibile.
+
+374
+00:11:09,571 --> 00:11:14,026
+La quantità di lavoro e portano
+le entità più vicine possibile
+
+375
+00:11:14,026 --> 00:11:14,381
+ai linked open data.
+
+376
+00:11:14,381 --> 00:11:15,511
+Ai linked open data.
+
+377
+00:11:17,941 --> 00:11:18,021
+Allora uno di questi aggiunge il
+Link via fissi e wikidata nel
+
+378
+00:11:18,021 --> 00:11:22,403
+Allora uno di questi aggiunge
+link via fissi e wikidata nel
+
+379
+00:11:22,403 --> 00:11:22,569
+tegmark scusate per chi non sa
+il March 21 parlerò di Tech no
+
+380
+00:11:22,569 --> 00:11:26,932
+tegmark scusate, per chi non sa
+il March 21 parlerò di Teg no
+
+381
+00:11:26,932 --> 00:11:27,125
+che sono qui i campi che hanno
+sono indicati con dei numeri a
+
+382
+00:11:27,125 --> 00:11:31,460
+che sono i campi che hanno sono
+indicati con dei numeri a tre
+
+383
+00:11:31,460 --> 00:11:31,680
+tre cifre.
+
+384
+00:11:31,680 --> 00:11:32,121
+cifre.
+
+385
+00:11:32,131 --> 00:11:32,201
+Quando Bibliotecario dà i
+numeri, gli da a tre cifre e
+
+386
+00:11:32,201 --> 00:11:35,446
+Quando un Bibliotecario dà i
+numeri gli da tre cifre e
+
+387
+00:11:35,446 --> 00:11:36,039
+proposta dei tre D esterni per
+uguaglianza somiglianza dei
+
+388
+00:11:36,039 --> 00:11:38,928
+proposta dei tre D esterni per
+uguaglianza somiglianza dei nomi
+
+389
+00:11:38,928 --> 00:11:40,588
+nomi, che è però una proposta,
+perché ovviamente è
+
+390
+00:11:40,588 --> 00:11:41,938
+che è per una proposta, perché
+ovviamente è un'operazione di
+
+391
+00:11:41,938 --> 00:11:44,923
+un'operazione di conciliazione,
+quindi è responsabilità del
+
+392
+00:11:44,923 --> 00:11:45,479
+conciliazione e quindi è
+responsabilità del catalogatore
+
+393
+00:11:45,479 --> 00:11:45,951
+cartone.
+
+394
+00:11:45,961 --> 00:11:48,961
+Dottore dire sì questo è lo
+stessa persona e quindi lo uso.
+
+395
+00:11:48,974 --> 00:11:49,291
+dire sì, questo è lo stessa
+persona, quindi lo uso e in
+
+396
+00:11:49,291 --> 00:11:52,954
+E in Camera lo nello 0 24 il
+numero via fino a un'altra
+
+397
+00:11:52,954 --> 00:11:53,863
+Camera lo nello 0 24 il numero
+via fino a un'altra occorrenza,
+
+398
+00:11:53,863 --> 00:11:54,761
+occorrenza.
+
+399
+00:11:54,771 --> 00:11:57,111
+Il numero wikidata in un'altra
+occorrenza il numero ismi,
+
+400
+00:11:57,111 --> 00:11:57,432
+ovviamente se disponibili.
+
+401
+00:11:57,432 --> 00:11:58,171
+il numero wikidata in un'altra
+occorrenza il numero ismi,
+
+402
+00:11:58,171 --> 00:12:01,554
+Disponibili e questo gadget
+interroga sia via chenny che
+
+403
+00:12:01,554 --> 00:12:04,039
+ovviamente se disponibili EO
+questo gadget gadget interroga
+
+404
+00:12:04,039 --> 00:12:05,818
+wikidata per sapere quali sono
+questi possibili match da
+
+405
+00:12:05,818 --> 00:12:09,869
+sia via chenny che wikidata per
+sapere quali sono questi
+
+406
+00:12:09,869 --> 00:12:09,907
+possibili match da introdurre
+nel catalogo, qui si vede un po
+
+407
+00:12:09,907 --> 00:12:12,481
+introdurre nei cataloghi.
+
+408
+00:12:13,931 --> 00:12:14,275
+Qui si vede un po male, lo
+confesso, ma è solo per far
+
+409
+00:12:14,275 --> 00:12:14,631
+male.
+
+410
+00:12:14,641 --> 00:12:17,446
+Po male, lo confesso, ma è solo
+per far vedere che si aprono un
+
+411
+00:12:17,446 --> 00:12:18,733
+vedere che si apre 1 1 dialogo
+modale che quello bianco, in
+
+412
+00:12:18,733 --> 00:12:21,281
+dialogo modale che quello
+bianco, in alto e in un
+
+413
+00:12:21,281 --> 00:12:21,930
+alto e in un nell'ambito della
+scheda di catalogazione che è
+
+414
+00:12:21,930 --> 00:12:25,179
+nell'ambito della scheda di
+catalogazione che è quella sotto
+
+415
+00:12:25,179 --> 00:12:25,830
+quella sotto in grigio, montanti
+campi, appunto in barca 21, ti
+
+416
+00:12:25,830 --> 00:12:29,270
+in grigio con tanti campi,
+appunto il marchio 21, ti fa
+
+417
+00:12:29,270 --> 00:12:29,411
+fa impazzire.
+
+418
+00:12:29,411 --> 00:12:30,051
+impazzire.
+
+419
+00:12:30,371 --> 00:12:30,431
+Ma vediamo più da vicino questa
+questo dialogo, dove si vede in
+
+420
+00:12:30,431 --> 00:12:36,280
+Ma vediamo più da vicino questa
+questo dialogo, dove si vede in
+
+421
+00:12:36,280 --> 00:12:36,383
+questo caso solo wikidata.
+
+422
+00:12:36,383 --> 00:12:38,801
+questo caso solo wikidata.
+
+423
+00:12:39,671 --> 00:12:39,711
+C'è Marco Bergonzi, che è
+bergonzini.
+
+424
+00:12:39,711 --> 00:12:44,031
+C'è Marco Bergonzi, che è
+bergonzini.
+
+425
+00:12:44,041 --> 00:12:44,101
+Perché c'è, si va a interrogare
+attraverso il test esce
+
+426
+00:12:44,101 --> 00:12:48,210
+Perché c'è, si va a interrogare
+attraverso il test esce
+
+427
+00:12:48,210 --> 00:12:48,406
+bergonzini ma evidentemente uno
+con coincide come nome due non è
+
+428
+00:12:48,406 --> 00:12:52,771
+bergonzini ma evidentemente uno
+coincide come nome due.
+
+429
+00:12:52,781 --> 00:12:52,980
+Non è un calciatore, quello che
+ci interessa, tantomeno il terzo
+
+430
+00:12:52,980 --> 00:12:57,015
+calciatore quello che ci
+interessa, tantomeno il terzo
+
+431
+00:12:57,015 --> 00:12:57,135
+che forse è che è un'altro, un
+arbitro.
+
+432
+00:12:57,135 --> 00:12:59,961
+che forse che è un'altro un
+arbitro, ci interessa invece il
+
+433
+00:12:59,961 --> 00:13:01,155
+Arbitro ci interessa invece il
+secondo.
+
+434
+00:13:01,155 --> 00:13:02,041
+secondo effettivamente coincide
+per motivo o per l'altro.
+
+435
+00:13:02,041 --> 00:13:05,051
+Effettivamente coincide per
+motivo o per l'altro, il
+
+436
+00:13:05,051 --> 00:13:06,017
+L'altro, il catalogatore sceglie
+fa clic sulla Catenina rossa e
+
+437
+00:13:06,017 --> 00:13:10,011
+catalogo delle sceglie fa clic
+sulla Catenina rossa e USA
+
+438
+00:13:10,011 --> 00:13:10,369
+USA questo identificatore per
+creare un nuovo 0 24 e quindi si
+
+439
+00:13:10,369 --> 00:13:14,894
+questo identificatore perché era
+un uomo 0 24 e quindi si vede in
+
+440
+00:13:14,894 --> 00:13:15,320
+vede in basso l'aggiunta
+dell'ssd eseguita delle
+
+441
+00:13:15,320 --> 00:13:15,771
+basso.
+
+442
+00:13:16,261 --> 00:13:17,621
+La giunta dell'u D.
+
+443
+00:13:17,661 --> 00:13:18,692
+Eseguita dell'indicatore esterno
+ad aggiunto al record di
+
+444
+00:13:18,692 --> 00:13:22,131
+identificatore esterno aggiunto
+al record di autorità del
+
+445
+00:13:22,131 --> 00:13:23,188
+autorità del catalogo della
+Santa Croce.
+
+446
+00:13:23,188 --> 00:13:25,281
+catalogo della Santa Croce.
+
+447
+00:13:27,151 --> 00:13:27,171
+E successivamente salvato il
+record autorità.
+
+448
+00:13:27,171 --> 00:13:29,891
+E successivamente salvato il
+record autorità.
+
+449
+00:13:29,891 --> 00:13:29,931
+Si vede anche una cosina da non
+indifferente sotto certi aspetti
+
+450
+00:13:29,931 --> 00:13:35,170
+Si vede anche cosina da non
+indifferente sotto certi aspetti
+
+451
+00:13:35,170 --> 00:13:35,242
+questo è già legato, dall'altra
+parte, vale a dire legame
+
+452
+00:13:35,242 --> 00:13:40,152
+questo è già legato, dall'altra
+parte, vale a dire il legame
+
+453
+00:13:40,152 --> 00:13:40,265
+simmetrico con wikidata,
+invalidata.
+
+454
+00:13:40,265 --> 00:13:42,241
+simmetrico con wikidata.
+
+455
+00:13:42,421 --> 00:13:43,341
+In wikidata c'è il P5739
+l'identificatore di questa voce
+
+456
+00:13:43,341 --> 00:13:47,662
+C'è il P5739 l'identificatore di
+questa voce Autorità, mentre in
+
+457
+00:13:47,662 --> 00:13:49,258
+Autorità, mentre in questa voce
+di autorità in zero 24,02 $
+
+458
+00:13:49,258 --> 00:13:53,180
+questa voce di autorità in zero
+24 $ giù due wikidata dollaro,
+
+459
+00:13:53,180 --> 00:13:54,993
+wikidata dollaro, acu 11,
+eccetera.
+
+460
+00:13:54,993 --> 00:13:56,531
+acu 11, eccetera.
+
+461
+00:13:56,531 --> 00:13:56,581
+Lì il legame reciproco.
+
+462
+00:13:56,581 --> 00:13:58,981
+Lì il legame reciproco.
+
+463
+00:14:01,621 --> 00:14:01,651
+È interessante, a mio parere
+ancora di più il fatto che
+
+464
+00:14:01,651 --> 00:14:05,143
+E interessante, a mio parere
+ancora di più il fatto che
+
+465
+00:14:05,143 --> 00:14:05,158
+abbiamo aggiunto valori euri di
+wikidata ad alcuni campi che
+
+466
+00:14:05,158 --> 00:14:08,980
+abbiamo aggiunto valori e ori di
+wikidata ad alcuni campi che
+
+467
+00:14:08,980 --> 00:14:09,041
+sono quelli relativi ad altre
+entità.
+
+468
+00:14:09,041 --> 00:14:11,421
+sono quelli relativi ad altre
+entità.
+
+469
+00:14:12,001 --> 00:14:12,011
+Vale a dire luoghi gruppare,
+appartenenza, occupazioni e
+
+470
+00:14:12,011 --> 00:14:16,116
+Vale a dire luoghi, gruppo,
+appartenenza, occupazioni e
+
+471
+00:14:16,116 --> 00:14:16,165
+volendo anche altri maschi sono
+quelli che poi gestiamo e quando
+
+472
+00:14:16,165 --> 00:14:20,881
+volendo anche altri maschi sono
+quelli che poi gestiamo e quando
+
+473
+00:14:20,881 --> 00:14:20,913
+c'è bisogno di arrivare a quel
+livello di identificazione, però
+
+474
+00:14:20,913 --> 00:14:25,573
+c'è bisogno di arrivare a quel
+livello di identificazione, però
+
+475
+00:14:25,573 --> 00:14:25,589
+devo dire che i miei colleghi a
+volte superano un po questa idea
+
+476
+00:14:25,589 --> 00:14:30,338
+devo dire che i miei colleghi a
+volte superano un po questa idea
+
+477
+00:14:30,338 --> 00:14:34,940
+di semplicemente identificare
+perché considerano il fatto, per
+di semplicemente identificare
+perché considerano il fatto, per
+
+478
+00:14:34,940 --> 00:14:34,956
+esempio, di un luogo di nascita
+o di morte o un'occupazione,
+
+479
+00:14:34,956 --> 00:14:39,397
+esempio, di un luogo di nascita
+o di morte o un'occupazione,
+
+480
+00:14:39,397 --> 00:14:39,428
+anche se non è già
+identificante.
+
+481
+00:14:39,428 --> 00:14:41,891
+anche se non è già
+identificante.
+
+482
+00:14:41,891 --> 00:14:41,931
+Perché già sufficiente,
+sufficiente, per esempio, la
+
+483
+00:14:41,931 --> 00:14:44,876
+Perché già è sfociata,
+sufficiente, per esempio, la
+
+484
+00:14:44,876 --> 00:14:45,971
+data di nascita, di morte.
+
+485
+00:14:45,971 --> 00:14:46,921
+data di nascita di morte, e
+perché intendono dare un quadro
+
+486
+00:14:46,921 --> 00:14:50,633
+E perché intendono dare un
+quadro rapido all'utenza di chi
+
+487
+00:14:50,633 --> 00:14:51,844
+rapido all'utenza di chi si
+tratta?
+
+488
+00:14:51,844 --> 00:14:53,431
+si tratta, di quell'autore in
+chi sia, per esempio filosofo,
+
+489
+00:14:53,431 --> 00:14:56,935
+Quell'autore che ci sia, per
+esempio, filosofo, lo storico
+
+490
+00:14:56,935 --> 00:14:58,182
+storico o quant'altro?
+
+491
+00:14:58,182 --> 00:14:59,061
+quant'è però no?
+
+492
+00:14:59,061 --> 00:14:59,901
+No, e allora siamo in grado di
+esprimere questo concetto
+
+493
+00:14:59,901 --> 00:15:02,763
+E allora siamo in grado di
+esprimere questo concetto
+
+494
+00:15:02,763 --> 00:15:03,230
+attraverso invece che una
+stringa semplicemente in
+
+495
+00:15:03,230 --> 00:15:06,075
+attraverso invece che una
+stringa semplicemente in
+
+496
+00:15:06,075 --> 00:15:06,433
+italiano e primario, con un
+onori e ovviamente anche la
+
+497
+00:15:06,433 --> 00:15:09,712
+italiano esprimerlo con un uri
+che ovviamente anche la strega
+
+498
+00:15:09,712 --> 00:15:10,327
+stringa in italiano.
+
+499
+00:15:10,327 --> 00:15:11,081
+in italiano.
+
+500
+00:15:12,971 --> 00:15:13,021
+Vediamo il caso del con il Geo
+Locker no che abbiamo chiamato
+
+501
+00:15:13,021 --> 00:15:16,151
+Vediamo il caso del con il
+Booker, no?
+
+502
+00:15:16,161 --> 00:15:17,456
+Abbiamo chiamato così nella
+modifica del campo 370 $ a Il
+
+503
+00:15:17,456 --> 00:15:20,451
+così nella modifica del campo
+370 $ a Il dollaro AO sottocampo
+
+504
+00:15:20,451 --> 00:15:22,014
+dollaro AO sottocampo a è quello
+dove semplicemente si scrive la
+
+505
+00:15:22,014 --> 00:15:25,259
+a è quello dove semplicemente si
+scrive la label ci si scrive un
+
+506
+00:15:25,259 --> 00:15:26,717
+label, ci si scrive, testo
+libero, diciamo così no, che
+
+507
+00:15:26,717 --> 00:15:29,401
+testo libero, diciamo così, no,
+che tocca a te indicare.
+
+508
+00:15:29,401 --> 00:15:30,881
+tocca a te indicare.
+
+509
+00:15:31,211 --> 00:15:31,261
+E questo è quello che facevano
+fino adesso che fanno tutti, in
+
+510
+00:15:31,261 --> 00:15:36,248
+E questo è quello che facevano
+fino adesso che fanno tutti, in
+
+511
+00:15:36,248 --> 00:15:36,296
+un certo senso la parte di
+diciamo invece tecnica è quella
+
+512
+00:15:36,296 --> 00:15:40,966
+un certo senso la parte di
+diciamo invece tecnica è quella
+
+513
+00:15:40,966 --> 00:15:41,011
+che costruisce Luri EE che
+questo sistema grazie a Wikidata
+
+514
+00:15:41,011 --> 00:15:45,764
+che costruisce Luri EE che
+questo sistema grazie a Wikidata
+
+515
+00:15:45,764 --> 00:15:45,807
+ti toglie la necessità di andare
+a fare manualmente e quindi
+
+516
+00:15:45,807 --> 00:15:50,641
+ti toglie la necessità di andare
+a fare manualmente e quindi
+
+517
+00:15:50,641 --> 00:15:50,682
+velocizza tantissimo.
+
+518
+00:15:50,682 --> 00:15:52,331
+velocizza tantissimo.
+
+519
+00:15:52,331 --> 00:15:52,371
+E da con sicurezza i costruisce
+con sicurezza il legame, in
+
+520
+00:15:52,371 --> 00:15:56,351
+E da con sicurezza i costruisce
+con sicurezza.
+
+521
+00:15:56,361 --> 00:15:57,158
+Il legale, in questo caso vedete
+che è possibile farlo sia con
+
+522
+00:15:57,158 --> 00:16:01,061
+questo caso vedete che è
+possibile farlo sia con wikidata
+
+523
+00:16:01,061 --> 00:16:01,824
+wikidata che il con Jones?
+
+524
+00:16:01,824 --> 00:16:02,951
+che con Jones.
+
+525
+00:16:03,601 --> 00:16:03,651
+E però in genere stiamo usando
+wikidata anche se urbe si adatta
+
+526
+00:16:03,651 --> 00:16:07,957
+E però in genere stiamo usando
+wikidata anche se si è data a
+
+527
+00:16:07,957 --> 00:16:08,580
+a John Ames come possibile, e in
+effetti concordo, ma diciamo che
+
+528
+00:16:08,580 --> 00:16:10,601
+John Ames come possibile.
+
+529
+00:16:10,611 --> 00:16:12,450
+E in effetti concordo, ah,
+diciamo che il passaggio
+
+530
+00:16:12,450 --> 00:16:13,757
+il passaggio dall'uno all'altro
+ormai è anche tecnicamente
+
+531
+00:16:13,757 --> 00:16:16,466
+dall'uno all'altro ormai è anche
+tecnicamente facile da fare,
+
+532
+00:16:16,466 --> 00:16:17,509
+facile da fare, quindi si può
+anche recuperare il pregresso in
+
+533
+00:16:17,509 --> 00:16:20,754
+quindi si può anche recuperare
+il pregresso in questo senso,
+
+534
+00:16:20,754 --> 00:16:21,200
+questo senso, senza troppa
+fatica in.
+
+535
+00:16:21,200 --> 00:16:22,411
+senza troppa fatica.
+
+536
+00:16:23,161 --> 00:16:23,351
+Nel caso di questo utente in
+pardon di questo autore si sa
+
+537
+00:16:23,351 --> 00:16:27,174
+Nel caso di questo utente in
+pardon di questo autore si sa
+
+538
+00:16:27,174 --> 00:16:27,274
+che era nato appunto a Crescent
+City ed era una contea della
+
+539
+00:16:27,274 --> 00:16:31,324
+che era nato appunto a Crescent
+City ed era una contea della
+
+540
+00:16:31,324 --> 00:16:31,330
+della California.
+
+541
+00:16:31,330 --> 00:16:32,461
+della California.
+
+542
+00:16:32,471 --> 00:16:32,491
+Si sapeva già per qualche
+motivo, perché vedete che sotto
+
+543
+00:16:32,491 --> 00:16:36,401
+Si sapeva già per qualche
+motivo, per perché vedete che
+
+544
+00:16:36,401 --> 00:16:36,531
+sotto ci sono altre cash City e
+che potrebbero anche essere,
+
+545
+00:16:36,531 --> 00:16:40,662
+ci sono altre cash City e che
+potrebbero anche essere, quindi
+
+546
+00:16:40,662 --> 00:16:40,871
+quindi se uno non è sicuro non
+deve fare una fretta eh di
+
+547
+00:16:40,871 --> 00:16:44,371
+se uno non è sicuro non deve
+fare una scelta, Eh?
+
+548
+00:16:44,571 --> 00:16:44,712
+Linkedin sennò lo manda da
+tutt'altra parte.
+
+549
+00:16:44,712 --> 00:16:45,341
+Linkedin?
+
+550
+00:16:45,401 --> 00:16:47,291
+No, lo manda da tutt'altra
+parte.
+
+551
+00:16:47,531 --> 00:16:47,591
+Non lo fa nascere altrove?
+
+552
+00:16:47,591 --> 00:16:48,731
+Lo fa nascere altrove?
+
+553
+00:16:48,741 --> 00:16:48,751
+No, e allora, se con la semplice
+scritta Crescent City che si va
+
+554
+00:16:48,751 --> 00:16:53,266
+No, e allora, se con la semplice
+scritta Crescent City che si va
+
+555
+00:16:53,266 --> 00:16:53,330
+popolando sotto l'auto suggest,
+poi c'è la possibilità di
+
+556
+00:16:53,330 --> 00:16:57,285
+popolando sotto l'auto agest,
+poi c'è la possibilità di
+
+557
+00:16:57,285 --> 00:16:57,296
+scegliere.
+
+558
+00:16:57,296 --> 00:16:57,991
+scegliere.
+
+559
+00:16:58,001 --> 00:17:01,822
+E si, se si preme sulla prima,
+in questo caso sarebbe quella
+E si, se si preme sulla prima,
+in questo caso sarebbe quella
+
+560
+00:17:01,822 --> 00:17:01,831
+giusta.
+
+561
+00:17:01,831 --> 00:17:02,271
+giusta.
+
+562
+00:17:02,761 --> 00:17:02,781
+Si ottiene questa, questa
+popolazione dello zero e
+
+563
+00:17:02,781 --> 00:17:09,616
+Si ottiene questa, questa
+popolazione dello zero dell'uno
+
+564
+00:17:09,616 --> 00:17:10,824
+dell'uno che sono link il pluri
+è.
+
+565
+00:17:10,824 --> 00:17:14,291
+che sono link il pluri è.
+
+566
+00:17:14,371 --> 00:17:14,401
+Il primo duri del del concetto e
+il link alla pagina effettiva di
+
+567
+00:17:14,401 --> 00:17:18,679
+Il primo, i muri del del
+concetto, Eh, è il link alla
+
+568
+00:17:18,679 --> 00:17:20,465
+pagina effettiva di wikidata e
+in più notate sia lo Stato che
+
+569
+00:17:20,465 --> 00:17:23,591
+wikidata e in più notate sia lo
+Stato che la nazione.
+
+570
+00:17:23,591 --> 00:17:25,461
+la nazione Stato la dimostrato
+solo nel caso Stati Uniti,
+
+571
+00:17:25,461 --> 00:17:28,186
+Lo Stato l'abbiamo scelto solo
+nel caso Stati Uniti, perché Eh,
+
+572
+00:17:28,186 --> 00:17:28,741
+perché?
+
+573
+00:17:30,403 --> 00:17:30,881
+che sarebbe troppo contro.
+
+574
+00:17:30,881 --> 00:17:32,421
+Perché sarebbe troppo convinta,
+sarebbe difficile, per esempio,
+
+575
+00:17:32,421 --> 00:17:34,644
+Sarebbe difficile, per esempio,
+boh, qual è un esempio?
+
+576
+00:17:34,644 --> 00:17:35,821
+o qual è un esempio?
+
+577
+00:17:35,821 --> 00:17:35,831
+Houston mi pare che ne siano tre
+o quattro i giusto, no?
+
+578
+00:17:35,831 --> 00:17:38,401
+Houston mi pare che ci siano tre
+o quattro, è giusto?
+
+579
+00:17:39,061 --> 00:17:39,601
+No no, di indicare lo Stato e
+quindi che censiti abbiamo visto
+
+580
+00:17:39,601 --> 00:17:42,717
+Allora devi indicare lo Stato e
+quindi che sentiti abbiamo visto
+
+581
+00:17:42,717 --> 00:17:42,998
+che queste più di una
+California, Stati Uniti, tutto
+
+582
+00:17:42,998 --> 00:17:45,611
+che ne esiste più di una
+California, Stati Uniti.
+
+583
+00:17:45,793 --> 00:17:46,061
+questo lavoro, quello
+sottolineato in rosso, è
+
+584
+00:17:46,061 --> 00:17:48,520
+Tutto questo lavoro, quello
+sottolineato in rosso, è
+
+585
+00:17:48,520 --> 00:17:48,858
+risparmiato al collega o alla
+collega che sia della
+
+586
+00:17:48,858 --> 00:17:51,538
+risparmiato dal collega alla
+collega, che sia della
+
+587
+00:17:51,538 --> 00:17:51,602
+catalogazione.
+
+588
+00:17:51,602 --> 00:17:52,341
+catalogazione.
+
+589
+00:17:54,101 --> 00:17:54,201
+Creazione di un elemento di
+wikidata a partire da un record
+
+590
+00:17:54,201 --> 00:17:57,340
+Creazione di un elemento di
+wikidata partire da un record
+
+591
+00:17:57,340 --> 00:17:57,347
+d'autorità a persona e la
+trasportazione i comandi
+
+592
+00:17:57,347 --> 00:18:00,052
+d'autorità persona e la
+trasportazione in comandi
+
+593
+00:18:00,052 --> 00:18:00,101
+statement di informazione che
+sta all'interno del record.
+
+594
+00:18:00,101 --> 00:18:03,201
+statement di informazione che
+sta all'interno del record.
+
+595
+00:18:03,201 --> 00:18:03,251
+Autorità perché dice perché ti
+interessa creare un record in un
+
+596
+00:18:03,251 --> 00:18:07,509
+Autorità, perché dici perché le
+interessa creare un record in un
+
+597
+00:18:07,509 --> 00:18:07,566
+elemento wikidata?
+
+598
+00:18:07,566 --> 00:18:08,761
+elemento wikidata?
+
+599
+00:18:09,241 --> 00:18:09,251
+Perché un docente che conosco
+bene, che della mia istituzione
+
+600
+00:18:09,251 --> 00:18:12,675
+Perché un docente che conosco
+bene, che è della mia
+
+601
+00:18:12,675 --> 00:18:13,172
+istituzione o dell'ambiente urbe
+e non è presente wikidata magari
+
+602
+00:18:13,172 --> 00:18:17,021
+o dell'ambiente urbe e non è
+presente wikidata magari già non
+
+603
+00:18:17,021 --> 00:18:17,104
+già non è presente neanche se
+viene comunque una è arrivata in
+
+604
+00:18:17,104 --> 00:18:20,401
+è presente neanche se BN
+comunque non è arrivato in
+
+605
+00:18:20,401 --> 00:18:21,170
+wikidata mi pare bene che abbia
+un ha un livello di un'autorità,
+
+606
+00:18:21,170 --> 00:18:24,523
+wikidata, mi pare bene che abbia
+un ha un livello di autorità non
+
+607
+00:18:24,523 --> 00:18:25,516
+noi indifferente.
+
+608
+00:18:25,516 --> 00:18:25,611
+differente.
+
+609
+00:18:25,611 --> 00:18:26,241
+Indifferente.
+
+610
+00:18:26,251 --> 00:18:28,981
+Io creo un elemento.
+Io creo un elemento che il
+sistema che poi vediamo un
+
+611
+00:18:28,981 --> 00:18:30,052
+Viene il sistema e che poi
+vediamo un pochino più da
+
+612
+00:18:30,052 --> 00:18:32,394
+pochino più da vicino, ti
+permette di costruire questi
+
+613
+00:18:32,394 --> 00:18:33,923
+vicino, ti permette di costruire
+questi comandi qui statement e
+
+614
+00:18:33,923 --> 00:18:36,515
+comandi qui statement e ti dà la
+possibilità di fare eventuali
+
+615
+00:18:36,515 --> 00:18:38,358
+ti dà la possibilità di fare
+eventuali ritocchi in caso di
+
+616
+00:18:38,358 --> 00:18:40,314
+ritocchi in caso di informazione
+mancante nell'elemento di
+
+617
+00:18:40,314 --> 00:18:42,511
+informazione mancante
+nell'elemento di autorità e
+
+618
+00:18:42,511 --> 00:18:43,534
+autorità e carica i comandi
+statement li esegue.
+
+619
+00:18:43,534 --> 00:18:45,971
+carica i comandi statement li
+esegue.
+
+620
+00:18:45,971 --> 00:18:45,991
+E così ti fa vedere se tutto va
+bene, perché chi si fa un
+
+621
+00:18:45,991 --> 00:18:50,783
+E così ti fa vedere se tutto va
+bene perché ti fa un controllo e
+
+622
+00:18:50,783 --> 00:18:51,954
+controllo e semmai tira fuori un
+rosso, se c'è qualche pasticcio
+
+623
+00:18:51,954 --> 00:18:54,431
+semmai tira fuori un rosso.
+
+624
+00:18:54,441 --> 00:18:56,176
+Se c'è qualche pasticcio e
+dopodiché si crea l'elemento è
+
+625
+00:18:56,176 --> 00:18:59,081
+e dopodiché si crea l'elemento è
+il nuovo Q che si ottiene, si
+
+626
+00:18:59,081 --> 00:19:01,403
+il nuovo UO che si ottiene si
+può, prendo no?
+
+627
+00:19:01,403 --> 00:19:02,731
+può, volendo no?
+
+628
+00:19:02,741 --> 00:19:02,771
+E di fatto lo facciamo,
+riportare le regole autorità
+
+629
+00:19:02,771 --> 00:19:05,838
+E di fatto lo facciamo riportare
+regolatoria nello stesso 0 24 di
+
+630
+00:19:05,838 --> 00:19:07,004
+nello stesso 0 24 di cui si
+parlava prima.
+
+631
+00:19:07,004 --> 00:19:08,351
+cui si parlava prima.
+
+632
+00:19:09,401 --> 00:19:09,441
+Ecco qui allora, come nel caso
+che è sempre della autrice di
+
+633
+00:19:09,441 --> 00:19:14,857
+Ecco qui allora, come nel caso
+che è sempre della autrice di
+
+634
+00:19:14,857 --> 00:19:14,893
+Crescent City, come viene fuori
+l'elemento prima di essere
+
+635
+00:19:14,893 --> 00:19:20,135
+Crescent City, come viene fuori
+l'elemento prima di essere
+
+636
+00:19:20,135 --> 00:19:20,166
+salvato?
+
+637
+00:19:20,166 --> 00:19:20,861
+salvato?
+
+638
+00:19:20,861 --> 00:19:20,921
+Anzi, viene proposto, vengono
+proposti questi comandi qui
+
+639
+00:19:20,921 --> 00:19:25,071
+Anzi, viene proposto, vengono
+proposti questi comandi, quiz
+
+640
+00:19:25,071 --> 00:19:25,379
+statement nella sintassi.
+
+641
+00:19:25,379 --> 00:19:27,221
+statement nella sintassi, Eh, mi
+ricordo come si chiama CSW.
+
+642
+00:19:27,221 --> 00:19:30,141
+La ricordo come si chiama, cioè
+se V uno OK, allora dove si?
+
+643
+00:19:30,141 --> 00:19:32,931
+Uno OK, allora dove si?
+
+644
+00:19:32,971 --> 00:19:33,031
+Chi conosce gli statement dirà
+ovvio banale, però qui si vede
+
+645
+00:19:33,031 --> 00:19:37,025
+Chi conosce tristemente dirà,
+ovvio banale, però qui si vede
+
+646
+00:19:37,025 --> 00:19:37,304
+che si crea un nuovo elemento
+con proprietà 31 istanza Q 5
+
+647
+00:19:37,304 --> 00:19:40,884
+che si crea un nuovo elemento
+con proprietà il 31 istanza
+
+648
+00:19:40,884 --> 00:19:41,367
+umano, etichetta in inglese,
+etichetta in italiano
+
+649
+00:19:41,367 --> 00:19:44,220
+cucini umano, etichetta in
+inglese, etichetta in italiano.
+
+650
+00:19:44,220 --> 00:19:45,511
+descrizione in italiano,
+descrizione in inglese, li
+
+651
+00:19:45,511 --> 00:19:47,620
+Descrizione in italiano,
+descrizione in inglese, li
+
+652
+00:19:47,620 --> 00:19:47,911
+vedete vuoti?
+
+653
+00:19:47,911 --> 00:19:48,481
+vedete vuoti?
+
+654
+00:19:48,481 --> 00:19:48,521
+Ecco qui si può intervenire e
+scrivere, per esempio storica,
+
+655
+00:19:48,521 --> 00:19:52,580
+Ecco qui si può intervenire e
+scrivere, per esempio storica se
+
+656
+00:19:52,580 --> 00:19:53,160
+se lo se corrisponde, perché
+magari nel d'autorità non c'era
+
+657
+00:19:53,160 --> 00:19:56,680
+lo perché magari nel autorità
+non c'era, oppure perché voglio
+
+658
+00:19:56,680 --> 00:19:57,725
+oppure perché voglio dire,
+storica parentesi 1971, trattino
+
+659
+00:19:57,725 --> 00:20:00,712
+dire, storica parentesi 1971,
+trattino e chiuso la parentesi.
+
+660
+00:20:00,712 --> 00:20:02,191
+e chiuso la parentesi.
+
+661
+00:20:02,391 --> 00:20:06,704
+Lo posso fare, diciamo
+intervenendo in questo in questo
+
+662
+00:20:06,704 --> 00:20:10,401
+ambito perché è una area di
+testo interessante.
+
+663
+00:20:10,451 --> 00:20:14,765
+Vedere riferimenti AP ovviamente
+a +5739, cioè è la Santa croce
+IERI riferimenti a ovviamente a
++5739, cioè è la Santa croce che
+
+664
+00:20:14,765 --> 00:20:15,013
+che dichiara la data di nascita
++569 e la dichiara nel record 20
+
+665
+00:20:15,013 --> 00:20:19,146
+dichiara la data di nascita
+P569E la dichiara nel record 20
+
+666
+00:20:19,146 --> 00:20:19,225
+1677E via dicendo, P 19 anche P
+214 P 213 EP5739 sono
+
+667
+00:20:19,225 --> 00:20:22,786
+1677E via dicendo, P 19 anche P
+214 P 213 EP5739 sono
+
+668
+00:20:22,786 --> 00:20:23,015
+identificatori, via fisiche
+Santa Croce, che si aggiungono
+
+669
+00:20:23,015 --> 00:20:26,763
+identificatori via fisi e Santa
+Croce, che si aggiungono anche
+
+670
+00:20:26,763 --> 00:20:27,438
+anche all'elemento nuovo 19.
+
+671
+00:20:27,438 --> 00:20:28,561
+all'elemento 19.
+
+672
+00:20:28,571 --> 00:20:28,661
+113 EP5739 sono identificatori,
+via fisi e Santa Croce, che si
+
+673
+00:20:28,661 --> 00:20:34,414
+113 EP5739 sono identificatori,
+via fisiche Santa Croce, che si
+
+674
+00:20:34,414 --> 00:20:34,656
+aggiungono anche all'elemento
+nuovo 19.
+
+675
+00:20:34,656 --> 00:20:37,941
+aggiungono anche all'elemento
+19.
+
+676
+00:20:37,951 --> 00:20:38,021
+Perché riusciamo a prenderla
+perché in Santa Croce, a
+
+677
+00:20:38,021 --> 00:20:40,845
+Perché diciamo a prendere perché
+di Santa Croce, a differenza che
+
+678
+00:20:40,845 --> 00:20:41,504
+differenza che nella gran parte
+dei cataloghi, non è soltanto
+
+679
+00:20:41,504 --> 00:20:44,168
+nella gran parte del catalogo,
+non è soltanto una stringa, ma,
+
+680
+00:20:44,168 --> 00:20:44,829
+una stringa, ma come abbiamo
+visto prima, il catalogatore ha
+
+681
+00:20:44,829 --> 00:20:47,437
+come abbiamo visto prima, il
+catalogatore abbinato Luisa
+
+682
+00:20:47,437 --> 00:20:47,837
+abbinato l'uri di wikidata e
+quindi se poi io voglio andarlo
+
+683
+00:20:47,837 --> 00:20:48,101
+Niki.
+
+684
+00:20:48,111 --> 00:20:50,707
+Data, quindi se poi io voglio
+andarlo a creare un evento
+
+685
+00:20:50,707 --> 00:20:51,611
+a creare come elemento wikidata
+io non è che ho il problema di
+
+686
+00:20:51,611 --> 00:20:54,083
+dilata io non è che ho il
+problema di abbinare, che so?
+
+687
+00:20:54,083 --> 00:20:54,941
+abbinare che so?
+
+688
+00:20:55,051 --> 00:20:55,111
+Roma, distinguendo Roma in
+Italia, da Roma in su, Aidan che
+
+689
+00:20:55,111 --> 00:20:58,021
+Roma, distinguendo Roma in
+Italia, da Roma in su.
+
+690
+00:20:58,031 --> 00:20:58,601
+Asino che mi piacessero o ma so
+già che è quella precisa.
+
+691
+00:20:58,601 --> 00:21:02,271
+mi pare ci sia, o in Lesotho, ma
+so già che è quella precisa.
+
+692
+00:21:02,281 --> 00:21:02,351
+Roma identificata da quel Cooper
+che lo ho messo nel mio catalogo
+
+693
+00:21:02,351 --> 00:21:05,512
+Roma è identificata da quel che
+l'ho messo nel mio catalogo e
+
+694
+00:21:05,512 --> 00:21:06,754
+quindi poi mi è facilissimo
+andare anche in Portogallo verso
+
+695
+00:21:06,754 --> 00:21:08,622
+e quindi poi mi è facilissimo
+andare anche in portarlo verso
+
+696
+00:21:08,622 --> 00:21:09,081
+l'Italia.
+
+697
+00:21:09,091 --> 00:21:10,888
+Esattamente questo 16 e 68 66 e
+lo stesso Q 66876 che si vede
+
+698
+00:21:10,888 --> 00:21:13,702
+wikidata esattamente questo 16 e
+68 66 e lo stesso Q 66866 che si
+
+699
+00:21:13,702 --> 00:21:15,041
+qui accanto a +19.
+
+700
+00:21:15,051 --> 00:21:15,362
+Si vede qui accanto a +19,
+altrimenti non si poteva fare
+
+701
+00:21:15,362 --> 00:21:16,921
+vede qui accanto AP 19.
+
+702
+00:21:17,341 --> 00:21:19,346
+Altrimenti non si poteva fare
+chiaramente.
+
+703
+00:21:19,346 --> 00:21:20,251
+chiaramente.
+
+704
+00:21:22,161 --> 00:21:22,311
+I comandi in cui statement si
+presentano così, avendo, diciamo
+
+705
+00:21:22,311 --> 00:21:26,889
+I comandi questa element si
+presentano così, avendo, diciamo
+
+706
+00:21:26,889 --> 00:21:26,909
+appena entrati ti confermerà
+tutto bene perché non ci sono
+
+707
+00:21:26,909 --> 00:21:31,318
+appena entrati ti confermerà
+tutto bene perché non ci sono
+
+708
+00:21:31,318 --> 00:21:31,357
+dei Rossi e allora si avvia o si
+avvia in background e si ottiene
+
+709
+00:21:31,357 --> 00:21:36,272
+dei Rossi e allora si avvia o si
+avvia in background e si ottiene
+
+710
+00:21:36,272 --> 00:21:36,333
+così l'elemento creato in cui
+mostriamo soltanto il P569E.
+
+711
+00:21:36,333 --> 00:21:40,711
+così l'elemento creato in cui
+mostriamo soltanto il P569E.
+
+712
+00:21:40,711 --> 00:21:40,791
+Il p 19 dove si vede la data di
+nascita e il riferimento
+
+713
+00:21:40,791 --> 00:21:45,325
+Il p 19 dove si vede la data di
+nascita e il riferimento
+
+714
+00:21:45,325 --> 00:21:45,489
+esplicito e idem lo stesso
+riferimento si trova sotto che
+
+715
+00:21:45,489 --> 00:21:49,938
+esplicito e idem lo stesso
+riferimento si trova sotto che
+
+716
+00:21:49,938 --> 00:21:50,351
+vuoi mettere 1, 78 eccetera
+eccetera che abbiamo visto
+
+717
+00:21:50,351 --> 00:21:54,313
+ovviamente tu 6 68 eccetera
+eccetera che abbiamo visto prima
+
+718
+00:21:54,313 --> 00:21:54,791
+prima?
+
+719
+00:21:55,465 --> 00:21:55,861
+bene mi fermo, però vorrei
+accennare al fatto che c'è 1 1
+
+720
+00:21:55,861 --> 00:22:00,327
+Bene, mi fermo, però vorrei
+accennare al fatto che c'è un
+
+721
+00:22:00,327 --> 00:22:00,683
+progetto in corso basato su
+Wikileaks, per chi conosce il
+
+722
+00:22:00,683 --> 00:22:05,189
+progetto in corso basato su
+Wikipedia, per chi conosce il
+
+723
+00:22:05,189 --> 00:22:05,505
+repertorio accoliti che è
+fondamentale per biblioteche, se
+
+724
+00:22:05,505 --> 00:22:10,135
+repertorio, accoliti che è
+fondamentale per biblioteche si,
+
+725
+00:22:10,135 --> 00:22:10,493
+non vorrei non allungarmi, non
+ho fatto il conto di quanto si
+
+726
+00:22:10,493 --> 00:22:15,315
+non vorrei allungarmi, non ho
+fatto il conto di quanto si
+
+727
+00:22:15,315 --> 00:22:15,333
+andiamo giusto per mostrarlo a
+schermo.
+
+728
+00:22:15,333 --> 00:22:18,351
+sia giusto per mostrarlo a
+schermo.
+
+729
+00:22:18,361 --> 00:22:20,451
+OK Open ANATOLY Twitch c'hai
+quasi.
+
+730
+00:22:20,451 --> 00:22:23,551
+Manco i tuoi c'hai Eh?
+
+731
+00:22:23,991 --> 00:22:24,831
+Tutta la vabbè si vede
+relativamente poco e non so cosa
+
+732
+00:22:24,831 --> 00:22:29,095
+Vabbè, si vede relativamente
+poco e non so cosa posso fare
+
+733
+00:22:29,095 --> 00:22:30,216
+posso fare vedere in concreto
+qui, Eh.
+
+734
+00:22:30,216 --> 00:22:32,681
+vedere in concreto qui, Eh.
+
+735
+00:22:34,381 --> 00:22:34,601
+Tutte le proprietà disponibili,
+un elemento a caso, una pagina a
+
+736
+00:22:34,601 --> 00:22:38,693
+Tutte le proprietà disponibili,
+un elemento a caso, una pagina a
+
+737
+00:22:38,693 --> 00:22:38,819
+caso, vediamo se siamo
+fortunati, non.
+
+738
+00:22:38,819 --> 00:22:41,331
+caso, vediamo se siamo
+fortunati, non.
+
+739
+00:22:41,331 --> 00:22:41,411
+Ecco sì, allora a colite e un
+repertorio di diversi ambiti,
+
+740
+00:22:41,411 --> 00:22:46,429
+Ecco sì, allora alcol IT è un
+repertorio di diversi ambiti,
+
+741
+00:22:46,429 --> 00:22:46,531
+diciamo tipicamente di necessità
+di interesse ecclesiastico, dove
+
+742
+00:22:46,531 --> 00:22:52,038
+diciamo tipicamente di necessità
+di interesse ecclesiastico, dove
+
+743
+00:22:52,038 --> 00:22:52,164
+ci sono, per esempio, i nomi dei
+libri, della Bibbia e tutti se
+
+744
+00:22:52,164 --> 00:22:57,285
+ci sono per esempio, i nomi dei
+libri, della Bibbia e tutti
+
+745
+00:22:57,285 --> 00:22:57,476
+forse che secondo una
+determinata non normativa,
+
+746
+00:22:57,476 --> 00:23:01,467
+che seguono una determinata non
+normativa, perché gli autori di
+
+747
+00:23:01,467 --> 00:23:02,914
+perché gli autori di acn hanno
+costruito una normativa ma
+
+748
+00:23:02,914 --> 00:23:06,417
+acne non hanno costruito una
+normativa, ma comunque tutta una
+
+749
+00:23:06,417 --> 00:23:08,183
+comunque tutta una logica ferrea
+EI nomi di di enti religiosi, di
+
+750
+00:23:08,183 --> 00:23:12,050
+logica ferrea e nomi di di enti
+religiosi, di ordini religiosi,
+
+751
+00:23:12,050 --> 00:23:13,621
+ordini religiosi, di di di opere
+liturgiche.
+
+752
+00:23:13,621 --> 00:23:15,831
+di di di opere liturgiche?
+
+753
+00:23:15,841 --> 00:23:15,901
+Acli vuol dire autori cattolici,
+opere liturgiche, autori
+
+754
+00:23:15,901 --> 00:23:19,666
+Acqua vuol dire autori
+cattolici, opere liturgiche,
+
+755
+00:23:19,666 --> 00:23:20,081
+autori antichi, eccetera, e
+questa opera in quattro volumi
+
+756
+00:23:20,081 --> 00:23:23,938
+antichi, eccetera, e questa
+opera in quattro volumi si è
+
+757
+00:23:23,938 --> 00:23:24,248
+si è fermata nel 2010.
+
+758
+00:23:24,248 --> 00:23:25,491
+fermata nel 2010.
+
+759
+00:23:25,581 --> 00:23:25,661
+E adesso l'intenzione di
+riprenderla e poterla.
+
+760
+00:23:25,661 --> 00:23:29,625
+E adesso l'intenzione di
+riprenderla, poterla ridare vita
+
+761
+00:23:29,625 --> 00:23:29,821
+necessariamente passa attraverso
+qualche sistema che abbia la
+
+762
+00:23:29,821 --> 00:23:33,509
+Ridare vita necessariamente
+passa attraverso qualche sistema
+
+763
+00:23:33,509 --> 00:23:33,862
+che abbia la possibilità di far
+lavorare molte più persone
+
+764
+00:23:33,862 --> 00:23:37,077
+possibilità di far lavorare
+molte più persone esperti.
+
+765
+00:23:37,077 --> 00:23:37,561
+esperti.
+
+766
+00:23:37,571 --> 00:23:37,631
+Si capisce possibile che possa
+essere fruita da chiunque e che,
+
+767
+00:23:37,631 --> 00:23:42,042
+Si capisce possibile che possa
+essere fruita da chiunque e che,
+
+768
+00:23:42,042 --> 00:23:43,066
+volendo superi anche l'ambito
+per cui EA cui è arrivato adesso
+
+769
+00:23:43,066 --> 00:23:46,384
+volendo superi anche l'ambito
+per cui EA cui è arrivato.
+
+770
+00:23:46,384 --> 00:23:47,971
+in adesso a COLICA coi suoi
+quattro volumi, perché non è era
+
+771
+00:23:47,971 --> 00:23:49,161
+Adesso sono adesso a.
+
+772
+00:23:49,511 --> 00:23:50,588
+Con quei suoi quattro volumi,
+perché non è era un'opera che si
+
+773
+00:23:50,588 --> 00:23:53,166
+un'opera che si poteva pensare a
+pensavano di poter portare
+
+774
+00:23:53,166 --> 00:23:54,723
+poteva pensare, pensavano di
+poter portare avanti facendo
+
+775
+00:23:54,723 --> 00:23:56,531
+avanti facendo altre cose che
+non sono state potute fare, come
+
+776
+00:23:56,531 --> 00:23:59,065
+altre cose che non sono state
+potute fare, come i santi e la
+
+777
+00:23:59,065 --> 00:24:00,070
+i santi e la patologia eccetera.
+
+778
+00:24:00,070 --> 00:24:01,231
+patologia, eccetera.
+
+779
+00:24:01,241 --> 00:24:01,281
+No?
+
+780
+00:24:01,281 --> 00:24:02,211
+Ma, e quindi questo è basata su
+wikipedi questa un'istanza wipes
+
+781
+00:24:02,211 --> 00:24:04,251
+E quindi questo è basato su
+wikipedi.
+
+782
+00:24:04,261 --> 00:24:05,349
+Questa è un'istanza wiki base
+cloud che sta crescendo piano
+
+783
+00:24:05,349 --> 00:24:07,788
+cloud che sta crescendo piano
+piano per adesso ci sono solo
+
+784
+00:24:07,788 --> 00:24:08,141
+piano.
+
+785
+00:24:08,451 --> 00:24:09,104
+Per adesso ci sono solo libri
+della Bibbia con le varie,
+
+786
+00:24:09,104 --> 00:24:11,465
+libri della Bibbia con le varie,
+questo è forse ancora più
+
+787
+00:24:11,465 --> 00:24:12,797
+questo è forse ancora più
+interessante.
+
+788
+00:24:12,797 --> 00:24:13,611
+interessante.
+
+789
+00:24:14,051 --> 00:24:14,061
+Le varie forme.
+
+790
+00:24:14,061 --> 00:24:16,531
+Le varie forme reicat.
+
+791
+00:24:17,391 --> 00:24:17,741
+Scendiamo forse?
+
+792
+00:24:17,741 --> 00:24:18,851
+Siamo forse?
+
+793
+00:24:18,861 --> 00:24:22,733
+Ecco, si vede, qua non si vede
+qui forma autorevole, qui si
+Ecco, si vede, qua si vede qui
+forma autorevole, qui si vede
+
+794
+00:24:22,733 --> 00:24:22,903
+vede una forma autorevole,
+vediamo se riesco a ingrandire.
+
+795
+00:24:22,903 --> 00:24:26,481
+una forma autorevole, vediamo se
+riesco a ingrandire.
+
+796
+00:24:28,441 --> 00:24:28,571
+Eh, non me lo fa, ma son
+sbagliato.
+
+797
+00:24:28,571 --> 00:24:31,451
+Eh lavoro fa no, ho sbagliato
+tasto e control, detto troppo,
+
+798
+00:24:31,451 --> 00:24:33,222
+Tasto del Control, ecco troppo
+forma autorevole Bibbia ti
+
+799
+00:24:33,222 --> 00:24:35,440
+forma autorevole, Bibbia ti
+Daniele in francese è la è la
+
+800
+00:24:35,440 --> 00:24:37,644
+Daniele in francese è la è la
+forma che presentata dal libro
+
+801
+00:24:37,644 --> 00:24:39,637
+forma anche presentata dal libro
+stesso, ma reika te lo direbbe.
+
+802
+00:24:39,637 --> 00:24:42,611
+stesso, ma reika te lo direbbe,
+Bibbia antico, Testamento
+
+803
+00:24:42,611 --> 00:24:43,626
+Bibbia antico, Testamento,
+Daniele, parentesi francese e si
+
+804
+00:24:43,626 --> 00:24:47,013
+Daniele, parentesi in francese
+si possa aggiungere altre forme
+
+805
+00:24:47,013 --> 00:24:47,960
+possa aggiungere altre forme.
+
+806
+00:24:47,960 --> 00:24:49,151
+e quindi significa che il
+repertorio è un repertorio di
+
+807
+00:24:49,151 --> 00:24:51,812
+E quindi significa che il
+repertorio è un repertorio di
+
+808
+00:24:51,812 --> 00:24:52,406
+forme diverse, mentre acuita va
+solo le sue forme.
+
+809
+00:24:52,406 --> 00:24:55,371
+forme diverse, mentre acuite va
+solo le sue forme.
+
+810
+00:24:56,081 --> 00:24:56,281
+Questo è un repertorio, diciamo
+così, di repertorio potrebbe
+
+811
+00:24:56,281 --> 00:25:00,667
+Questo è un repertorio, diciamo
+così, di repertorio potrebbe
+
+812
+00:25:00,667 --> 00:25:00,904
+essere AE quindi una tabella di
+conversione e di confronto di
+
+813
+00:25:00,904 --> 00:25:05,328
+essere e quindi una tabella di
+conversione, di confronto, di
+
+814
+00:25:05,328 --> 00:25:05,527
+studio del passato al e del
+corrente e via dicendo, e stiamo
+
+815
+00:25:05,527 --> 00:25:09,915
+studio del passato e del
+corrente e via dicendo, e stiamo
+
+816
+00:25:09,915 --> 00:25:09,922
+tentando di introdurre le forme
+sia ACR due che vaticana che
+
+817
+00:25:09,922 --> 00:25:14,501
+tentando di introdurre le forme
+sia ACR due che vaticana che
+
+818
+00:25:14,501 --> 00:25:14,545
+varianti di urbe e vale a dire
+quelle che appunto sono in uso
+
+819
+00:25:14,545 --> 00:25:19,162
+varianti di urbe, vale a dire
+quelle che appunto sono in uso
+
+820
+00:25:19,162 --> 00:25:19,168
+nella nel giro delle
+biblioteche, urbe EE poi
+
+821
+00:25:19,168 --> 00:25:22,621
+nella nel giro delle
+biblioteche, urbe EE poi
+
+822
+00:25:22,621 --> 00:25:22,654
+potenzialmente anche forme.
+
+823
+00:25:22,654 --> 00:25:24,701
+potenzialmente anche forme.
+
+824
+00:25:26,011 --> 00:25:26,291
+Reika.
+
+825
+00:25:26,291 --> 00:25:26,921
+Reika.
+
+826
+00:25:29,221 --> 00:25:29,271
+Non coincidesse bene a questo
+interessante ah interessante,
+
+827
+00:25:29,271 --> 00:25:34,326
+Non coincide se ha questo
+interessante ah interessante, e
+
+828
+00:25:34,326 --> 00:25:34,341
+allora lì dove c'è differenza?
+
+829
+00:25:34,341 --> 00:25:36,901
+allora lì dove c'è differenza?
+
+830
+00:25:36,911 --> 00:25:36,951
+Beh, parliamone grazie, grazie
+importante, importante.
+
+831
+00:25:36,951 --> 00:25:41,311
+Beh, parliamone grazie, grazie
+importante, importante.
+
+832
+00:25:42,891 --> 00:25:43,071
+Ecco, ecco beh, questo mi son
+quelle cose che se non ci lavori
+
+833
+00:25:43,071 --> 00:25:47,280
+Ecco, ecco beh, questo son
+quelle cose che se non ci lavori
+
+834
+00:25:47,280 --> 00:25:47,318
+veramente dentro EO non hai
+occasione come questi wikidata
+
+835
+00:25:47,318 --> 00:25:51,390
+veramente dentro EO non hai
+occasione come questi wikidata,
+
+836
+00:25:51,390 --> 00:25:51,565
+days magari non vieni a sapere
+benissimo e quindi dicevo anche
+
+837
+00:25:51,565 --> 00:25:55,671
+magari non vieni a sapere
+benissimo e quindi dicevo anche
+
+838
+00:25:55,671 --> 00:25:55,779
+forme ovviamente di ambito non
+italiano, addirittura e vediamo
+
+839
+00:25:55,779 --> 00:26:00,099
+forme ovviamente di ambito non
+italiano addirittura e vediamo
+
+840
+00:26:00,099 --> 00:26:00,131
+come però ci vorrà tempo.
+
+841
+00:26:00,131 --> 00:26:01,901
+come però ci vorrà tempo.
+
+842
+00:26:15,971 --> 00:26:16,441
+Già.
+
+843
+00:26:21,951 --> 00:26:22,831
+Grazie Stefano, scusa una
+domanda un po cattiva, no, non è
+
+844
+00:26:22,831 --> 00:26:26,194
+Scusa una domanda un po cattiva,
+no, non cattiva.
+
+845
+00:26:26,194 --> 00:26:27,481
+cattiva, anzi sono molto
+ammirata.
+
+846
+00:26:27,481 --> 00:26:28,721
+Anzi, sono molto attivata, 300.
+
+847
+00:26:28,721 --> 00:26:31,641
+Erano non so se non c'entra
+esattamente con wikidata, ma tu
+
+848
+00:26:31,641 --> 00:26:32,383
+Ma questa cosa tanto immagino
+abbia fatto sì, sì, Eh.
+
+849
+00:26:32,383 --> 00:26:34,031
+hai sviluppato questa cosa?
+
+850
+00:26:34,041 --> 00:26:37,001
+Intanto immagino abbia fatta, tu
+si.
+
+851
+00:26:37,021 --> 00:26:38,981
+Eh diciamo come viene
+ridistribuita la comunità di coa
+
+852
+00:26:38,981 --> 00:26:41,136
+Diciamo come viene redistribuita
+la Comunità dico viene
+
+853
+00:26:41,136 --> 00:26:42,669
+viene ridistribuita la vita.
+
+854
+00:26:42,669 --> 00:26:43,241
+distribuita per mia incapacità.
+
+855
+00:26:43,241 --> 00:26:46,011
+Dico per mia incapacità, Eh Eh,
+non lo è però per mia
+
+856
+00:26:46,011 --> 00:26:47,701
+Eh, non lo è.
+
+857
+00:26:48,431 --> 00:26:48,965
+E però per mie capacità, perché
+semplicemente bisogna farlo in
+
+858
+00:26:48,965 --> 00:26:50,131
+incapacità.
+
+859
+00:26:50,811 --> 00:26:53,155
+Semplicemente bisogna farlo in
+un certo modo, che no, no, OK,
+
+860
+00:26:53,155 --> 00:26:54,928
+un certo modo, che no, imparato
+sì, sì, teoricamente se ne
+
+861
+00:26:54,928 --> 00:26:57,579
+teoricamente, teoricamente
+sarebbe sarebbe auspicabile
+
+862
+00:26:57,579 --> 00:26:58,580
+sarebbe, sarebbe auspicabile, se
+mi trovassi qualcuno che sa fare
+
+863
+00:26:58,580 --> 00:27:01,901
+trovassi qualcuno che sa fare
+bene questo lavoro.
+
+864
+00:27:01,911 --> 00:27:02,528
+Gli do tutto senza nessun
+problema, anzi sarebbe una mia
+
+865
+00:27:02,528 --> 00:27:07,390
+bene questo lavoro, gli do tutto
+senza nessun problema, anzi, Eh,
+
+866
+00:27:07,390 --> 00:27:07,477
+aspirazione, perché in realtà è
+il diciamo non è coa.
+
+867
+00:27:07,477 --> 00:27:11,826
+sarebbe la mia aspirazione,
+perché in realtà è in diciamo
+
+868
+00:27:11,826 --> 00:27:12,591
+non EE qua.
+
+869
+00:27:12,591 --> 00:27:12,661
+Non è ancora veramente, cioè
+tante cose, l'attenzione verso
+
+870
+00:27:12,661 --> 00:27:15,911
+Non è ancora veramente
+licchetta, cioè tante cose.
+
+871
+00:27:16,251 --> 00:27:16,454
+L'attenzione verso il record
+d'autorità, per esempio, è
+
+872
+00:27:16,454 --> 00:27:19,137
+il record d'autorità, per
+esempio, è relativa.
+
+873
+00:27:19,137 --> 00:27:19,601
+relativa.
+
+874
+00:27:20,201 --> 00:27:20,291
+Questo perché è molto meno
+sentita, per esempio negli Stati
+
+875
+00:27:20,291 --> 00:27:24,487
+Questo perché è molto meno
+sentita, per esempio negli Stati
+
+876
+00:27:24,487 --> 00:27:24,566
+Uniti rispetto al mondo nostro
+occidentale.
+
+877
+00:27:24,566 --> 00:27:27,641
+Uniti rispetto al mondo nostro
+occidentale.
+
+878
+00:27:27,641 --> 00:27:27,711
+Europeo?
+
+879
+00:27:27,711 --> 00:27:28,211
+Europeo?
+
+880
+00:27:28,211 --> 00:27:28,291
+No, per tante ragioni storiche,
+tutto quello che vuoi e
+
+881
+00:27:28,291 --> 00:27:32,361
+No, per tante ragioni storiche,
+tutto quello che è.
+
+882
+00:27:32,361 --> 00:27:33,251
+certificato.
+
+883
+00:27:36,451 --> 00:27:36,531
+Per cui anche questo è da
+sarebbe da superare con
+
+884
+00:27:36,531 --> 00:27:39,976
+La per cui anche questo è da
+sarebbe da superare con
+
+885
+00:27:39,976 --> 00:27:40,142
+contribuendo a un ripensamento,
+un po di alcune cose di fondo
+
+886
+00:27:40,142 --> 00:27:44,347
+contribuendo a un ripensamento,
+un po di alcune cose di fondo
+
+887
+00:27:44,347 --> 00:27:44,368
+del record autorità in coa.
+
+888
+00:27:44,368 --> 00:27:45,731
+del regole autorità.
+
+889
+00:27:45,741 --> 00:27:46,821
+In coa però, questi alcuni di
+queste cose si possono entrare
+
+890
+00:27:46,821 --> 00:27:49,884
+Però questi alcuni di queste
+cose si possono entrare già
+
+891
+00:27:49,884 --> 00:27:50,568
+già direttamente così
+facilmente, perché intanto ho
+
+892
+00:27:50,568 --> 00:27:53,417
+direttamente così facilmente,
+perché intanto ho cercato di
+
+893
+00:27:53,417 --> 00:27:54,448
+cercato di fare in modo che non
+abbia l'impatto sulle versioni
+
+894
+00:27:54,448 --> 00:27:57,696
+fare in modo che non abbiano
+impatto sulle versioni di coach,
+
+895
+00:27:57,696 --> 00:27:58,524
+di colore, cioè che reggano il
+nel cambiamento di versione
+
+896
+00:27:58,524 --> 00:28:01,704
+cioè che reggano il nel
+cambiamento di versione reggano
+
+897
+00:28:01,704 --> 00:28:02,206
+reggano lo stesso no?
+
+898
+00:28:02,206 --> 00:28:03,061
+lo stesso no?
+
+899
+00:28:03,071 --> 00:28:03,141
+Quindi sono quando c'è una parte
+in interna coa, l'ho tenuta
+
+900
+00:28:03,141 --> 00:28:07,723
+Quindi sono quando c'è una parte
+in interna coa, l'ho tenuta
+
+901
+00:28:07,723 --> 00:28:07,994
+separata e al minimo possibile,
+la maggior parte se la gioca,
+
+902
+00:28:07,994 --> 00:28:12,381
+separata e al minimo possibile,
+la maggior parte se la gioca,
+
+903
+00:28:12,381 --> 00:28:12,998
+diciamo il sistema se la gioca
+javascript all'interno del
+
+904
+00:28:12,998 --> 00:28:16,738
+diciamo il sistema se la gioca
+con javascript all'interno del
+
+905
+00:28:16,738 --> 00:28:18,002
+browser e quindi in pratica
+diciamo è molto piu molto meno
+
+906
+00:28:18,002 --> 00:28:21,171
+browser e quindi in pratica
+diciamo è molto piu molto meno
+
+907
+00:28:21,171 --> 00:28:22,764
+dipendente ancoa perché appunto
+è logica e soprattutto
+
+908
+00:28:22,764 --> 00:28:25,302
+dipendente da coa perché appunto
+è logica e soprattutto
+
+909
+00:28:25,302 --> 00:28:27,284
+l'interazione verso wikidata che
+è il browser che la fa
+
+910
+00:28:27,284 --> 00:28:29,509
+l'interazione verso wikidata che
+è il browser che la fa. L'auto.
+
+911
+00:28:29,509 --> 00:28:32,541
+l'autocompletamento dei luoghi,
+il browser che va a chiedere a
+
+912
+00:28:32,541 --> 00:28:34,242
+Completamento dei luoghi e il
+browser che va a chiedere a
+
+913
+00:28:34,242 --> 00:28:35,991
+vigilata non è coa che va a
+chiedere a wikidata che riporta
+
+914
+00:28:35,991 --> 00:28:38,750
+wikidata non è coa che va a
+chiedere a wikidata che riporta
+
+915
+00:28:38,750 --> 00:28:39,561
+il browser, questa è la forza
+delle api di wikidata ovviamente
+
+916
+00:28:39,561 --> 00:28:42,714
+al browser, questa è la forza
+delle api di wikidata,
+
+917
+00:28:42,714 --> 00:28:43,483
+ovviamente te lo permettono,
+quindi scusami.
+
+918
+00:28:43,483 --> 00:28:45,361
+te lo permettono scusami.
+
+919
+00:28:45,401 --> 00:28:47,981
+La seconda domanda, che è un po
+collegata a questo, non so se
+
+920
+00:28:47,981 --> 00:28:48,451
+interessa, però non so se questa
+cosa interessa.
+
+921
+00:28:48,451 --> 00:28:50,031
+Però non so, mi interessa
+proprio.
+
+922
+00:28:50,031 --> 00:28:50,681
+Però vabbè, no, perché è un po
+collegata a questa cosa che hai
+
+923
+00:28:50,681 --> 00:28:54,564
+Eh no, perché è un po collegata
+la questa cosa che hai tu,
+
+924
+00:28:54,564 --> 00:28:55,456
+detto tu, quindi secondo te con
+non troppo sforzo questa cosa
+
+925
+00:28:55,456 --> 00:28:59,026
+quindi secondo te non troppo
+sforzo questa cosa potrebbe
+
+926
+00:28:59,026 --> 00:29:00,070
+potrebbe essere fatta anche per
+altri software?
+
+927
+00:29:00,070 --> 00:29:02,531
+essere, ma tante per altri
+software si, eh, cioè che coa e
+
+928
+00:29:02,531 --> 00:29:04,845
+Si Eh, cioè il fatto che coa e
+in March 21 va bene, ma quello
+
+929
+00:29:04,845 --> 00:29:07,498
+il March 21 va bene, ma quello
+primo.
+
+930
+00:29:07,498 --> 00:29:09,161
+80 senza la mappatura Eh?
+
+931
+00:29:09,161 --> 00:29:09,741
+Profilo si si, ovviamente devi
+poter eh fare l'aggiunta al.
+
+932
+00:29:09,741 --> 00:29:15,211
+Quindi sì, sì, ovviamente devi
+poter eh fare.
+
+933
+00:29:15,221 --> 00:29:17,451
+L'aggiunta al nelle parti minime
+essenziali necessarie al
+
+934
+00:29:17,451 --> 00:29:20,652
+Nelle parti minime essenziali
+necessarie al software in
+
+935
+00:29:20,652 --> 00:29:22,007
+software in questione è lì.
+
+936
+00:29:22,007 --> 00:29:22,821
+questione.
+
+937
+00:29:22,831 --> 00:29:23,191
+È lì, ovviamente entra la mia
+ignoranza.
+
+938
+00:29:23,191 --> 00:29:26,231
+Ovviamente entra la mia
+ignoranza di un software
+
+939
+00:29:26,231 --> 00:29:26,707
+Il software commerciale che non
+ho e che forse addirittura non è
+
+940
+00:29:26,707 --> 00:29:30,652
+commerciale che non ho e che
+forse addirittura non è detto
+
+941
+00:29:30,652 --> 00:29:30,942
+detto che si lasci manipolare a
+un livello sufficiente?
+
+942
+00:29:30,942 --> 00:29:34,971
+che si lasci e manipolare a un
+livello efficiente viene cloud
+
+943
+00:29:34,971 --> 00:29:35,392
+È, sì, sì, sì sì, sì.
+
+944
+00:29:35,392 --> 00:29:38,211
+per dire vediamo software o
+diciamo che l'idea in se diciamo
+
+945
+00:29:38,211 --> 00:29:39,770
+Diciamo che l'idea in se diciamo
+non è neanche troppo pesante,
+
+946
+00:29:39,770 --> 00:29:42,192
+non è neanche troppo pesante,
+quindi Riportabile Eh, non
+
+947
+00:29:42,192 --> 00:29:43,861
+quindi riportabile un lavorando
+al cinghiale anche troppo,
+
+948
+00:29:43,861 --> 00:29:45,920
+lavorandoci neanche troppo
+perché effettivamente non avrei
+
+949
+00:29:45,920 --> 00:29:48,095
+perché effettivamente non avrei
+voluto fare da solo su quelle.
+
+950
+00:29:48,095 --> 00:29:49,531
+voluto fare da solo.
+
+951
+00:29:49,541 --> 00:29:49,911
+Se è stato una montagna di di di
+lavoro?
+
+952
+00:29:49,911 --> 00:29:52,841
+Stata una montagna di di di
+lavoro no?
+
+953
+00:29:52,841 --> 00:29:53,711
+No, vabbè comunque.
+
+954
+00:29:53,711 --> 00:29:54,241
+Sono gadget, sono gadget.
+
+955
+00:29:54,241 --> 00:29:54,751
+Dai.
+
+956
+00:29:54,761 --> 00:29:55,751
+Sono gadget, sono gadget,
+grazie.
+
+957
+00:29:55,751 --> 00:29:56,391
+Sono gadget.
+
+958
+00:29:57,511 --> 00:29:58,621
+Eh?
+
+959
+00:30:00,211 --> 00:30:03,697
+Quindi sì, ci tenevamo a
+mostrare questi gadget di utenti
+
+960
+00:30:03,697 --> 00:30:06,943
+che credo sarà la prima
+presentazione in assoluto più
+
+961
+00:30:06,943 --> 00:30:09,889
+fuori al di fuori della
+Ricircolo rispetto delle
+
+962
+00:30:09,889 --> 00:30:13,436
+biblioteche di urbe, per COSI
+ingolosire anche persone che
+
+963
+00:30:13,436 --> 00:30:17,283
+usano altri gestionali, ma anche
+per ringraziare confida e dopo
+
+964
+00:30:17,283 --> 00:30:20,769
+questo fatto per noi è stato
+veramente importante perché,
+
+965
+00:30:20,769 --> 00:30:24,436
+appunto, vedere cose come queste
+speriamo che possa indurre,
+
+966
+00:30:24,436 --> 00:30:26,781
+anche perché ci sono altri
+gestionali.
+
+967
+00:30:27,001 --> 00:30:27,181
+OA passare a coa oppure diciamo
+a invece fare pressione su chi
+
+968
+00:30:27,181 --> 00:30:31,380
+OA passare a oppure diciamo
+anche, cioè fare pressione su
+
+969
+00:30:31,380 --> 00:30:31,723
+chi invece sviluppa quei
+gestionali o lo stessi sono
+
+970
+00:30:31,723 --> 00:30:35,218
+invece sviluppa quei gestionali
+o loro stessi sono gestionali
+
+971
+00:30:35,218 --> 00:30:36,369
+gestionali open a fare delle
+modifiche al fine poi di
+
+972
+00:30:36,369 --> 00:30:39,128
+open a fare delle modifiche al
+fine poi di implementare
+
+973
+00:30:39,128 --> 00:30:40,567
+diventare studenti del genere.
+
+974
+00:30:40,567 --> 00:30:41,541
+strumenti del genere che
+velocizza gadget, non vi fate,
+
+975
+00:30:41,541 --> 00:30:44,764
+Però sapete che sono grandi
+gente, non vi fate, non vi fate
+
+976
+00:30:44,764 --> 00:30:45,395
+non vi fate dire se ci vi
+costerà 10.000, ecco chiedete a
+
+977
+00:30:45,395 --> 00:30:47,451
+dire se ci costerà 10.000, ecco.
+
+978
+00:30:49,111 --> 00:30:49,711
+Stefano.
+
+979
+00:30:52,281 --> 00:30:52,341
+Altre domande, siamo in più o
+meno in orario due minuti
+
+980
+00:30:52,341 --> 00:30:52,951
+Altra domanda.
+
+981
+00:30:54,881 --> 00:30:56,501
+Perfettamente in orario, due
+minuti.
+
+982
+00:30:56,549 --> 00:30:57,241
+addirittura si, ci abbiamo due
+minuti di ritardo, quindi vabbè,
+
+983
+00:30:57,241 --> 00:31:01,426
+Addirittura ci abbiamo due
+minuti di ritardo, vabbè, non
+
+984
+00:31:01,426 --> 00:31:01,792
+non credevo.
+
+985
+00:31:01,792 --> 00:31:02,431
+credevo.
+
+986
+00:31:03,261 --> 00:31:03,291
+Se non ci sono altre domande,
+chiudiamo questa presentazione
+
+987
+00:31:03,291 --> 00:31:06,973
+Se non ci sono altre domande,
+chiudiamo questa presentazione.
+
+988
+00:31:06,973 --> 00:31:07,271
+passiamo alla successiva grazie.
+
+989
+00:31:07,271 --> 00:31:09,001
+Passiamo sì, grazie.

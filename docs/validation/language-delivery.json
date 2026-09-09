@@ -1,0 +1,67 @@
+{
+  "status": "acceptance-failed",
+  "checks": [
+    {
+      "step": "tests",
+      "exitCode": 1,
+      "seconds": 30.51
+    },
+    {
+      "step": "typecheck",
+      "exitCode": 0,
+      "seconds": 0.92
+    },
+    {
+      "step": "lint",
+      "exitCode": 0,
+      "seconds": 1.04
+    },
+    {
+      "step": "test-types",
+      "exitCode": 0,
+      "seconds": 0.51
+    },
+    {
+      "step": "native-build",
+      "exitCode": 0,
+      "seconds": 400.43
+    },
+    {
+      "step": "native-tests",
+      "exitCode": 0,
+      "seconds": 176.06
+    },
+    {
+      "step": "build",
+      "exitCode": 0,
+      "seconds": 1.76
+    },
+    {
+      "step": "package-verify",
+      "exitCode": 0,
+      "seconds": 1.54
+    },
+    {
+      "step": "pack",
+      "exitCode": 0,
+      "seconds": 1.94
+    }
+  ],
+  "tests": {
+    "passed": 867,
+    "failed": 1,
+    "skippedLiveProviderTests": 4
+  },
+  "artifact": {
+    "filename": "SubTandem-0.1.3.iinaplgz",
+    "version": "0.1.3",
+    "bytes": 1825320,
+    "sha256": "0a5fee4b6593742d05052b14c891b2182e71a7822fee8e3c9c3c7d0314b11332",
+    "entryCount": 21
+  },
+  "nativeArchitectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "hostAcceptance": "not-run"
+}

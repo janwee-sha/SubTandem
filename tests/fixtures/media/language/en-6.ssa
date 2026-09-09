@@ -1,0 +1,15 @@
+[Script Info]
+ScriptType: v4.00
+
+[V4 Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, TertiaryColour, BackColour, Bold, Italic, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, AlphaLevel, Encoding
+Style: Default,Arial,20,&HFFFFFF,&H0000FF,&H000000,&H000000,0,0,1,2,0,2,10,10,10,0,1
+
+[Events]
+Format: Marked, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: Marked=0,0:00:00.64,0:00:04.24,Default,,0,0,0,,It's 6371 km,
+Dialogue: Marked=0,0:00:04.27,0:00:07.75,Default,,0,0,0,,center of the earth. Follow us down. We're going all the way
+Dialogue: Marked=0,0:00:07.77,0:00:09.49,Default,,0,0,0,,to the heart of the planet.
+Dialogue: Marked=0,0:00:14.51,0:00:18.44,Default,,0,0,0,,Our world is made of layers, a bit like an onion. And as
+Dialogue: Marked=0,0:00:18.47,0:00:21.71,Default,,0,0,0,,far as we know, life only exists in the first
+Dialogue: Marked=0,0:00:21.77,0:00:25.75,Default,,0,0,0,,layer, the crust. In the crust, you'll find the burrows of

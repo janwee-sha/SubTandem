@@ -99,7 +99,7 @@ Quelle que soit la méthode choisie, approuvez les autorisations demandées si I
 ## 🌍 Démarrage rapide
 
 1. Ouvrez une vidéo locale et sélectionnez dans IINA une piste texte intégrée prise en charge ou un SRT/ASS externe comme sous-titre principal.
-2. Dans **Languages**, sélectionnez votre langue maternelle. Si IINA ne peut pas identifier la langue du sous-titre, confirmez-la manuellement, puis enregistrez les réglages.
+2. Dans **Languages**, choisissez votre langue maternelle et enregistrez. SubTandem détecte la langue source hors ligne à partir du texte des sous-titres.
 3. Dans **Translation service**, créez un Profile OpenAI, Claude, DeepSeek ou Ollama. Si le service exige une authentification, saisissez son API key avant d'actualiser manuellement la liste des modèles. Choisissez ensuite un modèle retourné ou saisissez un Model ID personnalisé exact.
 4. Enregistrez et testez le Profile, puis cliquez sur **Select**. La sélection autorise explicitement SubTandem à envoyer le texte des sous-titres proches à l'endpoint affiché.
 5. Activez **Translate**. Le sous-titre d'origine reste affiché par IINA et les cue traduits apparaissent dans la surcouche de SubTandem. Sous **Subtitle**, utilisez **Position** pour déplacer la surcouche du haut (`0`) vers le bas (`100`).
@@ -144,6 +144,7 @@ Pour chaque service, commencez par **Use macOS proxy settings**. Ne choisissez *
 
 ## 🔒 Confidentialité, identifiants et coûts
 
+- Pour le débogage, le texte des sous-titres, le contexte voisin et les traductions sont envoyés au Log Viewer d’IINA. Si la journalisation d’IINA est activée, ces données peuvent aussi être écrites sur disque et conservées après la session. SubTandem ne réutilise pas les journaux comme cache de traduction. Les identifiants secrets ne sont jamais journalisés.
 - SubTandem envoie uniquement au Profile explicitement sélectionné le texte des cue proches, la direction des langues, des identifiants de cue opaques et un contexte voisin limité. Aucun contenu vidéo ou audio n'est envoyé.
 - L'autorisation `video-overlay` affiche la traduction actuelle dans un Overlay local et non interactif. Cet Overlay n'accepte aucune saisie ni déplacement sur la vidéo, n'utilise ni réseau ni stockage WebView et est effacé avec la session de lecture.
 - Les API key OpenAI, Claude, DeepSeek et Ollama sont stockées localement en clair dans le fichier privé `credentials.json` du plugin. Son répertoire utilise le mode `0700` et le fichier le mode `0600`. La key n'est inscrite ni dans les preferences IINA, ni dans les journaux, diagnostics, l'état de la Sidebar ou le paquet du plugin, et elle n'est plus affichée après l'enregistrement.
@@ -159,7 +160,7 @@ SubTandem n'effectue pas de transcription audio, d'OCR ou d'extraction de sous-t
 ## 🛠️ Dépannage
 
 - **Select a supported text subtitle :** sélectionnez une piste locale intégrée SubRip/ASS/SSA/`mov_text` ou un SRT/ASS externe. Les pistes graphiques et intégrées distantes ne sont pas prises en charge ; suivez l'état pour resélectionner ou utiliser Retry après un échec.
-- **Confirm the subtitle language :** saisissez un tag de langue BCP 47, par exemple `en-US`, puis enregistrez les réglages.
+- **Détection de langue :** la détection couvre 67 langues sources, indépendamment de la liste plus large des langues cibles. Le meilleur candidat peut être incorrect. Pour un texte multilingue, SubTandem choisit la langue prise en charge ayant le plus de caractères, même si une langue non prise en charge domine. **Subtitle language could not be identified** signifie qu’aucun candidat n’a pu être choisi ; **This subtitle language is not supported** indique un texte hors du périmètre pris en charge. Des langues source et cible équivalentes ne nécessitent aucune traduction.
 - **Translation service unavailable :** testez le Profile et vérifiez son endpoint, son Model ID exact, son API key, sa route réseau ou le processus Ollama. Pour Claude, vérifiez l'API root, la compatibilité Messages, l'authentification/version, l'accès au modèle, les limites de dépenses, quotas, débit et les refus. Pour DeepSeek, vérifiez aussi le solde, le quota, le débit et la route API fixe. La lecture continue normalement.
 - **Credential could not be saved :** installez le paquet Release plutôt qu'une copie de développement incomplète, vérifiez que le répertoire de données du plugin est accessible en écriture, puis quittez complètement et relancez IINA.
 - **Aucune traduction affichée :** vérifiez que le Profile est testé et sélectionné, que la langue source diffère de votre langue maternelle, que **Translate** est activé et que la lecture se trouve dans l'intervalle d'un cue déjà traduit.

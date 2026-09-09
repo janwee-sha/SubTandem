@@ -1,0 +1,25 @@
+{
+  "firstCount": 40,
+  "repeatCount": 40,
+  "importP95Ms": 95.10745800000001,
+  "firstP95Ms": 65.45229100000002,
+  "repeatP95Ms": 41.397333,
+  "stepP99Ms": 6.8315000000000055,
+  "maxMs": 325.167875,
+  "stress": [
+    {
+      "elapsedMs": 325.167875,
+      "state": "reliable",
+      "steps": 164
+    }
+  ],
+  "environment": {
+    "platform": "darwin",
+    "release": "25.6.0",
+    "architecture": "arm64",
+    "cpu": "Apple M5 Pro",
+    "node": "v24.18.0"
+  },
+  "measuredAt": "2026-09-09T18:07:26.154Z",
+  "ordinaryReliableCount": 80
+}
