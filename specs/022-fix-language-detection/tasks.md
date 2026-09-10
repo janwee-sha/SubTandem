@@ -38,7 +38,7 @@
 以下测试可在阶段 2 后按文件并行编写。先证明边界用例能暴露缺陷；冻结验收集的检测指标只在 T011 固定参数后执行，不用于调参。
 
 - [ ] T006 [P] [US1] 扩展 `tests/unit/language-detection.test.ts`，覆盖充分短轨无 cue/窗口下限、重复正文只贡献一次证据、数字/链接/专名/歌词/混合正文未知、ASS 准备后正文、四区域覆盖、64 cue/4096 码元总界限、至多 4 个且各 ≤2048 码元片段、代理对安全、完整模型竞争、无第二候选不自动可靠及不推断变体；算法用例采用校准集或独立边界数据。
-- [ ] T007 [P] [US1] 扩展 `tests/unit/language-detection-coordinator.test.ts` 与 `tests/integration/auto-language-support.test.ts` 的检测用例，直接验证真实工作分片、正文就绪计时、deadline 前/等于/之后、同步异常、永不完成步骤、一次终态、失效后停工，以及 Main 的外挂/内嵌正文归属、元数据不影响结果和 seek 保留判断。
+- [ ] T007 [P] [US1] 扩展 `tests/unit/language-detection-coordinator.test.ts` 与 `tests/integration/auto-language-support.test.ts` 的检测用例，直接验证真实工作分片、正文就绪计时、内部停止时间前/等于/之后、同步异常、永不完成步骤、一次终态、失效后停工，以及 Main 的外挂/内嵌正文归属、元数据不影响结果和 seek 保留判断；补充剩余预算耗尽、定时器延迟及同步片段跨越截止时间的用例，验证第 499 ms 不会启动新的检测片段，实际超过 500 ms 的样本仍被性能验收判为失败。
 - [ ] T008 [P] [US1] 重写 `tests/integration/acceptance-metrics.test.ts` 的语言指标部分，复用 T002 加载器对每个独立轨道调用生产检测器一次；分别计算正样本正确可靠率、全部样本错误可靠率、负样本可靠率，按语言/长度/现象报告正确、未知/不支持、错误可靠计数与比例，覆盖九个指定回归；标签变体不得重复计入分母，保留该文件其他功能验证。
 - [ ] T009 [P] [US1] 扩展 `tests/integration/performance.test.ts` 的语言测量，覆盖最大样本、20,000-cue 预处理、共享脚本、高 trigram 和完整可靠判断路径；至少 30 次独立冷实例包含模型初始化，预热后至少 1000 次测热态与各同步片段，并测正文就绪到检测终态的总等待，保留其他性能用例。
 
@@ -46,7 +46,7 @@
 
 - [ ] T010 [US1] 在 `src/subtitles/language-detection.ts` 切换标准 franc 与 T005 源目录，实现检测契约的去重、有界四区域采样、分片及候选证据聚合；提供 Coordinator 可逐步执行的实际工作单元，预处理每批至多扫描 128 cue 且拆分大文本；统一 `reliable/unknown` 及原因枚举，删除固定 cue/匹配窗口门禁、50 次幂、旧脚本拒绝与变体猜测路径。
 - [ ] T011 [US1] 新增 `tests/helpers/language-calibration.ts` 并通过 `tests/unit/language-detection.test.ts` 的显式校准用例调用生产检测路径，仅使用 `tests/fixtures/languages/calibration.json` 按正文量/脚本比较有界阈值组合；先固定搜索范围及“错误可靠率→正确可靠率→规则简单度”选择规则，使用 `SUBTANDEM_LANGUAGE_CALIBRATION=1 npm test -- tests/unit/language-detection.test.ts -t calibration` 执行，再将选定参数写入 `src/subtitles/language-detection.ts`，将清单版本/哈希、选择规则及参数记录到新增 `tests/fixtures/languages/calibration-result.json`；此开关仅用于测试工具，普通回归只读取冻结配置，不自动重调参数。
-- [ ] T012 [US1] 在 `src/app/language-detection.ts` 执行 T010 实际采样/分类片段并在片段间让出事件循环，绑定完整 owner/attempt、使用传入的正文就绪时间及独立 deadline 唤醒，在片段前后和提交时校验身份/时限；异常与到期分别提交一次 `unknown/error`、`unknown/timeout`，失效 attempt 停止后续工作，普通 seek 不取消同正文检测。
+- [ ] T012 [US1] 在 `src/app/language-detection.ts` 执行 T010 实际采样/分类片段并在片段间让出事件循环，绑定完整 owner/attempt、使用传入的正文就绪时间，按检测契约分别落实内部停止时间和 500 ms 验收上限，在内部停止时间安排独立唤醒；片段前后及提交时检查身份和时间，停止后不再启动工作，未知终态立即触发准入检查；异常与到期分别提交一次 `unknown/error`、`unknown/timeout`，失效 attempt 停止后续工作，普通 seek 不取消同正文检测。不得将定时器已触发或已返回 unknown 当作等待时限通过的证据。
 - [ ] T013 [US1] 在 `src/main.ts` 的外挂与内嵌正文就绪入口传递 `sourceReadyAt`、播放器/会话/媒体/轨道/正文身份，适配新的终态模型；换轨、换片、正文变化、禁用、结束播放和关闭时清理对应 attempt，迟到结果不得更新 Sidebar 或新会话，tick/轮询不得重启同一次未知终态；配置变更和自动翻译衔接由 T021 完成。
 - [ ] T014 [US1] 参数冻结后执行 `specs/022-fix-language-detection/quickstart.md` 第 2 节的映射、检测、协调器、指标测试及 T007 的 Main 检测用例，将 SC-001/002 的分母、各层结果和冻结版本记录到 `specs/022-fix-language-detection/verification.md`；正确可靠率须 ≥95%，全部样本错误可靠率与负样本可靠率各 ≤1%，指定回归及标签不变性须全部通过；失败时不得调整验收真值或删样本，重新校准须另建独立冻结验收版本。
 - [ ] T015 [US1] 在计划测量环境执行 `npm test -- tests/integration/performance.test.ts --maxWorkers=1 --no-file-parallelism`，向 `specs/022-fix-language-detection/verification.md` 记录实际环境、采样次数及原始安全耗时统计，分别核对首次 p95 ≤100 ms、热态 p95 ≤50 ms、同步片段 p99 ≤16 ms 和检测总等待 ≤500 ms；自动翻译准入的衔接由 T021/T022 验证，Node 结果不能代替宿主验收。
@@ -103,14 +103,16 @@
 
 **目标**：同步披露，完成当前实现的测试、编译、打包以及不可由 mock 替代的验收。
 
+- [ ] T043 交付 `specs/022-fix-language-detection/quickstart.md` 第 5.1 节的宿主计时能力：新增 `tests/host/language-performance/`、`scripts/measure-language-host.mjs` 和 `tests/contract/language-host-performance.test.ts`，在 `src/main.ts`、`src/app/language-detection.ts` 接入有界的安全数值观测；实现独立冷实例、自动热测、完整样本检查及汇总入口。工具直接调用生产模块，正式包不包含测试插件或语料；执行 `npm test -- tests/contract/language-host-performance.test.ts tests/unit/language-detection-coordinator.test.ts tests/integration/auto-language-support.test.ts`，验证工具入口、样本完整性、观测不改变调度/取消/请求行为且不泄露敏感内容。完整操作指引及可执行入口通过前保持未验收；宿主实测结果由 T044 验收。
 - [ ] T034 [P] 更新 `README.md`、`docs/readme/README.zh-CN.md`、`docs/readme/README.ar.md`、`docs/readme/README.fr.md`、`docs/readme/README.ja.md`、`docs/readme/README.ko.md`、`docs/readme/README.ru.md` 和 `docs/engineering/development.md` 的相关功能/配置/隐私/排错说明，移除手动源语言和源目标必须不同的要求，明确本地检测失败或同语言仍向当前已选服务发送必要正文；多语言 README 沿用各自语言，开发文档引用本规格验证指南，不增加文档自动化测试。
-- [ ] T035 [P] 在 `tests/contract/package-manifest.test.ts` 与 `scripts/verify-package.sh` 补齐本次依赖迁移的正式交付检查，验证锁定 franc 的离线随包能力、第三方声明及 `franc-min` 移除，保留 helper 双架构/执行权限/签名、manifest 权限/最低版本和产物排除规则，确保源码、tests/语料、依赖树、密钥与运行状态不进入安装包。
-- [ ] T036 在全部代码及 T034–T035 完成后，按 `specs/022-fix-language-detection/quickstart.md` 第 2–3 节重新运行聚焦与性能回归，以及 `npm test`、`npm run typecheck`、`npm run lint`、`npm run build:native`、`npm run test:native`、`npm run build`、`npm run verify:package`、`npm run pack`；检查正式包内容及离线检测，将环境、结果、当前版本及包 SHA-256 记录到 `specs/022-fix-language-detection/verification.md`，不提升版本或创建 Release。
+- [ ] T035 [P] 在 `tests/contract/package-manifest.test.ts` 与 `scripts/verify-package.sh` 补齐本次依赖迁移的正式交付检查，验证锁定 franc 的离线随包能力、第三方声明及 `franc-min` 移除，保留 helper 双架构/执行权限/签名、manifest 权限/最低版本和产物排除规则，确保源码、tests/语料、T043 计时工具及测试插件、依赖树、密钥与运行状态不进入安装包。
+- [ ] T036 在全部代码及 T043、T034–T035 完成后，按 `specs/022-fix-language-detection/quickstart.md` 第 2–3 节重新运行聚焦与性能回归，以及 `npm test`、`npm run typecheck`、`npm run lint`、`npm run build:native`、`npm run test:native`、`npm run build`、`npm run verify:package`、`npm run pack`；检查正式包内容及离线检测，将环境、结果、当前版本及包 SHA-256 记录到 `specs/022-fix-language-detection/verification.md`，不提升版本或创建 Release。
 - [ ] T037 具备用户对实际服务联网及可能费用的明确授权后，按验证指南第 4 节执行 `tests/integration/live-language-continuation.test.ts` 的 `OpenAI language continuation`，先连接 Test 再运行全部冻结 case；将实际模型/模式的安全标识、成功数、原样一致率、混合/目标变体检查结果记录到 `specs/022-fix-language-detection/verification.md`，任一失败或未运行均保持未验收。
 - [ ] T038 按 T037 的授权及验收规则执行 `tests/integration/live-language-continuation.test.ts` 的 `Ollama language continuation`，使用既有 Ollama 环境变量及开关，将全部冻结 case 的服务遵从性结果记录到 `specs/022-fix-language-detection/verification.md`。
 - [ ] T039 按 T037 的授权及验收规则执行 `tests/integration/live-language-continuation.test.ts` 的 `DeepSeek language continuation`，使用既有 DeepSeek 环境变量及开关，将全部冻结 case 的服务遵从性结果记录到 `specs/022-fix-language-detection/verification.md`。
 - [ ] T040 按 T037 的授权及验收规则执行 `tests/integration/live-language-continuation.test.ts` 的 `Claude language continuation`，使用既有 Claude 环境变量及开关，将全部冻结 case 的服务遵从性结果记录到 `specs/022-fix-language-detection/verification.md`；四类服务各自应原样返回条目的成功逐字符一致率须为 100%，不能用其他服务的结果替代。
-- [ ] T041 向用户提供并由单名开发者手动执行 `specs/022-fix-language-detection/quickstart.md` 第 5 节全部 IINA 1.4.4 正式包步骤，覆盖短轨/未知/同语言、变体、外挂/内嵌、准备失败、配置及生命周期、多窗口、服务失败、至少 30 分钟连续播放和卸载；在 `specs/022-fix-language-detection/verification.md` 记录当前包哈希、环境、Sidebar/Overlay 宿主参照、SC-005/006 结果及未通过项，不调用浏览器控制或 Computer Use。
+- [ ] T044 使用 T036 的正式包，按 `specs/022-fix-language-detection/quickstart.md` 第 5.1 节完成 IINA 1.4.4 宿主模块测量及正式包准入计时；在 `specs/022-fix-language-detection/verification.md` 分别记录样本数、分位数、最大等待、超限数、环境及包哈希。缺少冷初始化证据、采样不足或任一预算失败时保持未验收。
+- [ ] T041 向用户提供并由单名开发者手动执行 `specs/022-fix-language-detection/quickstart.md` 第 5 节主流程表的全部 IINA 1.4.4 正式包步骤，覆盖短轨/未知/同语言、变体、外挂/内嵌、准备失败、配置及生命周期、多窗口、服务失败、至少 30 分钟连续播放和卸载；在 `specs/022-fix-language-detection/verification.md` 记录当前包哈希、环境、Sidebar/Overlay 宿主参照、SC-005/006 结果及未通过项，性能证据引用 T044 的第 5.1 节验收结果，不重复要求人工计时，不调用浏览器控制或 Computer Use。
 - [ ] T042 使用 T036 同一正式包，在 IINA 1.4.0 按 `specs/022-fix-language-detection/quickstart.md` 第 5 节重复短轨、未知源、同语言主流程及安装/卸载冒烟，将包哈希、架构/macOS/IINA 版本与结果记录到 `specs/022-fix-language-detection/verification.md`；未实际运行不得标记通过。
 
 ## 依赖与执行顺序
@@ -120,12 +122,13 @@ T001 → T002 → T003 → T004 → T005
   → US1：T006–T009 → T010 → T011 → T012 → T013 → T014 → T015
   → US2：T016–T017 → T018 → T019 → T020 → T021 → T022
   → US3：T023–T027 → T028 → T029 → T030 → T031 → T032 → T033
-  → T034–T035 → T036 → T037–T040 → T041 → T042
+  → T043 → T034–T035 → T036 → T037–T040、T044 → T041 → T042
 ```
 
 - 箭头表示前置产出可用后继续集成；代码任务仍须在当批集成后的测试、编译、打包全部通过才标为 `[X]`。T001–T002 的语料门以完整冻结清单及语料专项检查通过为准；新清单的语言指标调用方在 T008 迁移。
 - 默认按图顺序集成；US2 使用 US1 的检测终态，US3 使用 US2 的 nullable source 与请求链路，三个故事不作为整块并发修改。
-- T014 不得在 T011 参数冻结前执行验收指标；T015 验证本地检测性能，T021/T022 验证自动准入释放，T036 最终复验。
+- T014 不得在 T011 参数冻结前执行验收指标；T015 验证 Node 检测性能，T021/T022 验证自动准入释放，T036 复验当前代码，T044 单独验证宿主性能及正式包准入计时。
+- T043 在 T033 后串行集成，并作为 T035/T036 的前置任务；涉及共享生产文件时由集成负责人独占。T044 依赖 T036，与 T037–T040 分别执行，并作为 T041 完成验收的前置条件；正式包计时可与 T041 主流程同轮采集，分别记录结果。计时相关代码修改后仍须重新测试、编译和正式打包。
 - 测试先覆盖契约缺陷，再实施对应逻辑；冻结验收集不参与开发调参。任何调参后的验收版本必须符合检测契约的独立性规则。
 - T037–T040 可在 T036 后分别进行，授权与环境按服务确认，某一服务未验收不阻止其他服务验证。共用验收记录由一个负责人串行汇总；主流程人工验收在相应服务验证通过后执行。
 - 后续修复代码时重新执行测试、编译和打包，并针对新包重做受影响的 live/宿主验收；保留所有任务 ID，实际未验收项保持 `[ ]`。
@@ -139,7 +142,7 @@ T001 → T002 → T003 → T004 → T005
 | US1 | 阶段 2 后 T006、T007、T008、T009 分别编写检测、生命周期、指标和性能覆盖，文件互不重叠；生产实现 T010–T013 串行集成 | 例如 T006 执行 `npm test -- tests/unit/language-detection.test.ts`，T007 执行 `npm test -- tests/unit/language-detection-coordinator.test.ts tests/integration/auto-language-support.test.ts`；指标与性能按 T014/T015 验收 |
 | US2 | US1 接口稳定后 T016 与 T017 分别负责消息/缓存契约和完整链路/隐私回归；不同时编辑 Main/controller | 按 T022 执行各自任务列出的完整测试集合；例如 `npm test -- tests/contract/global-provider-client.test.ts` 与 `npm test -- tests/integration/auto-language-support.test.ts` 可独立验证消息和流程，不能代替完整矩阵 |
 | US3 | US2 集成后 T023、T024、T025、T026、T027 分别负责不同测试文件；T028 的公共提示和 T029–T031 的共享生产文件串行处理 | 例如 T023 执行 `npm test -- tests/contract/openai.test.ts`，T024 执行 `npm test -- tests/contract/ollama.test.ts`；全部模式、字符串及时间轴按 T033 验收 |
-| 交付 | 三个故事集成后 T034 文档与 T035 打包检查可并行 | 文档人工核对 FR-012；打包检查运行 `npm test -- tests/contract/package-manifest.test.ts`，最终由 T036 验证正式产物 |
+| 交付 | 三个故事及 T043 集成后 T034 文档与 T035 打包检查可并行；T043 独占 Main/Coordinator | 文档人工核对 FR-012；打包检查运行 `npm test -- tests/contract/package-manifest.test.ts`，最终由 T036 验证正式产物；宿主计时由 T044 验收 |
 
 实际委派须为所选任务给出全部测试路径组成的完整命令；性能使用 T015 的独立命令。并行只缩短编写时间，不取消依赖、授权或最终集成验证。
 
@@ -147,4 +150,4 @@ T001 → T002 → T003 → T004 → T005
 
 1. 先完成自然语料门、源目录和 US1，作为可信本地检测的最小演示范围；通过相应回归与正式构建验证后评估，不宣称整项功能完成。
 2. 接入 US2，验证任何未知原因均自动请求当前服务；再交付 US3，验证同语言请求和原字符链路。
-3. 同步产品说明并完成当前候选包的全部自动化、四类真实服务及两个 IINA 版本验收。全部必需证据通过后，整项功能才可验收。
+3. 交付宿主计时工具，同步产品说明并完成当前候选包的全部自动化、宿主模块性能与正式包准入计时、四类真实服务及两个 IINA 版本验收。全部必需证据通过后，整项功能才可验收。

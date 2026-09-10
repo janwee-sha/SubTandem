@@ -18,7 +18,8 @@
 | --- | --- |
 | `owner` | Main 生成的 `playerId`、`sessionId`、`sessionEpoch`、`mediaEpoch`、`trackIdentity`、`contentHash`；不包含随 seek 变化的 `windowEpoch` |
 | `attemptId` | Coordinator 单调生成的不透明身份，同一 owner 仅一个活动 attempt |
-| `sourceReadyAt`、`deadlineAt` | 字幕正文就绪时间及其后 500 ms；重入不能重置等待预算 |
+| `sourceReadyAt` | 当前正文首次就绪时间；检测重入不得重置 |
+| `workDeadlineAt`、`deadlineAt` | 内部停止时间与准入等待验收上限；计算及处理规则见[检测契约](contracts/language-detection.md#deadline-与生命周期) |
 | `sample` | 检测专用正文副本、选中 cue 身份、有效文字量、片段及去重统计；不得外发或写日志 |
 | `result.state` | `reliable` 或 `unknown` |
 | `result.languageId` | 仅 `reliable` 存在，且必须属于源语言身份集合 |

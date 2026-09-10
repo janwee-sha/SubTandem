@@ -31,7 +31,7 @@
 
 | 门禁 | 研究前 | 设计后 | 设计依据 |
 | --- | --- | --- | --- |
-| 验证与产品安全 | 通过 | 通过 | [检测契约](contracts/language-detection.md)限定正文、deadline、归属及自动继续；[验证指南](quickstart.md)分别覆盖各层证据 |
+| 验证与产品安全 | 通过 | 通过 | [检测契约](contracts/language-detection.md)区分内部停止时间与准入等待上限；[验证指南](quickstart.md#51-宿主性能测量)区分 Node、宿主模块与正式包计时证据，由 T043/T044 交付和验证 |
 | 生产代码约束 | 通过 | 通过 | 生产变更使用英语且不添加注释；移除被替代路径、同语言门禁和失效状态 |
 | 隐私与副作用 | 通过 | 通过 | [翻译契约](contracts/translation-task.md)保留选择/凭据/正文边界，更新用户外发披露；检测样本留在 Main |
 | 可重建发布 | 通过 | 通过 | 正式包离线包含 franc 及许可；依赖锁、编译、helper 和归档审计全部进入验证流程 |
@@ -39,7 +39,7 @@
 | 宿主一致性 | 通过 | 通过 | 以 IINA 1.4.4 当前 Sidebar/Overlay 为参照，复用组件；仅状态语义和正文保留按本规格变化，布局/样式/控件行为无偏离 |
 | 交付与人工成本 | 通过 | 通过 | 单名开发者执行明确步骤；本次止于规划，实施需后续明确指示 |
 
-**结论**：规划门禁全部通过，无宪法例外、无待澄清项。语料、产品测试、服务及宿主行为仍待实施验证，设计通过不代表产品验收通过。
+**结论**：规划门禁及截止时间、宿主性能验证方案的一致性复审通过，无宪法例外。调度余量、计时工具、语料、产品测试、真实服务及宿主行为仍须分别取得实施验证证据；设计通过不代表产品验收通过。
 
 ## 设计产物与实施顺序
 
@@ -49,7 +49,7 @@
 - [contracts/translation-task.md](contracts/translation-task.md)：跨运行时未知源语言、四类服务及逐字符结果。
 - [quickstart.md](quickstart.md)：可执行测试、性能、live 与单人正式包验收。
 
-后续任务按以下依赖拆分：语料前置任务 → 校准与检测实现 → 统一请求/结果契约和准入集成 → 自动化/编译/打包 → 真实服务及宿主验收。允许在契约固定后对不共享文件的服务和检测切片并行实现，但公共类型及 Main/controller 必须串行集成。
+实施依赖见 [tasks.md](tasks.md#依赖与执行顺序)：语料前置任务 → 校准与检测实现 → 统一请求/结果契约和准入集成 → 宿主计时工具 → 自动化/编译/打包 → 真实服务及宿主验收。允许在契约固定后对不共享文件的服务和检测切片并行实现，但公共类型及 Main/controller 必须串行集成。
 
 ## 工程结构与负责人边界
 
@@ -62,8 +62,9 @@
 | 请求与结果 | `src/providers/{types,translation-task,openai,ollama,deepseek,claude,validation}.ts`、`src/app/{request-builder,session-cache}.ts`、`src/adapters/iina/{global-provider-client,webview-translation-overlay}.ts`、`src/global.ts`、`src/domain/messages.ts` | 先统一未知源语言字段及边界校验，再调整服务，最后贯通正文保留；Broker 授权逻辑通过回归验证 |
 | 目录与交付 | `src/domain/target-languages.ts`、`package.json`、`package-lock.json`、`THIRD_PARTY_NOTICES.txt`、`README.md`、`docs/readme/`、`docs/engineering/development.md` | 移除检测与目标目录的隐式耦合；更新与本功能相关的说明 |
 | 集成验证 | `tests/contract/`、`tests/integration/`、`tests/security/`、`tests/unit/` 的受影响用例 | 生产切片完成后执行；正式包与实机证据不可由 mock 替代 |
+| 宿主性能验证 | 拟新增 `tests/host/language-performance/`、`scripts/measure-language-host.mjs`、`tests/contract/language-host-performance.test.ts`，以及 Main/Coordinator 的数值计时观测 | 测试专用 IINA 插件直接运行当前生产检测与协调器模块，完成重复采样；正式包另行测量真实正文就绪到准入释放的路径。工具和语料不进入正式包，具体步骤见验证指南 |
 
-本次研究代理仅在隔离快照中只读检查，主 Agent 独占本规格文档。后续若委派实现切片，必须使用隔离 worktree，事先约定契约、文件、验证命令和完成条件；公共 types、controller、Main、lockfile 同时只能有一名负责人。
+委派实现切片时必须使用隔离 worktree，明确契约、允许修改的文件、验证命令和完成条件；公共 types、controller、Main、lockfile 同时只能有一名负责人。具体分工与集成顺序见 [tasks.md](tasks.md)。
 
 ## 复杂度与验收风险
 
@@ -71,4 +72,4 @@
 
 样本许可/真值、400 轨冻结集和指定罗马字回归由首个前置任务证明；无法取得时该任务保持未验收。franc 覆盖不保证短轨可靠，阈值必须实际满足 SC-001/002；模型可能改写合法同语言正文，SC-004 需四类真实服务证明。事件循环及宿主时序必须实际测量，不能凭定时器或 Node 微基准宣称满足 SC-005。
 
-`tasks.md` 由后续任务拆分生成；产品实现与验证均未开始。本次只修改当前规格文档，无生产代码、依赖锁或打包产物变更。
+实施范围、依赖及验收工作以 [tasks.md](tasks.md) 为准；进入实施仍须获得用户明确指示。
