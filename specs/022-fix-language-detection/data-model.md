@@ -8,7 +8,7 @@
 | `DetectionText` | 规范正文流、有效文字位置索引、`letterCount` | 来自当前 `normalizedText`；正文清洗与计数按[检测契约](contracts/language-detection.md)；不修改显示/翻译正文 |
 | `DetectionSpan` | 正文起止位置、分类上下文、`observedLetterCount`、`representedLetterCount` | 全量模式计入实际文字；抽样模式记录代表区间；区间互不重复，上下文不额外贡献权重 |
 | `SpanEvidence` | 片段身份、候选语言、范围内/已确认范围外、模型排序证据 | 分数仅帮助归属判断，不是文字量或概率；未确认范围外时使用受支持候选；只留会话内存 |
-| `LanguageWeight` | 规范语言身份、`estimatedLetterCount` | 累加各归属片段代表的文字数；范围外语言分开累计并保留在占比分母；仅在范围内候选中选择最大值，范围内平票确定性选择 |
+| `LanguageWeight` | 规范语言身份、`estimatedLetterCount` | 累加各归属片段代表的文字数；不同范围外语言分开累计；选择最大值，平票确定性选择 |
 | `DetectionAttempt` | `playerId`、`mediaEpoch`、`trackIdentity`、`contentHash`、`attemptId`、`deadlineAt`、工作游标 | 全部身份绑定 Main 本地生命周期；每个工作步骤及提交核验；不是 Global 发送方身份 |
 | `LanguageDetectionResult` | `reliable + languageId`、`unknown` 或 `unsupported` | `reliable` 不保证正确；协调结果附加 `contentHash/attemptId`；不输出证据、正文、路径或异常 |
 
@@ -33,7 +33,7 @@
 | `SourceGroup` | `groupId`、`sourceIds`、作品/译本关联、`split` | `split` 为 `calibration` 或 `acceptance`；同作品、译本、相邻片段、镜像及派生版本不可跨集合 |
 | `SubtitleSample` | `sampleId`、`groupId`、文件与 SHA-256、原始区间、`originalCueCount`、`effectiveLetterCount`、格式、内容标签、`statisticalUnitId`、`derivedFrom` | 独立自然片段才计主分母；分段、时长、格式和受控混合变体关联基准身份；不循环模板扩充 |
 | `StatisticalUnit` | `statisticalUnitId`、`primarySampleId`、关联样本身份 | 冻结前选定唯一自然主样本贡献四类结果；其他译本及变体另作回归，主样本自身满足语言和长度覆盖 |
-| `GroundTruth` | `sampleId`、正文语言区间、中文形式、各语言文字量、范围内最高占比的预期主语言集合、正文充分性、`positive`、行为预期、核对人/日期/依据 | 基于正文人工核对；文字区间互不重叠、覆盖有效文字；预期集合按 FR-004 从真值推导，保留范围外真实文字量；无法归属部分显式记录，不能伪造精确混合占比 |
+| `GroundTruth` | `sampleId`、正文语言区间、中文形式、各语言文字量、并列主语言集合、正文充分性、`positive`、行为预期、核对人/日期/依据 | 基于正文人工核对；文字区间互不重叠、覆盖有效文字；无法归属部分显式记录，不能伪造精确混合占比 |
 | `CorpusFreeze` | 语料版本、两个集合的来源/样本/真值/分层/正样本归属哈希、核验状态 | 数据划分及真值在调参前冻结；补足准入条件前不标记冻结 |
 | `DetectorConfiguration` | 模型与锁文件哈希、算法参数、源映射版本、校准报告身份 | 仅校准集决定，首次运行冻结验收前锁定；不写用户 preferences |
 | `EvaluationRecord` | `sampleId`、语料/配置/构建身份、预期及实测语言、四类结果、耗时、内容/长度分层、Provider 调用计数 | 整体与分层只取各统计身份的主样本结果；变体另报成对一致率；无字幕正文、译文或凭据 |
