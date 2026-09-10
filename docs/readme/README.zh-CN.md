@@ -99,7 +99,7 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 ## 🌍 快速开始
 
 1. 打开本地视频，并在 IINA 中选择受支持的内嵌文本字幕或外部 SRT/ASS 作为主字幕。
-2. 在 **Languages** 中选择母语并保存。SubTandem 会根据字幕正文离线识别源语言。
+2. 在 **Languages** 中选择母语。如果 IINA 无法识别字幕语言，请手动确认，然后保存语言设置。
 3. 在 **Translation service** 中创建 OpenAI、Claude、DeepSeek 或 Ollama Profile。服务需要认证时，先填写 API key，再手动刷新模型列表；选择返回的模型，或填写准确的自定义 Model ID。
 4. 保存并测试 Profile，然后点击 **Select**。选择 Profile 即明确授权 SubTandem 向界面显示的 endpoint 发送播放位置附近的字幕文字。
 5. 打开 **Translate**。原字幕仍由 IINA 正常显示，译文会出现在 SubTandem 覆盖层中。可在 **Subtitle** 中用 **Position** 将覆盖层从顶部（`0`）调整到底部（`100`）。
@@ -144,7 +144,6 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 
 ## 🔒 隐私、凭据与费用
 
-- 为便于调试，字幕正文、附近上下文和译文会显示在 IINA 的 Log Viewer 中。开启 IINA 日志记录后，这些内容也可能写入磁盘，并在播放会话结束后保留。SubTandem 不会把日志复用为翻译缓存；凭据不会进入日志。
 - SubTandem 只向你明确选择的 Profile 发送播放位置附近的字幕文字、语言方向、不透明的字幕 ID 和少量相邻上下文，不会发送视频或音频内容。
 - `video-overlay` 权限只用于在本地非交互式 Overlay 中显示当前译文。Overlay 不接受输入，不支持在播放器画面拖动，不使用网络或 WebView storage，并随播放会话清理。
 - OpenAI、Claude、DeepSeek 与 Ollama API key 以本地明文保存在插件私有的 `credentials.json` 中。其目录权限为 `0700`，文件权限为 `0600`。密钥不会写入 IINA preferences、日志、诊断、Sidebar 状态或插件安装包，保存后也不会再次显示。
@@ -161,7 +160,7 @@ SubTandem 不提供音频转写、图形字幕 OCR/提取、远程媒体内嵌�
 ## 🛠️ 故障排查
 
 - **Select a supported text subtitle：** 在 IINA 中选择本地内嵌 SubRip/ASS/SSA/`mov_text` 或外部 SRT/ASS 作为主字幕。远程内嵌和图形字幕不受支持；可按状态提示重新选轨，或对失败的准备操作执行 Retry。
-- **语言识别：** 源语言识别范围固定为 67 种，与更多的目标语言选项分别管理。正文的最佳候选仍可能识别错误。混合字幕会选择受支持语言中文字量最多的一种，即使不受支持语言的文字更多。**Subtitle language could not be identified** 表示未能选出候选，**This subtitle language is not supported** 表示正文属于源语言范围外；源语言与目标语言等价时无需翻译。
+- **Confirm the subtitle language：** 输入 BCP 47 语言标签，例如 `en-US`，然后保存语言设置。
 - **Translation service unavailable：** 测试 Profile，并检查 endpoint、准确的 Model ID、API key、网络路由或 Ollama 进程。Claude 还需要确认填写的是 API root 而非完整资源 URL，并检查 Messages 兼容性、认证/版本支持、模型权限、spend limit、配额、rate limit 和拒绝状态；DeepSeek 还需检查余额、配额、rate limit 和固定 API 路由。视频和原字幕会继续正常播放。
 - **Credential could not be saved：** 使用正式 Release 安装包，不要使用内容不完整的开发副本；确认插件数据目录可写，并完全退出后重启 IINA。
 - **没有显示译文：** 确认 Profile 已测试并选中、源语言与母语不同，并且已开启 **Translate**；播放位置还需要处于已有译文的字幕时段内。

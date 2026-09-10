@@ -65,7 +65,7 @@ import type {
   SubtitleTrackIdentity,
 } from "./subtitles/types.js";
 
-export interface MainRuntime {
+interface MainRuntime {
   console: IINA.API.Console;
   core: IINA.API.Core;
   event: IINA.API.Event;
@@ -79,7 +79,7 @@ export interface MainRuntime {
   utils: IINA.API.Utils;
 }
 
-export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController {
+function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController {
   const provider = new GlobalProviderClient(runtime.global);
   let mediaEpoch = 0;
   const sourcePort = new IinaSubtitleSourcePort(
@@ -100,10 +100,7 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
   const subtitleStyle = new SubtitleStyleFollower();
   const restoredTarget = new TargetLanguagePreferences(runtime.preferences).read();
   const targetLanguageSession = new TargetLanguageSession(restoredTarget.targetLanguage);
-  const languageDetection = new LanguageDetectionCoordinator({
-    onMetrics: (metrics) =>
-      runtime.console.log(`[SubTandem language detection] ${JSON.stringify(metrics)}`),
-  });
+  const languageDetection = new LanguageDetectionCoordinator();
   let selectedSourceTrackId: number | null = null;
   let selectedSourceContentHash: string | null = null;
   let sourceSelectionTimer: ReturnType<typeof setTimeout> | null = null;
@@ -112,7 +109,6 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
   let preparationPromise: Promise<SubtitlePreparationCoordinator> | null = null;
   let preparationView: SourcePreparationView | null = null;
   let embeddedPreparationKey: string | null = null;
-  let windowClosed = false;
   const controller = new PlaybackController({
     playerId,
     provider,
@@ -278,14 +274,9 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
         { tempDirectory: runtime.utils.resolvePath("@tmp/subtandem-extraction") },
         executable,
       );
-      const extractor = new SubtitleExtractorClient(session, new IinaLocalHttpBridge(runtime.http));
-      if (windowClosed || controller.session.closed) {
-        await extractor.shutdown();
-        throw new Error("EXTRACTOR_UNAVAILABLE");
-      }
       preparation = new SubtitlePreparationCoordinator({
         playerId,
-        extractor,
+        extractor: new SubtitleExtractorClient(session, new IinaLocalHttpBridge(runtime.http)),
         readResult: (resultId) =>
           sourcePort.readBinary(`@tmp/subtandem-extraction/${resultId}/output.srt`),
       });
@@ -299,12 +290,7 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
 
   const acceptPrepared = (key: string, prepared: PreparedSubtitleSource | null): void => {
     preparationView = preparation?.view ?? null;
-    if (
-      !prepared ||
-      embeddedPreparationKey !== key ||
-      !controller.session.enabled ||
-      controller.session.closed
-    ) {
+    if (!prepared || embeddedPreparationKey !== key) {
       updateSidebarState({ sourcePreparation: preparationView });
       return;
     }
@@ -352,7 +338,6 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
     )
       return;
     invalidatePreparation();
-    languageDetection.invalidate();
     embeddedPreparationKey = key;
     selectedSourceTrackId = track.trackId;
     selectedSourceContentHash = null;
@@ -366,11 +351,7 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
     };
     updateSidebarState({ source: null, sourceIssue: null, sourcePreparation: preparationView });
     void coordinator()
-      .then((value) =>
-        embeddedPreparationKey === key && controller.session.enabled && !controller.session.closed
-          ? value.prepare(media, track)
-          : null,
-      )
+      .then((value) => value.prepare(media, track))
       .then((prepared) => acceptPrepared(key, prepared))
       .catch(() => {
         if (embeddedPreparationKey !== key) return;
@@ -386,7 +367,6 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
   };
 
   const loadSource = (commitFailure = true): boolean => {
-    if (windowClosed || !controller.session.enabled || controller.session.closed) return true;
     const snapshot = sourcePort.selectionSnapshot();
     const selection = snapshot ? classifySubtitleSelection(snapshot) : null;
     if (selection?.kind === "embedded") {
@@ -395,8 +375,6 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
     }
     if (selection?.kind === "unsupported") {
       invalidatePreparation();
-      languageDetection.invalidate();
-      selectedSourceContentHash = null;
       preparationView = {
         state: selection.state,
         origin: "embedded",
@@ -438,10 +416,7 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
       source: {
         format: loaded.source.format,
         cueCount: loaded.source.cues.length,
-        detectedLanguage: unchanged
-          ? ((sidebarState.source as { detectedLanguage?: string | null } | null)
-              ?.detectedLanguage ?? null)
-          : null,
+        detectedLanguage: null,
         warnings: loaded.source.decode.warnings,
       },
       sourceIssue: null,
@@ -459,7 +434,6 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
   };
 
   const scheduleSourceReload = (invalidateChangedSelection = false): void => {
-    if (!controller.session.enabled || controller.session.closed) return;
     const selectedId = runtime.core.subtitle.id;
     if (invalidateChangedSelection && selectedId !== selectedSourceTrackId)
       clearSource("unreadable");
@@ -538,12 +512,10 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
     }
   });
   runtime.sidebar.onMessage("translation:set-enabled", (raw: unknown) => {
-    if (controller.session.closed) return;
     const enabled = Boolean((raw as { payload?: { enabled?: unknown } }).payload?.enabled);
     controller.setEnabled(enabled);
     if (!enabled) {
-      if (sourceSelectionTimer !== null) clearTimeout(sourceSelectionTimer);
-      sourceSelectionTimer = null;
+      languageDetection.invalidate();
       clearSource("unreadable");
     } else if (!loadSource(false)) scheduleSourceReload();
     runtime.preferences.set("enabledByDefault", enabled);
@@ -941,8 +913,6 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
   requestProfiles();
 
   runtime.event.on("iina.file-loaded", () => {
-    if (controller.session.closed) return;
-    windowClosed = false;
     mediaEpoch += 1;
     invalidatePreparation();
     controller.endFile();
@@ -954,12 +924,7 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
     if (selectedId === selectedSourceTrackId) return;
     scheduleSourceReload(true);
   });
-  runtime.event.on("mpv.track-list.changed", () => {
-    if (!loadSource(false)) {
-      clearSource("unreadable");
-      scheduleSourceReload();
-    }
-  });
+  runtime.event.on("mpv.track-list.changed", () => scheduleSourceReload());
   const overlayRegionListeners = [
     {
       name: "mpv.sub-margin-x.changed",
@@ -1010,13 +975,11 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
   });
   runtime.event.on("mpv.end-file", () => {
     mediaEpoch += 1;
-    if (sourceSelectionTimer !== null) clearTimeout(sourceSelectionTimer);
-    sourceSelectionTimer = null;
-    clearSource("unreadable");
+    invalidatePreparation();
+    languageDetection.invalidate();
   });
   runtime.event.on("mpv.end-file", () => controller.endFile());
-  const playbackTimer = setInterval(() => {
-    if (windowClosed) return;
+  setInterval(() => {
     controller.session.setPaused(runtime.core.status.paused);
     controller.tick(
       finitePosition(
@@ -1025,9 +988,7 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
     );
     updateSidebarState();
   }, 350);
-  const closePlayer = (): void => {
-    if (windowClosed) return;
-    windowClosed = true;
+  runtime.event.on("iina.window-will-close", () => {
     closeOverlayRegion();
     translationOverlay.close();
     runtime.global.postMessage("subtitle-style:picker-cancel", {
@@ -1037,7 +998,6 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
     });
     modelCatalogSync.remove(playerId);
     if (sourceSelectionTimer !== null) clearTimeout(sourceSelectionTimer);
-    sourceSelectionTimer = null;
     if (currentSelection)
       runtime.global.postMessage("profile:release", {
         requestId: `release-${Date.now()}`,
@@ -1054,15 +1014,9 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
     preparationPromise = null;
     preparationView = null;
     embeddedPreparationKey = null;
-    controller.clearProviderSelection();
     controller.endFile();
+    controller.clearProviderSelection();
     updateSidebarState({ source: null, sourceIssue: "unreadable", selection: null });
-  };
-  runtime.event.on("iina.window-will-close", closePlayer);
-  runtime.event.on("mpv.shutdown", () => {
-    closePlayer();
-    clearInterval(playbackTimer);
-    controller.close();
   });
   if (!loadSource(false)) scheduleSourceReload();
   translationOverlay.setRegion(overlayRegion.snapshot);
@@ -1070,3 +1024,15 @@ export function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackCont
   requestSubtitleStyle();
   return controller;
 }
+
+let playerWired = false;
+const initializePlayer = (): void => {
+  if (playerWired || !iina.core.window.loaded) return;
+  playerWired = true;
+  wirePlayer(iina, `player-${Date.now()}`);
+};
+const scheduleInitializePlayer = (): void => {
+  setTimeout(initializePlayer, 100);
+};
+iina.event.on("iina.window-loaded", scheduleInitializePlayer);
+scheduleInitializePlayer();

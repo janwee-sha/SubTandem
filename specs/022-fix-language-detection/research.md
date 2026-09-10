@@ -2,11 +2,10 @@
 
 ## 1. 离线模型与源语言范围
 
-- **决策**：用完整 `franc-all@7.2.0` 替换 `franc-min`；新增独立的 67 种源语言映射，`cmn` 映射 `zh`，中文形式在选中中文后判定。完整模型的其他语言只提供范围外证据；须包含已核对范围外语料中的 `ina`，不能由缺失模型的受支持语言误判冒充范围外判断。
+- **决策**：用完整 `franc@6.2.0` 替换 `franc-min`；新增独立的 67 种源语言映射，`cmn` 映射 `zh`，中文形式在选中中文后判定。完整模型的其他语言只提供范围外证据。
 - **理由**：本地依赖实现有默认 10 字符门槛和 2,048 UTF-16 单元截断，归一化第一名不能表示概率或文字占比。受支持分类显式设置 `minLength: 0`，每次输入控制在模型截断范围内。完整模型能提供 `fin/nob/nno/heb` 等候选；实施时核对锁定数据中的全部源映射。
 - **备选**：保留最小模型并只判断特殊文字，无法充分覆盖芬兰语、挪威语；直接使用完整模型的任意第一名会扩大源范围；native/在线识别增加运行时或隐私边界，均不采用。
-- **查询实现**：按固定模型三元组建立倒排索引，等价累计距离并保持原归一化、候选及并列顺序；校准文本和 Unicode 边界逐项与 `francAll` 对照。索引仅保存静态模型，同正文查询只在当前 attempt 内复用。
-- **依据**：[7.2.0 包元数据](https://registry.npmjs.org/franc-all/7.2.0)、[分类实现](https://github.com/wooorm/franc/tree/main/packages/franc-all)、[模型说明](https://github.com/wooorm/franc/tree/main/packages/franc-all)。模型与既有依赖使用 MIT 声明；打包时更新实际组件名称和许可。
+- **依据**：[6.2.0 包元数据](https://raw.githubusercontent.com/wooorm/franc/6.2.0/packages/franc/package.json)、[分类实现](https://raw.githubusercontent.com/wooorm/franc/6.2.0/packages/franc/index.js)、[模型说明](https://github.com/wooorm/franc/tree/6.2.0/packages/franc)。模型与既有依赖使用 MIT 声明；打包时更新实际组件名称和许可。
 
 ## 2. 候选接受与范围外确认
 

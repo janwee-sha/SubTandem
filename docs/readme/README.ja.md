@@ -99,7 +99,7 @@ IINAの開発版では、利用可能なプラグイン一覧からSubTandemを�
 ## 🌍 クイックスタート
 
 1. ローカル動画を開き、対応する埋め込みテキスト字幕または外部SRT/ASSをIINAの主字幕として選択します。
-2. **Languages**で母語を選択して保存します。SubTandemは字幕本文から元の言語をオフラインで判定します。
+2. **Languages**で母語を選択します。IINAが字幕言語を識別できない場合は手動で確認し、言語設定を保存します。
 3. **Translation service**でOpenAI、Claude、DeepSeek、またはOllamaのProfileを作成します。認証が必要な場合は、API keyを入力してからモデル一覧を手動で更新します。返されたモデルを選ぶか、正確なカスタムModel IDを入力します。
 4. Profileを保存してテストし、**Select**をクリックします。Profileを選択すると、表示されたendpointへ再生位置付近の字幕テキストを送信することをSubTandemに明示的に許可します。
 5. **Translate**をオンにします。元の字幕はIINAでそのまま表示され、翻訳されたcueはSubTandemのオーバーレイに表示されます。**Subtitle**の**Position**で、オーバーレイを上（`0`）から下（`100`）まで移動できます。
@@ -144,7 +144,6 @@ Endpoint、モデル、API key、またはネットワーク経路を変更し�
 
 ## 🔒 プライバシー、認証情報、料金
 
-- デバッグ用に字幕本文、前後の文脈、訳文をIINAのLog Viewerへ出力します。IINAのログ記録を有効にするとディスクにも保存され、再生セッション終了後も残る場合があります。ログを翻訳キャッシュとして再利用することはありません。認証情報はログに出力しません。
 - SubTandemが明示的に選択したProfileへ送信するのは、再生位置付近の字幕テキスト、言語方向、不透明なcue ID、少量の隣接コンテキストだけです。動画や音声の内容は送信しません。
 - `video-overlay`権限は、現在の翻訳をローカルの非対話型Overlayに表示するためだけに使います。Overlayは入力や動画上でのドラッグを受け付けず、ネットワークやWebViewストレージを使用せず、再生セッションとともに消去されます。
 - OpenAI、Claude、DeepSeek、OllamaのAPI keyは、プラグイン専用の`credentials.json`にローカル平文で保存されます。ディレクトリの権限は`0700`、ファイルの権限は`0600`です。KeyはIINA preferences、ログ、診断、Sidebar状態、プラグインパッケージには書き込まれず、保存後に再表示されません。
@@ -160,7 +159,7 @@ SubTandemは、音声文字起こし、画像ベース字幕のOCR/抽出、リ�
 ## 🛠️ トラブルシューティング
 
 - **Select a supported text subtitle:** ローカル埋め込みSubRip/ASS/SSA/`mov_text`または外部SRT/ASSを主字幕として選択してください。画像ベースとリモート埋め込み字幕は非対応です。状態表示に従って再選択するか、準備失敗後にRetryしてください。
-- **言語の判定：** 判定対象は67言語で、翻訳先の言語一覧とは別です。最良の候補でも誤判定する場合があります。多言語の字幕では、対応言語のうち文字量が最も多い言語を選びます。非対応言語のほうが多くても、この規則は変わりません。**Subtitle language could not be identified**は候補を選べない状態、**This subtitle language is not supported**は本文が対応範囲外の状態です。元の言語と翻訳先が同等なら翻訳は不要です。
+- **Confirm the subtitle language:** `en-US`などのBCP 47言語tagを入力し、言語設定を保存してください。
 - **Translation service unavailable:** Profileをテストし、endpoint、正確なModel ID、API key、ネットワーク経路、Ollamaプロセスを確認してください。ClaudeではAPI root、Messages互換性、認証/version、モデルアクセス、spend limit、クォータ、rate limit、拒否を、DeepSeekでは残高、クォータ、rate limit、固定API routeを確認してください。再生と元字幕は継続します。
 - **Credential could not be saved:** 不完全な開発用コピーではなくReleaseパッケージをインストールし、プラグインデータディレクトリが書き込み可能であることを確認してから、IINAを完全に終了して再起動してください。
 - **翻訳が表示されない：** Profileがテスト済みで選択されていること、字幕言語と母語が異なること、**Translate**が有効であること、再生位置が翻訳済みcueの時間範囲内にあることを確認してください。

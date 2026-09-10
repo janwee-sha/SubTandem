@@ -99,7 +99,7 @@ IINA 개발 버전에서는 사용 가능한 플러그인 목록에서 SubTandem
 ## 🌍 빠른 시작
 
 1. 로컬 영상을 열고 지원되는 내장 텍스트 자막 또는 외부 SRT/ASS를 IINA 주 자막으로 선택합니다.
-2. **Languages**에서 모국어를 선택하고 저장합니다. SubTandem은 자막 본문을 바탕으로 원문 언어를 오프라인에서 감지합니다.
+2. **Languages**에서 모국어를 선택합니다. IINA가 자막 언어를 식별하지 못하면 직접 확인한 뒤 언어 설정을 저장합니다.
 3. **Translation service**에서 OpenAI, Claude, DeepSeek 또는 Ollama Profile을 만듭니다. 인증이 필요하면 API key를 입력한 뒤 모델 목록을 수동으로 새로 고칩니다. 반환된 모델을 선택하거나 정확한 사용자 지정 Model ID를 입력합니다.
 4. Profile을 저장하고 테스트한 다음 **Select**를 클릭합니다. Profile 선택은 화면에 표시된 endpoint로 재생 위치 주변의 자막 텍스트를 전송하도록 SubTandem에 명시적으로 허용하는 동작입니다.
 5. **Translate**를 켭니다. 원본 자막은 IINA에서 계속 표시되고 번역된 cue는 SubTandem 오버레이에 나타납니다. **Subtitle**의 **Position**으로 오버레이를 위쪽(`0`)에서 아래쪽(`100`)까지 옮길 수 있습니다.
@@ -144,7 +144,6 @@ Endpoint, 모델, API key 또는 네트워크 경로가 바뀌면 Profile을 다
 
 ## 🔒 개인정보, 자격 증명 및 비용
 
-- 디버깅을 위해 자막 본문, 주변 문맥, 번역문을 IINA의 Log Viewer에 출력합니다. IINA 로그 기록을 켜면 디스크에도 저장되어 재생 세션이 끝난 뒤에도 남을 수 있습니다. 로그는 번역 캐시로 재사용하지 않으며 인증 정보는 기록하지 않습니다.
 - SubTandem는 명시적으로 선택한 Profile에만 재생 위치 주변의 자막 텍스트, 언어 방향, 불투명한 cue ID와 소량의 인접 문맥을 보냅니다. 영상이나 오디오 내용은 보내지 않습니다.
 - `video-overlay` 권한은 현재 번역을 로컬 비대화형 Overlay에 표시하는 데만 사용됩니다. Overlay는 입력이나 영상 위 드래그를 받지 않고 네트워크 또는 WebView 저장소를 사용하지 않으며 재생 세션과 함께 지워집니다.
 - OpenAI, Claude, DeepSeek 및 Ollama API key는 플러그인 전용 `credentials.json` 파일에 로컬 평문으로 저장됩니다. 디렉터리는 `0700`, 파일은 `0600` 권한을 사용합니다. Key는 IINA preferences, 로그, 진단, Sidebar 상태 또는 플러그인 패키지에 기록되지 않으며 저장 후 다시 표시되지 않습니다.
@@ -160,7 +159,7 @@ SubTandem는 오디오 전사, 이미지 기반 자막 OCR/추출, 원격 미디
 ## 🛠️ 문제 해결
 
 - **Select a supported text subtitle:** 로컬 내장 SubRip/ASS/SSA/`mov_text` 또는 외부 SRT/ASS를 주 자막으로 선택하세요. 이미지 기반 및 원격 내장 자막은 지원하지 않으며, 상태 안내에 따라 다시 선택하거나 준비 실패 후 Retry하세요.
-- **언어 감지:** 원문 감지는 67개 언어를 지원하며 번역 대상 언어 목록과는 별개입니다. 최선의 후보도 틀릴 수 있습니다. 여러 언어가 섞인 자막에서는 지원 언어 중 글자량이 가장 많은 언어를 선택합니다. 미지원 언어가 더 많아도 같은 규칙을 적용합니다. **Subtitle language could not be identified**는 후보를 선택하지 못한 상태이고, **This subtitle language is not supported**는 본문이 지원 범위 밖인 상태입니다. 원문과 대상 언어가 동등하면 번역하지 않습니다.
+- **Confirm the subtitle language:** `en-US`와 같은 BCP 47 언어 tag를 입력하고 언어 설정을 저장하세요.
 - **Translation service unavailable:** Profile을 테스트하고 endpoint, 정확한 Model ID, API key, 네트워크 경로 또는 Ollama 프로세스를 확인하세요. Claude는 API root, Messages 호환성, 인증/version, 모델 접근, spend limit, 할당량, rate limit과 거부를 확인하고, DeepSeek는 잔액, 할당량, rate limit과 고정 API route를 확인하세요. 영상과 원본 자막은 계속 재생됩니다.
 - **Credential could not be saved:** 불완전한 개발 사본 대신 Release 패키지를 설치하고 플러그인 데이터 디렉터리가 쓰기 가능한지 확인한 뒤 IINA를 완전히 종료하고 다시 시작하세요.
 - **번역문이 표시되지 않음:** Profile을 테스트하고 선택했는지, 원본 언어와 모국어가 다른지, **Translate**가 켜져 있는지, 재생 위치가 번역된 cue의 시간 범위 안에 있는지 확인하세요.

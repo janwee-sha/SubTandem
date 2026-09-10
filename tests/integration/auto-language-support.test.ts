@@ -7,9 +7,6 @@ import { loadSubtitleSource } from "../../src/subtitles/source.js";
 import type { TranslationBatchRequest, TranslationBatchResult } from "../../src/providers/types.js";
 import type { SubtitleCue } from "../../src/subtitles/types.js";
 import { utf8Encode } from "../../src/domain/codec.js";
-import { selectNearbyCues } from "../../src/app/scheduler.js";
-import { loadFrozenCorpora } from "../helpers/language-corpus.js";
-import { translateCorpusSample } from "../helpers/language-translation.js";
 
 function cues(language: "en" | "zh-Hans" = "en"): SubtitleCue[] {
   const english = [
@@ -73,139 +70,6 @@ class Provider {
 }
 
 describe("automatic language support", () => {
-  it.each([
-    "romanized-only",
-    "romanized-mixed",
-    "sparse",
-    "mixed-unsupported-majority",
-    "mixed-unsupported-combined",
-    "mixed-small-supported",
-    "mixed-40-35-25",
-  ])("preserves translation eligibility for %s despite conflicting metadata", async (id) => {
-    const sample = loadFrozenCorpora().calibration.samples.find(
-      (item) => item.sampleId === `calibration-${id}`,
-    )!;
-    for (const tag of [undefined, sample.truth.expectedLanguageIds[0], "incorrect-track-label"]) {
-      const translated = await translateCorpusSample(sample, "zh-Hans", tag);
-      expect(translated.result.state).toBe("reliable");
-      expect(translated.calls).toBeGreaterThan(0);
-      expect(translated.gatesPassed).toBe(true);
-      if (id !== "romanized-only" && id !== "sparse")
-        expect(translated.correctDirection).toBe(true);
-      if (translated.result.state === "reliable") {
-        const equal = await translateCorpusSample(sample, translated.result.languageId, tag);
-        expect(equal.calls).toBe(0);
-        expect(equal.gatesPassed).toBe(true);
-      }
-    }
-  });
-
-  it.each([
-    "unsupported-fi",
-    "unsupported-he",
-    "unsupported-no",
-    "unsupported-ia",
-    "unsupported-mixed",
-    "no-letters",
-  ])("never sends %s because a tag claims English", async (id) => {
-    const sample = loadFrozenCorpora().calibration.samples.find(
-      (item) => item.sampleId === `calibration-${id}`,
-    )!;
-    const actual = await translateCorpusSample(sample, "ja", "en");
-    expect(actual.result.state).toBe(sample.truth.behavior);
-    expect(actual.calls).toBe(0);
-    expect(actual.gatesPassed).toBe(true);
-  });
-
-  it.each([
-    "de-eleven",
-    "en-ass",
-    "hu-19",
-    "it-19",
-    "ru-19",
-    "sv-19",
-    "en-6",
-    "de-6",
-    "ja-6",
-    "ar-6",
-    "ko-6",
-    "ha-6",
-  ])("translates natural %s through the body, coordinator and selected Profile", async (id) => {
-    const sample = loadFrozenCorpora().calibration.samples.find(
-      (item) => item.sampleId === `calibration-${id}`,
-    )!;
-    expect(sample).toBeDefined();
-    const expected = sample.truth.expectedLanguageIds[0]!;
-    for (const target of [expected === "en" ? "ja" : "en", expected]) {
-      const loaded = loadSubtitleSource(
-        { id: 1, isExternal: true, title: `sample.${sample.format}`, lang: "incorrect-tag" },
-        sample.bytes,
-      );
-      expect(loaded.ok).toBe(true);
-      if (!loaded.ok) continue;
-      const provider = new Provider();
-      const controller = new PlaybackController({
-        playerId: "natural",
-        provider,
-        overlay: new Overlay(),
-        targetLanguage: target,
-        requiresProviderSelection: true,
-      });
-      controller.setProviderSelection({
-        profileId: "selected",
-        revision: 7,
-        endpointFingerprint: "selected-endpoint",
-        kind: "openai",
-      });
-      controller.setSource({
-        cues: loaded.source.cues,
-        contentHash: loaded.source.contentHash,
-        format: loaded.source.format,
-        language: null,
-      });
-      const position = loaded.source.cues[0]!.startMs;
-      const nearby = new Set(selectNearbyCues(loaded.source.cues, position).map((cue) => cue.id));
-      const coordinator = new LanguageDetectionCoordinator({
-        yieldControl: async () => {
-          controller.tick(position);
-          expect(provider.requests).toHaveLength(0);
-        },
-      });
-      await coordinator.start(
-        {
-          playerId: "natural",
-          mediaEpoch: 1,
-          trackIdentity: "selected-track",
-          contentHash: loaded.source.contentHash,
-          cues: loaded.source.cues,
-        },
-        (result) => {
-          expect(result).toMatchObject({ state: "reliable", languageId: expected });
-          controller.setLanguageDetection(result.state === "reliable" ? result : result.state);
-        },
-      );
-      controller.tick(position);
-      await controller.whenIdle();
-      if (target === expected) {
-        expect(controller.status).toBe("noTranslationNeeded");
-        expect(provider.requests).toHaveLength(0);
-      } else {
-        expect(provider.requests.length).toBeGreaterThan(0);
-        for (const request of provider.requests) {
-          expect(request).toMatchObject({
-            sourceLanguage: expected,
-            targetLanguage: target,
-            profileId: "selected",
-            profileRevision: 7,
-          });
-          expect(request.items.every((item) => nearby.has(item.id))).toBe(true);
-        }
-      }
-      coordinator.invalidate();
-      controller.close();
-    }
-  });
-
   it("uses subtitle text instead of correct, missing or conflicting track metadata", async () => {
     const body = cues()
       .map(
@@ -319,6 +183,7 @@ describe("automatic language support", () => {
     const accepted: string[] = [];
     const first = new LanguageDetectionCoordinator({
       yieldControl: async () => undefined,
+      detect: () => ({ state: "reliable", languageId: "en" }),
     });
     const invalidated = first.start(
       { playerId: "a", mediaEpoch: 1, trackIdentity: "track", contentHash: "old", cues: cues() },

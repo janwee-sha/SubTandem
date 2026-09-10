@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createHash } from "node:crypto";
 import {
+  getDetectorLanguage,
   getProviderLanguageLabel,
   getTargetLanguage,
   isTargetLanguageId,
@@ -22,14 +22,11 @@ describe("target language catalog", () => {
       expect(new Set(TARGET_LANGUAGES.map((item) => item[field])).size).toBe(156);
     expect(TARGET_LANGUAGES[0]).toMatchObject({ id: "ab", displayName: "Abkhazian" });
     expect(TARGET_LANGUAGES.at(-1)).toMatchObject({ id: "zu", displayName: "Zulu" });
-    expect(createHash("sha256").update(JSON.stringify(TARGET_LANGUAGES)).digest("hex")).toBe(
-      "44eee5f62cc86bf3804284f9bf33351113682302c947a06fb08d22eeab7dcc1a",
-    );
   });
 
   it("keeps explicit variants and named edge identities distinct", () => {
-    expect(getTargetLanguage("zh-Hans")).toMatchObject({ equivalence: "exact-script" });
-    expect(getTargetLanguage("zh-Hant")).toMatchObject({ equivalence: "exact-script" });
+    expect(getTargetLanguage("zh-Hans")).toMatchObject({ detectorCode: "cmn" });
+    expect(getTargetLanguage("zh-Hant")).toMatchObject({ detectorCode: "cmn" });
     expect(getTargetLanguage("pt")).toMatchObject({ equivalence: "base" });
     expect(getTargetLanguage("pt-PT")).toMatchObject({ equivalence: "exact-region" });
     expect(getTargetLanguage("gaa")?.displayName).toBe("Ga");
@@ -40,5 +37,7 @@ describe("target language catalog", () => {
     expect(isTargetLanguageId("fil")).toBe(true);
     expect(isTargetLanguageId("tl")).toBe(false);
     expect(getProviderLanguageLabel("pt-PT")).toBe("Portuguese (Portugal) [pt-PT]");
+    expect(getDetectorLanguage("eng")?.id).toBe("en");
+    expect(getDetectorLanguage("por")?.id).toBe("pt");
   });
 });

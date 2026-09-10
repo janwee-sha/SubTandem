@@ -481,8 +481,6 @@ export class PlaybackController {
 
   close(): void {
     this.session.close();
-    this.source = null;
-    this.languageDetection = "detecting";
     this.translations.clear();
     this.terminallyFailedCueIds.clear();
     this.lastAttemptError = null;
