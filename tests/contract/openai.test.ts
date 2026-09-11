@@ -113,7 +113,11 @@ describe("OpenAI-compatible provider", () => {
         ],
       });
       expect(payload).toEqual(JSON.parse(expectedTask.userMessage));
-      expect(messages[0]!.content).toBe(expectedTask.systemMessage);
+      expect(messages[0]!.content).toBe(
+        capability === "prompt-json"
+          ? `${expectedTask.systemMessage} The response must validate against this exact JSON Schema: ${JSON.stringify(expectedTask.outputSchema)}`
+          : expectedTask.systemMessage,
+      );
       expect(messages[0]!.content).toContain("Chinese (Simplified) [zh-Hans]");
       expect(messages[0]!.content).toMatch(/source language.*independently/i);
       expect(messages[0]!.content).not.toContain("English [en]");

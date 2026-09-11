@@ -201,7 +201,10 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
           messages: [
             {
               role: "system",
-              content: task.systemMessage,
+              content:
+                capability === "prompt-json"
+                  ? `${task.systemMessage} The response must validate against this exact JSON Schema: ${JSON.stringify(task.outputSchema)}`
+                  : task.systemMessage,
             },
             { role: "user", content: task.userMessage },
           ],

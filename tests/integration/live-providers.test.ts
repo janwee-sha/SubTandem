@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
 import { freezeTranslationTargets } from "../../src/app/request-builder.js";
@@ -94,11 +95,11 @@ function expectCleanLiveTranslations(
     if (/(?:^|\n)\s*(?:translation|note|explanation)\s*[:：]/i.test(translation.text))
       counts.explanation += 1;
   }
-  expect(result.translations.length).toBe(request.items.length);
-  expect(result.translations.every((item, index) => item.id === request.items[index]?.id)).toBe(
+  expect.soft(result.translations.length).toBe(request.items.length);
+  expect.soft(result.translations.every((item, index) => item.id === request.items[index]?.id)).toBe(
     true,
   );
-  expect(counts).toEqual({
+  expect.soft(counts).toEqual({
     adjacentContext: 0,
     sourceEcho: 0,
     romanization: 0,
@@ -120,15 +121,44 @@ async function runLanguageMatrix(provider: {
     };
     const result = await withSafeProviderDiagnostics(provider.attempt(request));
     const resultsById = new Map(result.translations.map((item) => [item.id, item.text]));
+    const exactByIndex = matrixCase.exactIndexes.map((index) => {
+      const item = request.items[index];
+      return item !== undefined && resultsById.get(item.id) === item.text;
+    });
+    const exactMatches = exactByIndex.filter(Boolean).length;
+    const mismatches = matrixCase.exactIndexes.flatMap((index) => {
+      const item = request.items[index];
+      const output = item ? resultsById.get(item.id) : undefined;
+      if (!item || output === undefined || output === item.text) return [];
+      return [
+        {
+          index,
+          inputCodePoints: [...item.text].length,
+          outputCodePoints: [...output].length,
+          inputNewlines: item.text.match(/\n/g)?.length ?? 0,
+          outputNewlines: output.match(/\n/g)?.length ?? 0,
+          equalWithoutWhitespace: item.text.replace(/\s/g, "") === output.replace(/\s/g, ""),
+        },
+      ];
+    });
     const evidence = {
       complete: result.translations.length === request.items.length,
-      exact: matrixCase.exactIndexes.every((index) => {
-        const item = request.items[index];
-        return item !== undefined && resultsById.get(item.id) === item.text;
-      }),
+      exact: exactMatches === matrixCase.exactIndexes.length,
+      exactByIndex,
+      exactMatches,
+      exactExpected: matrixCase.exactIndexes.length,
+      mismatches,
       nonblank: result.translations.every((item) => item.text.trim().length > 0),
     };
-    expect(evidence, matrixCase.caseId).toEqual({ complete: true, exact: true, nonblank: true });
+    expect.soft(evidence, matrixCase.caseId).toEqual({
+      complete: true,
+      exact: true,
+      exactByIndex: matrixCase.exactIndexes.map(() => true),
+      exactMatches: matrixCase.exactIndexes.length,
+      exactExpected: matrixCase.exactIndexes.length,
+      mismatches: [],
+      nonblank: true,
+    });
   }
 }
 
@@ -168,7 +198,7 @@ describe.skipIf(!live)("authorized live provider smoke tests", () => {
         endpoint: endpoint!,
         model: model!,
         ...(apiKey ? { apiKey } : {}),
-        sessionId: "live-provider-test",
+        sessionId: randomUUID(),
       },
       new FetchTransport(),
     );
@@ -185,10 +215,11 @@ describe.skipIf(!live)("authorized live provider smoke tests", () => {
   it("probes and translates with the configured Ollama service", async () => {
     const endpoint = process.env.SUBTANDEM_OLLAMA_ENDPOINT;
     const model = process.env.SUBTANDEM_OLLAMA_MODEL;
+    const apiKey = process.env.SUBTANDEM_OLLAMA_KEY;
     expect(endpoint).toBeTruthy();
     expect(model).toBeTruthy();
     const provider = new OllamaProvider(
-      { endpoint: endpoint!, model: model! },
+      { endpoint: endpoint!, model: model!, ...(apiKey ? { apiKey } : {}) },
       new FetchTransport(),
     );
 
