@@ -74,7 +74,6 @@ export interface TranslationBatchRequest {
   profileId: ProfileId;
   profileRevision: number;
   endpointFingerprint: EndpointFingerprint;
-  sourceLanguage: string;
   targetLanguage: string;
   items: FrozenTranslationTarget[];
 }

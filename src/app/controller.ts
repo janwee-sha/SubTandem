@@ -1,5 +1,5 @@
 import type { SessionStatus } from "../domain/status.js";
-import { normalizeLanguageTag, shouldTranslate } from "../domain/language.js";
+import { isTargetLanguageId } from "../domain/target-languages.js";
 import type { TranslationProvider } from "../providers/provider.js";
 import type {
   FrozenTranslationTarget,
@@ -21,7 +21,6 @@ import { formatTranslationComparison } from "./translation-log.js";
 export interface ControllerSource {
   cues: SubtitleCue[];
   contentHash: string;
-  language: string | null;
   format: "srt" | "ass";
 }
 
@@ -49,7 +48,6 @@ export class PlaybackController {
   readonly session: PlaybackSession;
   status: SessionStatus = "waitingForSubtitle";
   private source: ControllerSource | null = null;
-  private languageDetection: "detecting" | "unknown" | "unsupported" | "reliable" = "detecting";
   private readonly translations = new Map<string, string>();
   private readonly terminallyFailedCueIds = new Set<string>();
   private lastAttemptError: ProviderAttemptError | null = null;
@@ -77,7 +75,6 @@ export class PlaybackController {
   setSource(source: ControllerSource | null): void {
     this.session.onTrackChanged();
     this.source = source;
-    this.languageDetection = source?.language ? "reliable" : "detecting";
     this.translations.clear();
     this.terminallyFailedCueIds.clear();
     this.lastAttemptError = null;
@@ -106,18 +103,6 @@ export class PlaybackController {
     this.lastAttemptError = null;
     this.cache.clear();
     this.clearOverlay();
-    this.status = this.nextIdleStatus();
-  }
-
-  setLanguageDetection(result: "unknown" | "unsupported" | { languageId: string }): void {
-    if (!this.source) return;
-    if (result === "unknown" || result === "unsupported") {
-      this.source = { ...this.source, language: null };
-      this.languageDetection = result;
-    } else {
-      this.source = { ...this.source, language: result.languageId };
-      this.languageDetection = "reliable";
-    }
     this.status = this.nextIdleStatus();
   }
 
@@ -161,13 +146,11 @@ export class PlaybackController {
   private nextIdleStatus(): SessionStatus {
     if (!this.session.enabled) return "disabled";
     if (!this.source) return "waitingForSubtitle";
-    if (this.languageDetection === "detecting") return "detectingLanguage";
-    if (this.languageDetection === "unknown") return "languageUnrecognized";
-    if (this.languageDetection === "unsupported") return "languageUnsupported";
-    const sourceLanguage = normalizeLanguageTag(this.source.language);
-    const targetLanguage = normalizeLanguageTag(this.options.targetLanguage);
-    if (sourceLanguage && targetLanguage && !shouldTranslate(sourceLanguage, targetLanguage))
-      return "noTranslationNeeded";
+    if (
+      !this.effectiveTargetLanguage() ||
+      (this.options.requiresProviderSelection && !this.options.profileId)
+    )
+      return "waitingForConfiguration";
     return "preparing";
   }
 
@@ -180,30 +163,12 @@ export class PlaybackController {
       this.status = "waitingForConfiguration";
       return;
     }
-    const sourceLanguage = normalizeLanguageTag(this.source.language);
-    const targetLanguage = this.options.targetLanguage
-      ? normalizeLanguageTag(this.options.targetLanguage)
-      : "target";
-    if (this.languageDetection !== "reliable" || !sourceLanguage) {
-      this.status = this.nextIdleStatus();
-      return;
-    }
+    const targetLanguage = this.effectiveTargetLanguage();
     if (!targetLanguage) {
       this.status = "waitingForConfiguration";
       return;
     }
-    if (
-      this.options.targetLanguage &&
-      sourceLanguage &&
-      !shouldTranslate(sourceLanguage, targetLanguage)
-    ) {
-      this.status = "noTranslationNeeded";
-      return;
-    }
-    const identity = this.cacheIdentity(
-      sourceLanguage ?? this.source.language ?? "und",
-      targetLanguage,
-    );
+    const identity = this.cacheIdentity(targetLanguage);
     const window = selectNearbyCues(this.source.cues, positionMs);
     for (const cue of window) {
       const cached = this.cache.get(identity, cue.id);
@@ -238,7 +203,6 @@ export class PlaybackController {
           profileId: this.options.profileId ?? "injected-provider",
           profileRevision: this.options.profileRevision ?? 1,
           endpointFingerprint: this.options.endpointFingerprint ?? "injected",
-          sourceLanguage: sourceLanguage ?? this.source.language ?? "und",
           targetLanguage,
           targets: remaining,
         });
@@ -317,9 +281,9 @@ export class PlaybackController {
     const seen = new Set<string>();
     const valid: Array<{ cueId: string; translation: string }> = [];
     for (const item of result.translations) {
-      const text = item.text.trim();
+      const text = item.text;
       const target = requestedById.get(item.id);
-      if (!target || counts.get(item.id) !== 1 || !text) continue;
+      if (!target || counts.get(item.id) !== 1 || !text.trim()) continue;
       seen.add(item.id);
       valid.push({ cueId: item.id, translation: text });
       this.translations.set(item.id, text);
@@ -403,14 +367,18 @@ export class PlaybackController {
     });
   }
 
-  private cacheIdentity(sourceLanguage: string, targetLanguage: string): CacheIdentity {
+  private cacheIdentity(targetLanguage: string): CacheIdentity {
     return {
       sessionId: this.session.sessionId,
       sourceContentHash: this.source?.contentHash ?? "",
-      sourceLanguage,
       targetLanguage,
       providerSemanticFingerprint: this.options.providerSemanticFingerprint ?? "injected",
     };
+  }
+
+  private effectiveTargetLanguage(): string | null {
+    if (isTargetLanguageId(this.options.targetLanguage)) return this.options.targetLanguage;
+    return this.options.requiresProviderSelection ? null : "en";
   }
 
   private acceptsAttempt(

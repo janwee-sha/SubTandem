@@ -53,7 +53,6 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
       const response = await this.send(
         `${testId}-probe-${capability}`,
         [{ id: "probe", text: "hello" }],
-        "en",
         "es",
         capability,
         10_000,
@@ -80,7 +79,6 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
       const response = await this.send(
         `${scopeId}-probe-${capability}`,
         [{ id: "probe", text: "hello" }],
-        "en",
         "es",
         capability,
         10_000,
@@ -117,7 +115,6 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
           const response = await this.send(
             jobId,
             items,
-            request.sourceLanguage,
             request.targetLanguage,
             capability,
             30_000,
@@ -165,12 +162,11 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
   private async send(
     jobId: string,
     items: WireTranslationTarget[],
-    sourceLanguage: string,
     targetLanguage: string,
     capability: Capability,
     timeoutMs: number,
   ): Promise<ProviderTransportResponse> {
-    const task = buildTranslationTask({ sourceLanguage, targetLanguage, targets: items });
+    const task = buildTranslationTask({ targetLanguage, targets: items });
     const apiRoot = this.endpoint.replace(/\/+$/, "");
     const responseFormat =
       capability === "strict-json-schema"

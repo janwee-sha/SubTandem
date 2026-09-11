@@ -11,7 +11,6 @@ export function makeProviderRequest(): TranslationBatchRequest {
     profileId: "profile" as TranslationBatchRequest["profileId"],
     profileRevision: 1,
     endpointFingerprint: "endpoint" as TranslationBatchRequest["endpointFingerprint"],
-    sourceLanguage: "en",
     targetLanguage: "zh-Hans",
     items: [
       { id: "c1", text: "one", contextNext: "two" },

@@ -191,6 +191,5 @@ export function getTargetLanguage(value: string): TargetLanguageOption | null {
 }
 
 export function getProviderLanguageLabel(value: string): string | null {
-  if (value === "zh") return "Chinese [zh]";
   return getTargetLanguage(value)?.providerLabel ?? null;
 }

@@ -12,6 +12,10 @@ import type {
   TranslationBatchResult,
 } from "../../src/providers/types.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
+import {
+  freezeFixtureTargets,
+  loadProviderLanguageDetectionFixture,
+} from "../helpers/provider-language-detection.js";
 import { createTranslationAlignmentFixture } from "../helpers/translation-alignment.js";
 
 class FetchTransport implements ProviderTransport {
@@ -44,6 +48,12 @@ class FetchTransport implements ProviderTransport {
 const live = process.env.SUBTANDEM_LIVE_PROVIDER_TEST === "1";
 const liveDeepSeek = process.env.SUBTANDEM_LIVE_DEEPSEEK_TEST === "1";
 const liveClaude = process.env.SUBTANDEM_LIVE_CLAUDE_TEST === "1";
+const languageFixture = loadProviderLanguageDetectionFixture();
+const languageMatrix = [
+  { caseId: "same-language-preservation", exactIndexes: [0, 1, 2, 3, 4, 5] },
+  { caseId: "mixed-language-batch", exactIndexes: [2, 5] },
+  { caseId: "traditional-chinese-target", exactIndexes: [] },
+] as const;
 
 function makeLiveAcceptanceRequest(count = 50): TranslationBatchRequest {
   const { continuousCues } = createTranslationAlignmentFixture();
@@ -98,6 +108,30 @@ function expectCleanLiveTranslations(
   });
 }
 
+async function runLanguageMatrix(provider: {
+  attempt(request: TranslationBatchRequest): Promise<TranslationBatchResult>;
+}): Promise<void> {
+  for (const matrixCase of languageMatrix) {
+    const testCase = languageFixture.cases.find((entry) => entry.id === matrixCase.caseId)!;
+    const request = {
+      ...makeProviderRequest(),
+      targetLanguage: testCase.targetLanguage,
+      items: freezeFixtureTargets(testCase),
+    };
+    const result = await withSafeProviderDiagnostics(provider.attempt(request));
+    const resultsById = new Map(result.translations.map((item) => [item.id, item.text]));
+    const evidence = {
+      complete: result.translations.length === request.items.length,
+      exact: matrixCase.exactIndexes.every((index) => {
+        const item = request.items[index];
+        return item !== undefined && resultsById.get(item.id) === item.text;
+      }),
+      nonblank: result.translations.every((item) => item.text.trim().length > 0),
+    };
+    expect(evidence, matrixCase.caseId).toEqual({ complete: true, exact: true, nonblank: true });
+  }
+}
+
 async function withSafeProviderDiagnostics<T>(
   operation: Promise<T>,
   safeCounts: () => Record<string, number> = () => ({}),
@@ -145,6 +179,7 @@ describe.skipIf(!live)("authorized live provider smoke tests", () => {
     const request = makeLiveAcceptanceRequest();
     const result = await withSafeProviderDiagnostics(provider.attempt(request));
     expectCleanLiveTranslations(request, result);
+    await runLanguageMatrix(provider);
   }, 300_000);
 
   it("probes and translates with the configured Ollama service", async () => {
@@ -161,6 +196,7 @@ describe.skipIf(!live)("authorized live provider smoke tests", () => {
     const request = makeLiveAcceptanceRequest();
     const result = await withSafeProviderDiagnostics(provider.attempt(request));
     expectCleanLiveTranslations(request, result);
+    await runLanguageMatrix(provider);
   }, 600_000);
 });
 
@@ -185,6 +221,7 @@ describe.skipIf(!liveDeepSeek)("authorized DeepSeek live acceptance", () => {
     const result = await withSafeProviderDiagnostics(provider.attempt(request));
     expect(request.items).toHaveLength(40);
     expectCleanLiveTranslations(request, result);
+    await runLanguageMatrix(provider);
   }, 600_000);
 });
 
@@ -213,5 +250,6 @@ describe.skipIf(!liveClaude)("authorized Claude-compatible live acceptance", () 
     );
     expect(request.items).toHaveLength(40);
     expectCleanLiveTranslations(request, result);
+    await runLanguageMatrix(provider);
   }, 600_000);
 });

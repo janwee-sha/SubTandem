@@ -41,4 +41,12 @@ describe("active translations", () => {
     expect(selectActiveTranslations(cues, values, null)).toEqual([]);
     expect(selectActiveTranslations(cues, values, 1_000)).toEqual([]);
   });
+
+  it("returns the original nonblank string including outer and internal blank lines", () => {
+    const values = new Map(translations);
+    values.set("overlap-first", "  first\n\nthird  \n");
+    values.set("overlap-second", " \n\t ");
+
+    expect(selectActiveTranslations(cues, values, 750)).toEqual(["  first\n\nthird  \n"]);
+  });
 });

@@ -3,7 +3,6 @@ import { identityHash } from "../domain/identity.js";
 export interface CacheIdentity {
   sessionId: string;
   sourceContentHash: string;
-  sourceLanguage: string;
   targetLanguage: string;
   providerSemanticFingerprint: string;
 }
@@ -34,8 +33,8 @@ export class SessionTranslationCache {
   ): void {
     if (identity.sessionId !== this.sessionId) return;
     for (const result of results) {
-      const translation = result.translation.trim();
-      if (!result.cueId || !translation) continue;
+      const translation = result.translation;
+      if (!result.cueId || !translation.trim()) continue;
       const cacheKey = this.key(identity, result.cueId);
       this.entries.set(cacheKey, { ...identity, cacheKey, cueId: result.cueId, translation });
     }

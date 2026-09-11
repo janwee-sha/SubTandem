@@ -96,6 +96,7 @@ open build/package/SubTandem-X.Y.Z.iinaplgz
 - Claude 翻译使用顶层 system、单条 user message、`max_tokens: 8192`、`stream: false` 和精确 ID JSON；只接受 `end_turn` 与按序 text block，拒绝、截断、畸形或不完整 wire 均零提交。模型目录按 `last_id/after_id` 分页，每页发送前后复核完整 owner；preview Key 只用于当前手动刷新，不进入状态、日志或诊断。
 - DeepSeek 翻译固定使用 `/chat/completions`、JSON object 输出、关闭 thinking 并严格校验 ID wire；模型目录使用 `/models`。产品不得预选、推荐或猜测 DeepSeek Model ID，也不持久化 Provider capability。
 - 已配置或正在编辑的 endpoint 可在 Select 前接收不含字幕的模型目录请求，其中包括默认 Claude 与 DeepSeek root；需要认证的新 Profile 仅在用户填写 API key 并手动刷新时临时使用该 Key，自动刷新不发送未保存 Key。只有用户明确 Select 的 Profile 修订版才会接收用于翻译的字幕正文。
+- 翻译请求只携带准确目标语言，不携带本地推测的源语言。四类 Provider 在同一请求内逐条理解源语言；短轨、源语言不明及已经符合准确目标语言的正文仍会发送到所选服务，并可能产生费用。同语言结果必须逐字符原样返回。
 - 原字幕和视频播放不得因翻译延迟或失败而暂停。
 
 ### 跨运行时播放器身份

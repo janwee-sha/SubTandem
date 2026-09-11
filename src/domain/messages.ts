@@ -4,6 +4,10 @@ export interface RpcEnvelope<T = unknown> {
   payload: T;
 }
 
+import type {
+  TranslationBatchProgress,
+  TranslationBatchRequest,
+} from "../providers/types.js";
 import { isTargetLanguageId } from "./target-languages.js";
 import { isOverlayPosition, isOverlayRegion, type OverlayRegion } from "./overlay-position.js";
 import {
@@ -232,7 +236,8 @@ export function parseOverlayRender(value: unknown): OverlayRenderMessage {
   if (
     !Array.isArray(record.lines) ||
     record.lines.length === 0 ||
-    record.lines.some((line) => typeof line !== "string" || !line.trim())
+    record.lines.some((line) => typeof line !== "string") ||
+    !record.lines.some((line) => typeof line === "string" && line.trim())
   )
     throw new Error("INVALID_MESSAGE");
   return { ...layout, lines: [...record.lines] as string[] };
@@ -550,6 +555,75 @@ export const PROVIDER_ATTEMPT_EVENT_NAMES = [
   "provider:attempt-result",
   "provider:attempt-error",
 ] as const;
+
+function opaqueIdentity(value: unknown): value is string {
+  return typeof value === "string" && /^[A-Za-z0-9_.:-]{1,256}$/.test(value);
+}
+
+export function parseProviderAttempt(value: unknown): RpcEnvelope<TranslationBatchRequest> {
+  const envelope = parseEnvelope(value);
+  const payload = envelope.payload as Record<string, unknown>;
+  if (
+    !exactKeys(payload, [
+      "playerId",
+      "requestId",
+      "batchId",
+      "sessionId",
+      "sessionEpoch",
+      "windowEpoch",
+      "profileId",
+      "profileRevision",
+      "endpointFingerprint",
+      "targetLanguage",
+      "items",
+    ]) ||
+    !opaqueIdentity(payload.playerId) ||
+    !opaqueIdentity(payload.requestId) ||
+    payload.requestId !== envelope.requestId ||
+    !opaqueIdentity(payload.batchId) ||
+    !opaqueIdentity(payload.sessionId) ||
+    !nonNegativeInteger(payload.sessionEpoch) ||
+    !nonNegativeInteger(payload.windowEpoch) ||
+    !opaqueIdentity(payload.profileId) ||
+    !Number.isInteger(payload.profileRevision) ||
+    (payload.profileRevision as number) < 1 ||
+    !opaqueIdentity(payload.endpointFingerprint) ||
+    !isTargetLanguageId(payload.targetLanguage) ||
+    !Array.isArray(payload.items) ||
+    payload.items.length === 0 ||
+    payload.items.length > 25
+  )
+    throw new Error("INVALID_PROVIDER_ATTEMPT");
+
+  const ids = new Set<string>();
+  let codePoints = 0;
+  for (const value of payload.items) {
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      throw new Error("INVALID_PROVIDER_ATTEMPT");
+    const item = value as Record<string, unknown>;
+    const optionalKeys = [
+      ...(item.contextPrevious === undefined ? [] : ["contextPrevious"]),
+      ...(item.contextNext === undefined ? [] : ["contextNext"]),
+    ];
+    if (
+      !exactKeys(item, ["id", "text", ...optionalKeys]) ||
+      !opaqueIdentity(item.id) ||
+      ids.has(item.id) ||
+      typeof item.text !== "string" ||
+      !item.text.trim() ||
+      (item.contextPrevious !== undefined && typeof item.contextPrevious !== "string") ||
+      (item.contextNext !== undefined && typeof item.contextNext !== "string")
+    )
+      throw new Error("INVALID_PROVIDER_ATTEMPT");
+    ids.add(item.id);
+    codePoints += [...item.text].length;
+    const contextCodePoints =
+      [...String(item.contextPrevious ?? "")].length + [...String(item.contextNext ?? "")].length;
+    if (contextCodePoints > 500) throw new Error("INVALID_PROVIDER_ATTEMPT");
+  }
+  if (codePoints > 5_000) throw new Error("INVALID_PROVIDER_ATTEMPT");
+  return envelope as RpcEnvelope<TranslationBatchRequest>;
+}
 
 export function parseTranslationBatchProgress(value: unknown): TranslationBatchProgress {
   if (!value || typeof value !== "object" || Array.isArray(value))
@@ -872,4 +946,3 @@ export function parseProfileSelection(value: unknown): {
     endpointFingerprint: input.endpointFingerprint,
   };
 }
-import type { TranslationBatchProgress } from "../providers/types.js";

@@ -4,13 +4,13 @@ import { parseProviderModelsResult, sanitizedProfileView } from "../../src/domai
 import { readFileSync } from "node:fs";
 import { SubtitlePreparationCoordinator } from "../../src/app/subtitle-preparation.js";
 import { SubtitleExtractorError } from "../../src/adapters/iina/subtitle-extractor.js";
-import { detectSubtitleLanguage } from "../../src/subtitles/language-detection.js";
+import { PlaybackController } from "../../src/app/controller.js";
 import {
   buildClaudeTranslationTask,
   buildTranslationTask,
 } from "../../src/providers/translation-task.js";
-import type { SubtitleCue } from "../../src/subtitles/types.js";
 import { discoverProviderModels } from "../../src/providers/model-discovery.js";
+import { RecordingProvider } from "../helpers/fake-provider.js";
 
 describe("credential and content leakage boundaries", () => {
   it("keeps style-picker token, bodies and native failures out of user-visible source", () => {
@@ -67,7 +67,6 @@ describe("credential and content leakage boundaries", () => {
       credential: { apiKey: sensitive[0]! },
     });
     const task = buildClaudeTranslationTask({
-      sourceLanguage: "en",
       targetLanguage: "zh-Hans",
       targets: [{ id: "c1", text: "fictional source" }],
     });
@@ -215,29 +214,40 @@ describe("credential and content leakage boundaries", () => {
     for (const value of sensitive) expect(output).not.toContain(value);
   });
 
-  it("keeps detector samples, candidates, scores and exceptions out of results", () => {
-    const sensitive = "PRIVATE_SUBTITLE_SAMPLE /private/media/title.srt";
-    const cues: SubtitleCue[] = Array.from({ length: 20 }, (_, index) => ({
-      id: String(index),
-      index,
-      startMs: index * 1_000,
-      endMs: index * 1_000 + 900,
-      sourceText: `${sensitive} ${index}`,
-      normalizedText: `${sensitive} ${index}`,
-    }));
-    const result = detectSubtitleLanguage(cues, {
-      classifier: () => {
-        throw new Error(`${sensitive} eng=1.0 fra=0.8 provider-secret`);
-      },
+  it("does not send subtitle text before translation and a Provider Profile are selected", async () => {
+    const provider = new RecordingProvider();
+    const controller = new PlaybackController({
+      playerId: "not-authorized",
+      provider,
+      overlay: { show: () => undefined, clear: () => undefined },
+      targetLanguage: "zh-Hans",
+      requiresProviderSelection: true,
     });
-    expect(result).toEqual({ state: "unknown", reason: "error" });
-    expect(JSON.stringify(result)).not.toMatch(/PRIVATE|private|eng|fra|score|secret/);
+    controller.setSource({
+      cues: [
+        {
+          id: "c1",
+          index: 0,
+          startMs: 0,
+          endMs: 1_000,
+          sourceText: "PRIVATE_SUBTITLE_SAMPLE",
+          normalizedText: "PRIVATE_SUBTITLE_SAMPLE",
+        },
+      ],
+      contentHash: "private-content",
+      format: "srt",
+    });
+
+    controller.tick(0);
+    await controller.whenIdle();
+
+    expect(provider.requests).toEqual([]);
+    expect(controller.status).toBe("waitingForConfiguration");
   });
 
   it("keeps credentials, authorization and endpoints out of the shared translation task", () => {
     const sensitive = ["provider-secret", "Bearer private", "https://private.example/v1"];
     const task = buildTranslationTask({
-      sourceLanguage: "en",
       targetLanguage: "zh-Hans",
       targets: [
         {

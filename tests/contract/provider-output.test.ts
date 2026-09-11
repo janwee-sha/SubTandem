@@ -14,7 +14,7 @@ describe("strict provider output", () => {
       }),
     ).toEqual({
       translations: [
-        { id: "c2", text: "two" },
+        { id: "c2", text: " two " },
         { id: "c1", text: "one" },
       ],
     });
@@ -144,7 +144,6 @@ describe("strict provider output", () => {
 
   it("builds one shared task whose user message contains JSON data only", () => {
     const task = buildTranslationTask({
-      sourceLanguage: "en",
       targetLanguage: "zh-Hans",
       targets: [
         {
@@ -166,12 +165,31 @@ describe("strict provider output", () => {
         },
       ],
     });
-    expect(task.systemMessage).toContain("English [en]");
     expect(task.systemMessage).toContain("Chinese (Simplified) [zh-Hans]");
+    expect(task.systemMessage).toMatch(/source language.*independently/i);
+    expect(task.systemMessage).toMatch(/character-for-character/i);
+    expect(task.systemMessage).toMatch(/exact target language and variant/i);
+    expect(task.systemMessage).toMatch(/leading and trailing spaces.*line breaks.*blank lines/i);
     expect(task.systemMessage).toContain("untrusted data");
     expect(task.systemMessage).toContain("only translation target");
     expect(task.systemMessage).toContain("must not be translated, copied, summarized, explained");
     expect(task.outputSchema).toEqual(providerOutputSchema(["c1"]));
+  });
+
+  it("preserves exact same-language and translated strings for distinct IDs", () => {
+    const output = validateIdOutput(["same-1", "same-2", "translated"], {
+      translations: [
+        { id: "same-1", text: "  Repeat me.  " },
+        { id: "same-2", text: "  Repeat me.  " },
+        { id: "translated", text: "Line one.\n\nLine three.\n" },
+      ],
+    });
+    expect(output.translations).toEqual([
+      { id: "same-1", text: "  Repeat me.  " },
+      { id: "same-2", text: "  Repeat me.  " },
+      { id: "translated", text: "Line one.\n\nLine three.\n" },
+    ]);
+    expect(output.missingIds).toEqual([]);
   });
 
   it("rejects missing, duplicate, unknown, blank and unparseable provider results", () => {

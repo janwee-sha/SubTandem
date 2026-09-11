@@ -49,6 +49,41 @@ function provider(
 }
 
 describe("Claude provider", () => {
+  it("preserves same-language and mixed-batch text character-for-character", async () => {
+    let systemMessage = "";
+    const value = provider({
+      request: async (request) => {
+        const body = request.body as { system: string; messages: Array<{ content: string }> };
+        systemMessage = body.system;
+        const targets = JSON.parse(body.messages[0]!.content).targets as Array<{
+          id: string;
+          text: string;
+        }>;
+        return {
+          statusCode: 200,
+          headers: {},
+          bodyText: JSON.stringify({
+            ...successFixture,
+            content: [
+              { type: "text", text: JSON.stringify({ translations: targets }) },
+            ],
+          }),
+        };
+      },
+    });
+    const request = makeProviderRequest();
+    request.items = [
+      { id: "same-a", text: "  Same.  " },
+      { id: "same-b", text: "Line one.\n\nLine three.\n" },
+    ];
+
+    const result = await value.attempt(request);
+
+    expect(result.translations).toEqual(request.items.map(({ id, text }) => ({ id, text })));
+    expect(systemMessage).toMatch(/character-for-character/i);
+    expect(systemMessage).toMatch(/context.*never.*output/i);
+  });
+
   it.each([
     ["https://api.anthropic.com", "https://api.anthropic.com/v1/messages"],
     ["https://host.example/base/", "https://host.example/base/v1/messages"],
@@ -99,6 +134,9 @@ describe("Claude provider", () => {
         targets: expect.any(Array),
       });
       expect(String(body.system)).toMatch(/untrusted data|untrusted/i);
+      expect(String(body.system)).toMatch(/Spanish \[es\]|Chinese \(Simplified\) \[zh-Hans\]/);
+      expect(String(body.system)).toMatch(/source language.*independently/i);
+      expect(String(body.system)).not.toMatch(/from English \[en\]/);
       expect(String(body.system)).toMatch(/exactly once/i);
       expect(String(body.system)).toContain('"translations"');
       for (const forbidden of [
@@ -115,6 +153,10 @@ describe("Claude provider", () => {
         expect(body).not.toHaveProperty(forbidden);
       expect(request.headers).not.toHaveProperty("X-Session-Id");
     }
+    expect(requests.map((request) => String((request.body as Record<string, unknown>).system))).toEqual([
+      expect.stringContaining("Spanish [es]"),
+      expect.stringContaining("Chinese (Simplified) [zh-Hans]"),
+    ]);
   });
 
   it("runs every Test as a fresh validated Messages request without selecting", async () => {

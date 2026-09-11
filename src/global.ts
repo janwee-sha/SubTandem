@@ -10,6 +10,7 @@ import {
   parseSubtitleStylePickerOpen,
   parseProviderModelsPreviewRequest,
   parseProviderModelsRequest,
+  parseProviderAttempt,
   parseSecretSet,
   parseTargetLanguageSave,
   parseTranslationBatchProgress,
@@ -79,12 +80,6 @@ function advanceCredentialEpoch(profileId: string): number {
   const next = (modelCredentialEpochs.get(profileId) ?? 0) + 1;
   modelCredentialEpochs.set(profileId, next);
   return next;
-}
-
-try {
-  targetLanguagePreferences.clearLegacySourcePreferences();
-} catch (error) {
-  void error;
 }
 
 function restoreProfileMetadata(): void {
@@ -1280,8 +1275,11 @@ iina.global.onMessage("provider:attempt", async (raw: unknown, playerId?: string
   if (!playerId) return;
   const id = requestId(raw);
   try {
-    const request = payload(raw) as unknown as TranslationBatchRequest;
-    if (request.requestId !== id) throw new Error("REQUEST_ID_MISMATCH");
+    const parsed = parseProviderAttempt(raw);
+    const request = {
+      ...parsed.payload,
+      playerId: playerId as TranslationBatchRequest["playerId"],
+    };
     const result = await broker.attempt(playerId, request, (progress) => {
       try {
         postToPlayer(playerId, "provider:attempt-progress", {

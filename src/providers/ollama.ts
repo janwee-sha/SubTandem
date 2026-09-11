@@ -82,7 +82,6 @@ export class OllamaProvider implements ConfiguredProvider {
       scopeId,
       `${scopeId}-schema`,
       [{ id: "probe", text: "hello" }],
-      "en",
       "es",
       15_000,
     );
@@ -107,7 +106,6 @@ export class OllamaProvider implements ConfiguredProvider {
           request.requestId,
           `${request.requestId}-part-${part}`,
           items,
-          request.sourceLanguage,
           request.targetLanguage,
           60_000,
         );
@@ -171,12 +169,11 @@ export class OllamaProvider implements ConfiguredProvider {
   private async chat(
     jobId: string,
     items: WireTranslationTarget[],
-    sourceLanguage: string,
     targetLanguage: string,
     timeoutMs: number,
     capability = this.outputCapability,
   ): Promise<ProviderTransportResponse> {
-    const task = buildTranslationTask({ sourceLanguage, targetLanguage, targets: items });
+    const task = buildTranslationTask({ targetLanguage, targets: items });
     this.activeJobs.add(jobId);
     try {
       return await this.transport.request({
@@ -218,7 +215,6 @@ export class OllamaProvider implements ConfiguredProvider {
     scopeId: string,
     jobId: string,
     items: WireTranslationTarget[],
-    sourceLanguage: string,
     targetLanguage: string,
     timeoutMs: number,
   ): Promise<TranslationBatchResult> {
@@ -227,7 +223,6 @@ export class OllamaProvider implements ConfiguredProvider {
     let response = await this.chat(
       jobId,
       items,
-      sourceLanguage,
       targetLanguage,
       timeoutMs,
       initialCapability,
@@ -243,7 +238,6 @@ export class OllamaProvider implements ConfiguredProvider {
       response = await this.chat(
         this.fallbackJobId(jobId),
         items,
-        sourceLanguage,
         targetLanguage,
         timeoutMs,
         "prompt-json",
@@ -261,7 +255,6 @@ export class OllamaProvider implements ConfiguredProvider {
       const fallback = await this.chat(
         this.fallbackJobId(jobId),
         items,
-        sourceLanguage,
         targetLanguage,
         timeoutMs,
         "prompt-json",

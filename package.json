@@ -57,8 +57,7 @@
     }
   },
   "dependencies": {
-    "@noble/hashes": "2.3.0",
-    "franc": "6.2.0"
+    "@noble/hashes": "2.3.0"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",

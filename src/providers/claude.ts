@@ -44,7 +44,6 @@ export class ClaudeProvider implements ConfiguredProvider {
       const response = await this.send(
         testId,
         [{ id: "c1", text: "hello" }],
-        "en",
         "es",
         REQUEST_TIMEOUT_MS,
       );
@@ -70,7 +69,6 @@ export class ClaudeProvider implements ConfiguredProvider {
           const response = await this.send(
             jobId,
             items,
-            request.sourceLanguage,
             request.targetLanguage,
             REQUEST_TIMEOUT_MS,
           );
@@ -110,11 +108,10 @@ export class ClaudeProvider implements ConfiguredProvider {
   private async send(
     jobId: string,
     items: WireTranslationTarget[],
-    sourceLanguage: string,
     targetLanguage: string,
     timeoutMs: number,
   ): Promise<ProviderTransportResponse> {
-    const task = buildClaudeTranslationTask({ sourceLanguage, targetLanguage, targets: items });
+    const task = buildClaudeTranslationTask({ targetLanguage, targets: items });
     this.activeJobs.add(jobId);
     try {
       return await this.transport.request({

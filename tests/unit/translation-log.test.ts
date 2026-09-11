@@ -70,7 +70,6 @@ describe("session translation log", () => {
         },
       ],
       contentHash: "translation-log",
-      language: "en",
       format: "srt",
     });
 
@@ -82,7 +81,7 @@ describe("session translation log", () => {
     );
     expect(targetMessage).toContain("Context before:\n  previous subtitle");
     expect(targetMessage).toContain("Context after:\n  next subtitle");
-    expect(targetMessage).toContain("Translation:\n  translated target");
+    expect(targetMessage).toContain("Translation:\n   translated target ");
     expect(messages.join("\n")).not.toContain("rejected output");
   });
 
@@ -113,7 +112,6 @@ describe("session translation log", () => {
         },
       ],
       contentHash: "translation-log-failure",
-      language: "en",
       format: "srt",
     });
 

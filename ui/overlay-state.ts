@@ -265,7 +265,8 @@ function createSubTandemOverlayState(): SubTandemOverlayStateCoordinator {
         Object.keys(record).sort().join(",") !== "lines,position,region,renderRevision,style" ||
         !Array.isArray(record.lines) ||
         record.lines.length === 0 ||
-        record.lines.some((line) => typeof line !== "string" || !line.trim())
+        record.lines.some((line) => typeof line !== "string") ||
+        !record.lines.some((line) => typeof line === "string" && line.trim())
       )
         return false;
       renderRevision = record.renderRevision as number;

@@ -42,6 +42,46 @@ describe("DeepSeek provider", () => {
     expect(source).not.toContain("chat-completions");
   });
 
+  it("preserves same-language and mixed-batch text character-for-character", async () => {
+    let systemMessage = "";
+    const provider = new DeepSeekProvider(
+      { endpoint: "https://api.deepseek.com", model: "model" },
+      {
+        request: async (request) => {
+          const messages = (request.body as { messages: Array<{ content: string }> }).messages;
+          systemMessage = messages[0]!.content;
+          const targets = JSON.parse(messages[1]!.content).targets as Array<{
+            id: string;
+            text: string;
+          }>;
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              choices: [
+                {
+                  finish_reason: "stop",
+                  message: { content: JSON.stringify({ translations: targets }) },
+                },
+              ],
+            }),
+          };
+        },
+      },
+    );
+    const request = makeProviderRequest();
+    request.items = [
+      { id: "same-a", text: "  Same.  " },
+      { id: "same-b", text: "Line one.\n\nLine three.\n" },
+    ];
+
+    const result = await provider.attempt(request);
+
+    expect(result.translations).toEqual(request.items.map(({ id, text }) => ({ id, text })));
+    expect(systemMessage).toMatch(/character-for-character/i);
+    expect(systemMessage).toMatch(/context.*must not.*output/i);
+  });
+
   it("uses the fixed JSON object dialect, disabled thinking and JSON-only instructions", async () => {
     const requests: ProviderTransportRequest[] = [];
     const provider = new DeepSeekProvider(
@@ -70,6 +110,9 @@ describe("DeepSeek provider", () => {
       expect(body).not.toHaveProperty("json_schema");
       expect(JSON.stringify(body)).not.toMatch(/outputSchema|strict-json-schema|X-Session-Id/);
       const messages = body.messages as Array<{ role: string; content: string }>;
+      expect(messages[0]!.content).toMatch(/Spanish \[es\]|Chinese \(Simplified\) \[zh-Hans\]/);
+      expect(messages[0]!.content).toMatch(/source language.*independently/i);
+      expect(messages[0]!.content).not.toMatch(/from English \[en\]/);
       expect(messages[0]!.content).toMatch(/JSON/i);
       expect(messages[0]!.content).toMatch(/one JSON object/i);
       expect(messages[0]!.content).toContain('"translations"');
@@ -78,6 +121,15 @@ describe("DeepSeek provider", () => {
       expect(messages[0]!.content).toMatch(/non-empty/i);
       expect(() => JSON.parse(messages[1]!.content)).not.toThrow();
     }
+    expect(
+      requests.map(
+        (request) =>
+          ((request.body as { messages: Array<{ content: string }> }).messages[0]!.content),
+      ),
+    ).toEqual([
+      expect.stringContaining("Spanish [es]"),
+      expect.stringContaining("Chinese (Simplified) [zh-Hans]"),
+    ]);
   });
 
   it("performs every Test as one fresh Chat Completions request without a capability probe", async () => {

@@ -13,6 +13,41 @@ describe("Ollama native provider", () => {
     expect(source).not.toMatch(/translation-batches|chat-completions/);
   });
 
+  it("preserves same-language and mixed-batch text character-for-character", async () => {
+    let systemMessage = "";
+    const provider = new OllamaProvider(
+      { endpoint: "http://127.0.0.1:11434", model: "model" },
+      {
+        request: async (request) => {
+          const messages = (request.body as { messages: Array<{ content: string }> }).messages;
+          systemMessage = messages[0]!.content;
+          const targets = JSON.parse(messages[1]!.content).targets as Array<{
+            id: string;
+            text: string;
+          }>;
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              message: { content: JSON.stringify({ translations: targets }) },
+            }),
+          };
+        },
+      },
+    );
+    const request = makeProviderRequest();
+    request.items = [
+      { id: "same-a", text: "  Same.  " },
+      { id: "same-b", text: "Line one.\n\nLine three.\n" },
+    ];
+
+    const result = await provider.attempt(request);
+
+    expect(result.translations).toEqual(request.items.map(({ id, text }) => ({ id, text })));
+    expect(systemMessage).toMatch(/character-for-character/i);
+    expect(systemMessage).toMatch(/context.*must not.*output/i);
+  });
+
   it("uses the same optional Bearer for version, tags and chat", async () => {
     const headers: Array<Record<string, string>> = [];
     const provider = new OllamaProvider(
@@ -113,8 +148,9 @@ describe("Ollama native provider", () => {
     ).body.messages.at(-1)?.content;
     const systemMessage = (calls[0] as { body: { messages: Array<{ content: string }> } }).body
       .messages[0]?.content;
-    expect(systemMessage).toContain("English [en]");
     expect(systemMessage).toContain("Chinese (Simplified) [zh-Hans]");
+    expect(systemMessage).toMatch(/source language.*independently/i);
+    expect(systemMessage).not.toMatch(/from English \[en\]/);
     expect(userMessage).toContain('"id":"c1"');
     expect(JSON.parse(userMessage!)).toEqual({
       targets: [
@@ -125,7 +161,6 @@ describe("Ollama native provider", () => {
     expect(userMessage).not.toContain("srt:0:0:1000");
     expect(systemMessage).toBe(
       buildTranslationTask({
-        sourceLanguage: "en",
         targetLanguage: "zh-Hans",
         targets: [
           { id: "c1", text: "one", context_next: "two" },

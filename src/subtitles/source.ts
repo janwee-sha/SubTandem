@@ -13,7 +13,6 @@ export interface SubtitleTrackDescriptor {
   id: number;
   isExternal: boolean;
   title?: string;
-  lang?: string;
 }
 
 export type SubtitleSourceResult =
@@ -52,7 +51,6 @@ export function loadSubtitleSource(
       isExternal: true,
       format,
       contentHash: sha256Hex(bytes),
-      trackLanguage: track.lang?.trim() || null,
       decode: {
         encoding: decoded.encoding,
         bom: decoded.bom,
@@ -84,7 +82,6 @@ export function loadPreparedSubtitleSource(
     origin: "embedded",
     codec: track.codec,
     contentHash: result.sha256,
-    trackLanguage: track.language?.trim() || null,
     cues: parsed.cues,
   };
 }

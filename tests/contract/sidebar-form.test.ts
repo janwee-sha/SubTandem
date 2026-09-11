@@ -249,6 +249,18 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarSource).not.toContain("sourceLanguageMode");
   });
 
+  it("shows source and actionable session details without local language detection", () => {
+    expect(html).toContain('id="source-format"');
+    expect(html).toContain('id="source-cues"');
+    expect(sidebarSource).toContain("view.source.format");
+    expect(sidebarSource).toContain("view.source.cueCount");
+    expect(sidebarSource).toContain("sourcePreparationLabels");
+    expect(sidebarSource).toContain("serviceUnavailable");
+    expect(`${html}\n${sidebarSource}`).not.toMatch(
+      /Detected language|source-detected-language|\bUnknown\b|detectingLanguage|languageUnrecognized|languageUnsupported|noTranslationNeeded/,
+    );
+  });
+
   it("offers an accessible native position range in the Subtitle section", () => {
     expect(html).toContain('<h2 id="languages-heading">Subtitle</h2>');
     expect(html).toMatch(/<label[^>]*for="translation-position"[^>]*>\s*Position\s*<\/label>/);

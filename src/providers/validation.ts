@@ -39,8 +39,8 @@ export function validateIdOutput(
     if (!item || typeof item !== "object" || Array.isArray(item)) continue;
     const record = item as Record<string, unknown>;
     if (typeof record.id !== "string" || typeof record.text !== "string") continue;
-    const text = record.text.trim();
-    if (!requested.has(record.id) || counts.get(record.id) !== 1 || !text) continue;
+    const text = record.text;
+    if (!requested.has(record.id) || counts.get(record.id) !== 1 || !text.trim()) continue;
     translations.push({ id: record.id, text });
   }
   const accepted = new Set(translations.map((item) => item.id));
@@ -90,7 +90,7 @@ export function validateStrictIdOutput(
     )
       throw new Error("MALFORMED_PROVIDER_OUTPUT");
     seen.add(record.id);
-    return { id: record.id, text: record.text.trim() };
+    return { id: record.id, text: record.text };
   });
   if (seen.size !== requested.size) throw new Error("MALFORMED_PROVIDER_OUTPUT");
   return { translations };

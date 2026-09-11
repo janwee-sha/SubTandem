@@ -21,7 +21,7 @@ description: "翻译服务自动识别源语言的可执行任务列表"
 
 **目的**：以小型、受版本管理且不含敏感数据的 fixture 替代检测语料。
 
-- [ ] T001 新建 `tests/fixtures/providers/provider-language-detection.json`，覆盖 5–11 cue 短轨、中长轨、罗马字、混合语言、错误或缺失轨道标签、重复正文、同语言多行与首尾空格、`zh-Hans`/`zh-Hant`/`pt-PT` 目标变体
+- [X] T001 新建 `tests/fixtures/providers/provider-language-detection.json`，覆盖 5–11 cue 短轨、中长轨、罗马字、混合语言、错误或缺失轨道标签、重复正文、同语言多行与首尾空格、`zh-Hans`/`zh-Hant`/`pt-PT` 目标变体
 
 ---
 
@@ -31,7 +31,7 @@ description: "翻译服务自动识别源语言的可执行任务列表"
 
 **关键约束**：本阶段完成前不得开始用户故事任务。
 
-- [ ] T002 基于 T001 实现 fixture 读取、`SubtitleCue` 构造、冻结目标和逐字符比较辅助函数于 `tests/helpers/provider-language-detection.ts`，不得读取旧 `tests/fixtures/languages/` 语料
+- [X] T002 基于 T001 实现 fixture 读取、`SubtitleCue` 构造、冻结目标和逐字符比较辅助函数于 `tests/helpers/provider-language-detection.ts`，不得读取旧 `tests/fixtures/languages/` 语料
 
 **Checkpoint**：共享测试基础可供所有用户故事独立复用。
 
@@ -45,29 +45,29 @@ description: "翻译服务自动识别源语言的可执行任务列表"
 
 ### Tests for User Story 1
 
-- [ ] T003 [P] [US1] 先新增失败的端到端 Controller 回归，覆盖直接准入、500ms 启动、有限窗口/批次、重试、换轨/片/目标/Profile/禁用/关窗、seek 和多窗口迟到结果隔离于 `tests/integration/provider-language-detection.test.ts`
-- [ ] T004 [P] [US1] 先新增失败的 Main↔Global 请求契约测试，断言精确字段、目标目录、身份与大小边界，并拒绝 `sourceLanguage`、轨道语言、检测字段、未知字段和非法目标于 `tests/contract/ui-messages.test.ts`
-- [ ] T005 [P] [US1] 先更新字幕源单元测试，断言外挂与内嵌准备结果不再保存或受 `lang` 影响，格式、hash、cue 与警告保持于 `tests/unit/subtitle-source.test.ts`
-- [ ] T006 [P] [US1] 先更新 OpenAI-compatible 契约测试，断言所有能力模式仅接收精确目标变体并要求逐条自行理解源语言于 `tests/contract/openai.test.ts`
-- [ ] T007 [P] [US1] 先更新 Ollama 契约测试，断言 JSON Schema 与一次有界 prompt fallback 的任务均不含确定源语言于 `tests/contract/ollama.test.ts`
-- [ ] T008 [P] [US1] 先更新 DeepSeek 契约测试，断言 JSON object 与 thinking-disabled 封装保留且共同任务只确定目标语言于 `tests/contract/deepseek.test.ts`
-- [ ] T009 [P] [US1] 先更新 Claude-compatible 契约测试，断言顶层 system、单 user、`end_turn` 和目标唯一方向语义于 `tests/contract/claude.test.ts`
-- [ ] T010 [P] [US1] 先更新安全回归，断言未启用或未选择有效 Profile 时不外发、合法请求不含源语言、错误与诊断不泄漏正文或凭据，并移除 detector 诊断断言于 `tests/security/credential-leakage.test.ts` 和 `tests/security/redaction.test.ts`
+- [X] T003 [P] [US1] 先新增失败的端到端 Controller 回归，覆盖直接准入、500ms 启动、有限窗口/批次、重试、换轨/片/目标/Profile/禁用/关窗、seek 和多窗口迟到结果隔离于 `tests/integration/provider-language-detection.test.ts`
+- [X] T004 [P] [US1] 先新增失败的 Main↔Global 请求契约测试，断言精确字段、目标目录、身份与大小边界，并拒绝 `sourceLanguage`、轨道语言、检测字段、未知字段和非法目标于 `tests/contract/ui-messages.test.ts`
+- [X] T005 [P] [US1] 先更新字幕源单元测试，断言外挂与内嵌准备结果不再保存或受 `lang` 影响，格式、hash、cue 与警告保持于 `tests/unit/subtitle-source.test.ts`
+- [X] T006 [P] [US1] 先更新 OpenAI-compatible 契约测试，断言所有能力模式仅接收精确目标变体并要求逐条自行理解源语言于 `tests/contract/openai.test.ts`
+- [X] T007 [P] [US1] 先更新 Ollama 契约测试，断言 JSON Schema 与一次有界 prompt fallback 的任务均不含确定源语言于 `tests/contract/ollama.test.ts`
+- [X] T008 [P] [US1] 先更新 DeepSeek 契约测试，断言 JSON object 与 thinking-disabled 封装保留且共同任务只确定目标语言于 `tests/contract/deepseek.test.ts`
+- [X] T009 [P] [US1] 先更新 Claude-compatible 契约测试，断言顶层 system、单 user、`end_turn` 和目标唯一方向语义于 `tests/contract/claude.test.ts`
+- [X] T010 [P] [US1] 先更新安全回归，断言未启用或未选择有效 Profile 时不外发、合法请求不含源语言、错误与诊断不泄漏正文或凭据，并移除 detector 诊断断言于 `tests/security/credential-leakage.test.ts` 和 `tests/security/redaction.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T011 [P] [US1] 从字幕轨身份及外挂/内嵌准备结果删除语言字段和读取逻辑，同时保留格式识别所需标题于 `src/subtitles/types.ts`、`src/adapters/iina/subtitle-source.ts` 和 `src/subtitles/source.ts`
-- [ ] T012 [P] [US1] 从翻译请求、请求构造器、会话缓存身份和共享测试请求删除 `sourceLanguage`，缓存键只保留 session/hash/target/provider/cue 维度于 `src/providers/types.ts`、`src/app/request-builder.ts`、`src/app/session-cache.ts` 和 `tests/contract/provider-test-helpers.ts`
-- [ ] T013 [US1] 实现 `provider:attempt` 的 exact-shape 运行时解析，校验身份、精确目标目录、非空 items、25 项/5,000 code point Controller 边界和冻结目标上下文边界于 `src/domain/messages.ts`
-- [ ] T014 [US1] 删除检测状态、检测回调、同语言短路和 source cache 维度，使 Controller 在有效配置与位置下直接构造目标唯一请求并保持既有窗口、批次、重试、取消与播放安全语义于 `src/app/controller.ts`
-- [ ] T015 [P] [US1] 删除 Main 的检测协调器、检测启动/失效调用和轨道语言传递，字幕就绪后直接驱动 T014 且保留字幕准备与会话生命周期于 `src/main.ts`
-- [ ] T016 [P] [US1] 在 Global 调用 Provider 前使用 T013 解析完整 payload，以权威发送方 ID 覆盖 `playerId`，并删除启动时旧源语言 preference 写入及 manifest 默认项于 `src/global.ts`、`src/adapters/iina/target-language-preferences.ts` 和 `Info.json`
-- [ ] T017 [US1] 将共同 Provider task builder 改为仅接收精确目标语言和冻结条目，要求逐条从正文/只读上下文理解源语言并保持 JSON ID 约束于 `src/providers/translation-task.ts`
-- [ ] T018 [P] [US1] 基于 T017 从 OpenAI-compatible 请求链删除 source 参数并保持 strict schema、JSON object、prompt JSON 及合法子集提交于 `src/providers/openai.ts`
-- [ ] T019 [P] [US1] 基于 T017 从 Ollama 请求与 fallback 链删除 source 参数并保持每次 wire 两项和一次有界能力降级于 `src/providers/ollama.ts`
-- [ ] T020 [P] [US1] 基于 T017 从 DeepSeek 请求链删除 source 参数并保持 JSON object、thinking disabled 和全有或全无提交于 `src/providers/deepseek.ts`
-- [ ] T021 [P] [US1] 基于 T017 从 Claude-compatible 请求链删除 source 参数并保持 Messages 封装、`end_turn` 和全有或全无提交于 `src/providers/claude.ts`
-- [ ] T022 [US1] 删除废弃检测实现 `src/app/language-detection.ts`、`src/subtitles/language-detection.ts`、`src/domain/source-languages.ts`、`src/domain/language.ts`，删除 detector-only 测试 `tests/contract/language-corpus.test.ts`、`tests/integration/acceptance-metrics.test.ts`、`tests/integration/auto-language-support.test.ts`、`tests/integration/local-language-regressions.test.ts`、`tests/integration/performance.test.ts`、`tests/unit/language-detection-coordinator.test.ts`、`tests/unit/language-detection.test.ts`、`tests/unit/language-diagnosis.test.ts`、`tests/unit/language.test.ts`、`tests/unit/source-languages.test.ts`、`tests/helpers/language-calibration.ts`、`tests/helpers/language-corpus.ts`、`tests/helpers/language-diagnosis.ts`、`tests/helpers/language-metrics.ts`、`tests/helpers/language-performance-cases.ts`、`tests/helpers/language-performance-worker.mjs` 及 `tests/fixtures/languages/`
+- [X] T011 [P] [US1] 从字幕轨身份及外挂/内嵌准备结果删除语言字段和读取逻辑，同时保留格式识别所需标题于 `src/subtitles/types.ts`、`src/adapters/iina/subtitle-source.ts` 和 `src/subtitles/source.ts`
+- [X] T012 [P] [US1] 从翻译请求、请求构造器、会话缓存身份和共享测试请求删除 `sourceLanguage`，缓存键只保留 session/hash/target/provider/cue 维度于 `src/providers/types.ts`、`src/app/request-builder.ts`、`src/app/session-cache.ts` 和 `tests/contract/provider-test-helpers.ts`
+- [X] T013 [US1] 实现 `provider:attempt` 的 exact-shape 运行时解析，校验身份、精确目标目录、非空 items、25 项/5,000 code point Controller 边界和冻结目标上下文边界于 `src/domain/messages.ts`
+- [X] T014 [US1] 删除检测状态、检测回调、同语言短路和 source cache 维度，使 Controller 在有效配置与位置下直接构造目标唯一请求并保持既有窗口、批次、重试、取消与播放安全语义于 `src/app/controller.ts`
+- [X] T015 [P] [US1] 删除 Main 的检测协调器、检测启动/失效调用和轨道语言传递，字幕就绪后直接驱动 T014 且保留字幕准备与会话生命周期于 `src/main.ts`
+- [X] T016 [P] [US1] 在 Global 调用 Provider 前使用 T013 解析完整 payload，以权威发送方 ID 覆盖 `playerId`，并删除启动时旧源语言 preference 写入及 manifest 默认项于 `src/global.ts`、`src/adapters/iina/target-language-preferences.ts` 和 `Info.json`
+- [X] T017 [US1] 将共同 Provider task builder 改为仅接收精确目标语言和冻结条目，要求逐条从正文/只读上下文理解源语言并保持 JSON ID 约束于 `src/providers/translation-task.ts`
+- [X] T018 [P] [US1] 基于 T017 从 OpenAI-compatible 请求链删除 source 参数并保持 strict schema、JSON object、prompt JSON 及合法子集提交于 `src/providers/openai.ts`
+- [X] T019 [P] [US1] 基于 T017 从 Ollama 请求与 fallback 链删除 source 参数并保持每次 wire 两项和一次有界能力降级于 `src/providers/ollama.ts`
+- [X] T020 [P] [US1] 基于 T017 从 DeepSeek 请求链删除 source 参数并保持 JSON object、thinking disabled 和全有或全无提交于 `src/providers/deepseek.ts`
+- [X] T021 [P] [US1] 基于 T017 从 Claude-compatible 请求链删除 source 参数并保持 Messages 封装、`end_turn` 和全有或全无提交于 `src/providers/claude.ts`
+- [X] T022 [US1] 删除废弃检测实现 `src/app/language-detection.ts`、`src/subtitles/language-detection.ts`、`src/domain/source-languages.ts`、`src/domain/language.ts`，删除 detector-only 测试 `tests/contract/language-corpus.test.ts`、`tests/integration/acceptance-metrics.test.ts`、`tests/integration/auto-language-support.test.ts`、`tests/integration/local-language-regressions.test.ts`、`tests/integration/performance.test.ts`、`tests/unit/language-detection-coordinator.test.ts`、`tests/unit/language-detection.test.ts`、`tests/unit/language-diagnosis.test.ts`、`tests/unit/language.test.ts`、`tests/unit/source-languages.test.ts`、`tests/helpers/language-calibration.ts`、`tests/helpers/language-corpus.ts`、`tests/helpers/language-diagnosis.ts`、`tests/helpers/language-metrics.ts`、`tests/helpers/language-performance-cases.ts`、`tests/helpers/language-performance-worker.mjs` 及 `tests/fixtures/languages/`
 
 **Checkpoint**：US1 聚焦测试通过；任意可提交字幕无需本地源语言即可进入 Provider，且检测实现与语料已删除。
 
@@ -81,17 +81,17 @@ description: "翻译服务自动识别源语言的可执行任务列表"
 
 ### Tests for User Story 2
 
-- [ ] T023 [P] [US2] 先扩展四类 Provider 与共享输出契约测试，逐类覆盖同语言/混合批次任务语义、重复正文不同 ID、首尾空格/换行保真，以及空白、缺失、重复和未知 ID 拒绝于 `tests/contract/provider-output.test.ts`、`tests/contract/openai.test.ts`、`tests/contract/ollama.test.ts`、`tests/contract/deepseek.test.ts` 和 `tests/contract/claude.test.ts`
-- [ ] T024 [P] [US2] 先扩展会话缓存测试，断言原样与译文走同一路径、保存原字符串、纯空白拒绝且目标/Profile/会话变化隔离于 `tests/unit/session-cache.test.ts`
-- [ ] T025 [P] [US2] 先扩展 Overlay 单元与契约测试，断言首尾和内部空行位置保留、整条全空白清除、消息不改写缓存字符串于 `tests/unit/translation-overlay.test.ts` 和 `tests/contract/overlay-webview.test.ts`
-- [ ] T026 [P] [US2] 先重写同语言费用与隐私回归，断言仍调用已选服务、未授权不外发、相同结果不重试且不记录正文于 `tests/integration/us2-cost-privacy.test.ts` 和 `tests/security/credential-leakage.test.ts`
-- [ ] T027 [P] [US2] 扩展默认关闭的真实服务验收矩阵，固定四类 Provider 的同语言、混合语言和目标变体 case ID 且只记录非敏感布尔证据于 `tests/integration/live-providers.test.ts`
+- [X] T023 [P] [US2] 先扩展四类 Provider 与共享输出契约测试，逐类覆盖同语言/混合批次任务语义、重复正文不同 ID、首尾空格/换行保真，以及空白、缺失、重复和未知 ID 拒绝于 `tests/contract/provider-output.test.ts`、`tests/contract/openai.test.ts`、`tests/contract/ollama.test.ts`、`tests/contract/deepseek.test.ts` 和 `tests/contract/claude.test.ts`
+- [X] T024 [P] [US2] 先扩展会话缓存测试，断言原样与译文走同一路径、保存原字符串、纯空白拒绝且目标/Profile/会话变化隔离于 `tests/unit/session-cache.test.ts`
+- [X] T025 [P] [US2] 先扩展 Overlay 单元与契约测试，断言首尾和内部空行位置保留、整条全空白清除、消息不改写缓存字符串于 `tests/unit/translation-overlay.test.ts` 和 `tests/contract/overlay-webview.test.ts`
+- [X] T026 [P] [US2] 先重写同语言费用与隐私回归，断言仍调用已选服务、未授权不外发、相同结果不重试且不记录正文于 `tests/integration/us2-cost-privacy.test.ts` 和 `tests/security/credential-leakage.test.ts`
+- [X] T027 [P] [US2] 扩展默认关闭的真实服务验收矩阵，固定四类 Provider 的同语言、混合语言和目标变体 case ID 且只记录非敏感布尔证据于 `tests/integration/live-providers.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T028 [US2] 扩展共同任务语义，明确精确目标变体、同语言逐字符原样、上下文只读、每个 wire ID 恰好一次以及禁止说明/标签/额外原文于 `src/providers/translation-task.ts`
-- [ ] T029 [US2] 将合法非空结果的判空与保存分离，OpenAI/Ollama 合法子集及 DeepSeek/Claude 严格全集均保留 JSON 解码后的原始 `text` 于 `src/providers/validation.ts`
-- [ ] T030 [US2] 在 progress/result、Controller、会话缓存和 Overlay 链路只用 `trim()` 判全空白并始终传递原字符串，允许非全空白文本中的空行于 `src/domain/messages.ts`、`src/app/controller.ts`、`src/app/session-cache.ts`、`src/subtitles/active-translations.ts`、`src/adapters/iina/webview-translation-overlay.ts` 和 `ui/overlay-state.ts`
+- [X] T028 [US2] 扩展共同任务语义，明确精确目标变体、同语言逐字符原样、上下文只读、每个 wire ID 恰好一次以及禁止说明/标签/额外原文于 `src/providers/translation-task.ts`
+- [X] T029 [US2] 将合法非空结果的判空与保存分离，OpenAI/Ollama 合法子集及 DeepSeek/Claude 严格全集均保留 JSON 解码后的原始 `text` 于 `src/providers/validation.ts`
+- [X] T030 [US2] 在 progress/result、Controller、会话缓存和 Overlay 链路只用 `trim()` 判全空白并始终传递原字符串，允许非全空白文本中的空行于 `src/domain/messages.ts`、`src/app/controller.ts`、`src/app/session-cache.ts`、`src/subtitles/active-translations.ts`、`src/adapters/iina/webview-translation-overlay.ts` 和 `ui/overlay-state.ts`
 
 **Checkpoint**：US1 与 US2 均通过独立测试；同语言正文仍产生一次正常服务调用并逐字符显示、缓存。
 
@@ -105,13 +105,13 @@ description: "翻译服务自动识别源语言的可执行任务列表"
 
 ### Tests for User Story 3
 
-- [ ] T031 [US3] 先更新状态与静态 UI 契约测试，断言状态白名单和字幕摘要无检测字段/占位/文案，同时保留准备、配置、运行与服务错误呈现于 `tests/contract/ui-messages.test.ts` 和 `tests/contract/sidebar-form.test.ts`
+- [X] T031 [US3] 先更新状态与静态 UI 契约测试，断言状态白名单和字幕摘要无检测字段/占位/文案，同时保留准备、配置、运行与服务错误呈现于 `tests/contract/ui-messages.test.ts` 和 `tests/contract/sidebar-form.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T032 [P] [US3] 从会话状态目录删除 `detectingLanguage`、`languageUnrecognized`、`languageUnsupported` 和 `noTranslationNeeded` 于 `src/domain/status.ts`
-- [ ] T033 [P] [US3] 从 Main 发出的本地字幕摘要及共享视图类型删除 detected/source language 字段，同时保留格式、cue 数、警告和准备错误于 `src/main.ts` 和 `src/domain/types.ts`
-- [ ] T034 [P] [US3] 删除 Sidebar 的 `Detected language` 行、`Unknown` 占位、四类失效标签和接收字段，并保持其余状态与 IINA/macOS 现有布局不变于 `ui/sidebar.html` 和 `ui/sidebar.ts`
+- [X] T032 [P] [US3] 从会话状态目录删除 `detectingLanguage`、`languageUnrecognized`、`languageUnsupported` 和 `noTranslationNeeded` 于 `src/domain/status.ts`
+- [X] T033 [P] [US3] 从 Main 发出的本地字幕摘要及共享视图类型删除 detected/source language 字段，同时保留格式、cue 数、警告和准备错误于 `src/main.ts` 和 `src/domain/types.ts`
+- [X] T034 [P] [US3] 删除 Sidebar 的 `Detected language` 行、`Unknown` 占位、四类失效标签和接收字段，并保持其余状态与 IINA/macOS 现有布局不变于 `ui/sidebar.html` 和 `ui/sidebar.ts`
 
 **Checkpoint**：三个用户故事均可独立验收，UI 只反映当前仍有效的字幕与翻译状态。
 
@@ -121,10 +121,10 @@ description: "翻译服务自动识别源语言的可执行任务列表"
 
 **目的**：完成依赖、披露、残留审计及正式交付验证。
 
-- [ ] T035 [P] 更新服务自动理解源语言、短轨/未知/同语言仍外发及潜在费用披露，删除手动确认源语言说明于 `README.md`、`docs/readme/README.ar.md`、`docs/readme/README.fr.md`、`docs/readme/README.ja.md`、`docs/readme/README.ko.md`、`docs/readme/README.ru.md`、`docs/readme/README.zh-CN.md`、`Info.json` 和 `docs/engineering/development.md`
-- [ ] T036 [P] 删除 `franc` 及只由其引入的传递依赖并同步第三方声明于 `package.json`、`package-lock.json` 和 `THIRD_PARTY_NOTICES.txt`
-- [ ] T037 执行 `specs/023-provider-language-detection/quickstart.md` 的生产残留扫描和聚焦 Vitest 命令，修复后原样重跑直至通过
-- [ ] T038 在最后一次代码变更后依次执行 `npm test`、`npm run typecheck`、`npm run lint`、`npm run build:native`、`npm run test:native`、`npm run build`、`npm run verify:package`、`npm run pack`，按 `specs/023-provider-language-detection/quickstart.md` 验收测试、编译和正式包
+- [X] T035 [P] 更新服务自动理解源语言、短轨/未知/同语言仍外发及潜在费用披露，删除手动确认源语言说明于 `README.md`、`docs/readme/README.ar.md`、`docs/readme/README.fr.md`、`docs/readme/README.ja.md`、`docs/readme/README.ko.md`、`docs/readme/README.ru.md`、`docs/readme/README.zh-CN.md`、`Info.json` 和 `docs/engineering/development.md`
+- [X] T036 [P] 删除 `franc` 及只由其引入的传递依赖并同步第三方声明于 `package.json`、`package-lock.json` 和 `THIRD_PARTY_NOTICES.txt`
+- [X] T037 执行 `specs/023-provider-language-detection/quickstart.md` 的生产残留扫描和聚焦 Vitest 命令，修复后原样重跑直至通过
+- [X] T038 在最后一次代码变更后依次执行 `npm test`、`npm run typecheck`、`npm run lint`、`npm run build:native`、`npm run test:native`、`npm run build`、`npm run verify:package`、`npm run pack`，按 `specs/023-provider-language-detection/quickstart.md` 验收测试、编译和正式包
 - [ ] T039 仅在用户明确批准网络及潜在费用后执行 `specs/023-provider-language-detection/quickstart.md` 的三组 live Provider 命令；未获批准时在交付报告明确记录为未执行且不得推断通过
 - [ ] T040 使用最终 `.iinaplgz` 按 `specs/023-provider-language-detection/quickstart.md` 完成单人 IINA 短轨、未知源语言、同语言、目标变体、失败、生命周期、多窗口及卸载验收并记录包版本或 SHA-256 与环境
 

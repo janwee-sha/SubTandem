@@ -1,7 +1,0 @@
-1
-00:00:00,000 --> 00:00:02,000
-We should leave the station before the last train arrives. The road is quiet and our friends are waiting beside the river. We all hope so.
-
-2
-00:00:03,000 --> 00:00:05,000
-Wir verlassen den Bahnhof bevor der letzte Zug eintrifft. Unsere Freunde warten auch heute am ruhigen Fluss. Auch Wege bleiben ruhig.

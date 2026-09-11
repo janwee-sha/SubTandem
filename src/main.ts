@@ -14,7 +14,6 @@ import {
 import { IinaLocalHttpBridge, IinaProcessLauncher } from "./adapters/iina/provider-transport.js";
 import { WebViewTranslationOverlay } from "./adapters/iina/webview-translation-overlay.js";
 import { SubtitlePreparationCoordinator } from "./app/subtitle-preparation.js";
-import { LanguageDetectionCoordinator } from "./app/language-detection.js";
 import {
   parseProviderModelsRequest,
   parseProviderModelsPreviewRequest,
@@ -100,7 +99,6 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   const subtitleStyle = new SubtitleStyleFollower();
   const restoredTarget = new TargetLanguagePreferences(runtime.preferences).read();
   const targetLanguageSession = new TargetLanguageSession(restoredTarget.targetLanguage);
-  const languageDetection = new LanguageDetectionCoordinator();
   let selectedSourceTrackId: number | null = null;
   let selectedSourceContentHash: string | null = null;
   let sourceSelectionTimer: ReturnType<typeof setTimeout> | null = null;
@@ -221,59 +219,10 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
 
   const clearSource = (reason: string, invalidateEmbedded = true): void => {
     if (invalidateEmbedded) invalidatePreparation();
-    languageDetection.invalidate();
     selectedSourceTrackId = runtime.core.subtitle.id;
     selectedSourceContentHash = null;
     controller.setSource(null);
     updateSidebarState({ source: null, sourceIssue: reason, sourcePreparation: preparationView });
-  };
-
-  const detectLanguage = (
-    trackIdentity: string,
-    contentHash: string,
-    cues: PreparedSubtitleSource["cues"],
-    sourceReadyAt: number,
-  ): void => {
-    const { sessionId, sessionEpoch } = controller.session;
-    const ownerMediaEpoch = mediaEpoch;
-    void languageDetection.start(
-      {
-        playerId,
-        sessionId,
-        sessionEpoch,
-        mediaEpoch,
-        trackIdentity,
-        contentHash,
-        sourceReadyAt,
-        cues,
-      },
-      (result) => {
-        if (
-          selectedSourceContentHash !== result.contentHash ||
-          controller.session.closed ||
-          !controller.session.enabled ||
-          controller.session.sessionId !== sessionId ||
-          controller.session.sessionEpoch !== sessionEpoch ||
-          mediaEpoch !== ownerMediaEpoch
-        )
-          return;
-        if (result.state === "reliable")
-          controller.setLanguageDetection({ languageId: result.languageId });
-        else controller.setLanguageDetection(result.state);
-        const currentSource =
-          sidebarState.source && typeof sidebarState.source === "object"
-            ? (sidebarState.source as Record<string, unknown>)
-            : null;
-        updateSidebarState({
-          source: currentSource
-            ? {
-                ...currentSource,
-                detectedLanguage: result.state === "reliable" ? result.languageId : null,
-              }
-            : null,
-        });
-      },
-    );
   };
 
   const preparationKey = (track: SubtitleTrackIdentity, epoch: number): string =>
@@ -323,20 +272,16 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
       preparation?.invalidate("invalidated");
       return;
     }
-    const sourceReadyAt = Date.now();
     selectedSourceContentHash = prepared.contentHash;
     controller.setSource({
       cues: prepared.cues,
       contentHash: prepared.contentHash,
-      language: null,
       format: "srt",
     });
-    detectLanguage(key, prepared.contentHash, prepared.cues, sourceReadyAt);
     updateSidebarState({
       source: {
         format: prepared.codec,
         cueCount: prepared.cues.length,
-        detectedLanguage: null,
         warnings: [],
       },
       sourceIssue: null,
@@ -411,7 +356,6 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
       if (commitFailure) clearSource(loaded.reason);
       return false;
     }
-    const sourceReadyAt = Date.now();
     const unchanged =
       selectedSourceTrackId === loaded.source.trackId &&
       selectedSourceContentHash === loaded.source.contentHash;
@@ -421,21 +365,12 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
       controller.setSource({
         cues: loaded.source.cues,
         contentHash: loaded.source.contentHash,
-        language: null,
         format: loaded.source.format,
       });
-    if (!unchanged)
-      detectLanguage(
-        `${loaded.source.trackId}:external`,
-        loaded.source.contentHash,
-        loaded.source.cues,
-        sourceReadyAt,
-      );
     updateSidebarState({
       source: {
         format: loaded.source.format,
         cueCount: loaded.source.cues.length,
-        detectedLanguage: null,
         warnings: loaded.source.decode.warnings,
       },
       sourceIssue: null,
@@ -534,7 +469,6 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     const enabled = Boolean((raw as { payload?: { enabled?: unknown } }).payload?.enabled);
     controller.setEnabled(enabled);
     if (!enabled) {
-      languageDetection.invalidate();
       clearSource("unreadable");
     } else if (!loadSource(false)) scheduleSourceReload();
     runtime.preferences.set("enabledByDefault", enabled);
@@ -985,7 +919,6 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   runtime.event.on("mpv.shutdown", closeOverlayRegion);
   runtime.event.on("mpv.seek", () => {
     preparation?.onSeek();
-    languageDetection.onSeek();
     controller.onSeek(
       finitePosition(
         runtime.core.status.position === null ? null : runtime.core.status.position * 1_000,
@@ -995,7 +928,6 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   runtime.event.on("mpv.end-file", () => {
     mediaEpoch += 1;
     invalidatePreparation();
-    languageDetection.invalidate();
   });
   runtime.event.on("mpv.end-file", () => controller.endFile());
   setInterval(() => {
@@ -1024,7 +956,6 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
         payload: currentSelection,
       });
     currentSelection = null;
-    languageDetection.invalidate();
     targetLanguageSession.close();
     selectedSourceTrackId = null;
     selectedSourceContentHash = null;
