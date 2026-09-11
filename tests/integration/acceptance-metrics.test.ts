@@ -4,84 +4,79 @@ import { classifySubtitleSelection } from "../../src/adapters/iina/subtitle-sour
 import { ProviderSimulator } from "../helpers/provider-server.js";
 import { readFileSync } from "node:fs";
 import { detectSubtitleLanguage } from "../../src/subtitles/language-detection.js";
-import type { SubtitleCue } from "../../src/subtitles/types.js";
+import { loadLanguageCorpus, resolveCorpusFile } from "../helpers/language-corpus.js";
+import { summarizeLanguageMetrics } from "../helpers/language-metrics.js";
+import { loadSubtitleSource } from "../../src/subtitles/source.js";
+import { LANGUAGE_DETECTION_PARAMETERS } from "../../src/subtitles/language-detection.js";
 
 const simulators: ProviderSimulator[] = [];
 afterEach(async () => Promise.all(simulators.splice(0).map((server) => server.close())));
 
 describe("controlled provider acceptance runner", () => {
-  it("keeps calibration and acceptance fixtures isolated with twenty cues per language", () => {
-    const calibration = JSON.parse(
-      readFileSync(new URL("../fixtures/languages/calibration.json", import.meta.url), "utf8"),
-    ) as { source: string; cycles: number; languages: Array<{ templates: string[] }> };
-    const acceptance = JSON.parse(
-      readFileSync(new URL("../fixtures/languages/acceptance.json", import.meta.url), "utf8"),
-    ) as { source: string; cycles: number; languages: Array<{ templates: string[] }> };
-    expect(calibration.source).not.toBe(acceptance.source);
-    for (const fixture of [calibration, acceptance]) {
-      expect(fixture.languages.length).toBeGreaterThanOrEqual(20);
-      for (const language of fixture.languages)
-        expect(language.templates.length * fixture.cycles).toBeGreaterThanOrEqual(20);
-    }
-  });
-
-  it("meets frozen language accuracy, metadata-conflict and false-reliable gates", () => {
-    const fixture = JSON.parse(
-      readFileSync(new URL("../fixtures/languages/acceptance.json", import.meta.url), "utf8"),
-    ) as {
-      cycles: number;
-      languages: Array<{
-        id: string;
-        trackLanguage: string;
-        templates: string[];
-      }>;
-      unreliable: Array<{ id: string; expected: "unknown" | "unsupported"; templates: string[] }>;
-    };
-    const expand = (templates: string[], cycles: number): SubtitleCue[] =>
-      Array.from({ length: cycles }, (_, cycle) =>
-        templates.map((text, index): SubtitleCue => ({
-          id: `${cycle}-${index}`,
-          index: cycle * templates.length + index,
-          startMs: (cycle * templates.length + index) * 1_000,
-          endMs: (cycle * templates.length + index) * 1_000 + 900,
-          sourceText: `${text} ${cycle + 1}`,
-          normalizedText: `${text} ${cycle + 1}`,
-        })),
-      ).flat();
-    const results = fixture.languages.map((language) => ({
-      expected: language.id,
-      metadataConflict: language.trackLanguage !== language.id,
-      result: detectSubtitleLanguage(expand(language.templates, fixture.cycles)),
+  it("meets the frozen independent-track language gates after parameter freeze", () => {
+    const calibration = loadLanguageCorpus("calibration");
+    const frozen = JSON.parse(
+      readFileSync(resolveCorpusFile("calibration-result.json"), "utf8"),
+    ) as { calibrationManifestHash: string; parameters: unknown };
+    expect(frozen.calibrationManifestHash === calibration.manifest.manifestHash).toBe(true);
+    expect(
+      JSON.stringify(frozen.parameters) === JSON.stringify(LANGUAGE_DETECTION_PARAMETERS),
+    ).toBe(true);
+    const acceptance = loadLanguageCorpus("acceptance");
+    const rows = acceptance.tracks.map(({ record, cues }) => ({
+      record,
+      result: detectSubtitleLanguage(cues),
     }));
-    const correct = results.filter(
-      ({ expected, result }) => result.state === "reliable" && result.languageId === expected,
-    ).length;
-    const conflictCorrect = results.filter(
-      ({ expected, metadataConflict, result }) =>
-        metadataConflict && result.state === "reliable" && result.languageId === expected,
-    ).length;
-    const conflicts = results.filter(({ metadataConflict }) => metadataConflict).length;
-    expect(correct / results.length, JSON.stringify(results)).toBeGreaterThanOrEqual(0.95);
-    expect(conflictCorrect / conflicts).toBeGreaterThanOrEqual(0.95);
-    const unreliableResults = fixture.unreliable.map(({ id, templates, expected }) => {
-      const repeats = Math.max(5, 20 / templates.length);
-      const windowed = templates.flatMap((text, templateIndex) =>
-        Array.from({ length: repeats }, (_, cycle): SubtitleCue => ({
-          id: `${templateIndex}-${cycle}`,
-          index: templateIndex * repeats + cycle,
-          startMs: (templateIndex * repeats + cycle) * 1_000,
-          endMs: (templateIndex * repeats + cycle) * 1_000 + 900,
-          sourceText: `${text} ${cycle + 1}`,
-          normalizedText: `${text} ${cycle + 1}`,
-        })),
-      );
-      const result = detectSubtitleLanguage(windowed);
-      return { id, expected, result };
-    });
-    const falseReliable = unreliableResults.filter(
-      ({ expected, result }) => result.state === "reliable" || result.state !== expected,
-    ).length;
-    expect(falseReliable, JSON.stringify(unreliableResults)).toBe(0);
+    const summary = summarizeLanguageMetrics(rows);
+    console.info(
+      "language-acceptance",
+      JSON.stringify({
+        frozenRevision: acceptance.manifest.frozenRevision,
+        manifestHash: acceptance.manifest.manifestHash,
+        ...summary,
+      }),
+    );
+    let differences = 0;
+    for (const [index, { record }] of acceptance.tracks.entries()) {
+      const bytes = readFileSync(resolveCorpusFile(record.file));
+      for (const lang of [undefined, "xx-wrong", record.languageTruth.languageId ?? "ja"]) {
+        const source = loadSubtitleSource(
+          {
+            id: 1,
+            isExternal: true,
+            title: `input.${record.format}`,
+            ...(lang === undefined ? {} : { lang }),
+          },
+          bytes,
+        );
+        if (!source.ok) throw new Error("language-acceptance:parser");
+        if (
+          JSON.stringify(detectSubtitleLanguage(source.source.cues)) !==
+          JSON.stringify(rows[index]!.result)
+        )
+          differences++;
+      }
+    }
+    console.info("language-metadata", JSON.stringify({ tracks: rows.length, differences }));
+    console.info(
+      "language-designated-short",
+      JSON.stringify(
+        rows
+          .filter(({ record }) => record.regressionId)
+          .map(({ record, result }) => ({ sampleId: record.sampleId, result })),
+      ),
+    );
+    expect(summary.overall.positive).toBeGreaterThanOrEqual(400);
+    expect(summary.overall.correctRate).toBeGreaterThanOrEqual(0.95);
+    expect(summary.overall.wrongRate).toBeLessThanOrEqual(0.01);
+    expect(summary.overall.negativeReliableRate).toBeLessThanOrEqual(0.01);
+    for (const row of rows.filter(({ record }) => record.regressionId))
+      expect(
+        row.result.state === "reliable" &&
+          row.result.languageId === row.record.languageTruth.languageId,
+        row.record.sampleId,
+      ).toBe(true);
+    expect(differences).toBe(0);
   });
 
   it("classifies every synthetic selected track with 100% exact identity", () => {

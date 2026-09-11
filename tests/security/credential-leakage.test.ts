@@ -230,7 +230,7 @@ describe("credential and content leakage boundaries", () => {
         throw new Error(`${sensitive} eng=1.0 fra=0.8 provider-secret`);
       },
     });
-    expect(result).toEqual({ state: "unknown" });
+    expect(result).toEqual({ state: "unknown", reason: "error" });
     expect(JSON.stringify(result)).not.toMatch(/PRIVATE|private|eng|fra|score|secret/);
   });
 

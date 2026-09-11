@@ -37,7 +37,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-franc-min 6.2.0
+franc 6.2.0
 https://github.com/wooorm/franc
 
 trigram-utils 2.0.1
@@ -51,7 +51,7 @@ https://github.com/wooorm/n-gram
 
 The MIT License (MIT)
 
-franc-min and trigram-utils:
+franc and trigram-utils:
 Copyright (c) 2014 Titus Wormer <tituswormer@gmail.com>
 
 collapse-white-space:

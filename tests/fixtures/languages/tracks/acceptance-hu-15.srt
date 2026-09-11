@@ -1,0 +1,44 @@
+1
+00:01:01,000 --> 00:01:03,000
+Ez elég félelmetes.
+
+2
+00:01:20,100 --> 00:01:23,348
+A robottudós gyilkos robotokat készít.
+
+3
+00:01:57,000 --> 00:02:00,004
+Nem lent kellene lenned?
+
+4
+00:02:13,002 --> 00:02:14,002
+Hallottalak benneteket múlt este beszélgetni.
+
+5
+00:02:16,000 --> 00:02:19,006
+Tudod, ez nem az én hibám.
+
+6
+00:03:11,000 --> 00:03:12,429
+Készen vagy?
+
+7
+00:03:13,000 --> 00:03:15,000
+Persze, hogy készen hisz egy rocksztár vagy.
+
+8
+00:03:17,000 --> 00:03:18,414
+Hogy néz ki, Barley?
+
+9
+00:03:19,000 --> 00:03:21,238
+Még kb. tíz percünk van.
+
+10
+00:03:21,500 --> 00:03:23,159
+Nos, ez tökéletes.
+
+11
+00:03:23,500 --> 00:03:27,900
+Egyre indulunk! Minden rendszer mehet!
+Ez az, már mész is!

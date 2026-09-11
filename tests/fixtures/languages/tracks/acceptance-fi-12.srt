@@ -1,0 +1,27 @@
+1
+00:02:20,000 --> 00:02:21,300
+[Mies] Anteeksi?
+
+2
+00:02:21,800 --> 00:02:23,000
+Anteeksi, herra?
+
+3
+00:02:24,000 --> 00:02:25,500
+Anteeksi?
+
+4
+00:02:27,000 --> 00:02:29,000
+[Lammas] Oho, tule.
+
+5
+00:02:30,000 --> 00:02:32,042
+[Mies] Onko sinulla hetki aikaa, herra?
+
+6
+00:02:32,125 --> 00:02:34,958
+[Lammas] Olen jotenkin keskellä jotain täällä.
+
+7
+00:02:35,042 --> 00:02:37,000
+Kyllä? Kiitos.

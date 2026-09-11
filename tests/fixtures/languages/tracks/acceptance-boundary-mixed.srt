@@ -1,0 +1,11 @@
+1
+00:00:00,000 --> 00:00:02,000
+Las puertas están cerradas.
+
+2
+00:00:03,000 --> 00:00:05,000
+Die Fenster bleiben offen.
+
+3
+00:00:06,000 --> 00:00:08,000
+Nous attendons dehors.

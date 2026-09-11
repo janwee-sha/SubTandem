@@ -183,10 +183,18 @@ describe("automatic language support", () => {
     const accepted: string[] = [];
     const first = new LanguageDetectionCoordinator({
       yieldControl: async () => undefined,
-      detect: () => ({ state: "reliable", languageId: "en" }),
     });
     const invalidated = first.start(
-      { playerId: "a", mediaEpoch: 1, trackIdentity: "track", contentHash: "old", cues: cues() },
+      {
+        playerId: "a",
+        sessionId: "s",
+        sessionEpoch: 1,
+        sourceReadyAt: Date.now(),
+        mediaEpoch: 1,
+        trackIdentity: "track",
+        contentHash: "old",
+        cues: cues(),
+      },
       (result) => accepted.push(result.contentHash),
     );
     first.invalidate();
@@ -196,12 +204,24 @@ describe("automatic language support", () => {
     left.onSeek();
     await Promise.all([
       left.start(
-        { playerId: "left", mediaEpoch: 2, trackIdentity: "1", contentHash: "left", cues: cues() },
+        {
+          playerId: "left",
+          sessionId: "s",
+          sessionEpoch: 1,
+          sourceReadyAt: Date.now(),
+          mediaEpoch: 2,
+          trackIdentity: "1",
+          contentHash: "left",
+          cues: cues(),
+        },
         (result) => accepted.push(`${result.contentHash}:${result.state}`),
       ),
       right.start(
         {
           playerId: "right",
+          sessionId: "s",
+          sessionEpoch: 1,
+          sourceReadyAt: Date.now(),
           mediaEpoch: 8,
           trackIdentity: "9",
           contentHash: "right",

@@ -1,0 +1,39 @@
+1
+00:08:13,000 --> 00:08:14,000
+Komm schon!
+
+2
+00:08:22,000 --> 00:08:24,000
+RAAAAAAAAH!
+
+3
+00:08:24,000 --> 00:08:25,000
+Überschreiben von Speicher, 90%
+
+4
+00:08:26,000 --> 00:08:28,000
+Captain! Wir müssen abbrechen!
+
+5
+00:08:38,000 --> 00:08:40,000
+Die Welt hat sich verändert, Celia...
+
+6
+00:08:54,000 --> 00:08:56,000
+...vielleicht können wir das auch.
+
+7
+00:08:58,000 --> 00:08:59,000
+Überschreiben von Speicher abgeschlossen!
+
+8
+00:09:19,000 --> 00:09:20,000
+Weißt du,
+
+9
+00:09:22,000 --> 00:09:24,000
+in all dem liegt eine Lektion für uns verborgen...
+
+10
+00:09:26,000 --> 00:09:27,000
+...hätte schlimmer kommen können.

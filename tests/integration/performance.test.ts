@@ -4,7 +4,15 @@ import type { TranslationProvider } from "../../src/providers/provider.js";
 import type { SubtitleCue } from "../../src/subtitles/types.js";
 import { readFileSync } from "node:fs";
 import { selectNearbyCues } from "../../src/app/scheduler.js";
-import { detectSubtitleLanguage } from "../../src/subtitles/language-detection.js";
+import { createLanguageDetectionWork } from "../../src/subtitles/language-detection.js";
+import { LanguageDetectionCoordinator } from "../../src/app/language-detection.js";
+import {
+  LANGUAGE_PERFORMANCE_CASES,
+  languagePerformanceCues,
+  percentile,
+} from "../helpers/language-performance-cases.js";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { createTranslationAlignmentFixture } from "../helpers/translation-alignment.js";
 import { WebViewTranslationOverlay } from "../../src/adapters/iina/webview-translation-overlay.js";
 import { DEFAULT_SUBTITLE_TEXT_STYLE } from "../../src/domain/subtitle-style.js";
@@ -85,29 +93,110 @@ describe("automated acceptance performance", () => {
     expect(durations.filter((duration) => duration <= 100)).toHaveLength(101);
     expect(durations.every((duration) => duration <= 200)).toBe(true);
   });
-  it("keeps maximum language detection samples within first, warm and sync budgets", () => {
-    const sample = Array.from({ length: 64 }, (_, index): SubtitleCue => ({
-      id: `language-${index}`,
-      index,
-      startMs: index * 1_000,
-      endMs: index * 1_000 + 900,
-      sourceText: `The passengers wait beside the station while the damaged engine is repaired in scene ${index}`,
-      normalizedText: `The passengers wait beside the station while the damaged engine is repaired in scene ${index}`,
-    }));
-    const durations: number[] = [];
-    for (let iteration = 0; iteration < 40; iteration += 1) {
-      const started = performance.now();
-      detectSubtitleLanguage(sample);
-      durations.push(performance.now() - started);
+  it("measures 30 independent cold model instances, 1000 warm detections and real slices", async () => {
+    const cold: number[] = [];
+    const warm: number[] = [];
+    const slices: number[] = [];
+    const waits: number[] = [];
+    const grouped: Record<
+      string,
+      { cold: number[]; warm: number[]; slices: number[]; waits: number[] }
+    > = {};
+    for (const kind of LANGUAGE_PERFORMANCE_CASES) {
+      const group = {
+        cold: [] as number[],
+        warm: [] as number[],
+        slices: [] as number[],
+        waits: [] as number[],
+      };
+      grouped[kind] = group;
+      for (let index = 0; index < 6; index++) {
+        const output = execFileSync(
+          process.execPath,
+          [
+            fileURLToPath(new URL("../helpers/language-performance-worker.mjs", import.meta.url)),
+            kind,
+          ],
+          { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 10_000 },
+        );
+        const sample = JSON.parse(output) as {
+          durationMs: number;
+          slices: number[];
+          terminal: string;
+        };
+        expect(Number.isFinite(sample.durationMs) && sample.slices.every(Number.isFinite)).toBe(
+          true,
+        );
+        if (kind === "reliable") expect(sample.terminal).toBe("reliable");
+        group.cold.push(sample.durationMs);
+        group.slices.push(...sample.slices);
+      }
+      const input = languagePerformanceCues(kind);
+      for (let iteration = 0; iteration < 220; iteration++) {
+        const started = performance.now();
+        const work = createLanguageDetectionWork(input);
+        for (;;) {
+          const before = performance.now();
+          const step = work.next();
+          if (iteration >= 20) group.slices.push(performance.now() - before);
+          if (step.done) {
+            if (kind === "reliable") expect(step.value.state).toBe("reliable");
+            break;
+          }
+        }
+        if (iteration >= 20) group.warm.push(performance.now() - started);
+      }
+      for (let iteration = 0; iteration < 5; iteration++) {
+        const coordinator = new LanguageDetectionCoordinator({ now: () => performance.now() });
+        const sourceReadyAt = performance.now();
+        await coordinator.start(
+          {
+            playerId: "performance",
+            sessionId: "session",
+            sessionEpoch: 1,
+            mediaEpoch: 1,
+            trackIdentity: kind,
+            contentHash: kind,
+            sourceReadyAt,
+            cues: input,
+          },
+          () => group.waits.push(performance.now() - sourceReadyAt),
+        );
+      }
+      cold.push(...group.cold);
+      warm.push(...group.warm);
+      slices.push(...group.slices);
+      waits.push(...group.waits);
     }
-    const percentile = (values: number[], percentage: number): number =>
-      [...values].sort((left, right) => left - right)[
-        Math.min(values.length - 1, Math.ceil(values.length * percentage) - 1)
-      ]!;
-    expect(percentile(durations.slice(0, 20), 0.95)).toBeLessThanOrEqual(100);
-    expect(percentile(durations.slice(20), 0.95)).toBeLessThanOrEqual(50);
-    expect(percentile(durations, 0.99)).toBeLessThanOrEqual(16);
-  });
+    const summary = Object.fromEntries(
+      Object.entries(grouped).map(([kind, group]) => [
+        kind,
+        {
+          coldCount: group.cold.length,
+          coldP95: percentile(group.cold, 0.95),
+          warmCount: group.warm.length,
+          warmP95: percentile(group.warm, 0.95),
+          sliceCount: group.slices.length,
+          sliceP99: percentile(group.slices, 0.99),
+          waitCount: group.waits.length,
+          maxWait: Math.max(...group.waits),
+          overDeadline: group.waits.filter((value) => value > 500).length,
+        },
+      ]),
+    );
+    console.info("language-performance", JSON.stringify(summary));
+    expect(cold.length).toBeGreaterThanOrEqual(30);
+    expect(warm.length).toBeGreaterThanOrEqual(1000);
+    expect(percentile(cold, 0.95)).toBeLessThanOrEqual(100);
+    expect(percentile(warm, 0.95)).toBeLessThanOrEqual(50);
+    expect(percentile(slices, 0.99)).toBeLessThanOrEqual(16);
+    expect(Math.max(...waits)).toBeLessThanOrEqual(500);
+    for (const group of Object.values(grouped)) {
+      expect(percentile(group.cold, 0.95)).toBeLessThanOrEqual(100);
+      expect(percentile(group.warm, 0.95)).toBeLessThanOrEqual(50);
+      expect(percentile(group.slices, 0.99)).toBeLessThanOrEqual(16);
+    }
+  }, 60_000);
 
   it("streams a four-hour, 20 GB-class, 20,000-cue workload without whole-media loading", () => {
     const large = Array.from({ length: 20_000 }, (_, index): SubtitleCue => ({

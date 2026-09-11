@@ -2,7 +2,7 @@
 
 **输入**：[规格](spec.md)、[计划](plan.md)、[研究](research.md)、[数据模型](data-model.md)、[检测契约](contracts/language-detection.md)、[翻译契约](contracts/translation-task.md)、[验证指南](quickstart.md)。
 
-**交付轨道**：完整 SDD；实施须获得用户明确指示，且已采用的需求检查清单须全部通过。当前任务均未验收。
+**交付轨道**：完整 SDD；实施须获得用户明确指示，且已采用的需求检查清单须全部通过。验收状态以各项勾选及验证记录为准。
 
 **组织方式**：按三个 P1 用户故事划分；规格明确要求自动化回归、性能、真实服务与单人宿主验收。路径均相对仓库根目录；标注“新增”的路径由对应任务创建。`[P]` 仅表示满足下文前置依赖后可并行，`[USn]` 对应规格用户故事。
 
@@ -12,8 +12,8 @@
 
 **目标**：首先取得可复现的自然字幕与冻结清单。T001–T002 通过前，不开展检测校准或产品验收。
 
-- [ ] T001 按 `specs/022-fix-language-detection/quickstart.md` 第 1 节及数据模型采集、逐条核验许可/署名与正文真值，在 `tests/fixtures/languages/calibration.json`、`tests/fixtures/languages/acceptance.json`、新增 `tests/fixtures/languages/tracks/`、`tests/fixtures/languages/licenses/` 和 `tests/fixtures/languages/same-language.json` 冻结受版本管理的语料；验收正样本至少 20 种语言各 20 个独立轨道，另含负样本、全部长度/现象分层及九个指定回归 ID，同语言集预标 `verbatim/translate`；校准与验收按完整同源组隔离，保留哈希、选段及真值依据，缺少指定正文或授权时保持未验收，不以替代或循环正文补数。
-- [ ] T002 新增 `tests/helpers/language-corpus.ts` 和 `tests/contract/language-corpus.test.ts`，直接使用生产 SRT/ASS parser 加载 T001 语料，检查文件及许可记录纳入版本管理、清单/正文哈希、实际 cue/文字计数、同源隔离、正文去重、数量、分层、指定回归与同语言预期；执行 `npm test -- tests/contract/language-corpus.test.ts`，将自动化结果及单名开发者的许可/真值审查结论记录到新增 `specs/022-fix-language-detection/verification.md`。
+- [X] T001 按 `specs/022-fix-language-detection/quickstart.md` 第 1 节及数据模型采集、逐条核验许可/署名与正文真值，在 `tests/fixtures/languages/calibration.json`、`tests/fixtures/languages/acceptance.json`、新增 `tests/fixtures/languages/tracks/`、`tests/fixtures/languages/licenses/` 和 `tests/fixtures/languages/same-language.json` 冻结受版本管理的语料；验收正样本至少 20 种语言各 20 个独立轨道，另含负样本、全部长度/现象分层及两个开放许可指定短轨，同语言集预标 `verbatim/translate`；校准与验收按完整同源组隔离，保留哈希、选段及真值依据，开放许可集合缺少正文或授权时保持未验收，不以替代或循环正文补数；七个 FFmpeg 指定回归只在新增 `tests/fixtures/languages/local-regressions.json` 保留[本地回归契约](contracts/local-regressions.md)要求的安全元数据，正文不入库且不作为本任务前置条件。
+- [X] T002 新增 `tests/helpers/language-corpus.ts` 和 `tests/contract/language-corpus.test.ts`，直接使用生产 SRT/ASS parser 加载 T001 语料，检查文件及许可记录纳入版本管理、清单/正文哈希、实际 cue/文字计数、同源隔离、正文去重、数量、分层、两个开放许可指定短轨与同语言预期；验证七个本地回归元数据，并新增默认关闭的 `tests/integration/local-language-regressions.test.ts` 本地入口，直接使用生产 native helper 和检测器、验证来源/提取哈希及安全输出，本阶段只验证加载与输入边界，检测缺陷验收由 T014 执行；执行 `npm test -- tests/contract/language-corpus.test.ts`，将自动化结果及单名开发者的许可/真值审查结论记录到新增 `specs/022-fix-language-detection/verification.md`。
 
 **检查点**：完整语料前置门通过；自动检查不代替许可与真值审查。
 
@@ -39,7 +39,7 @@
 
 - [ ] T006 [P] [US1] 扩展 `tests/unit/language-detection.test.ts`，覆盖充分短轨无 cue/窗口下限、重复正文只贡献一次证据、数字/链接/专名/歌词/混合正文未知、ASS 准备后正文、四区域覆盖、64 cue/4096 码元总界限、至多 4 个且各 ≤2048 码元片段、代理对安全、完整模型竞争、无第二候选不自动可靠及不推断变体；算法用例采用校准集或独立边界数据。
 - [ ] T007 [P] [US1] 扩展 `tests/unit/language-detection-coordinator.test.ts` 与 `tests/integration/auto-language-support.test.ts` 的检测用例，直接验证真实工作分片、正文就绪计时、内部停止时间前/等于/之后、同步异常、永不完成步骤、一次终态、失效后停工，以及 Main 的外挂/内嵌正文归属、元数据不影响结果和 seek 保留判断；补充剩余预算耗尽、定时器延迟及同步片段跨越截止时间的用例，验证第 499 ms 不会启动新的检测片段，实际超过 500 ms 的样本仍被性能验收判为失败。
-- [ ] T008 [P] [US1] 重写 `tests/integration/acceptance-metrics.test.ts` 的语言指标部分，复用 T002 加载器对每个独立轨道调用生产检测器一次；分别计算正样本正确可靠率、全部样本错误可靠率、负样本可靠率，按语言/长度/现象报告正确、未知/不支持、错误可靠计数与比例，覆盖九个指定回归；标签变体不得重复计入分母，保留该文件其他功能验证。
+- [ ] T008 [P] [US1] 重写 `tests/integration/acceptance-metrics.test.ts` 的语言指标部分，复用 T002 加载器对每个独立轨道调用生产检测器一次；分别计算正样本正确可靠率、全部样本错误可靠率、负样本可靠率，按语言/长度/现象报告正确、未知/不支持、错误可靠计数与比例，覆盖两个开放许可指定短轨；七个 FFmpeg 指定回归使用 T002 的独立本地入口，不进入这些分母；标签变体不得重复计入分母，保留该文件其他功能验证。
 - [ ] T009 [P] [US1] 扩展 `tests/integration/performance.test.ts` 的语言测量，覆盖最大样本、20,000-cue 预处理、共享脚本、高 trigram 和完整可靠判断路径；至少 30 次独立冷实例包含模型初始化，预热后至少 1000 次测热态与各同步片段，并测正文就绪到检测终态的总等待，保留其他性能用例。
 
 ### 实现与验收
@@ -48,7 +48,7 @@
 - [ ] T011 [US1] 新增 `tests/helpers/language-calibration.ts` 并通过 `tests/unit/language-detection.test.ts` 的显式校准用例调用生产检测路径，仅使用 `tests/fixtures/languages/calibration.json` 按正文量/脚本比较有界阈值组合；先固定搜索范围及“错误可靠率→正确可靠率→规则简单度”选择规则，使用 `SUBTANDEM_LANGUAGE_CALIBRATION=1 npm test -- tests/unit/language-detection.test.ts -t calibration` 执行，再将选定参数写入 `src/subtitles/language-detection.ts`，将清单版本/哈希、选择规则及参数记录到新增 `tests/fixtures/languages/calibration-result.json`；此开关仅用于测试工具，普通回归只读取冻结配置，不自动重调参数。
 - [ ] T012 [US1] 在 `src/app/language-detection.ts` 执行 T010 实际采样/分类片段并在片段间让出事件循环，绑定完整 owner/attempt、使用传入的正文就绪时间，按检测契约分别落实内部停止时间和 500 ms 验收上限，在内部停止时间安排独立唤醒；片段前后及提交时检查身份和时间，停止后不再启动工作，未知终态立即触发准入检查；异常与到期分别提交一次 `unknown/error`、`unknown/timeout`，失效 attempt 停止后续工作，普通 seek 不取消同正文检测。不得将定时器已触发或已返回 unknown 当作等待时限通过的证据。
 - [ ] T013 [US1] 在 `src/main.ts` 的外挂与内嵌正文就绪入口传递 `sourceReadyAt`、播放器/会话/媒体/轨道/正文身份，适配新的终态模型；换轨、换片、正文变化、禁用、结束播放和关闭时清理对应 attempt，迟到结果不得更新 Sidebar 或新会话，tick/轮询不得重启同一次未知终态；配置变更和自动翻译衔接由 T021 完成。
-- [ ] T014 [US1] 参数冻结后执行 `specs/022-fix-language-detection/quickstart.md` 第 2 节的映射、检测、协调器、指标测试及 T007 的 Main 检测用例，将 SC-001/002 的分母、各层结果和冻结版本记录到 `specs/022-fix-language-detection/verification.md`；正确可靠率须 ≥95%，全部样本错误可靠率与负样本可靠率各 ≤1%，指定回归及标签不变性须全部通过；失败时不得调整验收真值或删样本，重新校准须另建独立冻结验收版本。
+- [ ] T014 [US1] 参数冻结后执行 `specs/022-fix-language-detection/quickstart.md` 第 2 节的映射、检测、协调器、指标测试及 T007 的 Main 检测用例，将 SC-001/002 的分母、各层结果和冻结版本记录到 `specs/022-fix-language-detection/verification.md`；正确可靠率须 ≥95%，全部样本错误可靠率与负样本可靠率各 ≤1%，冻结集指定短轨及标签不变性须全部通过；另按本地回归契约显式执行七个 FFmpeg 指定回归及标签不变性，单独记录通过/失败/未运行，不与 SC-001 分母合并；失败时不得调整验收真值或删样本，重新校准须另建独立冻结验收版本。
 - [ ] T015 [US1] 在计划测量环境执行 `npm test -- tests/integration/performance.test.ts --maxWorkers=1 --no-file-parallelism`，向 `specs/022-fix-language-detection/verification.md` 记录实际环境、采样次数及原始安全耗时统计，分别核对首次 p95 ≤100 ms、热态 p95 ≤50 ms、同步片段 p99 ≤16 ms 和检测总等待 ≤500 ms；自动翻译准入的衔接由 T021/T022 验证，Node 结果不能代替宿主验收。
 
 **检查点**：US1 检测能力可独立演示和评估；整项功能仍需后续继续翻译与原样返回能力。
@@ -137,12 +137,12 @@ T001 → T002 → T003 → T004 → T005
 
 下表只描述可选执行分工。使用多个 Agent 时必须隔离 worktree，并在委派中给出表内任务范围、所引用契约、对应任务列出的允许修改文件、验证命令和通过条件。公共 `types`、controller、Main、Global、lockfile 与 `verification.md` 同时只由集成负责人修改；集成顺序遵循上图。
 
-| 范围 | 可并行任务及前置条件 | 验证命令与完成条件 |
-| --- | --- | --- |
-| US1 | 阶段 2 后 T006、T007、T008、T009 分别编写检测、生命周期、指标和性能覆盖，文件互不重叠；生产实现 T010–T013 串行集成 | 例如 T006 执行 `npm test -- tests/unit/language-detection.test.ts`，T007 执行 `npm test -- tests/unit/language-detection-coordinator.test.ts tests/integration/auto-language-support.test.ts`；指标与性能按 T014/T015 验收 |
-| US2 | US1 接口稳定后 T016 与 T017 分别负责消息/缓存契约和完整链路/隐私回归；不同时编辑 Main/controller | 按 T022 执行各自任务列出的完整测试集合；例如 `npm test -- tests/contract/global-provider-client.test.ts` 与 `npm test -- tests/integration/auto-language-support.test.ts` 可独立验证消息和流程，不能代替完整矩阵 |
-| US3 | US2 集成后 T023、T024、T025、T026、T027 分别负责不同测试文件；T028 的公共提示和 T029–T031 的共享生产文件串行处理 | 例如 T023 执行 `npm test -- tests/contract/openai.test.ts`，T024 执行 `npm test -- tests/contract/ollama.test.ts`；全部模式、字符串及时间轴按 T033 验收 |
-| 交付 | 三个故事及 T043 集成后 T034 文档与 T035 打包检查可并行；T043 独占 Main/Coordinator | 文档人工核对 FR-012；打包检查运行 `npm test -- tests/contract/package-manifest.test.ts`，最终由 T036 验证正式产物；宿主计时由 T044 验收 |
+| 范围 | 可并行任务及前置条件                                                                                               | 验证命令与完成条件                                                                                                                                                                                                         |
+| ---- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| US1  | 阶段 2 后 T006、T007、T008、T009 分别编写检测、生命周期、指标和性能覆盖，文件互不重叠；生产实现 T010–T013 串行集成 | 例如 T006 执行 `npm test -- tests/unit/language-detection.test.ts`，T007 执行 `npm test -- tests/unit/language-detection-coordinator.test.ts tests/integration/auto-language-support.test.ts`；指标与性能按 T014/T015 验收 |
+| US2  | US1 接口稳定后 T016 与 T017 分别负责消息/缓存契约和完整链路/隐私回归；不同时编辑 Main/controller                   | 按 T022 执行各自任务列出的完整测试集合；例如 `npm test -- tests/contract/global-provider-client.test.ts` 与 `npm test -- tests/integration/auto-language-support.test.ts` 可独立验证消息和流程，不能代替完整矩阵           |
+| US3  | US2 集成后 T023、T024、T025、T026、T027 分别负责不同测试文件；T028 的公共提示和 T029–T031 的共享生产文件串行处理   | 例如 T023 执行 `npm test -- tests/contract/openai.test.ts`，T024 执行 `npm test -- tests/contract/ollama.test.ts`；全部模式、字符串及时间轴按 T033 验收                                                                    |
+| 交付 | 三个故事及 T043 集成后 T034 文档与 T035 打包检查可并行；T043 独占 Main/Coordinator                                 | 文档人工核对 FR-012；打包检查运行 `npm test -- tests/contract/package-manifest.test.ts`，最终由 T036 验证正式产物；宿主计时由 T044 验收                                                                                    |
 
 实际委派须为所选任务给出全部测试路径组成的完整命令；性能使用 T015 的独立命令。并行只缩短编写时间，不取消依赖、授权或最终集成验证。
 

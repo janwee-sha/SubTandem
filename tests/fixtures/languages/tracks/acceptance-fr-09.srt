@@ -1,0 +1,39 @@
+1
+00:02:58,000 --> 00:02:59,500
+Tu es Franck.
+
+2
+00:03:00,500 --> 00:03:04,000
+Tu es bien plus qu’un mouton n’est-ce pas?
+
+3
+00:03:05,000 --> 00:03:08,000
+Ah ouais? Qu’est-ce que vous en savez?
+
+4
+00:03:10,000 --> 00:03:12,900
+Regarde toi. T’es un aventurier, Franck.
+
+5
+00:03:12,900 --> 00:03:17,000
+T’es comme moi, t’es un… loup solitaire!
+
+6
+00:03:18,000 --> 00:03:22,000
+Dis-moi, est-ce qu’on choisit d’être seul?
+
+7
+00:03:23,000 --> 00:03:25,000
+Non, on choisit pas.
+
+8
+00:03:25,000 --> 00:03:27,600
+On choisit pas d’être un loup non plus.
+
+9
+00:03:30,000 --> 00:03:32,000
+N’est-ce pas ?
+
+10
+00:03:35,000 --> 00:03:38,800
+Bon, monsieur… Euh… Hector.

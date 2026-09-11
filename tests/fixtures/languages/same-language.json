@@ -1,0 +1,308 @@
+{
+  "schemaVersion": 1,
+  "frozenRevision": "022-corpus-2026-09-10-1",
+  "acceptanceManifestHash": "25c2f31436895dc716cb537348855be1ed4747feeb10809c73f1bace4799b270",
+  "sourceCatalogHash": "cc6030d6635d89aebe8a6583728806e14d1cb50b25824259fe43ac4a18f676c8",
+  "reviewer": "Codex",
+  "licenseAttribution": "按每个引用样本的来源继承许可和署名；派生处理在 transform 中明确标注。",
+  "cases": [
+    {
+      "caseId": "known-same-en",
+      "sourceLanguage": "en",
+      "targetLanguage": "en",
+      "phenomena": [
+        "known-same-language"
+      ],
+      "items": [
+        {
+          "id": "a",
+          "sampleId": "acceptance-en-04",
+          "cueIndices": [
+            1
+          ],
+          "transform": "identity",
+          "text": "I–I just want to answer the phone.",
+          "expectation": "verbatim"
+        },
+        {
+          "id": "b",
+          "sampleId": "acceptance-en-04",
+          "cueIndices": [
+            2
+          ],
+          "transform": "identity",
+          "text": "Emo, look… I mean, listen.",
+          "expectation": "verbatim"
+        }
+      ],
+      "reviewBasis": "英语正文已符合英语目标，保持原字符。"
+    },
+    {
+      "caseId": "unknown-same-en",
+      "sourceLanguage": null,
+      "targetLanguage": "en",
+      "phenomena": [
+        "unknown-source"
+      ],
+      "items": [
+        {
+          "id": "a",
+          "sampleId": "acceptance-en-06",
+          "cueIndices": [
+            3
+          ],
+          "transform": "identity",
+          "text": "What do you see at your left side, Emo?",
+          "expectation": "verbatim"
+        },
+        {
+          "id": "b",
+          "sampleId": "acceptance-en-06",
+          "cueIndices": [
+            5
+          ],
+          "transform": "identity",
+          "text": "No, nothing at all.",
+          "expectation": "verbatim"
+        }
+      ],
+      "reviewBasis": "本地未知不改变正文已经是英语的事实。"
+    },
+    {
+      "caseId": "mixed-items-en",
+      "sourceLanguage": null,
+      "targetLanguage": "en",
+      "phenomena": [
+        "mixed-items"
+      ],
+      "items": [
+        {
+          "id": "a",
+          "sampleId": "acceptance-en-04",
+          "cueIndices": [
+            1
+          ],
+          "transform": "identity",
+          "text": "I–I just want to answer the phone.",
+          "expectation": "verbatim"
+        },
+        {
+          "id": "b",
+          "sampleId": "acceptance-fr-04",
+          "cueIndices": [
+            1
+          ],
+          "transform": "identity",
+          "text": "Emo, ferme les yeux.",
+          "expectation": "translate"
+        }
+      ],
+      "reviewBasis": "英语条目原样返回；法语条目须译成英语，不能复制邻近英语正文。"
+    },
+    {
+      "caseId": "punctuation-case-spacing",
+      "sourceLanguage": "en",
+      "targetLanguage": "en",
+      "phenomena": [
+        "punctuation",
+        "case",
+        "spaces"
+      ],
+      "items": [
+        {
+          "id": "a",
+          "sampleId": "acceptance-en-04",
+          "cueIndices": [
+            1
+          ],
+          "transform": "pad",
+          "text": "  I–I just want to answer the phone.  ",
+          "expectation": "verbatim"
+        },
+        {
+          "id": "b",
+          "sampleId": "acceptance-en-04",
+          "cueIndices": [
+            2
+          ],
+          "transform": "upper",
+          "text": "EMO, LOOK… I MEAN, LISTEN.",
+          "expectation": "verbatim"
+        }
+      ],
+      "reviewBasis": "从许可正文派生空格及大小写边界，显式变换后的 text 是实际任务的逐字符比较基准。"
+    },
+    {
+      "caseId": "multiline-internal-blank",
+      "sourceLanguage": null,
+      "targetLanguage": "en",
+      "phenomena": [
+        "multiline",
+        "internal-blank-line"
+      ],
+      "items": [
+        {
+          "id": "a",
+          "sampleId": "acceptance-en-04",
+          "cueIndices": [
+            1,
+            2
+          ],
+          "transform": "blank-line",
+          "text": "I–I just want to answer the phone.\n\nEmo, look… I mean, listen.",
+          "expectation": "verbatim"
+        }
+      ],
+      "reviewBasis": "两个英语 cue 通过内部空行组合为单个测试条目，实际任务正文须完整保留该空行。"
+    },
+    {
+      "caseId": "repeated-items",
+      "sourceLanguage": "en",
+      "targetLanguage": "en",
+      "phenomena": [
+        "repeated"
+      ],
+      "items": [
+        {
+          "id": "a",
+          "sampleId": "acceptance-en-04",
+          "cueIndices": [
+            1
+          ],
+          "transform": "identity",
+          "text": "I–I just want to answer the phone.",
+          "expectation": "verbatim"
+        },
+        {
+          "id": "b",
+          "sampleId": "acceptance-en-04",
+          "cueIndices": [
+            1
+          ],
+          "transform": "identity",
+          "text": "I–I just want to answer the phone.",
+          "expectation": "verbatim"
+        }
+      ],
+      "reviewBasis": "重复正文仍对应两个不同条目身份；两条结果均应原样返回。"
+    },
+    {
+      "caseId": "simplified-to-traditional",
+      "sourceLanguage": "zh",
+      "targetLanguage": "zh-Hant",
+      "phenomena": [
+        "target-variant"
+      ],
+      "items": [
+        {
+          "id": "a",
+          "sampleId": "acceptance-zh-01",
+          "cueIndices": [
+            7
+          ],
+          "transform": "identity",
+          "text": "你受伤了吗？",
+          "expectation": "translate"
+        }
+      ],
+      "reviewBasis": "输入含简体字，必须转换为繁体目标；通用 zh 不能代替书写系统判断。"
+    },
+    {
+      "caseId": "already-traditional",
+      "sourceLanguage": null,
+      "targetLanguage": "zh-Hant",
+      "phenomena": [
+        "target-variant",
+        "unknown-source"
+      ],
+      "items": [
+        {
+          "id": "a",
+          "sampleId": "acceptance-zh-14",
+          "cueIndices": [
+            1
+          ],
+          "transform": "identity",
+          "text": "你真是爛透了，湯姆",
+          "expectation": "verbatim"
+        },
+        {
+          "id": "b",
+          "sampleId": "acceptance-zh-14",
+          "cueIndices": [
+            2
+          ],
+          "transform": "identity",
+          "text": "聽著希莉亞，我們必須順著我們的感覺走",
+          "expectation": "verbatim"
+        }
+      ],
+      "reviewBasis": "输入已经采用繁体字，符合 zh-Hant；没有必要改写语句。"
+    },
+    {
+      "caseId": "traditional-to-simplified",
+      "sourceLanguage": "zh",
+      "targetLanguage": "zh-Hans",
+      "phenomena": [
+        "target-variant"
+      ],
+      "items": [
+        {
+          "id": "a",
+          "sampleId": "acceptance-zh-14",
+          "cueIndices": [
+            2
+          ],
+          "transform": "identity",
+          "text": "聽著希莉亞，我們必須順著我們的感覺走",
+          "expectation": "translate"
+        }
+      ],
+      "reviewBasis": "输入含繁体字，必须遵循明确的简体目标。"
+    },
+    {
+      "caseId": "portugal-gerund",
+      "sourceLanguage": "pt",
+      "targetLanguage": "pt-PT",
+      "phenomena": [
+        "target-variant"
+      ],
+      "items": [
+        {
+          "id": "a",
+          "sampleId": "acceptance-pt-14",
+          "cueIndices": [
+            7
+          ],
+          "transform": "identity",
+          "text": "Estou apavorado! Tenho pesadelos\nque eu estou sendo perseguido ...",
+          "expectation": "translate"
+        }
+      ],
+      "reviewBasis": "输入使用巴西葡语正在进行结构；本例预期按 pt-PT 转为欧洲葡语惯用表达，不以基础 pt 相同要求复制。"
+    },
+    {
+      "caseId": "already-portugal",
+      "sourceLanguage": null,
+      "targetLanguage": "pt-PT",
+      "phenomena": [
+        "target-variant",
+        "unknown-source"
+      ],
+      "items": [
+        {
+          "id": "a",
+          "sampleId": "acceptance-pt-01",
+          "cueIndices": [
+            9
+          ],
+          "transform": "identity",
+          "text": "magoaste-te?",
+          "expectation": "verbatim"
+        }
+      ],
+      "reviewBasis": "输入的人称变位和附着代词符合欧洲葡语目标，原样返回。"
+    }
+  ],
+  "manifestHash": "53704458eeff34ae142603b4bc3236f9db3c98ba0de3fd52ffb797f524f4d3ef"
+}

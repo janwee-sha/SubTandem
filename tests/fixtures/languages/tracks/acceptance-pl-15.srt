@@ -1,0 +1,44 @@
+1
+00:01:01,000 --> 00:01:03,000
+To jest trochę szalone.
+
+2
+00:01:57,000 --> 00:01:59,000
+Nie powinieneś być tam na dole?
+
+3
+00:02:11,000 --> 00:02:13,000
+Słyszałem jak rozmawialiście, wczoraj wieczorem.
+
+4
+00:02:16,000 --> 00:02:18,000
+Wiesz... To nie moja wina.
+
+5
+00:03:11,000 --> 00:03:12,000
+Jesteś gotowy?
+
+6
+00:03:13,000 --> 00:03:15,000
+Oczywiście że jesteś, jesteś przecież gwiazdą.
+
+7
+00:03:17,000 --> 00:03:18,000
+Jak to wygląda, Barley?
+
+8
+00:03:19,000 --> 00:03:21,000
+Powinniśmy mieć jakieś 10 minut...
+
+9
+00:03:21,500 --> 00:03:23,000
+W sumie to idealnie.
+
+10
+00:03:23,500 --> 00:03:26,500
+Startujemy na raz! Wszystkie systemy: odpalać!
+Tak Ty! Odpalaj!
+
+11
+00:03:28,000 --> 00:03:32,000
+Jedziesz! Ruszajcie swoje dupy! Dawaj, dawaj, dawaj!

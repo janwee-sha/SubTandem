@@ -1,0 +1,481 @@
+{
+  "schemaVersion": 1,
+  "frozenRevision": "022-corpus-2026-09-10-1",
+  "calibrationManifestHash": "5e0740b399327946079f60587ef95798bf85d37e969fcf44a4b1c034923aea18",
+  "search": {
+    "minimumLatinLetters": [
+      45,
+      55,
+      65
+    ],
+    "minimumOtherLetters": [
+      24,
+      30,
+      40
+    ],
+    "shortMargin": [
+      0.0001,
+      0.001,
+      0.005,
+      0.015
+    ],
+    "longMargin": [
+      0.0001,
+      0.001,
+      0.005
+    ],
+    "minimumScriptRatio": [
+      0.8,
+      0.9
+    ],
+    "minimumSupport": [
+      0.7,
+      0.8,
+      0.9
+    ],
+    "minimumModelCoverage": [
+      0.15,
+      0.2,
+      0.25
+    ]
+  },
+  "selection": "minimum wrong-reliable rate; maximum correct-positive rate; fixed seven-parameter rule; highest lexicographic parameter vector on ties",
+  "candidateCount": 1944,
+  "parameters": {
+    "minimumLatinLetters": 65,
+    "minimumOtherLetters": 40,
+    "shortMargin": 0.001,
+    "longMargin": 0.0001,
+    "minimumScriptRatio": 0.9,
+    "minimumSupport": 0.9,
+    "minimumModelCoverage": 0.2
+  },
+  "summary": {
+    "overall": {
+      "total": 65,
+      "positive": 58,
+      "negative": 7,
+      "correct": 57,
+      "unknown": 8,
+      "wrong": 0,
+      "negativeReliable": 0,
+      "correctRate": 0.9827586206896551,
+      "wrongRate": 0,
+      "negativeReliableRate": 0
+    },
+    "byLanguage": {
+      "cs": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 2,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0.6666666666666666,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "da": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "de": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "el": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "en": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "es": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "fa": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "fi": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "fr": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "he": {
+        "total": 1,
+        "positive": 1,
+        "negative": 0,
+        "correct": 1,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "hu": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "id": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "it": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "ja": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "negative": {
+        "total": 7,
+        "positive": 0,
+        "negative": 7,
+        "correct": 0,
+        "unknown": 7,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "nl": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "pl": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "pt": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "ru": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "sv": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "zh": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      }
+    },
+    "byPhenomenon": {
+      "authored-boundary": {
+        "total": 7,
+        "positive": 0,
+        "negative": 7,
+        "correct": 0,
+        "unknown": 7,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "digits": {
+        "total": 1,
+        "positive": 0,
+        "negative": 1,
+        "correct": 0,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "links": {
+        "total": 1,
+        "positive": 0,
+        "negative": 1,
+        "correct": 0,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "long": {
+        "total": 1,
+        "positive": 1,
+        "negative": 0,
+        "correct": 1,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "lyrics": {
+        "total": 1,
+        "positive": 0,
+        "negative": 1,
+        "correct": 0,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "medium": {
+        "total": 19,
+        "positive": 19,
+        "negative": 0,
+        "correct": 18,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0.9473684210526315,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "mixed": {
+        "total": 1,
+        "positive": 0,
+        "negative": 1,
+        "correct": 0,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "names": {
+        "total": 1,
+        "positive": 0,
+        "negative": 1,
+        "correct": 0,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "repeated": {
+        "total": 1,
+        "positive": 0,
+        "negative": 1,
+        "correct": 0,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "romanized-japanese": {
+        "total": 1,
+        "positive": 0,
+        "negative": 1,
+        "correct": 0,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "shared-script": {
+        "total": 42,
+        "positive": 42,
+        "negative": 0,
+        "correct": 41,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0.9761904761904762,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "short": {
+        "total": 45,
+        "positive": 38,
+        "negative": 7,
+        "correct": 38,
+        "unknown": 7,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "symbols": {
+        "total": 1,
+        "positive": 0,
+        "negative": 1,
+        "correct": 0,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      }
+    }
+  },
+  "algorithmSha256": "84d32f744d08402935f4cef5eba5a1076c7bc3ffc770d10124106b3a760c1b2b",
+  "manifestHash": "3c1d39714afe5c89f9d46dd92ddb08888a648a2108c3068eaa251dd214c2f596"
+}

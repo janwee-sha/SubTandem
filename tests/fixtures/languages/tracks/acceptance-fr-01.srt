@@ -1,0 +1,43 @@
+1
+00:00:15,000 --> 00:00:18,000
+À votre gauche vous pouvez voir…
+
+2
+00:00:18,750 --> 00:00:20,333
+À votre droite vous pouvez voir les…
+
+3
+00:00:20,417 --> 00:00:21,917
+… les étêteurs.
+
+4
+00:00:22,000 --> 00:00:24,625
+Tout est sans danger. Parfaitement sans danger.
+
+5
+00:00:26,000 --> 00:00:27,000
+Emo ?
+
+6
+00:00:28,625 --> 00:00:30,000
+Attention !
+
+7
+00:00:46,917 --> 00:00:48,000
+Tu n’as rien ?
+
+8
+00:00:51,917 --> 00:00:53,917
+Je crois pas… et vous ?
+
+9
+00:00:55,625 --> 00:00:57,125
+Ça va.
+
+10
+00:00:57,583 --> 00:01:01,667
+Lève-toi. Emo, ce n’est pas sûr ici.
+
+11
+00:01:02,000 --> 00:01:03,208
+Allons-y.

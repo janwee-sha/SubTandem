@@ -1,0 +1,19 @@
+[Script Info]
+ScriptType: v4.00+
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize
+Style: Default,Arial,24
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,00:00:23.00,00:00:24.50,Default,,0,0,0,,{\pos(20,40)\bord2\i1}あなたは馬鹿よ、トム
+Dialogue: 0,00:00:25.00,00:00:27.00,Default,,0,0,0,,{\pos(20,40)\bord2\i1}セリア、僕たちは夢を追いかけないと
+Dialogue: 0,00:00:27.00,00:00:30.50,Default,,0,0,0,,{\pos(20,40)\bord2\i1}...君はロボット工学があるし、\N僕も宇宙に行きたいだけなんだ
+Dialogue: 0,00:00:30.80,00:00:34.00,Default,,0,0,0,,{\pos(20,40)\bord2\i1}なぜ私のロボットハンドが\N怖くなったっていわないの？
+Dialogue: 0,00:00:34.50,00:00:36.00,Default,,0,0,0,,{\pos(20,40)\bord2\i1}僕は怖くなんか...
+Dialogue: 0,00:00:37.00,00:00:38.00,Default,,0,0,0,,{\pos(20,40)\bord2\i1}...ああそうとも！
+Dialogue: 0,00:00:38.00,00:00:41.00,Default,,0,0,0,,{\pos(20,40)\bord2\i1}怖いさ！　夢の中で\N追いかけられて...
+Dialogue: 0,00:00:41.00,00:00:42.00,Default,,0,0,0,,{\pos(20,40)\bord2\i1}...巨大なロボットの爪に...
+Dialogue: 0,00:00:43.00,00:00:45.00,Default,,0,0,0,,{\pos(20,40)\bord2\i1}とにかくトム、もう終わりね
+Dialogue: 0,00:00:50.00,00:00:53.50,Default,,0,0,0,,{\pos(20,40)\bord2\i1}ロボットのメモリとの同期・ロック完了！

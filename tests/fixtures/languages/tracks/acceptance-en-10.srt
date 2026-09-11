@@ -1,0 +1,36 @@
+1
+00:02:20,000 --> 00:02:21,300
+[man] Excuse me?
+
+2
+00:02:21,800 --> 00:02:23,000
+Excuse me, sir?
+
+3
+00:02:24,000 --> 00:02:25,500
+Excuse me?
+
+4
+00:02:27,000 --> 00:02:29,000
+[sheep] Oh, come on.
+
+5
+00:02:30,000 --> 00:02:32,042
+[man] Do you have a moment, sir?
+
+6
+00:02:32,125 --> 00:02:34,958
+[sheep] I'm kind of in the middle
+of something here.
+
+7
+00:02:35,042 --> 00:02:37,000
+Yes? Thank you.
+
+8
+00:02:37,050 --> 00:02:39,326
+I've come a long way for you, Franck.
+
+9
+00:02:49,000 --> 00:02:51,000
+My name is Victor.

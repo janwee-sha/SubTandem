@@ -1,0 +1,45 @@
+1
+00:01:01,000 --> 00:01:03,000
+Esto es bastante raro.
+
+2
+00:01:57,000 --> 00:01:59,000
+¿No deberías estar abajo?
+
+3
+00:02:11,000 --> 00:02:13,000
+Los escuché hablando anoche.
+
+4
+00:02:16,000 --> 00:02:18,000
+No es mi culpa, sabes.
+
+5
+00:03:11,000 --> 00:03:12,000
+¿Estás listo?
+
+6
+00:03:13,000 --> 00:03:15,000
+Claro que estás listo. ¡Eres una estrella!
+
+7
+00:03:17,000 --> 00:03:18,000
+¿Cómo lo ves, Barley?
+
+8
+00:03:19,000 --> 00:03:21,000
+Debemos tener unos diez minutos...
+
+9
+00:03:21,500 --> 00:03:23,000
+Bueno, perfecto.
+
+10
+00:03:23,500 --> 00:03:26,500
+¡Empezamos en uno! ¡Todos los sistemas encendidos! 
+Sí, tú. ¡Vé!
+
+11
+00:03:28,000 --> 00:03:32,000
+¡Vamos! ¡Muevan el trasero!
+¡Vamos, vamos, vamos!

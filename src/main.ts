@@ -232,11 +232,31 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     trackIdentity: string,
     contentHash: string,
     cues: PreparedSubtitleSource["cues"],
+    sourceReadyAt: number,
   ): void => {
+    const { sessionId, sessionEpoch } = controller.session;
+    const ownerMediaEpoch = mediaEpoch;
     void languageDetection.start(
-      { playerId, mediaEpoch, trackIdentity, contentHash, cues },
+      {
+        playerId,
+        sessionId,
+        sessionEpoch,
+        mediaEpoch,
+        trackIdentity,
+        contentHash,
+        sourceReadyAt,
+        cues,
+      },
       (result) => {
-        if (selectedSourceContentHash !== result.contentHash) return;
+        if (
+          selectedSourceContentHash !== result.contentHash ||
+          controller.session.closed ||
+          !controller.session.enabled ||
+          controller.session.sessionId !== sessionId ||
+          controller.session.sessionEpoch !== sessionEpoch ||
+          mediaEpoch !== ownerMediaEpoch
+        )
+          return;
         if (result.state === "reliable")
           controller.setLanguageDetection({ languageId: result.languageId });
         else controller.setLanguageDetection(result.state);
@@ -303,6 +323,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
       preparation?.invalidate("invalidated");
       return;
     }
+    const sourceReadyAt = Date.now();
     selectedSourceContentHash = prepared.contentHash;
     controller.setSource({
       cues: prepared.cues,
@@ -310,11 +331,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
       language: null,
       format: "srt",
     });
-    detectLanguage(
-      `${prepared.trackId}:embedded:${prepared.codec}`,
-      prepared.contentHash,
-      prepared.cues,
-    );
+    detectLanguage(key, prepared.contentHash, prepared.cues, sourceReadyAt);
     updateSidebarState({
       source: {
         format: prepared.codec,
@@ -394,6 +411,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
       if (commitFailure) clearSource(loaded.reason);
       return false;
     }
+    const sourceReadyAt = Date.now();
     const unchanged =
       selectedSourceTrackId === loaded.source.trackId &&
       selectedSourceContentHash === loaded.source.contentHash;
@@ -411,6 +429,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
         `${loaded.source.trackId}:external`,
         loaded.source.contentHash,
         loaded.source.cues,
+        sourceReadyAt,
       );
     updateSidebarState({
       source: {
