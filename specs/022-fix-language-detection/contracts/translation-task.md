@@ -31,7 +31,7 @@
 ## 返回、缓存与显示
 
 - 只允许 `trim()` 用于判断字符串是否全为空白，不能把裁剪结果作为返回值。身份缺失/重复、空白、不可解析等沿用当前无效结果规则，OpenAI/Ollama 与 DeepSeek/Claude 的提交粒度保持各自现状。
-- JSON 解码后的 `text` 必须原样经过 validator、progress/result 消息、controller、session cache 和 Overlay 适配器。字符串相等属于合法成功；运行时不新增逐 cue 语言分类、语义改写拦截或本地回声捷径。
+- JSON 解码后的 `text` 必须原样经过 validator、progress/result 消息、controller、session cache 和 Overlay 适配器。字符串相等属于合法成功；结果路径不新增逐 cue 语言分类、语义改写拦截或本地回声捷径。检测副本内的语言证据归属仅用于轨道判断，见[检测契约](language-detection.md)。
 - 缓存的未知 source 使用 `null`，与可靠 source ID 区分；仍包含正文、目标变体和 Profile 语义身份。会话失效清理缓存，禁止字幕及译文跨播放会话持久化。
 - Overlay 的 `lines` 每项承载完整活动 cue 正文，保留内部空白行并沿用文本节点与 `pre-wrap`。按原 cue 的半开时间区间显示，不修改布局、样式或交互；字符保留测试比较文本数据，宿主人工核对视觉与时间轴。
 - 语义改写若格式和身份合法，仍按成功接收；固定语料中的原样字符不一致使 SC-004 验收失败，不触发生产额外检测/重试。

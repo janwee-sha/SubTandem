@@ -21,6 +21,8 @@
 | `sourceReadyAt`                | 当前正文首次就绪时间；检测重入不得重置                                                                                                |
 | `workDeadlineAt`、`deadlineAt` | 内部停止时间与准入等待验收上限；计算及处理规则见[检测契约](contracts/language-detection.md#deadline-与生命周期)                       |
 | `sample`                       | 检测专用正文副本、选中 cue 身份、有效文字量、片段及去重统计；不得外发或写日志                                                         |
+| `evidence`                     | 仅检测内部使用的非重叠样本区间、候选证据及可靠模型归属或未归属标记；区间总长受同一采样预算限制，不进入逐 cue 产品接口 |
+| `languageLetterCounts`、`unassignedLetterCount` | 按 Unicode `Letter` 码点计权的可靠语言量及未归属量；宏语言身份归一化，未映射模型保留竞争，不以 cue 数、脚本或分数代替 |
 | `result.state`                 | `reliable` 或 `unknown`                                                                                                               |
 | `result.languageId`            | 仅 `reliable` 存在，且必须属于源语言身份集合                                                                                          |
 | `result.reason`                | 仅 `unknown` 存在：`insufficient-evidence`、`ambiguous`、`unsupported`、`unmapped`、`error`、`timeout`、`interrupted`                 |
@@ -44,7 +46,7 @@
 
 ## 验收语料与冻结记录
 
-位置为 `tests/fixtures/languages/` 下的 `sources.json`、`calibration.json`、`acceptance.json`、`tracks/`、`licenses/` 和 `same-language.json`；正文及许可全部纳入版本控制，均不随插件打包。样本通过 `sourceTrack` 引用来源目录中的 URL、原文件摘要、许可、署名及许可证据摘要，避免重复保存。
+位置为 `tests/fixtures/languages/`；现有 `sources.json`、`calibration.json`、`acceptance.json`、`tracks/`、`licenses/` 和 `same-language.json` 保持可复现。T050 以版本目录保存新清单，并用用途索引明确选择 `calibration`、`holdout`、`known-regression` 与 `mixed-semantics`，禁止默认把已评估清单当留出集。正文及许可全部纳入版本控制，均不随插件打包；来源通过 `sourceTrack` 引用，避免重复保存。
 
 | 字段                                        | 约束                                                                             |
 | ------------------------------------------- | -------------------------------------------------------------------------------- |
@@ -58,8 +60,12 @@
 | `split`、`regressionId`                     | `calibration` 或 `acceptance`；两个开放许可短轨有独立回归 ID，不能用替代样本冒充 |
 | `frozenRevision`、`manifestHash`            | 冻结清单版本和哈希；校准产物记录所用版本，验收另记录代码修订及包哈希             |
 
+新版本用途索引记录清单路径及哈希、语义版本、用途、是否已评估和完整作品/译本分组。评估状态不覆盖冻结清单；加载器必须拒绝已评估材料用作 `holdout`，并在校准开始前检查校准、开发及留出作品隔离。`known-regression` 保留原始 ID、正文和真值；指定短轨所属作品不得出现在校准用途。
+
+混合语义版本逐样本记录正文内不重叠区间的语言真值或未归属原因、去重后的 Unicode 字母码点数、唯一最高语言或并列/不足/不可映射的未知预期及正文审查依据。同/跨脚本混合、55:45、40:35:25、并列、cue 数与文字量赢家不同、人名、译文、重复正文和充分长度罗马字均须预标。语义变化新建版本，不覆盖冻结记录；该层不补足或稀释 SC-001 单语分母。
+
 同语言语料另记录每个 case 的 `sourceLanguage`、`targetLanguage`、冻结正文和逐条 `expectation`（`verbatim` 或 `translate`），后者预先注明目标变体的核验依据。此预期仅供验收使用，不进入生产 provider 请求。
 
 来源的 `origin` 区分 `natural-subtitle` 与 `authored-boundary`。原创无语义音节、数字等只作为负边界，不计入自然正样本数量，也不替代自然歌词或指定本地罗马字回归。清单哈希为删除 `manifestHash` 后按原字段顺序 `JSON.stringify` 的 SHA-256；`bodyHash` 为解析后 `normalizedText` 数组的同类摘要，文件及许可证据使用字节摘要。
 
-语料状态为 `collected → license-verified → truth-reviewed → frozen`。校准集与验收集按完整同源组隔离；元数据变化、格式变体和重复正文不增加独立样本数。首次任务必须满足开放许可集合的全部数量、分层及两个指定短轨，再允许校准及验收。七个 FFmpeg 指定回归的受版本管理记录只含公开来源、摘要、轨道身份及预期，结构和本地输入边界见[本地回归契约](contracts/local-regressions.md)；不计入冻结集数量，不共享正文到校准路径。
+语料状态为 `collected → license-verified → truth-reviewed → frozen`。重新开发校准前，T050 冻结多个作品的校准材料及独立留出版本，保留全部数量和分层；元数据变化、格式变体和重复正文不增加独立样本数。单语留出、混合主语言层及已知指定回归分别报告。七个 FFmpeg 指定回归的受版本管理记录只含公开来源、摘要、轨道身份及预期，结构和本地输入边界见[本地回归契约](contracts/local-regressions.md)；不计入冻结集数量，不共享正文到校准路径。

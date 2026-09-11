@@ -1,0 +1,49 @@
+1
+00:06:44,137 --> 00:06:45,671
+-  Erbitte Abschussfreigabe, over.
+
+2
+00:06:45,671 --> 00:06:47,407
+- Freigabe erteilt.
+
+3
+00:07:13,332 --> 00:07:15,234
+- Ineffektiv.
+
+4
+00:07:16,469 --> 00:07:19,038
+- Verstanden, bereite zwei Mavericks vor.
+
+5
+00:07:20,406 --> 00:07:25,311
+Drei, zwei, eins, Feuer.
+
+6
+00:07:33,453 --> 00:07:34,554
+- Volltreffer.
+
+7
+00:07:43,930 --> 00:07:47,300
+- Keine Wirkung, wiederhole,
+Keine Auswirkung auf das Ziel.
+
+8
+00:07:47,300 --> 00:07:50,102
+- Verstanden Hog One, kehre zur Basis zurück.
+
+9
+00:07:50,102 --> 00:07:51,938
+Retrieval-Team, Vektor halten.
+
+10
+00:07:55,875 --> 00:07:58,911
+- Es erwies sich als schwierig, 096
+zu verfolgen.
+
+11
+00:07:58,911 --> 00:08:00,146
+Es wird nicht auf
+
+12
+00:08:00,146 --> 00:08:01,714
+Satelliten-Thermalbildern angezeigt.

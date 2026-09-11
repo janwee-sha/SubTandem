@@ -1,0 +1,47 @@
+1
+00:03:01,581 --> 00:03:03,316
+laboratuvardan kim sorumluydu?
+
+2
+00:03:03,316 --> 00:03:04,884
+- Dr. Oleksei.
+
+3
+00:03:04,884 --> 00:03:06,986
+- Peki, 096 nasıl tutuluyordu?
+
+4
+00:03:06,986 --> 00:03:07,887
+- Protokole göre.
+
+5
+00:03:09,289 --> 00:03:12,992
+096 13. sınıf bir muhafaza kübünde tutuluyor.
+
+6
+00:03:12,992 --> 00:03:15,762
+Pencere yok, kamera yok, yüzünü görmesi olağan
+
+7
+00:03:15,762 --> 00:03:17,597
+kimse yok.
+
+8
+00:03:17,597 --> 00:03:19,866
+Tüm kontrol aygıtları veya yaşam destek sistemi
+
+9
+00:03:19,866 --> 00:03:22,202
+şartlara sıkıca uyuyor. - Teşekkür ederim.
+
+10
+00:03:22,202 --> 00:03:24,537
+Peki, muhafaza tam olarak ne zaman ihlal edildi?
+
+11
+00:03:25,972 --> 00:03:29,409
+- Henüz tam vakti konusunda bilgilendirilmedim.
+
+12
+00:03:29,409 --> 00:03:30,910
+- Evet, elbette.

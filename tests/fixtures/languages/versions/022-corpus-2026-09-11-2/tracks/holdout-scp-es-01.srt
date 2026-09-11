@@ -1,0 +1,31 @@
+1
+00:02:21,740 --> 00:02:22,980
+- Aquí Inspectora Arlia,
+
+2
+00:02:23,160 --> 00:02:25,440
+Comenzando la sesión cinco de la investigación.
+
+3
+00:02:25,440 --> 00:02:29,616
+Del incidente 096/1/alfa.
+
+4
+00:02:29,616 --> 00:02:31,251
+Estoy aquí con el Dr. Daniels.
+
+5
+00:02:32,280 --> 00:02:33,220
+- Hola, doctor.
+
+6
+00:02:33,220 --> 00:02:34,980
+- ¿Ya lo han capturado?
+
+7
+00:02:36,220 --> 00:02:38,140
+- Si, estará satisfecho de saber que
+
+8
+00:02:38,140 --> 00:02:39,200
+se ha logrado su contención.

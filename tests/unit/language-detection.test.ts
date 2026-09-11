@@ -6,9 +6,9 @@ import {
 } from "../../src/subtitles/language-detection.js";
 import { parseAss } from "../../src/subtitles/ass.js";
 import type { SubtitleCue } from "../../src/subtitles/types.js";
-import { loadLanguageCorpus } from "../helpers/language-corpus.js";
+import { loadMixedLanguageCases, loadVersionedLanguageCorpus } from "../helpers/language-corpus.js";
 
-const calibration = loadLanguageCorpus("calibration").tracks;
+const calibration = loadVersionedLanguageCorpus("calibration").tracks;
 const english = calibration.find((sample) => sample.record.languageTruth.languageId === "en")!.cues;
 function cue(index: number, text: string): SubtitleCue {
   return {
@@ -27,6 +27,72 @@ function large(count = 200): SubtitleCue[] {
 }
 
 describe("subtitle language sampling", () => {
+  it("yields while scanning repeated cues even when only one body contributes evidence", () => {
+    const input = Array.from({ length: 20_000 }, (_, index) =>
+      cue(index, english[0]!.normalizedText),
+    );
+    const steps = [...createLanguageDetectionWork(input)].filter(
+      (step) => step.phase === "sampling",
+    );
+    expect(steps.length).toBeGreaterThanOrEqual(156);
+    expect(steps.every((step) => step.processedCues <= 128)).toBe(true);
+    expect(sampleSubtitleCues(input).cues).toHaveLength(1);
+  });
+  it("detects the later primary language when fewer than 64 long cues exceed the text budget", () => {
+    const longEnglish = calibration
+      .find(({ record }) => record.sampleId === "calibration-valkaama-en-long")!
+      .cues.map((item) => item.normalizedText)
+      .join("\n");
+    const longGerman = calibration
+      .find(({ record }) => record.sampleId === "calibration-valkaama-de-long")!
+      .cues.map((item) => item.normalizedText)
+      .join("\n");
+    const input = Array.from({ length: 63 }, (_, index) =>
+      cue(index, `${index < 16 ? longGerman : longEnglish} ${index}`),
+    );
+    expect(detectSubtitleLanguage(input)).toEqual({ state: "reliable", languageId: "en" });
+  });
+  it.each([63, 64, 65])("covers all four regions when %i cues exceed the text budget", (count) => {
+    const input = Array.from({ length: count }, (_, index) =>
+      cue(
+        index,
+        `Section ${index}: ${"A lengthy subtitle sentence appears in this timeline region. ".repeat(5)}`,
+      ),
+    );
+    const sample = sampleSubtitleCues(input);
+    expect(sample.text.length).toBeLessThanOrEqual(4096);
+    expect(
+      sample.windows.every((window, region) =>
+        window.cues.some(
+          (item) =>
+            item.index >= Math.floor((count * region) / 4) &&
+            item.index < Math.floor((count * (region + 1)) / 4),
+        ),
+      ),
+    ).toBe(true);
+  });
+  it("retains sparse valid evidence when invalid cues alone exceed the cue budget", () => {
+    const input = Array.from({ length: 200 }, (_, index) => cue(index, "1234"));
+    for (const [index, item] of english.entries())
+      input[index * 5] = cue(index * 5, item.normalizedText);
+    const sample = sampleSubtitleCues(input);
+    expect(sample.cues.length).toBe(english.length);
+    expect(sample.text).toBe(english.map((item) => item.normalizedText).join("\n"));
+  });
+  it("samples the beginning and end of one oversized cue without splitting surrogate pairs", () => {
+    const input = cue(
+      0,
+      ["Beginning", "Second", "Third", "Ending"]
+        .map((word) => `${word.padEnd(20, " ")}${"𠀀".repeat(3000)}`)
+        .join(""),
+    );
+    const sample = sampleSubtitleCues([input]);
+    expect(sample.cues).toHaveLength(1);
+    expect(sample.text.length).toBeLessThanOrEqual(4096);
+    expect(sample.text.isWellFormed()).toBe(true);
+    expect(sample.text.includes("Beginning")).toBe(true);
+    expect(sample.text.includes("Ending")).toBe(true);
+  });
   it("retains all useful short-track evidence and deduplicates a repeated cue only once", () => {
     const sample = sampleSubtitleCues([
       ...english,
@@ -69,7 +135,12 @@ describe("subtitle language sampling", () => {
       },
     });
     expect(inputs.length).toBeGreaterThan(0);
-    expect(inputs.length).toBeLessThanOrEqual(4);
+    expect(inputs.reduce((sum, text) => sum + text.length, 0)).toBeLessThanOrEqual(8192);
+    const steps = [...createLanguageDetectionWork(sample.cues)];
+    expect(
+      new Set(steps.filter((step) => step.phase === "classifying").map((step) => step.fragment))
+        .size,
+    ).toBeLessThanOrEqual(4);
     expect(inputs.every((text) => text.length <= 2048 && text.isWellFormed())).toBe(true);
     expect(sample.text.length <= 4096 && sample.text.isWellFormed()).toBe(true);
   });
@@ -104,6 +175,22 @@ describe("subtitle language sampling", () => {
 });
 
 describe("language reliability", () => {
+  it("preserves mixed-language weights when bilingual lines share one cue", () => {
+    for (const { record, cues } of loadMixedLanguageCases().cases.filter(({ record }) =>
+      ["mixed-v2-55-45", "mixed-v2-tie", "mixed-v2-cross-script"].includes(record.caseId),
+    )) {
+      expect(
+        detectSubtitleLanguage([cue(0, cues.map((item) => item.normalizedText).join("\n"))]),
+        record.caseId,
+      ).toMatchObject(record.expected);
+    }
+  });
+  it.each(loadMixedLanguageCases().cases)(
+    "uses prelabelled nonoverlapping language evidence ($record.caseId)",
+    ({ record, cues }) => {
+      expect(detectSubtitleLanguage(cues), record.caseId).toMatchObject(record.expected);
+    },
+  );
   it("keeps insufficient numeric, link, proper-name, lyric and romanization evidence unknown", () => {
     const negatives = calibration.filter(
       (sample) => sample.record.languageTruth.kind === "negative",
@@ -157,25 +244,7 @@ describe("language reliability", () => {
       "unknown",
     );
   });
-  it("rejects conflicting fragments and sanitizes synchronous classifier failures", () => {
-    let call = 0;
-    expect(
-      detectSubtitleLanguage(
-        large(64).map((item) => cue(item.index, `${item.normalizedText} ${item.normalizedText}`)),
-        {
-          classifier: () =>
-            call++ % 2 === 0
-              ? [
-                  ["eng", 1],
-                  ["deu", 0.5],
-                ]
-              : [
-                  ["deu", 1],
-                  ["eng", 0.5],
-                ],
-        },
-      ).state,
-    ).toBe("unknown");
+  it("sanitizes synchronous classifier failures", () => {
     expect(
       detectSubtitleLanguage(english, {
         classifier: () => {
@@ -194,7 +263,11 @@ it.skipIf(process.env.SUBTANDEM_LANGUAGE_CALIBRATION !== "1")(
     const result = calibrateLanguageDetection();
     writeLanguageCalibration(result);
     console.info("language-calibration", JSON.stringify(result));
-    expect(result.candidateCount).toBe(1944);
+    expect(result.candidateCount).toBe(144);
+    expect(
+      result.feasibleCandidateCount,
+      "No parameter candidate satisfies the frozen calibration constraints",
+    ).toBeGreaterThan(0);
   },
   120_000,
 );

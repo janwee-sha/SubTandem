@@ -1,0 +1,32 @@
+1
+00:10:07,106 --> 00:10:09,008
+Což nás přivádí k našemu dalšímu bodu.
+
+2
+00:10:12,178 --> 00:10:13,546
+Vaše SCRAMBLE brýle.
+
+3
+00:10:15,414 --> 00:10:17,483
+Řekněte mi, na jakém principu fungují?
+
+4
+00:10:21,287 --> 00:10:22,688
+Jen pro záznam, doktore.
+
+5
+00:10:26,459 --> 00:10:28,761
+- Jsou to brýle pro smíšenou realitu.
+
+6
+00:10:28,761 --> 00:10:31,864
+Každému oku je zobrazováno video
+
+7
+00:10:31,864 --> 00:10:37,060
+a umělá inteligence detekuje a
+vymazává obličej 096 z obrazu.
+
+8
+00:10:38,340 --> 00:10:41,574
+- Jednoduché řešení k velmi komplikovanému problému.

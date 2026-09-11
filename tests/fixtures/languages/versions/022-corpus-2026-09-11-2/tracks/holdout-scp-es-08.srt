@@ -1,0 +1,48 @@
+1
+00:05:52,552 --> 00:05:54,954
+en la división tres, muerto.
+
+2
+00:05:56,255 --> 00:05:57,090
+- ¿Muerto?
+
+3
+00:05:58,858 --> 00:05:59,692
+- Exacto.
+
+4
+00:06:01,761 --> 00:06:03,830
+- Oleksei, tu idiota.
+
+5
+00:06:05,498 --> 00:06:06,866
+- Lamento su pérdida, Doctor
+
+6
+00:06:06,866 --> 00:06:08,601
+pero tenemos mucho más por cubrir.
+
+7
+00:06:10,002 --> 00:06:11,437
+Después de escapar la base,
+
+8
+00:06:11,437 --> 00:06:13,973
+096 se movió en un vector recto hacia las montañas.
+
+9
+00:06:21,280 --> 00:06:22,548
+- Gran Hermano, este es Hog Uno.
+
+10
+00:06:22,548 --> 00:06:25,118
+aproximándose a ubicación 
+estimada de destino, cambio.
+
+11
+00:06:26,018 --> 00:06:28,788
+- Copiado. Hog Uno, mantenga el vector.
+
+12
+00:06:33,426 --> 00:06:34,927
+- Creo que tengo algo.

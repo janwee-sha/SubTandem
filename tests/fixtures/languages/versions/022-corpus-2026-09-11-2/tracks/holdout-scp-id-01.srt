@@ -1,0 +1,31 @@
+1
+00:00:18,000 --> 00:00:19,580
+R-T-B.
+
+2
+00:02:21,740 --> 00:02:22,980
+- Ini adalah Inspektur Arlia,
+
+3
+00:02:22,980 --> 00:02:25,020
+memulai sesi lima investigasi
+
+4
+00:02:25,020 --> 00:02:29,180
+insiden 096-1-alpha.
+
+5
+00:02:29,620 --> 00:02:31,040
+Saya disini dengan Dr. Daniels.
+
+6
+00:02:32,280 --> 00:02:33,220
+Halo dokter.
+
+7
+00:02:33,220 --> 00:02:34,940
+- Sudahkah anda menangkapnya?
+
+8
+00:02:36,220 --> 00:02:37,457
+- Ya, kau akan senang

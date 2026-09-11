@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
   corpusManifestHash,
+  loadCorpusVersionIndex,
   loadLanguageCorpus,
   loadLocalLanguageRegressions,
+  loadMixedLanguageCases,
   loadSameLanguageCases,
+  loadVersionedLanguageCorpus,
   resolveCorpusFile,
   validateCorpusBoundary,
+  validateCorpusPurpose,
   validateParsedLanguageSample,
+  validateVersionedCorpusBoundary,
 } from "../helpers/language-corpus.js";
 
 describe("frozen language corpus", () => {
@@ -124,5 +129,90 @@ describe("frozen language corpus", () => {
         testCase.items.some((item) => item.expectation === "translate"),
       ),
     ).toBe(true);
+  });
+});
+
+describe("versioned language corpus purposes", () => {
+  it("keeps evaluated works reproducible and separates 420 fresh natural positives from semantic cases", () => {
+    const index = loadCorpusVersionIndex();
+    const known = index.versions.find((entry) => entry.purpose === "known-regression")!;
+    expect(validateCorpusPurpose(index, "known-regression", known.version)).toBe(known);
+    const calibration = loadVersionedLanguageCorpus("calibration");
+    const holdout = loadVersionedLanguageCorpus("holdout");
+    expect(calibration.tracks.length).toBe(315);
+    expect(holdout.tracks.length).toBe(427);
+    expect(holdout.manifest.languages).toHaveLength(21);
+    expect(
+      holdout.tracks.filter(({ record }) => record.languageTruth.kind === "positive"),
+    ).toHaveLength(420);
+    expect(holdout.tracks.filter(({ record }) => record.format === "ass")).toHaveLength(1);
+    expect(
+      calibration.tracks.some(
+        ({ record, cues }) =>
+          record.languageTruth.kind === "positive" &&
+          cues.map((cue) => cue.normalizedText).join("\n").length > 4096,
+      ),
+    ).toBe(true);
+    expect(
+      calibration.tracks.some(({ record }) => record.sourceGroupId === "elephants-dream"),
+    ).toBe(false);
+    for (const language of ["id", "ru", "bg", "es", "gl", "sv", "no"])
+      expect(
+        calibration.tracks.some(({ record }) => record.languageTruth.languageId === language),
+      ).toBe(true);
+  });
+
+  it("rejects evaluated or wrong-purpose material as a fresh holdout", () => {
+    const index = structuredClone(loadCorpusVersionIndex());
+    const holdout = index.versions.find((entry) => entry.purpose === "holdout")!;
+    holdout.evaluation.state = "evaluated";
+    expect(() => validateCorpusPurpose(index, "holdout")).toThrow("evaluated-holdout");
+    expect(() => validateCorpusPurpose(index, "holdout", index.versions[0]!.version)).toThrow(
+      "version-purpose",
+    );
+  });
+
+  it("rejects whole-work leakage and missing natural positives in a new version", () => {
+    const calibration = loadVersionedLanguageCorpus("calibration").manifest;
+    const holdout = structuredClone(loadVersionedLanguageCorpus("holdout").manifest);
+    expect(() =>
+      validateVersionedCorpusBoundary(
+        calibration,
+        holdout,
+        new Set([holdout.samples[0]!.sourceGroupId]),
+      ),
+    ).toThrow("source-group-leak");
+    holdout.samples.shift();
+    expect(() => validateVersionedCorpusBoundary(calibration, holdout, new Set())).toThrow(
+      "independent-positive-count",
+    );
+    const badCalibration = structuredClone(calibration);
+    badCalibration.samples[0]!.sourceGroupId = "elephants-dream";
+    expect(() => validateVersionedCorpusBoundary(badCalibration, holdout, new Set())).toThrow(
+      "designated-work-calibration",
+    );
+  });
+
+  it("prelabels mixed text intervals and exact 55:45 / 40:35:25 weights before detection", () => {
+    const { cases } = loadMixedLanguageCases();
+    expect(cases).toHaveLength(14);
+    expect(
+      cases
+        .find(({ record }) => record.caseId === "mixed-v2-55-45")!
+        .record.annotations.map((part) => part.letterCount),
+    ).toEqual([110, 90]);
+    expect(
+      cases
+        .find(({ record }) => record.caseId === "mixed-v2-40-35-25")!
+        .record.annotations.map((part) => part.letterCount),
+    ).toEqual([160, 140, 100]);
+    expect(
+      cases.some(({ record }) => record.annotations.some((part) => part.languageId === null)),
+    ).toBe(true);
+    expect(
+      cases
+        .find(({ record }) => record.caseId === "mixed-v2-tie")!
+        .record.annotations.map((part) => part.letterCount),
+    ).toEqual([110, 110]);
   });
 });

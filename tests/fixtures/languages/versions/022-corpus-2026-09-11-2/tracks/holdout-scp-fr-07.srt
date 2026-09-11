@@ -1,0 +1,31 @@
+1
+00:05:34,701 --> 00:05:36,536
+le systeme automatique assure qu'un agent est-
+
+2
+00:05:36,536 --> 00:05:39,906
+- Le système a échoué à démarrer.
+
+3
+00:05:41,074 --> 00:05:42,775
+En cas d'erreur automatique,
+
+4
+00:05:42,775 --> 00:05:44,711
+ce serait au Chef des opérations.
+
+5
+00:05:44,711 --> 00:05:46,512
+Dans ce cas, Dr. Oleksei.
+
+6
+00:05:46,512 --> 00:05:48,014
+- Alors, où se trouver t-il bon sang?
+
+7
+00:05:49,349 --> 00:05:52,552
+- Il a était trouvé en train de se cacher dans la salle des consierge
+
+8
+00:05:52,552 --> 00:05:54,954
+dans le secteur 3, mort.

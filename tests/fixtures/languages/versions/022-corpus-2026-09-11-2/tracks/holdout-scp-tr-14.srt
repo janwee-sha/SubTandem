@@ -1,0 +1,47 @@
+1
+00:10:15,414 --> 00:10:17,483
+Söyleyin, nasıl çalışıyorlar?
+
+2
+00:10:21,287 --> 00:10:22,688
+Kayıt için, Doktor.
+
+3
+00:10:26,459 --> 00:10:28,761
+- Onlar karma gerçeklik gözlükleri.
+
+4
+00:10:28,761 --> 00:10:31,864
+Her göze bir video sağlanıyor
+
+5
+00:10:31,864 --> 00:10:36,035
+ve bir AI 096'nın yüzünü saptayıp onu
+
+6
+00:10:36,040 --> 00:10:37,340
+görüntüden kazıyıp çıkarıyor.
+
+7
+00:10:38,340 --> 00:10:41,574
+- Çok karışık bir probleme harika bir çözüm.
+
+8
+00:10:41,574 --> 00:10:42,842
+Baya da pahalı.
+
+9
+00:10:42,842 --> 00:10:44,610
+İşe yaramamaları ne kadar üzücü.
+
+10
+00:10:46,545 --> 00:10:48,848
+- Ne? - Devam edelim.
+
+11
+00:10:56,255 --> 00:10:58,124
+- Tau Bir, size bildiriyoruz,
+
+12
+00:10:58,124 --> 00:10:59,859
+yerleşkeye yaklaşıyorsunuz.

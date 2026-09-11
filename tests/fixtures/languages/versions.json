@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "activeVersion": "022-corpus-2026-09-11-2",
+  "versions": [
+    {
+      "version": "022-corpus-2026-09-10-1",
+      "purpose": "known-regression",
+      "manifests": [
+        "calibration.json",
+        "acceptance.json"
+      ],
+      "manifestHashes": [
+        "5e0740b399327946079f60587ef95798bf85d37e969fcf44a4b1c034923aea18",
+        "25c2f31436895dc716cb537348855be1ed4747feeb10809c73f1bace4799b270"
+      ],
+      "sourceCatalog": "sources.json",
+      "sourceCatalogHash": "cc6030d6635d89aebe8a6583728806e14d1cb50b25824259fe43ac4a18f676c8",
+      "evaluation": {
+        "state": "evaluated",
+        "evidence": "specs/022-fix-language-detection/verification.md"
+      }
+    },
+    {
+      "version": "022-corpus-2026-09-11-2",
+      "purpose": "calibration",
+      "manifests": [
+        "versions/022-corpus-2026-09-11-2/calibration.json"
+      ],
+      "manifestHashes": [
+        "f0aceed87ef627d6b0418fd78edc74d600aa540fdaa7be2ad00229fb3744d89a"
+      ],
+      "sourceCatalog": "versions/022-corpus-2026-09-11-2/sources.json",
+      "sourceCatalogHash": "769d3ea1098b0847a0eb44c34fb1ac042ede474c06d83ad65a25e5179142b1c1",
+      "evaluation": {
+        "state": "evaluated",
+        "algorithmSha256": "b84309d0a9df46125b609d4f6e5d051ad4839a50a15f565d9c02bd1cf28344c0",
+        "evidence": "specs/022-fix-language-detection/verification.md"
+      }
+    },
+    {
+      "version": "022-corpus-2026-09-11-2",
+      "purpose": "holdout",
+      "manifests": [
+        "versions/022-corpus-2026-09-11-2/holdout.json"
+      ],
+      "manifestHashes": [
+        "ee8a429de897408b8d81ccae797066b87d9416f567a2a3974d2caa7a6f252f09"
+      ],
+      "sourceCatalog": "versions/022-corpus-2026-09-11-2/sources.json",
+      "sourceCatalogHash": "769d3ea1098b0847a0eb44c34fb1ac042ede474c06d83ad65a25e5179142b1c1",
+      "evaluation": {
+        "state": "unevaluated"
+      }
+    },
+    {
+      "version": "022-corpus-2026-09-11-2",
+      "purpose": "mixed-semantics",
+      "manifests": [
+        "versions/022-corpus-2026-09-11-2/mixed-semantics.json"
+      ],
+      "manifestHashes": [
+        "d4dca1ce50c696186bc15cc2a9a8628c00d6e753e8acde7a22413b04389df930"
+      ],
+      "sourceCatalog": "versions/022-corpus-2026-09-11-2/sources.json",
+      "sourceCatalogHash": "769d3ea1098b0847a0eb44c34fb1ac042ede474c06d83ad65a25e5179142b1c1",
+      "evaluation": {
+        "state": "evaluated",
+        "algorithmSha256": "b84309d0a9df46125b609d4f6e5d051ad4839a50a15f565d9c02bd1cf28344c0",
+        "evidence": "specs/022-fix-language-detection/verification.md"
+      }
+    }
+  ],
+  "manifestHash": "5d481a9599789ea3e09b3425fec289dc85a32f9b5980e70ab4bcb6c22988be54"
+}

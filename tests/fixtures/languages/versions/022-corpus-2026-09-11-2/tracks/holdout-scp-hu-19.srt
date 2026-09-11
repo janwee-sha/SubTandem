@@ -1,0 +1,34 @@
+1
+00:16:20,012 --> 00:16:22,681
+Úgy tűnik, hogy 096
+arca olyan kicsi volt
+
+2
+00:16:22,681 --> 00:16:25,584
+a képen, hogy kevesebb,
+mint négy pixelt foglalt el.
+
+3
+00:16:26,885 --> 00:16:29,955
+Négy pixel
+okozta mindezt?
+
+4
+00:16:32,758 --> 00:16:34,927
+Négy kibaszott pixel?
+
+5
+00:16:38,797 --> 00:16:39,631
+Sajnálom.
+
+6
+00:16:42,735 --> 00:16:46,238
+Mit sajnál, Doktor?
+
+7
+00:16:46,238 --> 00:16:47,306
+Mindent...
+
+8
+00:16:51,410 --> 00:16:53,145
+Működniük kellett volna.

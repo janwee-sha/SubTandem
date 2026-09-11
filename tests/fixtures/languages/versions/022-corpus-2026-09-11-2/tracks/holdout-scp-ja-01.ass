@@ -1,0 +1,12 @@
+[Script Info]
+ScriptType: v4.00+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:01:30.20,0:01:35.86,Default,,0,0,0,,{\i1}確保、収容、保護
+Dialogue: 0,0:02:21.74,0:02:22.94,Default,,0,0,0,,{\i1}- 質問者はArlia検査官、
+Dialogue: 0,0:02:22.94,0:02:25.56,Default,,0,0,0,,{\i1}調査セッション5を\N開始
+Dialogue: 0,0:02:25.64,0:02:28.86,Default,,0,0,0,,{\i1}事案096-1-Aの
+Dialogue: 0,0:02:29.64,0:02:31.26,Default,,0,0,0,,{\i1}私はダニエルズ博士とここにいます。
+Dialogue: 0,0:02:32.28,0:02:33.21,Default,,0,0,0,,{\i1}こんにちは博士。
+Dialogue: 0,0:02:33.21,0:02:34.98,Default,,0,0,0,,{\i1}- それで,収容できたのか？
+Dialogue: 0,0:02:36.22,0:02:39.10,Default,,0,0,0,,{\i1}- はい、あなたは収容が成功したと聞いて喜ぶでしょう。

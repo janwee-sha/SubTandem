@@ -1,0 +1,33 @@
+1
+00:05:29,996 --> 00:05:32,265
+Várjon, várjon, várjon.
+
+2
+00:05:32,265 --> 00:05:34,701
+Az elsőfokú kitörés esetén
+
+3
+00:05:34,701 --> 00:05:36,536
+az automatizált protokollok biztosítják
+hogy egy altatószer--
+
+4
+00:05:36,536 --> 00:05:39,906
+Az automatizált protokollok
+nem indultak el.
+
+5
+00:05:41,074 --> 00:05:42,775
+Az automata rendszer hibája esetén,
+
+6
+00:05:42,775 --> 00:05:44,711
+a műveleti főnöknek kell megtennie ezt.
+
+7
+00:05:44,711 --> 00:05:46,512
+Ebben az esetben Dr. Oleksei volt.
+
+8
+00:05:46,512 --> 00:05:48,014
+Nos, hol a fenében volt?

@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, realpathSync } from "node:fs";
 import { relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isSourceLanguageId } from "../../src/domain/source-languages.js";
 import { isTargetLanguageId } from "../../src/domain/target-languages.js";
 import { parseAss } from "../../src/subtitles/ass.js";
 import { parseSrt } from "../../src/subtitles/srt.js";
@@ -18,6 +19,9 @@ export interface CorpusSource {
   sourceUrl: string;
   sourceTrack: string;
   rawSha256: string;
+  rawFile?: string;
+  sourceEncoding?: string;
+  normalization?: string;
   originalCueCount: number;
   maxCueIndex: number;
   license: string;
@@ -56,6 +60,8 @@ export interface LanguageManifest {
   status: string;
   reviewer: string;
   split: CorpusSplit;
+  purpose?: "calibration" | "holdout";
+  languages?: string[];
   samples: LanguageSample[];
   manifestHash: string;
 }
@@ -137,7 +143,9 @@ export function corpusManifestHash(input: object): string {
 
 export function resolveCorpusFile(file: string): string {
   check(
-    /^(?:tracks\/[A-Za-z0-9-]+\.(?:srt|ass)|licenses\/[a-z-]+\.md|[a-z-]+\.json)$/.test(file),
+    /^(?:(?:versions\/[A-Za-z0-9-]{1,80}\/)?(?:(?:tracks|raw)\/[A-Za-z0-9-]+\.(?:srt|ass)|[a-z-]+\.json)|licenses\/[a-z0-9-]+\.md)$/.test(
+      file,
+    ),
     "file-scope",
   );
   try {
@@ -305,8 +313,7 @@ export function validateParsedLanguageSample(
   check(record.phenomena.includes(length), "length-stratum");
   if (record.languageTruth.kind === "positive")
     check(
-      source.origin === "natural-subtitle" &&
-        REQUIRED_CORPUS_LANGUAGES.includes(record.languageTruth.languageId),
+      source.origin === "natural-subtitle" && isSourceLanguageId(record.languageTruth.languageId),
       "positive-truth",
     );
   else
@@ -339,8 +346,16 @@ export function loadLanguageCorpus(split: CorpusSplit): {
     );
   validateCorpusBoundary(calibration, acceptance);
   const manifest = split === "calibration" ? calibration : acceptance;
+  return { manifest, tracks: loadTracks(read, catalog, manifest.samples) };
+}
+
+function loadTracks(
+  read: (file: string) => Buffer,
+  catalog: SourceCatalog,
+  records: LanguageSample[],
+): LoadedLanguageSample[] {
   const licenses = new Map<string, string>();
-  const tracks = manifest.samples.map((record): LoadedLanguageSample => {
+  return records.map((record): LoadedLanguageSample => {
     const source = catalog.sources[record.sourceTrack];
     check(source, "missing-source");
     check(URL.canParse(source.sourceUrl), "source-url");
@@ -348,7 +363,9 @@ export function loadLanguageCorpus(split: CorpusSplit): {
     check(url.protocol === "https:" && !url.username && !url.password, "source-url");
     check(digestPattern.test(source.rawSha256), "source-hash-format");
     check(
-      ["CC-BY-2.5", "CC-BY-3.0", "CC-BY-SA-4.0", "GPL-3.0-only"].includes(source.license),
+      ["CC-BY-2.5", "CC-BY-3.0", "CC-BY-SA-3.0", "CC-BY-SA-4.0", "GPL-3.0-only"].includes(
+        source.license,
+      ),
       "license",
     );
     check(
@@ -361,6 +378,7 @@ export function loadLanguageCorpus(split: CorpusSplit): {
       licenses.get(source.licenseEvidence) === source.licenseEvidenceSha256,
       "license-evidence-hash",
     );
+    if (source.rawFile) check(corpusSha256(read(source.rawFile)) === source.rawSha256, "raw-hash");
     const bytes = read(record.file);
     check(corpusSha256(bytes) === record.sha256, "file-hash");
     check(record.format === "srt" || record.format === "ass", "subtitle-format");
@@ -369,7 +387,311 @@ export function loadLanguageCorpus(split: CorpusSplit): {
     validateParsedLanguageSample(record, source, parsed.cues);
     return { record, source, cues: parsed.cues };
   });
+}
+
+export type CorpusPurpose = "calibration" | "holdout" | "known-regression" | "mixed-semantics";
+
+export interface CorpusVersionEntry {
+  version: string;
+  purpose: CorpusPurpose;
+  manifests: string[];
+  manifestHashes: string[];
+  sourceCatalog: string;
+  sourceCatalogHash: string;
+  evaluation: { state: "unevaluated" | "evaluated"; algorithmSha256?: string; evidence?: string };
+}
+
+export interface CorpusVersionIndex {
+  schemaVersion: number;
+  activeVersion: string;
+  versions: CorpusVersionEntry[];
+  manifestHash: string;
+}
+
+export interface MixedLanguageCase {
+  caseId: string;
+  file: string;
+  sha256: string;
+  bodyHash: string;
+  sourceGroupIds: string[];
+  annotations: Array<{
+    cueIndex: number;
+    start: number;
+    end: number;
+    languageId: string | null;
+    letterCount: number;
+  }>;
+  expected: { state: "reliable"; languageId: string } | { state: "unknown" };
+  phenomena: string[];
+  reviewBasis: string;
+}
+
+interface MixedLanguageManifest {
+  schemaVersion: number;
+  frozenRevision: string;
+  status: string;
+  purpose: "mixed-semantics";
+  reviewer: string;
+  sourceCatalogHash: string;
+  licenseEvidence: string;
+  licenseEvidenceSha256: string;
+  cases: MixedLanguageCase[];
+  manifestHash: string;
+}
+
+export function loadCorpusVersionIndex(): CorpusVersionIndex {
+  const index = readJson<CorpusVersionIndex>(reader(), "versions.json");
+  checkSeal(index);
+  check(index.schemaVersion === 1 && identityPattern.test(index.activeVersion), "version-index");
+  return index;
+}
+
+export function validateCorpusPurpose(
+  index: CorpusVersionIndex,
+  purpose: CorpusPurpose,
+  version = index.activeVersion,
+): CorpusVersionEntry {
+  const entry = index.versions.find((row) => row.version === version && row.purpose === purpose);
+  check(entry, "version-purpose");
+  if (purpose === "holdout") check(entry.evaluation.state === "unevaluated", "evaluated-holdout");
+  if (purpose === "known-regression")
+    check(entry.evaluation.state === "evaluated", "unevaluated-regression");
+  check(
+    entry.manifests.length > 0 && entry.manifests.length === entry.manifestHashes.length,
+    "version-manifests",
+  );
+  return entry;
+}
+
+function readVersionManifest<T extends { manifestHash: string }>(
+  read: (file: string) => Buffer,
+  entry: CorpusVersionEntry,
+  position = 0,
+): T {
+  const manifest = readJson<T>(read, entry.manifests[position]!);
+  checkSeal(manifest);
+  check(manifest.manifestHash === entry.manifestHashes[position], "version-manifest-hash");
+  return manifest;
+}
+
+export function validateVersionedCorpusBoundary(
+  calibration: LanguageManifest,
+  holdout: LanguageManifest,
+  developmentGroups: ReadonlySet<string>,
+): void {
+  const identities = new Set<string>();
+  const bodies = new Set<string>();
+  const intervals = new Map<string, Array<[number, number]>>();
+  const calibrationGroups = new Set(calibration.samples.map((sample) => sample.sourceGroupId));
+  check(!calibrationGroups.has("elephants-dream"), "designated-work-calibration");
+  for (const [purpose, manifest] of [
+    ["calibration", calibration],
+    ["holdout", holdout],
+  ] as const) {
+    check(
+      manifest.schemaVersion === 3 && manifest.status === "frozen" && manifest.purpose === purpose,
+      "manifest-state",
+    );
+    check(manifest.reviewer.trim() && manifest.samples.length, "review-missing");
+    for (const sample of manifest.samples) {
+      check(
+        identityPattern.test(sample.sampleId) && !identities.has(sample.sampleId),
+        "duplicate-id",
+      );
+      check(!bodies.has(sample.bodyHash), "duplicate-body");
+      check(sample.split === manifest.split && sample.reviewBasis.trim(), "sample-split-review");
+      if (purpose === "holdout")
+        check(
+          !calibrationGroups.has(sample.sourceGroupId) &&
+            !developmentGroups.has(sample.sourceGroupId),
+          "source-group-leak",
+        );
+      identities.add(sample.sampleId);
+      bodies.add(sample.bodyHash);
+      const key = `${sample.sourceGroupId}/${sample.canonicalTrackId}`;
+      const ranges = intervals.get(key) ?? [];
+      ranges.push(sample.canonicalCueRange);
+      intervals.set(key, ranges);
+    }
+  }
+  for (const ranges of intervals.values()) {
+    ranges.sort((a, b) => a[0] - b[0]);
+    for (let index = 1; index < ranges.length; index++)
+      check(ranges[index - 1]![1] < ranges[index]![0], "overlapping-source-cues");
+  }
+  const languages = holdout.languages ?? [];
+  check(new Set(languages).size === languages.length && languages.length >= 20, "language-count");
+  for (const language of languages)
+    check(
+      holdout.samples.filter(
+        (sample) =>
+          sample.languageTruth.kind === "positive" &&
+          sample.languageTruth.languageId === language &&
+          !sample.phenomena.includes("authored-boundary"),
+      ).length >= 20,
+      "independent-positive-count",
+    );
+  check(
+    holdout.samples.every(
+      (sample) =>
+        sample.languageTruth.kind !== "positive" ||
+        languages.includes(sample.languageTruth.languageId),
+    ),
+    "unlisted-language",
+  );
+  check(
+    !holdout.samples.some((sample) => sample.phenomena.includes("mixed") || sample.regressionId),
+    "holdout-layer",
+  );
+  for (const manifest of [calibration, holdout]) {
+    const phenomena = new Set(manifest.samples.flatMap((sample) => sample.phenomena));
+    for (const stratum of [
+      "short",
+      "medium",
+      "long",
+      "shared-script",
+      "romanized-japanese",
+      "lyrics",
+    ])
+      check(phenomena.has(stratum), "missing-phenomenon");
+    check(
+      manifest.samples.some(
+        (sample) =>
+          sample.languageTruth.kind === "negative" &&
+          sample.letterCount >= 65 &&
+          sample.phenomena.includes("sufficient-length-negative"),
+      ),
+      "long-negative-missing",
+    );
+  }
+  check(
+    holdout.samples.some((sample) => sample.format === "ass"),
+    "ass-stratum",
+  );
+  check(
+    new Set(
+      calibration.samples
+        .filter((sample) => sample.languageTruth.kind === "positive")
+        .map((sample) => sample.sourceGroupId),
+    ).size >= 3,
+    "calibration-work-count",
+  );
+}
+
+export function loadVersionedLanguageCorpus(
+  purpose: "calibration" | "holdout",
+  version?: string,
+): { manifest: LanguageManifest; tracks: LoadedLanguageSample[] } {
+  const read = reader();
+  const index = loadCorpusVersionIndex();
+  const selected = validateCorpusPurpose(index, purpose, version);
+  const calibrationEntry = validateCorpusPurpose(index, "calibration", selected.version);
+  const holdoutEntry = index.versions.find(
+    (entry) =>
+      entry.version === selected.version &&
+      (entry.purpose === "holdout" || entry.purpose === "known-regression"),
+  );
+  check(holdoutEntry, "version-purpose");
+  const calibration = readVersionManifest<LanguageManifest>(read, calibrationEntry);
+  const holdout = readVersionManifest<LanguageManifest>(read, holdoutEntry);
+  const developmentGroups = new Set<string>();
+  for (const entry of index.versions.filter(
+    (row) => row.purpose === "known-regression" && row.version !== selected.version,
+  ))
+    for (let position = 0; position < entry.manifests.length; position++) {
+      const known = readVersionManifest<LanguageManifest>(read, entry, position);
+      for (const sample of known.samples) developmentGroups.add(sample.sourceGroupId);
+    }
+  const mixedEntry = validateCorpusPurpose(index, "mixed-semantics", selected.version);
+  const mixed = readVersionManifest<MixedLanguageManifest>(read, mixedEntry);
+  for (const testCase of mixed.cases)
+    for (const group of testCase.sourceGroupIds) developmentGroups.add(group);
+  validateVersionedCorpusBoundary(calibration, holdout, developmentGroups);
+  const catalog = readJson<SourceCatalog>(read, selected.sourceCatalog);
+  checkSeal(catalog);
+  check(
+    catalog.schemaVersion === 2 && catalog.manifestHash === selected.sourceCatalogHash,
+    "version-catalog",
+  );
+  for (const manifest of [calibration, holdout, mixed])
+    check(
+      manifest.sourceCatalogHash === catalog.manifestHash &&
+        manifest.frozenRevision === selected.version,
+      "source-catalog-version",
+    );
+  const manifest = purpose === "calibration" ? calibration : holdout;
+  const tracks = loadTracks(read, catalog, manifest.samples);
+  if (purpose === "calibration")
+    check(
+      tracks.some(
+        ({ record, cues }) =>
+          record.languageTruth.kind === "positive" &&
+          cues.map((cue) => cue.normalizedText).join("\n").length > 2048,
+      ),
+      "natural-long-input",
+    );
   return { manifest, tracks };
+}
+
+export function loadMixedLanguageCases(version?: string): {
+  manifest: MixedLanguageManifest;
+  cases: Array<{ record: MixedLanguageCase; cues: SubtitleCue[] }>;
+} {
+  const read = reader();
+  const index = loadCorpusVersionIndex();
+  const entry = validateCorpusPurpose(index, "mixed-semantics", version);
+  const manifest = readVersionManifest<MixedLanguageManifest>(read, entry);
+  check(
+    manifest.schemaVersion === 1 &&
+      manifest.status === "frozen" &&
+      manifest.purpose === "mixed-semantics",
+    "mixed-state",
+  );
+  check(
+    manifest.reviewer.trim() &&
+      corpusSha256(read(manifest.licenseEvidence)) === manifest.licenseEvidenceSha256,
+    "mixed-license",
+  );
+  const identities = new Set<string>();
+  const cases = manifest.cases.map((record) => {
+    check(identityPattern.test(record.caseId) && !identities.has(record.caseId), "mixed-id");
+    identities.add(record.caseId);
+    check(record.reviewBasis.trim() && record.sourceGroupIds.length > 0, "mixed-review");
+    const bytes = read(record.file);
+    check(corpusSha256(bytes) === record.sha256, "mixed-file-hash");
+    const parsed = (record.file.endsWith(".ass") ? parseAss : parseSrt)(bytes.toString("utf8"));
+    check(
+      parsed.warnings.length === 0 &&
+        corpusSha256(JSON.stringify(parsed.cues.map((cue) => cue.normalizedText))) ===
+          record.bodyHash,
+      "mixed-body",
+    );
+    const ends = new Map<number, number>();
+    for (const annotation of record.annotations) {
+      const text = parsed.cues[annotation.cueIndex]?.normalizedText;
+      check(
+        text !== undefined &&
+          Number.isInteger(annotation.start) &&
+          Number.isInteger(annotation.end) &&
+          annotation.start >= (ends.get(annotation.cueIndex) ?? 0) &&
+          annotation.end > annotation.start &&
+          annotation.end <= text.length,
+        "mixed-interval",
+      );
+      check(
+        annotation.languageId === null || isSourceLanguageId(annotation.languageId),
+        "mixed-language",
+      );
+      check(
+        (text.slice(annotation.start, annotation.end).match(/\p{L}/gu)?.length ?? 0) ===
+          annotation.letterCount,
+        "mixed-letter-count",
+      );
+      ends.set(annotation.cueIndex, annotation.end);
+    }
+    return { record, cues: parsed.cues };
+  });
+  return { manifest, cases };
 }
 
 export function loadLocalLanguageRegressions(): LocalLanguageRegression[] {

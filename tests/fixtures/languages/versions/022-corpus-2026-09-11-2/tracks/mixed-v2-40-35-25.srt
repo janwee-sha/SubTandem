@@ -1,0 +1,11 @@
+1
+00:00:00,000 --> 00:00:02,000
+We should leave the station before the last train arrives. The road is quiet and my friends are waiting beside the river. We have brought warm clothes because the evenings here are still very cold.
+
+2
+00:00:03,000 --> 00:00:05,000
+Wir verlassen den Bahnhof bevor der letzte Zug eintrifft. Unsere Freunde warten hier am ruhigen Fluss. Wir haben warme Kleidung dabei, denn die Nächte sind hier noch kalt.
+
+3
+00:00:06,000 --> 00:00:08,000
+Мы уедем со станции до прибытия последнего поезда. Наши друзья ждут у тихой реки. Мы взяли тёплую одежду для холодной ночи.

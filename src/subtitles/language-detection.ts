@@ -16,6 +16,7 @@ export type LanguageDetectionResult =
   | { readonly state: "unknown"; readonly reason: LanguageDetectionUnknownReason };
 export interface LanguageDetectionStep {
   readonly phase: "sampling" | "classifying";
+  readonly fragment?: number;
   readonly processedCues: number;
   readonly processedCodeUnits: number;
 }
@@ -25,8 +26,8 @@ export interface LanguageDetectionParameters {
   readonly minimumOtherLetters: number;
   readonly shortMargin: number;
   readonly longMargin: number;
-  readonly minimumScriptRatio: number;
-  readonly minimumSupport: number;
+  readonly minimumSegmentLetters: number;
+  readonly contextWeight: number;
   readonly minimumModelCoverage: number;
 }
 export const LANGUAGE_DETECTION_PARAMETERS: LanguageDetectionParameters = Object.freeze({
@@ -34,8 +35,8 @@ export const LANGUAGE_DETECTION_PARAMETERS: LanguageDetectionParameters = Object
   minimumOtherLetters: 40,
   shortMargin: 0.001,
   longMargin: 0.0001,
-  minimumScriptRatio: 0.9,
-  minimumSupport: 0.9,
+  minimumSegmentLetters: 8,
+  contextWeight: 0.5,
   minimumModelCoverage: 0.2,
 });
 
@@ -51,6 +52,7 @@ export interface LanguageDetectionSample {
   readonly cues: readonly SubtitleCue[];
   readonly windows: readonly LanguageDetectionSampleWindow[];
   readonly text: string;
+  readonly intervals: ReadonlyArray<{ start: number; end: number }>;
 }
 
 function unknown(reason: LanguageDetectionUnknownReason): LanguageDetectionResult {
@@ -70,85 +72,199 @@ function safePrefix(value: string, limit: number): string {
 function letters(value: string): number {
   return value.match(/\p{L}/gu)?.length ?? 0;
 }
+interface SamplingBudget {
+  processedCues: number;
+  processedCodeUnits: number;
+}
+interface PreparedEvidence {
+  cue: SubtitleCue;
+  text: string;
+  regions: string[];
+  oversized: boolean;
+}
+function* accountCue(budget: SamplingBudget): Generator<LanguageDetectionStep> {
+  budget.processedCues++;
+  if (budget.processedCues >= 128) {
+    yield { phase: "sampling", ...budget };
+    budget.processedCues = 0;
+    budget.processedCodeUnits = 0;
+  }
+}
+function* prepareEvidence(
+  cue: SubtitleCue,
+  budget: SamplingBudget,
+): Generator<LanguageDetectionStep, PreparedEvidence> {
+  const raw = cue.normalizedText;
+  const regions = ["", "", "", ""];
+  let text = "";
+  let contentLength = 0;
+  let trimmedLength = 0;
+  let inTag = false;
+  for (let offset = 0; offset < raw.length;) {
+    if (budget.processedCodeUnits >= 12_288) {
+      yield { phase: "sampling", ...budget };
+      budget.processedCues = 0;
+      budget.processedCodeUnits = 0;
+    }
+    const region = Math.min(3, Math.floor((offset * 4) / raw.length));
+    let character = String.fromCodePoint(raw.codePointAt(offset)!);
+    let width = character.length;
+    if (character === "&") {
+      const entity = raw.slice(offset, offset + 6).match(/^&(?:amp|lt|gt|quot|apos|nbsp);/u)?.[0];
+      if (entity) {
+        character = (
+          {
+            "&amp;": "&",
+            "&lt;": "<",
+            "&gt;": ">",
+            "&quot;": '"',
+            "&apos;": "'",
+            "&nbsp;": " ",
+          } as Record<string, string>
+        )[entity]!;
+        width = entity.length;
+      }
+    }
+    offset += width;
+    budget.processedCodeUnits += width;
+    if (character === "<" && width === 1) inTag = true;
+    else if (character === ">" && width === 1 && inTag) inTag = false;
+    else if (!inTag) {
+      if (contentLength > 0 || character.trim()) {
+        contentLength += character.length;
+        if (character.trim()) trimmedLength = contentLength;
+        if (text.length + character.length <= 4097) text += character;
+      }
+      if (regions[region]!.length + character.length <= 1023) regions[region] += character;
+    }
+  }
+  yield* accountCue(budget);
+  return {
+    cue,
+    text: text.trim(),
+    regions: regions.map((part) => part.trim()),
+    oversized: trimmedLength > 4096,
+  };
+}
+function usefulEvidence(text: string): boolean {
+  return /\p{L}/u.test(text) && !/^https?:\/\/\S+$/iu.test(text);
+}
 function* sampleWork(
   cues: readonly SubtitleCue[],
 ): Generator<LanguageDetectionStep, LanguageDetectionSample> {
-  const windows: Array<{ cues: SubtitleCue[]; text: string }> = Array.from({ length: 4 }, () => ({
-    cues: [],
-    text: "",
-  }));
+  const budget: SamplingBudget = { processedCues: 0, processedCodeUnits: 0 };
+  const prepared = new Map<number, PreparedEvidence>();
   const seen = new Set<string>();
-  let processedCues = 0;
-  let processedCodeUnits = 0;
+  const all: Array<{ index: number; evidence: PreparedEvidence }> = [];
   let used = 0;
-  let count = 0;
-  const short = cues.length <= 64;
-  for (let region = 0; region < 4; region++) {
+  let overflow = false;
+  for (let index = 0; index < cues.length; index++) {
+    const cue = cues[index]!;
+    if (seen.has(cue.normalizedText)) {
+      yield* accountCue(budget);
+      continue;
+    }
+    const evidence = yield* prepareEvidence(cue, budget);
+    if (!usefulEvidence(evidence.text) && !evidence.regions.some(usefulEvidence)) continue;
+    const key = evidence.oversized ? cue.normalizedText : evidence.text;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    prepared.set(index, evidence);
+    used += evidence.text.length + (all.length ? 1 : 0);
+    all.push({ index, evidence });
+    if (all.length > 64 || used > 4096 || evidence.oversized) {
+      overflow = true;
+      break;
+    }
+  }
+  const windows: Array<{
+    cues: SubtitleCue[];
+    text: string;
+    intervals: Array<{ start: number; end: number }>;
+  }> = Array.from({ length: 4 }, () => ({ cues: [], text: "", intervals: [] }));
+  const append = (region: number, cue: SubtitleCue, text: string) => {
+    if (!usefulEvidence(text)) return;
     const window = windows[region]!;
-    const end = Math.floor((cues.length * (region + 1)) / 4);
-    for (let index = Math.floor((cues.length * region) / 4); index < end; index++) {
-      if (count >= 64 || (!short && (window.cues.length >= 16 || window.text.length >= 1023)))
-        break;
-      const raw = cues[index]!.normalizedText;
-      let text = "";
-      let inTag = false;
-      for (let offset = 0; offset < raw.length && text.length < 4096;) {
-        if (processedCodeUnits >= 12_288) {
-          yield { phase: "sampling", processedCues, processedCodeUnits };
-          processedCues = 0;
-          processedCodeUnits = 0;
+    if (!window.cues.includes(cue)) window.cues.push(cue);
+    const start = window.text.length + (window.text ? 1 : 0);
+    window.intervals.push({ start, end: start + text.length });
+    window.text += (window.text ? "\n" : "") + text;
+  };
+  if (!overflow) {
+    for (const { index, evidence } of all)
+      append(
+        Math.min(3, Math.floor((index * 4) / Math.max(1, cues.length))),
+        evidence.cue,
+        evidence.text,
+      );
+  } else if (cues.length === 1) {
+    for (let region = 0; region < 4; region++)
+      append(region, cues[0]!, all[0]!.evidence.regions[region]!);
+  } else {
+    seen.clear();
+    for (let region = 0; region < 4; region++) {
+      const selected: PreparedEvidence[] = [];
+      for (
+        let index = Math.floor((cues.length * region) / 4);
+        index < Math.floor((cues.length * (region + 1)) / 4);
+        index++
+      ) {
+        if (selected.length >= 16) break;
+        const cue = cues[index]!;
+        if (seen.has(cue.normalizedText)) {
+          yield* accountCue(budget);
+          continue;
         }
-        const chunk = safePrefix(raw.slice(offset, offset + 4097), 4096);
-        offset += chunk.length;
-        processedCodeUnits += chunk.length;
-        for (let position = 0; position < chunk.length; position++) {
-          const character = chunk.charAt(position);
-          if (character === "<") inTag = true;
-          else if (character === ">" && inTag) inTag = false;
-          else if (!inTag) text += character;
-        }
-        text = safePrefix(text, 4096);
-      }
-      processedCues++;
-      text = text
-        .replace(
-          /&(?:amp|lt|gt|quot|apos|nbsp);/g,
-          (entity) =>
-            ({
-              "&amp;": "&",
-              "&lt;": "<",
-              "&gt;": ">",
-              "&quot;": '"',
-              "&apos;": "'",
-              "&nbsp;": " ",
-            })[entity] ?? " ",
+        const evidence = prepared.get(index) ?? (yield* prepareEvidence(cue, budget));
+        const key = evidence.oversized ? cue.normalizedText : evidence.text;
+        if (
+          seen.has(key) ||
+          (!usefulEvidence(evidence.text) && !evidence.regions.some(usefulEvidence))
         )
-        .trim();
-      if (text && !/^https?:\/\/\S+$/i.test(text) && /\p{L}/u.test(text) && !seen.has(text)) {
-        const separator = count > 0 ? 1 : 0;
-        const available = short
-          ? 4096 - used - separator
-          : 1023 - window.text.length - (window.text ? 1 : 0);
-        const accepted = safePrefix(text, Math.max(0, available));
-        if (accepted && /\p{L}/u.test(accepted)) {
-          seen.add(text);
-          window.cues.push(cues[index]!);
-          window.text += (window.text ? "\n" : "") + accepted;
-          used += accepted.length + separator;
-          count++;
+          continue;
+        seen.add(key);
+        selected.push(evidence);
+      }
+      const limits = selected.map(() => 0);
+      let remaining = 1023 - Math.max(0, selected.length - 1);
+      for (;;) {
+        const open = selected
+          .map((evidence, index) => ({ evidence, index }))
+          .filter(({ evidence, index }) => limits[index]! < evidence.text.length);
+        if (!open.length || remaining <= 0) break;
+        const share = Math.max(1, Math.floor(remaining / open.length));
+        for (const { evidence, index } of open) {
+          const added = Math.min(share, evidence.text.length - limits[index]!, remaining);
+          limits[index]! += added;
+          remaining -= added;
         }
       }
-      if (processedCues >= 128) {
-        yield { phase: "sampling", processedCues, processedCodeUnits };
-        processedCues = 0;
-        processedCodeUnits = 0;
+      for (const [index, evidence] of selected.entries()) {
+        const limit = limits[index]!;
+        const text = evidence.oversized
+          ? evidence.regions
+              .map((part) => safePrefix(part, Math.max(0, Math.floor((limit - 3) / 4))))
+              .filter(Boolean)
+              .join("\n")
+          : safePrefix(evidence.text, limit);
+        append(region, evidence.cue, text);
       }
     }
   }
-  if (processedCues || processedCodeUnits)
-    yield { phase: "sampling", processedCues, processedCodeUnits };
+  if (budget.processedCues || budget.processedCodeUnits) yield { phase: "sampling", ...budget };
+  let offset = 0;
+  const intervals = windows.flatMap((window) => {
+    if (!window.text) return [];
+    const result = window.intervals.map((interval) => ({
+      start: interval.start + offset,
+      end: interval.end + offset,
+    }));
+    offset += window.text.length + 1;
+    return result;
+  });
   return {
-    cues: windows.flatMap((window) => window.cues),
+    intervals,
+    cues: [...new Set(windows.flatMap((window) => window.cues))],
     windows,
     text: windows
       .map((window) => window.text)
@@ -227,10 +343,15 @@ function evidence(text: string) {
     count,
     counts,
     latin: (counts.get("Latin") ?? 0) / Math.max(1, count),
-    scriptRatio: Math.max(...counts.values()) / Math.max(1, count),
+    properNames:
+      words.length >= 3 &&
+      (text.match(/\p{L}+/gu) ?? []).every((word) => /^\p{Lu}\p{Ll}+$/u.test(word)),
     unique: new Set(text.toLowerCase().match(/\p{L}/gu) ?? []).size,
     words: new Set(words).size,
     romaji,
+    rhythmic:
+      words.length >= 8 &&
+      words.filter((word) => /^([a-z]{1,3})\1+$/.test(word)).length / words.length >= 0.2,
   };
 }
 interface Classification {
@@ -238,7 +359,7 @@ interface Classification {
   leader: string;
   code: string;
   scores: Map<string, number>;
-  coverage: number;
+  codes: Map<string, string>;
 }
 const modelTrigrams = new Map<string, Set<string> | null>();
 function modelCoverage(text: string, code: string): number {
@@ -280,60 +401,93 @@ function classify(
     leader,
     code,
     scores,
-    coverage: modelCoverage(text, code),
+    codes: new Map(candidates.map(([candidate]) => [identity(candidate), candidate])),
   };
 }
-function decide(
+function assignEvidence(
   text: string,
-  results: Classification[],
+  result: Classification,
   parameters: LanguageDetectionParameters,
-): LanguageDetectionResult {
+  context: Classification,
+): string | null {
   const value = evidence(text);
   if (
-    value.count <
-      (value.latin >= 0.5 ? parameters.minimumLatinLetters : parameters.minimumOtherLetters) ||
-    value.unique < 8 ||
-    (value.latin >= 0.5 && value.words < 5)
+    value.count < parameters.minimumSegmentLetters ||
+    value.unique < 5 ||
+    value.properNames ||
+    value.romaji ||
+    value.rhythmic
   )
-    return unknown("insufficient-evidence");
-  if (value.scriptRatio < parameters.minimumScriptRatio || (value.latin >= 0.95 && value.romaji))
-    return unknown("ambiguous");
-  const weight = results.reduce((sum, result) => sum + result.weight, 0);
-  const aggregate = new Map<string, number>();
-  for (const result of results)
-    for (const [key, score] of result.scores)
-      aggregate.set(key, (aggregate.get(key) ?? 0) + (score * result.weight) / weight);
-  const ranked = [...aggregate].sort((left, right) => right[1] - left[1]);
+    return null;
+  const local = [...result.scores].sort((left, right) => right[1] - left[1]);
+  const contextWeight =
+    local.length > 1 && local[0]![1] - local[1]![1] >= 0.05 ? 0 : parameters.contextWeight;
+  const ranked = [...result.scores]
+    .map(
+      ([language, score]) =>
+        [
+          language,
+          context.scores.has(language)
+            ? score * (1 - contextWeight) + context.scores.get(language)! * contextWeight
+            : score,
+        ] as const,
+    )
+    .sort((left, right) => right[1] - left[1]);
   const first = ranked[0];
-  if (!first) return unknown("unsupported");
-  if (
-    results.reduce((sum, result) => sum + result.coverage * result.weight, 0) / weight <
-    parameters.minimumModelCoverage
-  )
-    return unknown("ambiguous");
-  const support =
-    results
-      .filter((result) => result.leader === first[0])
-      .reduce((sum, result) => sum + result.weight, 0) / weight;
-  if (support < parameters.minimumSupport) return unknown("ambiguous");
+  if (!first) return null;
+  const code = result.codes.get(first[0]) ?? result.code;
+  if (modelCoverage(text, code) < parameters.minimumModelCoverage) return null;
   if (ranked.length === 1) {
-    const code = results[0]?.code ?? "und";
     const supported = value.counts.get(code) ?? 0;
     const kana = text.match(/[\p{Script=Hiragana}\p{Script=Katakana}]/gu)?.length ?? 0;
     if (
-      supported / value.count < parameters.minimumScriptRatio ||
-      value.unique < 12 ||
+      supported < parameters.minimumSegmentLetters ||
+      value.unique < 5 ||
       (code === "cmn" && kana > 0) ||
       (code === "jpn" && kana < 5)
     )
-      return unknown("ambiguous");
+      return null;
   } else if (
     first[1] - ranked[1]![1] <
     (value.count < 200 ? parameters.shortMargin : parameters.longMargin)
   )
-    return unknown("ambiguous");
-  if (first[0].startsWith("model:")) return unknown("unmapped");
-  return { state: "reliable", languageId: first[0] };
+    return null;
+  return first[0];
+}
+const evidenceScripts = Object.entries(scriptExpressions)
+  .filter(([script]) => script !== "cmn")
+  .map(([script, expression]) => [script, new RegExp(expression.source, "u")] as const);
+function scriptFamily(character: string): string {
+  for (const [script, expression] of evidenceScripts) if (expression.test(character)) return script;
+  return "other";
+}
+function evidenceIntervals(
+  text: string,
+  start: number,
+  end: number,
+): Array<{ start: number; end: number }> {
+  const result: Array<{ start: number; end: number }> = [];
+  let from = start;
+  let family = "";
+  for (let offset = start; offset < end;) {
+    const character = String.fromCodePoint(text.codePointAt(offset)!);
+    if (character === "\n") {
+      if (from < offset) result.push({ start: from, end: offset });
+      from = offset + 1;
+      family = "";
+    }
+    if (/\p{L}/u.test(character)) {
+      const next = scriptFamily(character);
+      if (family && family !== next) {
+        result.push({ start: from, end: offset });
+        from = offset;
+      }
+      family = next;
+    }
+    offset += character.length;
+  }
+  if (from < end) result.push({ start: from, end });
+  return result;
 }
 export function* createLanguageDetectionWork(
   cues: readonly SubtitleCue[],
@@ -341,13 +495,61 @@ export function* createLanguageDetectionWork(
 ): Generator<LanguageDetectionStep, LanguageDetectionResult> {
   try {
     const sample = yield* sampleWork(cues);
-    if (!/\p{L}/u.test(sample.text)) return unknown("insufficient-evidence");
-    const results: Classification[] = [];
+    const parameters = options.parameters ?? LANGUAGE_DETECTION_PARAMETERS;
+    const total = evidence(sample.text);
+    const minimum = Math.min(parameters.minimumLatinLetters, parameters.minimumOtherLetters);
+    if (total.count < minimum || total.unique < 8) return unknown("insufficient-evidence");
+    const weights = new Map<string, number>();
+    const minimums = new Map<string, number>();
+    let available = false;
+    let offset = 0;
+    let fragmentIndex = 0;
     for (const fragment of fragments(sample.text)) {
-      results.push(classify(fragment, options.classifier ?? francAll));
-      yield { phase: "classifying", processedCues: 0, processedCodeUnits: fragment.length };
+      const end = offset + fragment.length;
+      const context = classify(fragment, options.classifier ?? francAll);
+      yield {
+        phase: "classifying",
+        fragment: fragmentIndex,
+        processedCues: 0,
+        processedCodeUnits: fragment.length,
+      };
+      for (const interval of sample.intervals) {
+        for (const part of evidenceIntervals(
+          sample.text,
+          Math.max(offset, interval.start),
+          Math.min(end, interval.end),
+        )) {
+          const text = sample.text.slice(part.start, part.end);
+          const result = classify(text, options.classifier ?? francAll);
+          available ||= result.scores.size > 0;
+          const language = assignEvidence(text, result, parameters, context);
+          if (language) {
+            weights.set(language, (weights.get(language) ?? 0) + result.weight);
+            minimums.set(
+              language,
+              evidence(text).latin >= 0.5
+                ? parameters.minimumLatinLetters
+                : parameters.minimumOtherLetters,
+            );
+          }
+          yield {
+            phase: "classifying",
+            fragment: fragmentIndex,
+            processedCues: 0,
+            processedCodeUnits: text.length,
+          };
+        }
+      }
+      offset = end;
+      fragmentIndex++;
     }
-    return decide(sample.text, results, options.parameters ?? LANGUAGE_DETECTION_PARAMETERS);
+    const ranked = [...weights].sort((a, b) => b[1] - a[1]);
+    const first = ranked[0];
+    if (!first) return unknown(available ? "ambiguous" : "unsupported");
+    if (first[1] < (minimums.get(first[0]) ?? minimum)) return unknown("insufficient-evidence");
+    if (ranked[1]?.[1] === first[1]) return unknown("ambiguous");
+    if (first[0].startsWith("model:")) return unknown("unmapped");
+    return { state: "reliable", languageId: first[0] };
   } catch {
     return unknown("error");
   }
