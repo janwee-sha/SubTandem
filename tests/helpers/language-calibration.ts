@@ -4,7 +4,11 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
   detectSubtitleLanguage,
+  LANGUAGE_CANDIDATE_MINIMUM_MODEL_DENSITY,
+  LANGUAGE_CANDIDATE_SCORE_BIASES,
   LANGUAGE_DETECTION_PARAMETERS,
+  LANGUAGE_LEXICAL_EVIDENCE,
+  LANGUAGE_SHARED_MODEL_EVIDENCE,
   type LanguageDetectionParameters,
 } from "../../src/subtitles/language-detection.js";
 import {
@@ -25,6 +29,7 @@ export const CALIBRATION_SEARCH = Object.freeze({
   minimumModelCoverage: [0.2, 0.3, 0.4],
   contextWeight: [0.95, 1],
   independentEvidence: [3, 6],
+  modelEvidenceWeight: [0.2],
 });
 export const CALIBRATION_SELECTION =
   "First require overall wrong-reliable <=1%, negative-reliable <=1%, and all prelabelled semantics; then minimize maximum per-work wrong rate, maximize macro per-work and overall correct rate, prefer the highest fixed parameter vector. If infeasible, report failure and the candidate with minimum constraint excess; never relax the gates.";
@@ -49,16 +54,18 @@ export function calibrateLanguageDetection() {
             for (const minimumModelCoverage of CALIBRATION_SEARCH.minimumModelCoverage)
               for (const contextWeight of CALIBRATION_SEARCH.contextWeight)
                 for (const independentEvidence of CALIBRATION_SEARCH.independentEvidence)
-                  candidates.push({
-                    minimumLatinLetters,
-                    minimumOtherLetters,
-                    shortMargin,
-                    longMargin,
-                    minimumSegmentLetters,
-                    contextWeight,
-                    minimumModelCoverage,
-                    independentEvidence,
-                  });
+                  for (const modelEvidenceWeight of CALIBRATION_SEARCH.modelEvidenceWeight)
+                    candidates.push({
+                      minimumLatinLetters,
+                      minimumOtherLetters,
+                      shortMargin,
+                      longMargin,
+                      minimumSegmentLetters,
+                      contextWeight,
+                      minimumModelCoverage,
+                      independentEvidence,
+                      modelEvidenceWeight,
+                    });
   const results = candidates.map((parameters) => {
     const rows = corpus.tracks.map(({ record, cues }) => ({
       record,
@@ -155,6 +162,12 @@ export function calibrateLanguageDetection() {
         ({ record }) => record.languageTruth.kind === "negative" && record.letterCount >= 65,
       ).length,
       completeCompetition: "franc@6.2.0; no only/ignore filters",
+      modelEvidence:
+        "Distinct Unicode-normalized model trigrams weighted by inverse model frequency and franc rank",
+      candidateScoreBiases: LANGUAGE_CANDIDATE_SCORE_BIASES,
+      candidateMinimumModelDensity: LANGUAGE_CANDIDATE_MINIMUM_MODEL_DENSITY,
+      sharedModelEvidence: LANGUAGE_SHARED_MODEL_EVIDENCE,
+      lexicalEvidence: LANGUAGE_LEXICAL_EVIDENCE,
       mixedCases: mixed.cases.length,
     },
     candidates: results.map((result) => ({

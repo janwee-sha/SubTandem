@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { PlaybackSession } from "../../src/app/playback-session.js";
 import { classifySubtitleSelection } from "../../src/adapters/iina/subtitle-source.js";
 import { ProviderSimulator } from "../helpers/provider-server.js";
-import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { readFileSync, writeFileSync } from "node:fs";
 import { detectSubtitleLanguage } from "../../src/subtitles/language-detection.js";
 import {
   loadLanguageCorpus,
@@ -10,6 +11,7 @@ import {
   loadCorpusVersionIndex,
   loadMixedLanguageCases,
   resolveCorpusFile,
+  corpusManifestHash,
 } from "../helpers/language-corpus.js";
 import { summarizeLanguageMetrics } from "../helpers/language-metrics.js";
 import { loadSubtitleSource } from "../../src/subtitles/source.js";
@@ -17,99 +19,181 @@ import { LANGUAGE_DETECTION_PARAMETERS } from "../../src/subtitles/language-dete
 
 const simulators: ProviderSimulator[] = [];
 afterEach(async () => Promise.all(simulators.splice(0).map((server) => server.close())));
+const corpusVersionIndex = loadCorpusVersionIndex();
+const activeHoldout = corpusVersionIndex.versions.find(
+  ({ version, purpose }) => version === corpusVersionIndex.activeVersion && purpose === "holdout",
+)!;
 
 describe("controlled provider acceptance runner", () => {
-  it("meets the frozen independent-track language gates after parameter freeze", () => {
-    const calibration = loadVersionedLanguageCorpus("calibration");
-    const version = loadCorpusVersionIndex().activeVersion;
-    const frozen = JSON.parse(
-      readFileSync(resolveCorpusFile(`versions/${version}/calibration-result.json`), "utf8"),
-    ) as {
-      calibrationManifestHash: string;
-      parameters: unknown;
-      feasibleCandidateCount: number;
-      status: string;
-    };
-    expect(
-      frozen.feasibleCandidateCount,
-      "Calibration has no feasible candidate; the independent holdout remains unevaluated",
-    ).toBeGreaterThan(0);
-    expect(frozen.status).toBe("candidate-selected");
-    expect(frozen.calibrationManifestHash === calibration.manifest.manifestHash).toBe(true);
-    expect(frozen.parameters).toEqual(LANGUAGE_DETECTION_PARAMETERS);
-    const acceptance = loadVersionedLanguageCorpus("holdout");
-    const known = loadLanguageCorpus("acceptance")
-      .tracks.filter(({ record }) => record.regressionId)
-      .map(({ record, cues }) => ({ record, result: detectSubtitleLanguage(cues) }));
-    const mixed = loadMixedLanguageCases().cases.map(({ record, cues }) => ({
-      record,
-      result: detectSubtitleLanguage(cues),
-    }));
-    const rows = acceptance.tracks.map(({ record, cues }) => ({
-      record,
-      result: detectSubtitleLanguage(cues),
-    }));
-    const summary = summarizeLanguageMetrics(rows);
-    console.info(
-      "language-acceptance",
-      JSON.stringify({
-        frozenRevision: acceptance.manifest.frozenRevision,
-        manifestHash: acceptance.manifest.manifestHash,
-        ...summary,
-      }),
-    );
-    let differences = 0;
-    for (const [index, { record }] of acceptance.tracks.entries()) {
-      const bytes = readFileSync(resolveCorpusFile(record.file));
-      for (const lang of [undefined, "xx-wrong", record.languageTruth.languageId ?? "ja"]) {
-        const source = loadSubtitleSource(
-          {
-            id: 1,
-            isExternal: true,
-            title: `input.${record.format}`,
-            ...(lang === undefined ? {} : { lang }),
-          },
-          bytes,
-        );
-        if (!source.ok) throw new Error("language-acceptance:parser");
-        if (
-          JSON.stringify(detectSubtitleLanguage(source.source.cues)) !==
-          JSON.stringify(rows[index]!.result)
-        )
-          differences++;
-      }
-    }
-    console.info("language-metadata", JSON.stringify({ tracks: rows.length, differences }));
-    console.info(
-      "language-designated-short",
-      JSON.stringify(known.map(({ record, result }) => ({ sampleId: record.sampleId, result }))),
-    );
-    expect(summary.overall.positive).toBeGreaterThanOrEqual(400);
-    expect(summary.overall.correctRate).toBeGreaterThanOrEqual(0.95);
-    expect(summary.overall.wrongRate).toBeLessThanOrEqual(0.01);
-    expect(summary.overall.negativeReliableRate).toBeLessThanOrEqual(0.01);
-    console.info(
-      "language-mixed",
-      JSON.stringify({
-        total: mixed.length,
-        correct: mixed.filter(
-          ({ record, result }) =>
-            result.state === record.expected.state &&
-            (result.state !== "reliable" ||
-              (record.expected.state === "reliable" &&
-                result.languageId === record.expected.languageId)),
-        ).length,
-      }),
-    );
-    for (const { record, result } of mixed)
-      expect(result, record.caseId).toMatchObject(record.expected);
-    for (const row of known)
+  it.skipIf(process.env.SUBTANDEM_LANGUAGE_ACCEPTANCE !== "1")(
+    "meets the frozen independent-track language gates after parameter freeze",
+    () => {
+      const calibration = loadVersionedLanguageCorpus("calibration");
+      const version = corpusVersionIndex.activeVersion;
+      const frozen = JSON.parse(
+        readFileSync(resolveCorpusFile(`versions/${version}/calibration-result.json`), "utf8"),
+      ) as {
+        calibrationManifestHash: string;
+        parameters: unknown;
+        feasibleCandidateCount: number;
+        status: string;
+      };
       expect(
-        row.result.state === "reliable" &&
-          row.result.languageId === row.record.languageTruth.languageId,
-        row.record.sampleId,
-      ).toBe(true);
-    expect(differences).toBe(0);
+        frozen.feasibleCandidateCount,
+        "Calibration has no feasible candidate; the independent holdout remains unevaluated",
+      ).toBeGreaterThan(0);
+      expect(frozen.status).toBe("candidate-selected");
+      expect(frozen.calibrationManifestHash === calibration.manifest.manifestHash).toBe(true);
+      expect(frozen.parameters).toEqual(LANGUAGE_DETECTION_PARAMETERS);
+      const acceptance = loadVersionedLanguageCorpus("holdout");
+      const known = loadLanguageCorpus("acceptance")
+        .tracks.filter(({ record }) => record.regressionId)
+        .map(({ record, cues }) => ({ record, result: detectSubtitleLanguage(cues) }));
+      const mixed = loadMixedLanguageCases().cases.map(({ record, cues }) => ({
+        record,
+        result: detectSubtitleLanguage(cues),
+      }));
+      const rows = acceptance.tracks.map(({ record, cues }) => ({
+        record,
+        result: detectSubtitleLanguage(cues),
+      }));
+      const summary = summarizeLanguageMetrics(rows);
+      console.info(
+        "language-acceptance",
+        JSON.stringify({
+          frozenRevision: acceptance.manifest.frozenRevision,
+          manifestHash: acceptance.manifest.manifestHash,
+          ...summary,
+        }),
+      );
+      let differences = 0;
+      for (const [index, { record }] of acceptance.tracks.entries()) {
+        const bytes = readFileSync(resolveCorpusFile(record.file));
+        for (const lang of [undefined, "xx-wrong", record.languageTruth.languageId ?? "ja"]) {
+          const source = loadSubtitleSource(
+            {
+              id: 1,
+              isExternal: true,
+              title: `input.${record.format}`,
+              ...(lang === undefined ? {} : { lang }),
+            },
+            bytes,
+          );
+          if (!source.ok) throw new Error("language-acceptance:parser");
+          if (
+            JSON.stringify(detectSubtitleLanguage(source.source.cues)) !==
+            JSON.stringify(rows[index]!.result)
+          )
+            differences++;
+        }
+      }
+      console.info("language-metadata", JSON.stringify({ tracks: rows.length, differences }));
+      console.info(
+        "language-designated-short",
+        JSON.stringify(known.map(({ record, result }) => ({ sampleId: record.sampleId, result }))),
+      );
+      const mixedCorrect = mixed.filter(
+        ({ record, result }) =>
+          result.state === record.expected.state &&
+          (result.state !== "reliable" ||
+            (record.expected.state === "reliable" &&
+              result.languageId === record.expected.languageId)),
+      ).length;
+      const report = {
+        schemaVersion: 1,
+        frozenRevision: acceptance.manifest.frozenRevision,
+        holdoutManifestHash: acceptance.manifest.manifestHash,
+        calibrationManifestHash: calibration.manifest.manifestHash,
+        algorithmSha256: createHash("sha256")
+          .update(
+            readFileSync(new URL("../../src/subtitles/language-detection.ts", import.meta.url)),
+          )
+          .digest("hex"),
+        parameters: LANGUAGE_DETECTION_PARAMETERS,
+        summary,
+        metadataDifferences: differences,
+        designatedShort: known.map(({ record, result }) => ({
+          sampleId: record.sampleId,
+          result,
+        })),
+        mixed: { total: mixed.length, correct: mixedCorrect },
+      };
+      writeFileSync(
+        new URL(
+          `../fixtures/languages/versions/${version}/acceptance-result.json`,
+          import.meta.url,
+        ),
+        JSON.stringify({ ...report, manifestHash: corpusManifestHash(report) }, null, 2) + "\n",
+      );
+      expect(summary.overall.positive).toBeGreaterThanOrEqual(400);
+      expect(summary.overall.correctRate).toBeGreaterThanOrEqual(0.95);
+      expect(summary.overall.wrongRate).toBeLessThanOrEqual(0.01);
+      expect(summary.overall.negativeReliableRate).toBeLessThanOrEqual(0.01);
+      console.info(
+        "language-mixed",
+        JSON.stringify({
+          total: mixed.length,
+          correct: mixed.filter(
+            ({ record, result }) =>
+              result.state === record.expected.state &&
+              (result.state !== "reliable" ||
+                (record.expected.state === "reliable" &&
+                  result.languageId === record.expected.languageId)),
+          ).length,
+        }),
+      );
+      for (const { record, result } of mixed)
+        expect(result, record.caseId).toMatchObject(record.expected);
+      for (const row of known)
+        expect(
+          row.result.state === "reliable" &&
+            row.result.languageId === row.record.languageTruth.languageId,
+          row.record.sampleId,
+        ).toBe(true);
+      expect(differences).toBe(0);
+    },
+    120_000,
+  );
+
+  it("keeps evaluated holdout evidence sealed against the frozen algorithm", () => {
+    if (activeHoldout.evaluation.state === "unevaluated") return;
+    const version = corpusVersionIndex.activeVersion;
+    const report = JSON.parse(
+      readFileSync(
+        new URL(
+          `../fixtures/languages/versions/${version}/acceptance-result.json`,
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    ) as {
+      algorithmSha256: string;
+      holdoutManifestHash: string;
+      manifestHash: string;
+      parameters: unknown;
+      summary: {
+        overall: {
+          positive: number;
+          correctRate: number;
+          wrongRate: number;
+          negativeReliableRate: number;
+        };
+      };
+      metadataDifferences: number;
+      designatedShort: Array<{ result: { state: string; languageId?: string } }>;
+      mixed: { total: number; correct: number };
+    };
+    expect(report.manifestHash).toBe(corpusManifestHash(report));
+    expect(report.algorithmSha256).toBe(activeHoldout.evaluation.algorithmSha256);
+    expect(report.holdoutManifestHash).toBe(activeHoldout.manifestHashes[0]);
+    expect(report.parameters).toEqual(LANGUAGE_DETECTION_PARAMETERS);
+    expect(report.summary.overall.positive).toBeGreaterThanOrEqual(400);
+    expect(report.summary.overall.correctRate).toBeGreaterThanOrEqual(0.95);
+    expect(report.summary.overall.wrongRate).toBeLessThanOrEqual(0.01);
+    expect(report.summary.overall.negativeReliableRate).toBeLessThanOrEqual(0.01);
+    expect(report.metadataDifferences).toBe(0);
+    expect(report.designatedShort.every(({ result }) => result.state === "reliable")).toBe(true);
+    expect(report.mixed.correct).toBe(report.mixed.total);
   });
 
   it("classifies every synthetic selected track with 100% exact identity", () => {

@@ -1,0 +1,624 @@
+1
+00:00:01,640 --> 00:00:04,459
+O que lemos em 2015?
+
+2
+00:00:05,137 --> 00:00:06,710
+O que
+
+3
+00:00:06,710 --> 00:00:09,384
+O que editamos em 2015?
+
+4
+00:00:10,534 --> 00:00:12,818
+2015
+
+5
+00:00:12,818 --> 00:00:14,628
+Vivaldi - Inverno, movimento 1
+
+6
+00:00:25,979 --> 00:00:27,699
+Plutão
+
+7
+00:00:30,687 --> 00:00:32,147
+Je suis Charlie
+
+8
+00:00:32,147 --> 00:00:33,521
+Ataque contra a Universidade de Garissa
+
+9
+00:00:33,521 --> 00:00:35,092
+Atentado em Borno em setembro de 2015
+
+10
+00:00:35,092 --> 00:00:36,492
+Atentado em Ancara em 2015
+
+11
+00:00:36,492 --> 00:00:38,022
+Voo Metrojet 9268
+
+12
+00:00:42,495 --> 00:00:43,835
+Crise migratória na Europa
+
+13
+00:00:43,835 --> 00:00:45,195
+Guerra Civil Síria
+
+14
+00:00:46,739 --> 00:00:47,759
+foi destruído.
+
+15
+00:00:47,759 --> 00:00:48,399
+Editar
+
+16
+00:00:48,399 --> 00:00:49,239
+Inserir
+
+17
+00:00:49,239 --> 00:00:51,179
+Mídia
+
+18
+00:00:51,179 --> 00:00:52,769
+Palmira
+
+19
+00:00:52,769 --> 00:00:53,649
+Bassel-bel-3
+
+20
+00:00:53,649 --> 00:00:54,349
+Usar esta imagem
+
+21
+00:00:54,829 --> 00:00:55,569
+Palmira
+
+22
+00:00:59,684 --> 00:01:00,394
+Parceria Transpacífico
+
+23
+00:01:00,394 --> 00:01:01,214
+Acordo de Viena
+
+24
+00:01:01,214 --> 00:01:01,954
+Conferência das Nações Unidas sobre as Mudanças Climáticas de 2015
+
+25
+00:01:01,954 --> 00:01:02,734
+Furacão Patrícia
+
+26
+00:01:02,734 --> 00:01:03,494
+Smog no Sudeste Asiático em 2015
+
+27
+00:01:03,494 --> 00:01:04,123
+Onda de calor na Índia em 2015
+
+28
+00:01:04,123 --> 00:01:04,944
+Terremoto de Illapel de 2015
+
+29
+00:01:04,944 --> 00:01:05,714
+Terremoto do Nepal de 2015
+
+30
+00:01:05,714 --> 00:01:06,284
+Terremoto de Hindu Kush de 2015
+
+31
+00:01:06,284 --> 00:01:07,054
+Alagamento de Tbilisi de 2015
+
+32
+00:01:11,554 --> 00:01:12,964
+Shanghai Tower
+
+33
+00:01:12,964 --> 00:01:13,654
+Shinkansen L0
+
+34
+00:01:13,654 --> 00:01:14,444
+505km/h
+
+35
+00:01:15,154 --> 00:01:15,924
+Sonda espacial Dawn
+
+36
+00:01:15,924 --> 00:01:16,595
+Astrosat
+
+37
+00:01:16,595 --> 00:01:17,345
+Kepler-452b
+
+38
+00:01:17,345 --> 00:01:18,105
+Água em Marte
+
+39
+00:01:18,105 --> 00:01:18,825
+Vacina para o ebola
+
+40
+00:01:18,825 --> 00:01:20,175
+Prêmio Nobel
+
+41
+00:01:20,175 --> 00:01:21,112
+Física, Química, Psicologia ou Medicina
+
+42
+00:01:21,112 --> 00:01:21,742
+Literatura, Paz, Economia
+
+43
+00:01:21,742 --> 00:01:23,142
+Lista de laureados
+
+44
+00:01:23,142 --> 00:01:23,642
+Homo naledi
+
+45
+00:01:25,471 --> 00:01:26,301
+Eclipse solar de 20 de março de 2015
+
+46
+00:01:27,727 --> 00:01:28,517
+Enviar arquivo
+
+47
+00:01:28,517 --> 00:01:29,257
+Visibilidade de eclipses
+
+48
+00:01:29,257 --> 00:01:29,957
+''To Pimp a Butterfly''
+
+49
+00:01:29,957 --> 00:01:30,597
+Cinquenta Tons de Cinza
+
+50
+00:01:30,597 --> 00:01:31,267
+Star Wars: O Despertar da Força
+
+51
+00:01:31,267 --> 00:01:31,817
+Mad Max: Estrada da Fúria
+
+52
+00:01:31,817 --> 00:01:32,397
+Velozes e Furiosos 7
+
+53
+00:01:32,397 --> 00:01:32,837
+Lista de trabalhos de ficção de 2015
+
+54
+00:01:32,837 --> 00:01:34,017
+De Volta para o Futuro II
+
+55
+00:01:34,017 --> 00:01:34,597
+Óscar de melhores efeitos visuais
+
+56
+00:01:34,597 --> 00:01:35,227
+Óscar
+
+57
+00:01:35,227 --> 00:01:35,717
+Óscar 2015
+
+58
+00:01:35,717 --> 00:01:37,217
+Citizenfour
+
+59
+00:01:37,217 --> 00:01:37,717
+Fundação Wikimedia contra NSA
+
+60
+00:01:37,717 --> 00:01:39,367
+Toda noite, todo dia
+
+61
+00:01:39,367 --> 00:01:41,507
+lutaremos por Freddy Gray
+
+62
+00:01:41,507 --> 00:01:42,507
+Black Lives Matter
+
+63
+00:01:42,507 --> 00:01:43,767
+Fees Must Fall
+
+64
+00:01:43,767 --> 00:01:45,407
+Manifestações equatorianas de 2015
+
+65
+00:01:45,407 --> 00:01:46,237
+Tentativa de golpe de Estado no Burundi em 2015
+
+66
+00:01:46,237 --> 00:01:46,987
+No person is illegal
+
+67
+00:01:47,658 --> 00:01:48,568
+Vote pela igualdade no casamento
+
+68
+00:01:48,568 --> 00:01:49,338
+Sem guerra
+
+69
+00:01:49,338 --> 00:01:50,058
+Legislação de segurança da paz
+
+70
+00:01:51,678 --> 00:01:52,358
+Eleição geral na Turquia em 2015
+
+71
+00:01:52,358 --> 00:01:53,168
+Eleição geral na Turquia em novembro de 2015
+
+72
+00:01:53,168 --> 00:01:53,968
+Eleição presidencial na Nigéria em 2015
+
+73
+00:01:53,968 --> 00:01:54,618
+Referendo grego de 2015
+
+74
+00:01:54,618 --> 00:01:56,118
+Não: 61.31%
+
+75
+00:01:56,118 --> 00:01:56,928
+Eleições municipais na Arábia Saudita em 2015
+
+76
+00:01:56,928 --> 00:01:57,598
+Eleições federais no Canadá em 2015
+
+77
+00:01:57,598 --> 00:01:58,248
+Bidhya Devi Bhandari
+
+78
+00:01:58,248 --> 00:01:59,078
+Eleições parlamentares na Polônia em 2015
+
+79
+00:01:59,078 --> 00:01:59,998
+Eleições legislativas de Mianmar de 2015
+
+80
+00:01:59,998 --> 00:02:00,728
+Eleições gerais no Reino Unido em 2015
+
+81
+00:02:00,728 --> 00:02:01,578
+Rei da Arábia Saudita
+
+82
+00:02:01,578 --> 00:02:02,268
+Política de dois filhos
+
+83
+00:02:02,268 --> 00:02:03,148
+Carlota de Cambridge
+
+84
+00:02:03,148 --> 00:02:04,548
+Nicolas Paul Gustaf Bernadotte
+
+85
+00:02:04,548 --> 00:02:05,438
+Salvar página
+
+86
+00:02:05,438 --> 00:02:06,438
+Nicolau, Duque de Ångermanland
+
+87
+00:02:06,438 --> 00:02:06,928
+Sueco
+
+88
+00:02:06,928 --> 00:02:07,598
+Prins Nicolas
+
+89
+00:02:09,467 --> 00:02:10,176
+Tour de France 2015
+
+90
+00:02:12,010 --> 00:02:12,750
+Copa do Mundo de Futebol Feminino de 2015
+
+91
+00:02:14,310 --> 00:02:15,290
+Final da Liga dos Campeões da UEFA de 2014–15
+
+92
+00:02:15,290 --> 00:02:15,790
+Caminhos até a final
+
+93
+00:02:15,790 --> 00:02:16,380
+Juventus 1, Barcelona 3
+
+94
+00:02:16,380 --> 00:02:17,330
+Campeonato Mundial de Patinação Artística no Gelo de 2015
+
+95
+00:02:17,330 --> 00:02:17,860
+Russo
+
+96
+00:02:17,860 --> 00:02:19,490
+Elizaveta Tuktamysheva
+
+97
+00:02:19,490 --> 00:02:20,150
+2015 World Series
+
+98
+00:02:20,150 --> 00:02:20,650
+Chicago Cubs
+
+99
+00:02:20,650 --> 00:02:21,320
+Temporada de 2015 dos Chicago Cubs
+
+100
+00:02:21,320 --> 00:02:21,860
+Chicago Cubs
+
+101
+00:02:21,860 --> 00:02:23,470
+Maldição de Billy Goat
+
+102
+00:02:26,540 --> 00:02:27,425
+Copa do Mundo de Rugby Union de 2015
+
+103
+00:02:27,425 --> 00:02:28,145
+Super Bowl XLIX
+
+104
+00:02:28,145 --> 00:02:28,905
+Floyd Mayweather Jr. x Manny Pacquiao
+
+105
+00:02:28,905 --> 00:02:29,825
+Grande Prêmio de Mônaco de 2015
+
+106
+00:02:29,825 --> 00:02:30,655
+Maratona de Boston de 2015
+
+107
+00:02:30,655 --> 00:02:32,205
+União Econômica Eurasiática
+
+108
+00:02:33,937 --> 00:02:35,557
+Parada do Dia da Vitória Chinesa de 2015
+
+109
+00:02:35,557 --> 00:02:38,327
+1945
+
+110
+00:02:38,327 --> 00:02:39,147
+Segunda Guerra Mundial
+
+111
+00:02:41,512 --> 00:02:42,782
+Lista de conflitos em curso
+
+112
+00:02:42,782 --> 00:02:43,542
+Batalha de Palmira
+
+113
+00:02:43,542 --> 00:02:44,972
+Bombardeio ao centro hospitalar de Kunduz
+
+114
+00:02:44,972 --> 00:02:46,682
+Intervenção militar no Iêmen
+
+115
+00:02:46,682 --> 00:02:47,512
+Bombardeio a Sana'a, abril de 2015
+
+116
+00:02:47,512 --> 00:02:48,242
+Ataque ao Museu Nacional do Bardo
+
+117
+00:02:48,242 --> 00:02:48,872
+Atentados de Beirute em 2015
+
+118
+00:02:48,872 --> 00:02:50,342
+Massacre ao Instituto Superior Umpqua
+
+119
+00:02:50,342 --> 00:02:51,042
+Uma vigília de oração na Igreja Episcopal Metodista Africana Morris Brown
+
+120
+00:02:51,042 --> 00:02:51,862
+Naufrágio do Extremo Oriente
+
+121
+00:02:51,862 --> 00:02:52,752
+Naufrágio do Estrela Oriental
+
+122
+00:02:52,752 --> 00:02:53,312
+Voo Germanwings 9525
+
+123
+00:02:53,312 --> 00:02:54,072
+Desastre do Hercules C-130 da Força Aérea da Indonésia
+
+124
+00:02:54,072 --> 00:02:54,932
+Nacionalidade das vítimas da debandada de Mina em 2015 por número de falecimentos
+
+125
+00:02:54,932 --> 00:02:55,672
+Explosões em Tianjin em 2015
+
+126
+00:02:56,391 --> 00:02:56,851
+El Chapo
+
+127
+00:02:56,851 --> 00:02:57,361
+Escândalo de emissões da Volkswagen
+
+128
+00:02:57,361 --> 00:02:57,841
+Caso de corrupção na FIFA em 2015
+
+129
+00:02:57,841 --> 00:02:58,371
+Escândalo estrangeiro
+
+130
+00:02:58,371 --> 00:02:58,771
+Oferta de aquisição da SABMiller
+
+131
+00:02:58,771 --> 00:02:59,241
+Pfizer e Allergan
+
+132
+00:02:59,241 --> 00:02:59,671
+''Crash'' da bolsa chinesa em 2015
+
+133
+00:02:59,671 --> 00:03:00,141
+Onda de vendas do mercado de ações em 2015
+
+134
+00:03:00,141 --> 00:03:00,951
+€ 1,00
+
+135
+00:03:00,951 --> 00:03:02,511
+Wikipédia:Wiki Loves Earth
+
+136
+00:03:11,268 --> 00:03:12,796
+mortes em 2015
+
+137
+00:03:12,796 --> 00:03:13,546
+Pessoas vindo à cena do assassinato de Boris Nemtsov
+
+138
+00:03:13,546 --> 00:03:14,286
+Boris Nemtsov
+
+139
+00:03:14,286 --> 00:03:15,036
+Khaled al-Asaad
+
+140
+00:03:15,036 --> 00:03:15,786
+Amelia Boynton Robinson
+
+141
+00:03:15,786 --> 00:03:16,496
+Satoru Iwata
+
+142
+00:03:16,496 --> 00:03:17,286
+Günter Grass
+
+143
+00:03:17,286 --> 00:03:17,966
+Sabeen Mahmud
+
+144
+00:03:17,966 --> 00:03:18,786
+A. P. J. Abdul Kalam
+
+145
+00:03:18,786 --> 00:03:19,506
+Lee Kuan Yew
+
+146
+00:03:19,506 --> 00:03:20,336
+Leonard Nimoy
+
+147
+00:03:22,737 --> 00:03:24,497
+Editar Histórico
+
+148
+00:03:24,497 --> 00:03:25,242
+Traduzir Histórico
+(Traduza história)
+
+149
+00:03:25,242 --> 00:03:25,842
+Enviar Histórico
+(Envie história)
+
+150
+00:03:25,842 --> 00:03:26,452
+Referenciar Histórico
+(Referencie história)
+
+151
+00:03:26,452 --> 00:03:27,105
+Escrever Histórico
+(Escreva história)
+
+152
+00:03:27,105 --> 00:03:28,174
+Editar Histórico
+(Edite história)
+
+153
+00:03:28,174 --> 00:03:29,773
+Edite. História.
+
+154
+00:03:29,773 --> 00:03:31,622
+Wikipédia
+
+155
+00:03:32,026 --> 00:03:34,306
+O que lemos em 2015: https://analytics.wmflabs.org/demo/pageview-api/ (em inglês)

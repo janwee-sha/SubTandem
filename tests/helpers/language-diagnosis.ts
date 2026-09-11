@@ -51,11 +51,13 @@ export function traceLanguageDetection(
   }
 }
 
-export function diagnoseLanguageDetection() {
+export function diagnoseLanguageDetection(
+  parameters: LanguageDetectionParameters = LANGUAGE_DETECTION_PARAMETERS,
+) {
   const corpus = loadVersionedLanguageCorpus("calibration");
   const rows = corpus.tracks.map(({ record, cues }) => ({
     record,
-    ...traceLanguageDetection(cues),
+    ...traceLanguageDetection(cues, parameters),
   }));
   const summary = summarizeLanguageMetrics(rows);
   const failures = rows
@@ -118,7 +120,7 @@ export function diagnoseLanguageDetection() {
     algorithmSha256: createHash("sha256")
       .update(readFileSync(new URL("../../src/subtitles/language-detection.ts", import.meta.url)))
       .digest("hex"),
-    parameters: LANGUAGE_DETECTION_PARAMETERS,
+    parameters,
     summary,
     ablations,
     rejectedLetters,

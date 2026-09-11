@@ -1,0 +1,19 @@
+1
+00:01:08,920 --> 00:01:10,280
+Ini adalah Falcon's Nest,
+
+2
+00:01:10,600 --> 00:01:13,120
+sebuah rumah besar di pedesaan yang telah saya sewa untuk musim panas.
+
+3
+00:01:14,040 --> 00:01:17,480
+Saya seorang penulis dan saya menulis terutama novel misteri.
+
+4
+00:01:18,000 --> 00:01:21,640
+Tetapi tidak ada dalam publikasi saya yang melaporkan unsur-unsur aneh
+
+5
+00:01:21,800 --> 00:01:23,880
+seperti yang terjadi di istana ini.

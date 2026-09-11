@@ -1,0 +1,513 @@
+{
+  "schemaVersion": 1,
+  "frozenRevision": "022-corpus-2026-09-11-5",
+  "status": "frozen",
+  "purpose": "mixed-semantics",
+  "reviewer": "Codex",
+  "sourceCatalogHash": "303705b17578ed27b3fc29a207ba6753b989daf060a5b9730bcb8cf10f82a71d",
+  "licenseEvidence": "licenses/authored-boundaries-v2.md",
+  "licenseEvidenceSha256": "072c32acf5eec250a307efc45e49184fbee35330b367bd4b74e354e02501f9f0",
+  "cases": [
+    {
+      "caseId": "mixed-v2-55-45",
+      "file": "versions/022-corpus-2026-09-11-2/tracks/mixed-v2-55-45.srt",
+      "sha256": "9e833585bf453f87b72c0568d9e025473083a099a22d2f881f9a45fe67543659",
+      "bodyHash": "9cdf2e5aa3221318786d1489151d4104083427c88de67ce5f9095a5cdf2bd529",
+      "sourceGroupIds": [
+        "authored-semantics-v2"
+      ],
+      "annotations": [
+        {
+          "cueIndex": 0,
+          "start": 0,
+          "end": 138,
+          "languageId": "en",
+          "letterCount": 110
+        },
+        {
+          "cueIndex": 1,
+          "start": 0,
+          "end": 108,
+          "languageId": "de",
+          "letterCount": 90
+        }
+      ],
+      "expected": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "phenomena": [
+        "same-script",
+        "55-45"
+      ],
+      "reviewBasis": "原创句段先按词汇和语法标注语言；Unicode 字母数确定唯一最大值或并列，未归属的名字/音节不计入任一语言，重复句段只计一次。未调用检测器。"
+    },
+    {
+      "caseId": "mixed-v2-40-35-25",
+      "file": "versions/022-corpus-2026-09-11-2/tracks/mixed-v2-40-35-25.srt",
+      "sha256": "5c0d38bb75719b6c6b44cd11a18ba1bd57759e07d0f61c119f5507a7ec9e0b61",
+      "bodyHash": "2d9cefe9d5bea2f4fb1963032a2c4b11643b24845c294b801279b687653c61e9",
+      "sourceGroupIds": [
+        "authored-semantics-v2"
+      ],
+      "annotations": [
+        {
+          "cueIndex": 0,
+          "start": 0,
+          "end": 197,
+          "languageId": "en",
+          "letterCount": 160
+        },
+        {
+          "cueIndex": 1,
+          "start": 0,
+          "end": 171,
+          "languageId": "de",
+          "letterCount": 140
+        },
+        {
+          "cueIndex": 2,
+          "start": 0,
+          "end": 123,
+          "languageId": "ru",
+          "letterCount": 100
+        }
+      ],
+      "expected": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "phenomena": [
+        "cross-script",
+        "40-35-25"
+      ],
+      "reviewBasis": "原创句段先按词汇和语法标注语言；Unicode 字母数确定唯一最大值或并列，未归属的名字/音节不计入任一语言，重复句段只计一次。未调用检测器。"
+    },
+    {
+      "caseId": "mixed-v2-tie",
+      "file": "versions/022-corpus-2026-09-11-2/tracks/mixed-v2-tie.srt",
+      "sha256": "e6b7c525715b1c13335daa63b0fb3fdbb0badf0f9027ab96e927fce03bb77615",
+      "bodyHash": "d56bbf63500b6bab1f4edc17a5fe1a8c55390cf63d69efa6123f06edfcb6178b",
+      "sourceGroupIds": [
+        "authored-semantics-v2"
+      ],
+      "annotations": [
+        {
+          "cueIndex": 0,
+          "start": 0,
+          "end": 138,
+          "languageId": "en",
+          "letterCount": 110
+        },
+        {
+          "cueIndex": 1,
+          "start": 0,
+          "end": 133,
+          "languageId": "de",
+          "letterCount": 110
+        }
+      ],
+      "expected": {
+        "state": "unknown"
+      },
+      "phenomena": [
+        "tie"
+      ],
+      "reviewBasis": "原创句段先按词汇和语法标注语言；Unicode 字母数确定唯一最大值或并列，未归属的名字/音节不计入任一语言，重复句段只计一次。未调用检测器。"
+    },
+    {
+      "caseId": "mixed-v2-cross-script",
+      "file": "versions/022-corpus-2026-09-11-2/tracks/mixed-v2-cross-script.srt",
+      "sha256": "d0eab804b8da9dd31da064ca063b358ec8cd419ff82efe846dabb0c55b66bcc9",
+      "bodyHash": "4725cdbafc5a27dbc61c09d88f29b4a8531365f5c2a07d8d718463b942d9fa74",
+      "sourceGroupIds": [
+        "authored-semantics-v2"
+      ],
+      "annotations": [
+        {
+          "cueIndex": 0,
+          "start": 0,
+          "end": 64,
+          "languageId": "ja",
+          "letterCount": 61
+        },
+        {
+          "cueIndex": 1,
+          "start": 0,
+          "end": 138,
+          "languageId": "en",
+          "letterCount": 110
+        }
+      ],
+      "expected": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "phenomena": [
+        "cross-script"
+      ],
+      "reviewBasis": "原创句段先按词汇和语法标注语言；Unicode 字母数确定唯一最大值或并列，未归属的名字/音节不计入任一语言，重复句段只计一次。未调用检测器。"
+    },
+    {
+      "caseId": "mixed-v2-cue-weight",
+      "file": "versions/022-corpus-2026-09-11-2/tracks/mixed-v2-cue-weight.srt",
+      "sha256": "885745454c3851cd9bae2b53143c29300a50c34ecb2ba8e2ca8175b1e47cb5dd",
+      "bodyHash": "94830baa0f8ea116b5837be1bc30b06aadccec900058d7cbc5055d1c72f9faba",
+      "sourceGroupIds": [
+        "authored-semantics-v2"
+      ],
+      "annotations": [
+        {
+          "cueIndex": 0,
+          "start": 0,
+          "end": 56,
+          "languageId": "de",
+          "letterCount": 48
+        },
+        {
+          "cueIndex": 1,
+          "start": 0,
+          "end": 45,
+          "languageId": "de",
+          "letterCount": 38
+        },
+        {
+          "cueIndex": 2,
+          "start": 0,
+          "end": 138,
+          "languageId": "en",
+          "letterCount": 110
+        }
+      ],
+      "expected": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "phenomena": [
+        "cue-weight"
+      ],
+      "reviewBasis": "原创句段先按词汇和语法标注语言；Unicode 字母数确定唯一最大值或并列，未归属的名字/音节不计入任一语言，重复句段只计一次。未调用检测器。"
+    },
+    {
+      "caseId": "mixed-v2-deduplicate",
+      "file": "versions/022-corpus-2026-09-11-2/tracks/mixed-v2-deduplicate.srt",
+      "sha256": "3fd984bd44025b1d8cd193be45d6c3ea7d748809eb4a2fd6f292b93a18399062",
+      "bodyHash": "f1f5864b170b970c81d66ffe8f03595a9b05178edb8bfab36e3f07b65ea52a4c",
+      "sourceGroupIds": [
+        "authored-semantics-v2"
+      ],
+      "annotations": [
+        {
+          "cueIndex": 0,
+          "start": 0,
+          "end": 108,
+          "languageId": "de",
+          "letterCount": 90
+        },
+        {
+          "cueIndex": 1,
+          "start": 0,
+          "end": 108,
+          "languageId": "de",
+          "letterCount": 90
+        },
+        {
+          "cueIndex": 2,
+          "start": 0,
+          "end": 138,
+          "languageId": "en",
+          "letterCount": 110
+        }
+      ],
+      "expected": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "phenomena": [
+        "repeated"
+      ],
+      "reviewBasis": "原创句段先按词汇和语法标注语言；Unicode 字母数确定唯一最大值或并列，未归属的名字/音节不计入任一语言，重复句段只计一次。未调用检测器。"
+    },
+    {
+      "caseId": "mixed-v2-unassigned",
+      "file": "versions/022-corpus-2026-09-11-2/tracks/mixed-v2-unassigned.srt",
+      "sha256": "37ec5f80ca41e6ab56b78f17e94161406cb169ea2864b41f3ddcd6e90c9d1be2",
+      "bodyHash": "76d648437133fd50631d8df69696a29f1e5d76c439fb7e4f1a78b045f1e0f8ba",
+      "sourceGroupIds": [
+        "authored-semantics-v2"
+      ],
+      "annotations": [
+        {
+          "cueIndex": 0,
+          "start": 0,
+          "end": 138,
+          "languageId": "en",
+          "letterCount": 110
+        },
+        {
+          "cueIndex": 1,
+          "start": 0,
+          "end": 133,
+          "languageId": null,
+          "letterCount": 104
+        },
+        {
+          "cueIndex": 2,
+          "start": 0,
+          "end": 161,
+          "languageId": null,
+          "letterCount": 124
+        }
+      ],
+      "expected": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "phenomena": [
+        "names",
+        "romanized-japanese"
+      ],
+      "reviewBasis": "原创句段先按词汇和语法标注语言；Unicode 字母数确定唯一最大值或并列，未归属的名字/音节不计入任一语言，重复句段只计一次。未调用检测器。"
+    },
+    {
+      "caseId": "mixed-v2-translations",
+      "file": "versions/022-corpus-2026-09-11-2/tracks/mixed-v2-translations.srt",
+      "sha256": "4cb458951b82146e9565e0359bde417801a457a85e3360ff30c3caba28812e86",
+      "bodyHash": "dca055347b370d5d0d01a17d9f7fa1f2a3c349c4af9896d66105ea550e7d4638",
+      "sourceGroupIds": [
+        "authored-semantics-v2"
+      ],
+      "annotations": [
+        {
+          "cueIndex": 0,
+          "start": 0,
+          "end": 108,
+          "languageId": "de",
+          "letterCount": 90
+        },
+        {
+          "cueIndex": 1,
+          "start": 0,
+          "end": 138,
+          "languageId": "en",
+          "letterCount": 110
+        },
+        {
+          "cueIndex": 2,
+          "start": 0,
+          "end": 90,
+          "languageId": "fr",
+          "letterCount": 73
+        }
+      ],
+      "expected": {
+        "state": "reliable",
+        "languageId": "en"
+      },
+      "phenomena": [
+        "translations",
+        "same-script"
+      ],
+      "reviewBasis": "原创句段先按词汇和语法标注语言；Unicode 字母数确定唯一最大值或并列，未归属的名字/音节不计入任一语言，重复句段只计一次。未调用检测器。"
+    },
+    {
+      "caseId": "mixed-v2-malay",
+      "file": "versions/022-corpus-2026-09-11-2/tracks/mixed-v2-malay.srt",
+      "sha256": "2865c8d70f00387dd6df269bce544fdd1cc0b224c75347346f4e28522bea15d0",
+      "bodyHash": "cc1f284ab24c6428f7768f6014ff53439da5760c1d94e30ec5f065bdc25b7170",
+      "sourceGroupIds": [
+        "authored-semantics-v2"
+      ],
+      "annotations": [
+        {
+          "cueIndex": 0,
+          "start": 0,
+          "end": 184,
+          "languageId": "ms",
+          "letterCount": 152
+        }
+      ],
+      "expected": {
+        "state": "reliable",
+        "languageId": "ms"
+      },
+      "phenomena": [
+        "similar-language"
+      ],
+      "reviewBasis": "原创句段先按词汇和语法标注语言；Unicode 字母数确定唯一最大值或并列，未归属的名字/音节不计入任一语言，重复句段只计一次。未调用检测器。"
+    },
+    {
+      "caseId": "semantic-v2-calibration-boundary-mixed",
+      "file": "tracks/calibration-boundary-mixed.srt",
+      "sha256": "107e415f7e4928fe97be54bd9b8df8d59cb6b45e1de7c3cde80d87952232b2f9",
+      "bodyHash": "1b5d703def4090fe094539596aed3f1ebab299a5d43af9af3f995eb1fa03bcd0",
+      "sourceGroupIds": [
+        "authored-calibration"
+      ],
+      "annotations": [
+        {
+          "cueIndex": 0,
+          "start": 0,
+          "end": 23,
+          "languageId": "fr",
+          "letterCount": 19
+        },
+        {
+          "cueIndex": 1,
+          "start": 0,
+          "end": 27,
+          "languageId": "de",
+          "letterCount": 23
+        },
+        {
+          "cueIndex": 2,
+          "start": 0,
+          "end": 23,
+          "languageId": "en",
+          "letterCount": 19
+        }
+      ],
+      "expected": {
+        "state": "unknown"
+      },
+      "phenomena": [
+        "known-mixed",
+        "insufficient-evidence"
+      ],
+      "reviewBasis": "重新逐条阅读正文：各语言句段不足以提供充分可靠证据，或单句内仅有短促多语言呼喊；保留未知。此语义版本不覆盖旧清单，不据检测输出重标。"
+    },
+    {
+      "caseId": "semantic-v2-negative-ed-hu-61",
+      "file": "tracks/negative-ed-hu-61.srt",
+      "sha256": "b464a2bebc41f4b9570c86c5f65414350dde043531f545c95ad7876324a807c3",
+      "bodyHash": "a622daa84f4aa79292220e42b61c86480c62ddba56f2a1d8c3196b6dd0ac204d",
+      "sourceGroupIds": [
+        "elephants-dream"
+      ],
+      "annotations": [
+        {
+          "cueIndex": 0,
+          "start": 0,
+          "end": 26,
+          "languageId": "en",
+          "letterCount": 20
+        },
+        {
+          "cueIndex": 1,
+          "start": 0,
+          "end": 10,
+          "languageId": "hu",
+          "letterCount": 9
+        }
+      ],
+      "expected": {
+        "state": "unknown"
+      },
+      "phenomena": [
+        "known-mixed",
+        "insufficient-evidence"
+      ],
+      "reviewBasis": "重新逐条阅读正文：各语言句段不足以提供充分可靠证据，或单句内仅有短促多语言呼喊；保留未知。此语义版本不覆盖旧清单，不据检测输出重标。"
+    },
+    {
+      "caseId": "semantic-v2-negative-cosmos-fi-36",
+      "file": "tracks/negative-cosmos-fi-36.srt",
+      "sha256": "a8fb25508eb8f079a9c9bc82f9fd1bd3ad39d4fb3f24d86cc98aa3ab991c9cef",
+      "bodyHash": "ab80b233d9d02d31c3ce46bb8731733a37a2fd1a19210ae73e9c8730e5a65e2b",
+      "sourceGroupIds": [
+        "cosmos-laundromat"
+      ],
+      "annotations": [
+        {
+          "cueIndex": 0,
+          "start": 0,
+          "end": 42,
+          "languageId": "fi",
+          "letterCount": 32
+        },
+        {
+          "cueIndex": 1,
+          "start": 0,
+          "end": 37,
+          "languageId": "en",
+          "letterCount": 28
+        }
+      ],
+      "expected": {
+        "state": "unknown"
+      },
+      "phenomena": [
+        "known-mixed",
+        "insufficient-evidence"
+      ],
+      "reviewBasis": "重新逐条阅读正文：各语言句段不足以提供充分可靠证据，或单句内仅有短促多语言呼喊；保留未知。此语义版本不覆盖旧清单，不据检测输出重标。"
+    },
+    {
+      "caseId": "semantic-v2-negative-tos-id-21",
+      "file": "tracks/negative-tos-id-21.srt",
+      "sha256": "25874d961fbad3d220196fa5a83865700810c6b418c703ff6bdc70576e20663d",
+      "bodyHash": "302e61a6f78d9e95c8e138aa36cc5acf909e1487c0f58e0bac9892f6201fb991",
+      "sourceGroupIds": [
+        "tears-of-steel"
+      ],
+      "annotations": [
+        {
+          "cueIndex": 0,
+          "start": 0,
+          "end": 24,
+          "languageId": null,
+          "letterCount": 17
+        }
+      ],
+      "expected": {
+        "state": "unknown"
+      },
+      "phenomena": [
+        "known-mixed",
+        "insufficient-evidence"
+      ],
+      "reviewBasis": "重新逐条阅读正文：各语言句段不足以提供充分可靠证据，或单句内仅有短促多语言呼喊；保留未知。此语义版本不覆盖旧清单，不据检测输出重标。"
+    },
+    {
+      "caseId": "semantic-v2-acceptance-boundary-mixed",
+      "file": "tracks/acceptance-boundary-mixed.srt",
+      "sha256": "c201641f7687e68c17ffdba940f0e7e48bc762d7d8c8c8ccbfea87cffda43658",
+      "bodyHash": "d1c60d277160946908da87676975e544af2cf1eafdf95eb43cedf3ba0c552a15",
+      "sourceGroupIds": [
+        "authored-acceptance"
+      ],
+      "annotations": [
+        {
+          "cueIndex": 0,
+          "start": 0,
+          "end": 27,
+          "languageId": "es",
+          "letterCount": 23
+        },
+        {
+          "cueIndex": 1,
+          "start": 0,
+          "end": 26,
+          "languageId": "de",
+          "letterCount": 22
+        },
+        {
+          "cueIndex": 2,
+          "start": 0,
+          "end": 22,
+          "languageId": "fr",
+          "letterCount": 19
+        }
+      ],
+      "expected": {
+        "state": "unknown"
+      },
+      "phenomena": [
+        "known-mixed",
+        "insufficient-evidence"
+      ],
+      "reviewBasis": "重新逐条阅读正文：各语言句段不足以提供充分可靠证据，或单句内仅有短促多语言呼喊；保留未知。此语义版本不覆盖旧清单，不据检测输出重标。"
+    }
+  ],
+  "manifestHash": "5ffcc35d1485810c220b55d79977c4ac7661f8ccb3ac21c4e739e1b0357f77f0"
+}

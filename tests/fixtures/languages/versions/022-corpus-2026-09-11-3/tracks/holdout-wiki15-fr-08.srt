@@ -1,0 +1,19 @@
+1
+00:01:18,825 --> 00:01:20,175
+Prix Nobel
+
+2
+00:01:20,175 --> 00:01:21,112
+Physique, Chimie, Physiologie ou Médecine
+
+3
+00:01:21,112 --> 00:01:21,742
+Littérature, Paix, Économie
+
+4
+00:01:21,742 --> 00:01:23,142
+Liste des lauréats
+
+5
+00:01:25,471 --> 00:01:26,301
+Éclipse solaire du 20 mars 2015

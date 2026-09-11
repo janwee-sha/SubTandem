@@ -133,18 +133,18 @@ describe("frozen language corpus", () => {
 });
 
 describe("versioned language corpus purposes", () => {
-  it("keeps evaluated works reproducible and separates 420 fresh natural positives from semantic cases", () => {
+  it("keeps evaluated works reproducible and separates at least 400 fresh natural positives from semantic cases", () => {
     const index = loadCorpusVersionIndex();
     const known = index.versions.find((entry) => entry.purpose === "known-regression")!;
     expect(validateCorpusPurpose(index, "known-regression", known.version)).toBe(known);
     const calibration = loadVersionedLanguageCorpus("calibration");
     const holdout = loadVersionedLanguageCorpus("holdout");
-    expect(calibration.tracks.length).toBe(315);
-    expect(holdout.tracks.length).toBe(427);
-    expect(holdout.manifest.languages).toHaveLength(21);
+    expect(calibration.tracks.length).toBe(749);
+    expect(holdout.tracks.length).toBe(407);
+    expect(holdout.manifest.languages).toHaveLength(20);
     expect(
       holdout.tracks.filter(({ record }) => record.languageTruth.kind === "positive"),
-    ).toHaveLength(420);
+    ).toHaveLength(400);
     expect(holdout.tracks.filter(({ record }) => record.format === "ass")).toHaveLength(1);
     expect(
       calibration.tracks.some(
@@ -164,7 +164,9 @@ describe("versioned language corpus purposes", () => {
 
   it("rejects evaluated or wrong-purpose material as a fresh holdout", () => {
     const index = structuredClone(loadCorpusVersionIndex());
-    const holdout = index.versions.find((entry) => entry.purpose === "holdout")!;
+    const holdout = index.versions.find(
+      (entry) => entry.version === index.activeVersion && entry.purpose === "holdout",
+    )!;
     holdout.evaluation.state = "evaluated";
     expect(() => validateCorpusPurpose(index, "holdout")).toThrow("evaluated-holdout");
     expect(() => validateCorpusPurpose(index, "holdout", index.versions[0]!.version)).toThrow(

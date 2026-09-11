@@ -1,0 +1,19 @@
+1
+00:01:21,112 --> 00:01:21,742
+Literatura, Paz, Economía
+
+2
+00:01:21,742 --> 00:01:23,142
+Lista de premiados
+
+3
+00:01:25,471 --> 00:01:26,301
+Eclipse solar del 20 de marzo de 2015
+
+4
+00:01:27,727 --> 00:01:28,517
+Subir archivo
+
+5
+00:01:28,517 --> 00:01:29,257
+Visibilidad del eclipse

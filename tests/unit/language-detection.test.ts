@@ -188,6 +188,43 @@ describe("language reliability", () => {
       languageId: sample.record.languageTruth.languageId,
     });
   });
+  it.each(["acceptance-es-18", "acceptance-pt-13", "acceptance-ru-19", "acceptance-sv-14"])(
+    "uses calibrated model evidence for close-language competition (%s)",
+    (id) => {
+      const sample = calibration.find(({ record }) => record.sampleId === id)!;
+      expect(detectSubtitleLanguage(sample.cues)).toEqual({
+        state: "reliable",
+        languageId: sample.record.languageTruth.languageId,
+      });
+    },
+  );
+  it.each([
+    "acceptance-id-13",
+    "acceptance-id-15",
+    "acceptance-id-17",
+    "acceptance-id-20",
+    "holdout-scp-id-07",
+    "holdout-scp-id-10",
+    "holdout-scp-id-14",
+    "holdout-scp-id-18",
+    "holdout-scp-id-20",
+  ])("uses shared Malay-model evidence to identify Indonesian (%s)", (id) => {
+    const sample = calibration.find(({ record }) => record.sampleId === id)!;
+    expect(detectSubtitleLanguage(sample.cues)).toEqual({
+      state: "reliable",
+      languageId: "id",
+    });
+  });
+  it.each(["acceptance-ru-15", "holdout-scp-sv-01"])(
+    "uses lexical evidence to resolve close-language competition (%s)",
+    (id) => {
+      const sample = calibration.find(({ record }) => record.sampleId === id)!;
+      expect(detectSubtitleLanguage(sample.cues)).toEqual({
+        state: "reliable",
+        languageId: sample.record.languageTruth.languageId,
+      });
+    },
+  );
   it("keeps each macro-language score paired with its highest-scoring model", () => {
     for (const candidates of [
       [
@@ -231,6 +268,16 @@ describe("language reliability", () => {
     expect(negatives.length).toBeGreaterThan(0);
     for (const sample of negatives)
       expect(detectSubtitleLanguage(sample.cues).state, sample.record.sampleId).toBe("unknown");
+  });
+  it("rejects uniform synthetic syllable sequences", () => {
+    const input = [
+      cue(0, "sova renu kalim pador veshi numel toran lisek mavir ponel rusi dakem volar senik"),
+    ];
+    const decisions = [...createLanguageDetectionWork(input)].flatMap((step) =>
+      step.evidence ? [step.evidence] : [],
+    );
+    expect(detectSubtitleLanguage(input)).toEqual({ state: "unknown", reason: "ambiguous" });
+    expect(decisions).toContainEqual(expect.objectContaining({ reason: "fabricated" }));
   });
   it("preserves full model competition and unmapped winners", () => {
     expect(
@@ -302,5 +349,5 @@ it.skipIf(process.env.SUBTANDEM_LANGUAGE_CALIBRATION !== "1")(
       "No parameter candidate satisfies the frozen calibration constraints",
     ).toBeGreaterThan(0);
   },
-  120_000,
+  180_000,
 );

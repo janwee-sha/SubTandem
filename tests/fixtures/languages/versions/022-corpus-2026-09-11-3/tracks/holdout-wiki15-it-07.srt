@@ -1,0 +1,19 @@
+1
+00:01:18,825 --> 00:01:20,175
+Premio Nobel
+
+2
+00:01:20,175 --> 00:01:21,112
+Fisica, chimica, fisiologia o medicina
+
+3
+00:01:21,112 --> 00:01:21,742
+letteratura, pace, economina
+
+4
+00:01:21,742 --> 00:01:23,142
+Lista di laureati
+
+5
+00:01:25,471 --> 00:01:26,301
+Eclissi solare del 20 marzo 2015
