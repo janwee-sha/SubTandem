@@ -1,0 +1,3134 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "c14a358",
+  "algorithmSha256": "b84309d0a9df46125b609d4f6e5d051ad4839a50a15f565d9c02bd1cf28344c0",
+  "calibrationManifestHash": "f0aceed87ef627d6b0418fd78edc74d600aa540fdaa7be2ad00229fb3744d89a",
+  "summary": {
+    "overall": {
+      "total": 315,
+      "positive": 303,
+      "negative": 12,
+      "correct": 240,
+      "unknown": 61,
+      "wrong": 14,
+      "negativeReliable": 0,
+      "correctRate": 0.7920792079207921,
+      "wrongRate": 0.044444444444444446,
+      "negativeReliableRate": 0
+    },
+    "byLanguage": {
+      "bg": {
+        "total": 1,
+        "positive": 1,
+        "negative": 0,
+        "correct": 1,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "cs": {
+        "total": 16,
+        "positive": 16,
+        "negative": 0,
+        "correct": 11,
+        "unknown": 5,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0.6875,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "da": {
+        "total": 15,
+        "positive": 15,
+        "negative": 0,
+        "correct": 11,
+        "unknown": 0,
+        "wrong": 4,
+        "negativeReliable": 0,
+        "correctRate": 0.7333333333333333,
+        "wrongRate": 0.26666666666666666,
+        "negativeReliableRate": 0
+      },
+      "de": {
+        "total": 17,
+        "positive": 17,
+        "negative": 0,
+        "correct": 17,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "el": {
+        "total": 13,
+        "positive": 13,
+        "negative": 0,
+        "correct": 13,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "en": {
+        "total": 16,
+        "positive": 16,
+        "negative": 0,
+        "correct": 11,
+        "unknown": 5,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0.6875,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "es": {
+        "total": 16,
+        "positive": 16,
+        "negative": 0,
+        "correct": 13,
+        "unknown": 1,
+        "wrong": 2,
+        "negativeReliable": 0,
+        "correctRate": 0.8125,
+        "wrongRate": 0.125,
+        "negativeReliableRate": 0
+      },
+      "fa": {
+        "total": 12,
+        "positive": 12,
+        "negative": 0,
+        "correct": 10,
+        "unknown": 2,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0.8333333333333334,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "fi": {
+        "total": 12,
+        "positive": 12,
+        "negative": 0,
+        "correct": 10,
+        "unknown": 2,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0.8333333333333334,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "fr": {
+        "total": 16,
+        "positive": 16,
+        "negative": 0,
+        "correct": 14,
+        "unknown": 2,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0.875,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "gl": {
+        "total": 1,
+        "positive": 1,
+        "negative": 0,
+        "correct": 1,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "he": {
+        "total": 14,
+        "positive": 14,
+        "negative": 0,
+        "correct": 14,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "hu": {
+        "total": 16,
+        "positive": 16,
+        "negative": 0,
+        "correct": 14,
+        "unknown": 2,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0.875,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "id": {
+        "total": 16,
+        "positive": 16,
+        "negative": 0,
+        "correct": 8,
+        "unknown": 4,
+        "wrong": 4,
+        "negativeReliable": 0,
+        "correctRate": 0.5,
+        "wrongRate": 0.25,
+        "negativeReliableRate": 0
+      },
+      "it": {
+        "total": 16,
+        "positive": 16,
+        "negative": 0,
+        "correct": 13,
+        "unknown": 3,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0.8125,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "ja": {
+        "total": 16,
+        "positive": 16,
+        "negative": 0,
+        "correct": 11,
+        "unknown": 5,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0.6875,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "negative": {
+        "total": 12,
+        "positive": 0,
+        "negative": 12,
+        "correct": 0,
+        "unknown": 12,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "nl": {
+        "total": 16,
+        "positive": 16,
+        "negative": 0,
+        "correct": 12,
+        "unknown": 4,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0.75,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "no": {
+        "total": 1,
+        "positive": 1,
+        "negative": 0,
+        "correct": 1,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "pl": {
+        "total": 16,
+        "positive": 16,
+        "negative": 0,
+        "correct": 15,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0.9375,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "pt": {
+        "total": 15,
+        "positive": 15,
+        "negative": 0,
+        "correct": 11,
+        "unknown": 4,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0.7333333333333333,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "ru": {
+        "total": 15,
+        "positive": 15,
+        "negative": 0,
+        "correct": 10,
+        "unknown": 1,
+        "wrong": 4,
+        "negativeReliable": 0,
+        "correctRate": 0.6666666666666666,
+        "wrongRate": 0.26666666666666666,
+        "negativeReliableRate": 0
+      },
+      "sv": {
+        "total": 11,
+        "positive": 11,
+        "negative": 0,
+        "correct": 10,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0.9090909090909091,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "zh": {
+        "total": 16,
+        "positive": 16,
+        "negative": 0,
+        "correct": 9,
+        "unknown": 7,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0.5625,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      }
+    },
+    "byPhenomenon": {
+      "ass-styling": {
+        "total": 1,
+        "positive": 1,
+        "negative": 0,
+        "correct": 1,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "authored-boundary": {
+        "total": 10,
+        "positive": 0,
+        "negative": 10,
+        "correct": 0,
+        "unknown": 10,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "digits": {
+        "total": 1,
+        "positive": 0,
+        "negative": 1,
+        "correct": 0,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "insufficient-evidence": {
+        "total": 1,
+        "positive": 0,
+        "negative": 1,
+        "correct": 0,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "links": {
+        "total": 1,
+        "positive": 0,
+        "negative": 1,
+        "correct": 0,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "long": {
+        "total": 4,
+        "positive": 4,
+        "negative": 0,
+        "correct": 4,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "lyrics": {
+        "total": 2,
+        "positive": 0,
+        "negative": 2,
+        "correct": 0,
+        "unknown": 2,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "meaningless": {
+        "total": 1,
+        "positive": 0,
+        "negative": 1,
+        "correct": 0,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "medium": {
+        "total": 55,
+        "positive": 55,
+        "negative": 0,
+        "correct": 40,
+        "unknown": 11,
+        "wrong": 4,
+        "negativeReliable": 0,
+        "correctRate": 0.7272727272727273,
+        "wrongRate": 0.07272727272727272,
+        "negativeReliableRate": 0
+      },
+      "names": {
+        "total": 2,
+        "positive": 0,
+        "negative": 2,
+        "correct": 0,
+        "unknown": 2,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "over-2048-code-units": {
+        "total": 2,
+        "positive": 2,
+        "negative": 0,
+        "correct": 2,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "repeated": {
+        "total": 2,
+        "positive": 0,
+        "negative": 2,
+        "correct": 0,
+        "unknown": 2,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "romanized-japanese": {
+        "total": 2,
+        "positive": 0,
+        "negative": 2,
+        "correct": 0,
+        "unknown": 2,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "shared-script": {
+        "total": 218,
+        "positive": 217,
+        "negative": 1,
+        "correct": 173,
+        "unknown": 35,
+        "wrong": 10,
+        "negativeReliable": 0,
+        "correctRate": 0.7972350230414746,
+        "wrongRate": 0.045871559633027525,
+        "negativeReliableRate": 0
+      },
+      "short": {
+        "total": 256,
+        "positive": 244,
+        "negative": 12,
+        "correct": 196,
+        "unknown": 50,
+        "wrong": 10,
+        "negativeReliable": 0,
+        "correctRate": 0.8032786885245902,
+        "wrongRate": 0.0390625,
+        "negativeReliableRate": 0
+      },
+      "similar-language": {
+        "total": 3,
+        "positive": 3,
+        "negative": 0,
+        "correct": 3,
+        "unknown": 0,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 1,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "sufficient-length-negative": {
+        "total": 4,
+        "positive": 0,
+        "negative": 4,
+        "correct": 0,
+        "unknown": 4,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      },
+      "symbols": {
+        "total": 1,
+        "positive": 0,
+        "negative": 1,
+        "correct": 0,
+        "unknown": 1,
+        "wrong": 0,
+        "negativeReliable": 0,
+        "correctRate": 0,
+        "wrongRate": 0,
+        "negativeReliableRate": 0
+      }
+    },
+    "mixedFailures": []
+  },
+  "ablations": {
+    "cue-no-newline": {
+      "overall": {
+        "total": 315,
+        "positive": 303,
+        "negative": 12,
+        "correct": 249,
+        "unknown": 56,
+        "wrong": 10,
+        "negativeReliable": 0,
+        "correctRate": 0.8217821782178217,
+        "wrongRate": 0.031746031746031744,
+        "negativeReliableRate": 0
+      },
+      "mixedFailures": []
+    },
+    "context-0": {
+      "overall": {
+        "total": 315,
+        "positive": 303,
+        "negative": 12,
+        "correct": 212,
+        "unknown": 89,
+        "wrong": 14,
+        "negativeReliable": 0,
+        "correctRate": 0.6996699669966997,
+        "wrongRate": 0.044444444444444446,
+        "negativeReliableRate": 0
+      },
+      "mixedFailures": []
+    },
+    "context-0.8": {
+      "overall": {
+        "total": 315,
+        "positive": 303,
+        "negative": 12,
+        "correct": 252,
+        "unknown": 47,
+        "wrong": 16,
+        "negativeReliable": 0,
+        "correctRate": 0.8316831683168316,
+        "wrongRate": 0.050793650793650794,
+        "negativeReliableRate": 0
+      },
+      "mixedFailures": []
+    },
+    "context-0.95": {
+      "overall": {
+        "total": 315,
+        "positive": 303,
+        "negative": 12,
+        "correct": 256,
+        "unknown": 44,
+        "wrong": 15,
+        "negativeReliable": 0,
+        "correctRate": 0.8448844884488449,
+        "wrongRate": 0.047619047619047616,
+        "negativeReliableRate": 0
+      },
+      "mixedFailures": []
+    },
+    "context-1": {
+      "overall": {
+        "total": 315,
+        "positive": 303,
+        "negative": 12,
+        "correct": 256,
+        "unknown": 46,
+        "wrong": 13,
+        "negativeReliable": 0,
+        "correctRate": 0.8448844884488449,
+        "wrongRate": 0.04126984126984127,
+        "negativeReliableRate": 0
+      },
+      "mixedFailures": [
+        "mixed-v2-40-35-25"
+      ]
+    }
+  },
+  "rawFragmentWinnerDiagnostic": {
+    "total": 315,
+    "positive": 303,
+    "negative": 12,
+    "correct": 283,
+    "unknown": 9,
+    "wrong": 23,
+    "negativeReliable": 6,
+    "correctRate": 0.933993399339934,
+    "wrongRate": 0.07301587301587302,
+    "negativeReliableRate": 0.5
+  },
+  "failures": [
+    {
+      "sampleId": "calibration-en-02",
+      "truth": "en",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 159,
+      "assigned": {
+        "hmn": 15,
+        "en": 52,
+        "no": 36,
+        "it": 14,
+        "model:tpi": 20
+      },
+      "rawFragmentWinner": "en",
+      "contexts": [
+        {
+          "letters": 159,
+          "top": [
+            [
+              "en",
+              1
+            ],
+            [
+              "model:sco",
+              0.9357386679368104
+            ],
+            [
+              "no",
+              0.9085099626895292
+            ],
+            [
+              "af",
+              0.9075970469159323
+            ],
+            [
+              "da",
+              0.9033500039691991
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "calibration-it-02",
+      "truth": "it",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 172,
+      "assigned": {
+        "it": 61,
+        "model:men": 12,
+        "pt": 36,
+        "model:nds": 14,
+        "ca": 42
+      },
+      "rawFragmentWinner": "it",
+      "contexts": [
+        {
+          "letters": 172,
+          "top": [
+            [
+              "it",
+              1
+            ],
+            [
+              "ca",
+              0.9313110066717061
+            ],
+            [
+              "es",
+              0.9272685443849213
+            ],
+            [
+              "gl",
+              0.9067933085746213
+            ],
+            [
+              "ro",
+              0.8954218292963486
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "calibration-ru-03",
+      "truth": "ru",
+      "result": {
+        "state": "reliable",
+        "languageId": "mk"
+      },
+      "sampleLetters": 201,
+      "assigned": {
+        "bg": 15,
+        "ru": 47,
+        "mk": 49
+      },
+      "rawFragmentWinner": "ru",
+      "contexts": [
+        {
+          "letters": 201,
+          "top": [
+            [
+              "ru",
+              1
+            ],
+            [
+              "bg",
+              0.9997555277883414
+            ],
+            [
+              "mk",
+              0.987531917205411
+            ],
+            [
+              "bs",
+              0.9812028032813603
+            ],
+            [
+              "sr",
+              0.9728635845058945
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "calibration-fi-03",
+      "truth": "fi",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 210,
+      "assigned": {
+        "et": 20,
+        "model:ada": 14,
+        "model:bug": 26,
+        "model:ilo": 17,
+        "ha": 18,
+        "fi": 52,
+        "wo": 25
+      },
+      "rawFragmentWinner": "fi",
+      "contexts": [
+        {
+          "letters": 210,
+          "top": [
+            [
+              "fi",
+              1
+            ],
+            [
+              "model:ilo",
+              0.9642196350801286
+            ],
+            [
+              "model:bug",
+              0.9455182032962341
+            ],
+            [
+              "model:snk",
+              0.9451766246335146
+            ],
+            [
+              "ht",
+              0.9416469784520793
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "calibration-pt-02",
+      "truth": "pt",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 166,
+      "assigned": {
+        "pt": 55,
+        "es": 24,
+        "lt": 13,
+        "gl": 37,
+        "su": 19,
+        "fr": 18
+      },
+      "rawFragmentWinner": "pt",
+      "contexts": [
+        {
+          "letters": 166,
+          "top": [
+            [
+              "pt",
+              1
+            ],
+            [
+              "gl",
+              0.975906479096493
+            ],
+            [
+              "es",
+              0.9267683772538141
+            ],
+            [
+              "ca",
+              0.8734693877551021
+            ],
+            [
+              "model:src",
+              0.8320586487021994
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "calibration-nl-03",
+      "truth": "nl",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 175,
+      "assigned": {
+        "nl": 46,
+        "no": 12,
+        "de": 43,
+        "af": 16,
+        "model:nds": 12,
+        "model:sco": 21
+      },
+      "rawFragmentWinner": "nl",
+      "contexts": [
+        {
+          "letters": 175,
+          "top": [
+            [
+              "nl",
+              1
+            ],
+            [
+              "model:nds",
+              0.9623112848919301
+            ],
+            [
+              "de",
+              0.9578853046594982
+            ],
+            [
+              "af",
+              0.9574236993591833
+            ],
+            [
+              "model:sco",
+              0.924079504724666
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "calibration-cs-03",
+      "truth": "cs",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 175,
+      "assigned": {
+        "sl": 37,
+        "model:nhn": 12,
+        "ss": 28,
+        "hu": 29,
+        "ca": 23,
+        "model:ada": 18
+      },
+      "rawFragmentWinner": "hu",
+      "contexts": [
+        {
+          "letters": 175,
+          "top": [
+            [
+              "hu",
+              1
+            ],
+            [
+              "sl",
+              0.97246595075956
+            ],
+            [
+              "model:src",
+              0.9708289680460974
+            ],
+            [
+              "model:ada",
+              0.9690282870612886
+            ],
+            [
+              "model:snk",
+              0.9684717129387114
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "calibration-id-03",
+      "truth": "id",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 203,
+      "assigned": {
+        "model:snk": 25,
+        "ms": 30,
+        "fil": 22,
+        "su": 23,
+        "id": 59,
+        "model:ilo": 26
+      },
+      "rawFragmentWinner": "id",
+      "contexts": [
+        {
+          "letters": 203,
+          "top": [
+            [
+              "id",
+              1
+            ],
+            [
+              "ms",
+              0.9958405324118513
+            ],
+            [
+              "fil",
+              0.9621168490433225
+            ],
+            [
+              "su",
+              0.9446044239670656
+            ],
+            [
+              "pam",
+              0.9330432371323137
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "calibration-ja-02",
+      "truth": "ja",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 64,
+      "assigned": {
+        "ja": 30
+      },
+      "rawFragmentWinner": "ja",
+      "contexts": [
+        {
+          "letters": 64,
+          "top": [
+            [
+              "ja",
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "calibration-ja-03",
+      "truth": "ja",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 89,
+      "assigned": {
+        "ja": 37
+      },
+      "rawFragmentWinner": "ja",
+      "contexts": [
+        {
+          "letters": 89,
+          "top": [
+            [
+              "ja",
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "calibration-zh-02",
+      "truth": "zh",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 66,
+      "assigned": {
+        "zh": 32
+      },
+      "rawFragmentWinner": "zh",
+      "contexts": [
+        {
+          "letters": 66,
+          "top": [
+            [
+              "zh",
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "calibration-zh-03",
+      "truth": "zh",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 60,
+      "assigned": {
+        "zh": 10
+      },
+      "rawFragmentWinner": "zh",
+      "contexts": [
+        {
+          "letters": 60,
+          "top": [
+            [
+              "zh",
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-en-10",
+      "truth": "en",
+      "result": {
+        "state": "unknown",
+        "reason": "unmapped"
+      },
+      "sampleLetters": 156,
+      "assigned": {
+        "model:bum": 19,
+        "ee": 11,
+        "model:sco": 65,
+        "model:tiv": 22,
+        "en": 39
+      },
+      "rawFragmentWinner": "model:sco",
+      "contexts": [
+        {
+          "letters": 156,
+          "top": [
+            [
+              "model:sco",
+              1
+            ],
+            [
+              "en",
+              0.9909056219791401
+            ],
+            [
+              "da",
+              0.9349084202493004
+            ],
+            [
+              "no",
+              0.9202493004324599
+            ],
+            [
+              "model:tiv",
+              0.9089608242177563
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-en-13",
+      "truth": "en",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 222,
+      "assigned": {
+        "et": 42,
+        "es": 18,
+        "lt": 27,
+        "model:rmn": 25,
+        "ht": 10,
+        "mg": 19,
+        "model:bem": 12,
+        "model:sco": 39,
+        "en": 20
+      },
+      "rawFragmentWinner": "en",
+      "contexts": [
+        {
+          "letters": 222,
+          "top": [
+            [
+              "en",
+              1
+            ],
+            [
+              "model:sco",
+              0.9836236778952981
+            ],
+            [
+              "no",
+              0.950626610967914
+            ],
+            [
+              "da",
+              0.9431383876988713
+            ],
+            [
+              "af",
+              0.9421606968269487
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-en-15",
+      "truth": "en",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 196,
+      "assigned": {
+        "model:nyn": 20,
+        "model:sco": 32,
+        "model:tpi": 21,
+        "ht": 9,
+        "model:tiv": 10,
+        "model:snk": 11,
+        "model:nds": 36
+      },
+      "rawFragmentWinner": "model:sco",
+      "contexts": [
+        {
+          "letters": 196,
+          "top": [
+            [
+              "model:sco",
+              1
+            ],
+            [
+              "en",
+              0.9824946306089929
+            ],
+            [
+              "nl",
+              0.9362601325604489
+            ],
+            [
+              "model:nds",
+              0.9348513891134154
+            ],
+            [
+              "no",
+              0.932588161936214
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-en-19",
+      "truth": "en",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 99,
+      "assigned": {
+        "lua": 15,
+        "model:sco": 26,
+        "hmn": 38
+      },
+      "rawFragmentWinner": "model:sco",
+      "contexts": [
+        {
+          "letters": 99,
+          "top": [
+            [
+              "model:sco",
+              1
+            ],
+            [
+              "hmn",
+              0.9711412631723948
+            ],
+            [
+              "en",
+              0.9547489496521799
+            ],
+            [
+              "no",
+              0.9110131551759764
+            ],
+            [
+              "sq",
+              0.8818100420139128
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-hu-12",
+      "truth": "hu",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 180,
+      "assigned": {
+        "pam": 41,
+        "model:bin": 11,
+        "hu": 61,
+        "model:mos": 24
+      },
+      "rawFragmentWinner": "hu",
+      "contexts": [
+        {
+          "letters": 180,
+          "top": [
+            [
+              "hu",
+              1
+            ],
+            [
+              "model:mos",
+              0.8832665709319023
+            ],
+            [
+              "pam",
+              0.8593832665709319
+            ],
+            [
+              "gl",
+              0.8493311163177386
+            ],
+            [
+              "pt",
+              0.8417353185700249
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-hu-13",
+      "truth": "hu",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 123,
+      "assigned": {
+        "hu": 45,
+        "ht": 19,
+        "wo": 16,
+        "fi": 12,
+        "gl": 9,
+        "model:tiv": 12
+      },
+      "rawFragmentWinner": "ht",
+      "contexts": [
+        {
+          "letters": 123,
+          "top": [
+            [
+              "ht",
+              1
+            ],
+            [
+              "hu",
+              0.9992104016423646
+            ],
+            [
+              "model:bum",
+              0.9752066115702479
+            ],
+            [
+              "no",
+              0.9647839132494604
+            ],
+            [
+              "model:tiv",
+              0.9490445859872612
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-it-08",
+      "truth": "it",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 130,
+      "assigned": {
+        "model:src": 22,
+        "ms": 11,
+        "it": 36,
+        "gl": 45
+      },
+      "rawFragmentWinner": "it",
+      "contexts": [
+        {
+          "letters": 130,
+          "top": [
+            [
+              "it",
+              1
+            ],
+            [
+              "model:src",
+              0.9476151651039544
+            ],
+            [
+              "gl",
+              0.9320729718711781
+            ],
+            [
+              "pt",
+              0.9207093355075417
+            ],
+            [
+              "es",
+              0.8746942519364044
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-it-13",
+      "truth": "it",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 134,
+      "assigned": {
+        "model:rmn": 16,
+        "it": 64,
+        "model:fuf": 18,
+        "model:rup": 13,
+        "pt": 8
+      },
+      "rawFragmentWinner": "it",
+      "contexts": [
+        {
+          "letters": 134,
+          "top": [
+            [
+              "it",
+              1
+            ],
+            [
+              "gl",
+              0.9205475891348611
+            ],
+            [
+              "model:vec",
+              0.9058181345578997
+            ],
+            [
+              "model:src",
+              0.8993198457739462
+            ],
+            [
+              "es",
+              0.895420872503574
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-ru-13",
+      "truth": "ru",
+      "result": {
+        "state": "reliable",
+        "languageId": "mk"
+      },
+      "sampleLetters": 193,
+      "assigned": {
+        "bg": 45,
+        "ru": 36,
+        "sr": 17,
+        "mk": 63,
+        "bs": 16
+      },
+      "rawFragmentWinner": "ru",
+      "contexts": [
+        {
+          "letters": 193,
+          "top": [
+            [
+              "ru",
+              1
+            ],
+            [
+              "bg",
+              0.9782466256060804
+            ],
+            [
+              "bs",
+              0.965076660988075
+            ],
+            [
+              "mk",
+              0.9593434674354606
+            ],
+            [
+              "sr",
+              0.9501375966452628
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-ru-15",
+      "truth": "ru",
+      "result": {
+        "state": "reliable",
+        "languageId": "bs"
+      },
+      "sampleLetters": 212,
+      "assigned": {
+        "ru": 18,
+        "uk": 16,
+        "bs": 45,
+        "tg": 15,
+        "sr": 20,
+        "bg": 27,
+        "mk": 23
+      },
+      "rawFragmentWinner": "bg",
+      "contexts": [
+        {
+          "letters": 212,
+          "top": [
+            [
+              "bg",
+              1
+            ],
+            [
+              "mk",
+              0.9979659703612824
+            ],
+            [
+              "bs",
+              0.99270332224841
+            ],
+            [
+              "sr",
+              0.9900235689148613
+            ],
+            [
+              "ru",
+              0.9226745875439899
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-ru-18",
+      "truth": "ru",
+      "result": {
+        "state": "reliable",
+        "languageId": "bg"
+      },
+      "sampleLetters": 168,
+      "assigned": {
+        "bg": 42,
+        "ru": 38,
+        "mk": 36
+      },
+      "rawFragmentWinner": "bg",
+      "contexts": [
+        {
+          "letters": 168,
+          "top": [
+            [
+              "bg",
+              1
+            ],
+            [
+              "ru",
+              0.9993782061246697
+            ],
+            [
+              "mk",
+              0.9882636406031401
+            ],
+            [
+              "sr",
+              0.9732240012435878
+            ],
+            [
+              "bs",
+              0.9702704803357687
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-ru-19",
+      "truth": "ru",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 115,
+      "assigned": {
+        "bs": 27,
+        "uk": 18,
+        "ru": 34,
+        "bg": 8
+      },
+      "rawFragmentWinner": "bg",
+      "contexts": [
+        {
+          "letters": 115,
+          "top": [
+            [
+              "bg",
+              1
+            ],
+            [
+              "ru",
+              0.9990307729585656
+            ],
+            [
+              "uk",
+              0.9957596316937243
+            ],
+            [
+              "bs",
+              0.9952144414829174
+            ],
+            [
+              "mk",
+              0.9794039253695178
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-sv-20",
+      "truth": "sv",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 94,
+      "assigned": {
+        "no": 46,
+        "model:vec": 24,
+        "ku": 11,
+        "gl": 8
+      },
+      "rawFragmentWinner": "sv",
+      "contexts": [
+        {
+          "letters": 94,
+          "top": [
+            [
+              "sv",
+              1
+            ],
+            [
+              "no",
+              0.9735879183021755
+            ],
+            [
+              "da",
+              0.9556250415807331
+            ],
+            [
+              "nl",
+              0.8785842591976581
+            ],
+            [
+              "af",
+              0.8655445412813518
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-fi-12",
+      "truth": "fi",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 125,
+      "assigned": {
+        "model:toi": 12,
+        "ku": 13,
+        "st": 13,
+        "model:vmw": 30,
+        "fi": 38,
+        "gl": 11
+      },
+      "rawFragmentWinner": "fi",
+      "contexts": [
+        {
+          "letters": 125,
+          "top": [
+            [
+              "fi",
+              1
+            ],
+            [
+              "model:vmw",
+              0.8741903037618186
+            ],
+            [
+              "pam",
+              0.8692013679340174
+            ],
+            [
+              "model:emk",
+              0.8691209012271173
+            ],
+            [
+              "model:ilo",
+              0.8653791993562663
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-es-08",
+      "truth": "es",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 129,
+      "assigned": {
+        "model:kng": 8,
+        "es": 64,
+        "eo": 10,
+        "gl": 36
+      },
+      "rawFragmentWinner": "es",
+      "contexts": [
+        {
+          "letters": 129,
+          "top": [
+            [
+              "es",
+              1
+            ],
+            [
+              "gl",
+              0.9333236630886761
+            ],
+            [
+              "pt",
+              0.9066821390581181
+            ],
+            [
+              "eo",
+              0.8514166908422783
+            ],
+            [
+              "it",
+              0.8417464461850885
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-es-13",
+      "truth": "es",
+      "result": {
+        "state": "reliable",
+        "languageId": "gl"
+      },
+      "sampleLetters": 135,
+      "assigned": {
+        "nl": 9,
+        "gl": 114,
+        "pt": 9
+      },
+      "rawFragmentWinner": "gl",
+      "contexts": [
+        {
+          "letters": 135,
+          "top": [
+            [
+              "gl",
+              1
+            ],
+            [
+              "es",
+              0.9487864517297591
+            ],
+            [
+              "pt",
+              0.9481072269516392
+            ],
+            [
+              "ca",
+              0.8483064662198877
+            ],
+            [
+              "model:src",
+              0.8416953450461873
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-es-18",
+      "truth": "es",
+      "result": {
+        "state": "reliable",
+        "languageId": "gl"
+      },
+      "sampleLetters": 155,
+      "assigned": {
+        "gl": 73,
+        "pl": 17,
+        "model:ibb": 9,
+        "es": 33
+      },
+      "rawFragmentWinner": "gl",
+      "contexts": [
+        {
+          "letters": 155,
+          "top": [
+            [
+              "gl",
+              1
+            ],
+            [
+              "es",
+              0.9869956652217405
+            ],
+            [
+              "pt",
+              0.9359369789929977
+            ],
+            [
+              "ca",
+              0.9009669889963321
+            ],
+            [
+              "model:vec",
+              0.8858786262087363
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-fr-08",
+      "truth": "fr",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 161,
+      "assigned": {
+        "model:kng": 18,
+        "lv": 13,
+        "fr": 62,
+        "no": 16
+      },
+      "rawFragmentWinner": "fr",
+      "contexts": [
+        {
+          "letters": 161,
+          "top": [
+            [
+              "fr",
+              1
+            ],
+            [
+              "model:src",
+              0.9235582552693209
+            ],
+            [
+              "ht",
+              0.9141173887587822
+            ],
+            [
+              "no",
+              0.9129830210772834
+            ],
+            [
+              "af",
+              0.8997365339578455
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-fr-19",
+      "truth": "fr",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 126,
+      "assigned": {
+        "fr": 47,
+        "model:src": 20,
+        "pt": 17,
+        "qu": 10,
+        "no": 11
+      },
+      "rawFragmentWinner": "fr",
+      "contexts": [
+        {
+          "letters": 126,
+          "top": [
+            [
+              "fr",
+              1
+            ],
+            [
+              "model:src",
+              0.8664017539051795
+            ],
+            [
+              "ro",
+              0.8393167077738193
+            ],
+            [
+              "gl",
+              0.8390426600895222
+            ],
+            [
+              "pt",
+              0.832237142596145
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-pt-13",
+      "truth": "pt",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 183,
+      "assigned": {
+        "model:vec": 38,
+        "pt": 58,
+        "es": 15,
+        "gl": 51,
+        "model:zyb": 13
+      },
+      "rawFragmentWinner": "gl",
+      "contexts": [
+        {
+          "letters": 183,
+          "top": [
+            [
+              "gl",
+              1
+            ],
+            [
+              "pt",
+              0.9813569584754135
+            ],
+            [
+              "es",
+              0.9710634500780777
+            ],
+            [
+              "model:vec",
+              0.9469071672137417
+            ],
+            [
+              "it",
+              0.9280729150068517
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-pt-16",
+      "truth": "pt",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 141,
+      "assigned": {
+        "model:src": 19,
+        "ln": 8,
+        "gl": 38,
+        "es": 9,
+        "pt": 50
+      },
+      "rawFragmentWinner": "pt",
+      "contexts": [
+        {
+          "letters": 141,
+          "top": [
+            [
+              "pt",
+              1
+            ],
+            [
+              "es",
+              0.9641056462653177
+            ],
+            [
+              "gl",
+              0.9626030919229357
+            ],
+            [
+              "model:src",
+              0.9135196500717887
+            ],
+            [
+              "it",
+              0.8994290293498948
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-pt-19",
+      "truth": "pt",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 136,
+      "assigned": {
+        "pt": 47,
+        "gl": 26,
+        "es": 17,
+        "model:vmw": 10,
+        "mg": 16,
+        "model:lun": 11
+      },
+      "rawFragmentWinner": "pt",
+      "contexts": [
+        {
+          "letters": 136,
+          "top": [
+            [
+              "pt",
+              1
+            ],
+            [
+              "gl",
+              0.9917129673227234
+            ],
+            [
+              "model:vec",
+              0.9231566060834353
+            ],
+            [
+              "model:src",
+              0.919013089744797
+            ],
+            [
+              "es",
+              0.9147283171673416
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-nl-17",
+      "truth": "nl",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 197,
+      "assigned": {
+        "nl": 47,
+        "model:nhn": 9,
+        "af": 54,
+        "model:bin": 25,
+        "no": 11,
+        "lt": 11
+      },
+      "rawFragmentWinner": "nl",
+      "contexts": [
+        {
+          "letters": 197,
+          "top": [
+            [
+              "nl",
+              1
+            ],
+            [
+              "af",
+              0.984188851301662
+            ],
+            [
+              "model:nds",
+              0.9728636564200618
+            ],
+            [
+              "de",
+              0.9264597734961024
+            ],
+            [
+              "no",
+              0.9191792910722165
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-nl-18",
+      "truth": "nl",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 185,
+      "assigned": {
+        "af": 49,
+        "nl": 61,
+        "model:nds": 46
+      },
+      "rawFragmentWinner": "nl",
+      "contexts": [
+        {
+          "letters": 185,
+          "top": [
+            [
+              "nl",
+              1
+            ],
+            [
+              "af",
+              0.9820241095557647
+            ],
+            [
+              "model:nds",
+              0.901739896152795
+            ],
+            [
+              "de",
+              0.8572860049190781
+            ],
+            [
+              "da",
+              0.8346946831445663
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-nl-19",
+      "truth": "nl",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 130,
+      "assigned": {
+        "id": 15,
+        "nl": 58,
+        "model:nds": 38,
+        "af": 11
+      },
+      "rawFragmentWinner": "nl",
+      "contexts": [
+        {
+          "letters": 130,
+          "top": [
+            [
+              "nl",
+              1
+            ],
+            [
+              "af",
+              0.9680921052631579
+            ],
+            [
+              "model:nds",
+              0.9646146616541353
+            ],
+            [
+              "de",
+              0.875422932330827
+            ],
+            [
+              "no",
+              0.8707236842105264
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-da-09",
+      "truth": "da",
+      "result": {
+        "state": "reliable",
+        "languageId": "no"
+      },
+      "sampleLetters": 157,
+      "assigned": {
+        "da": 49,
+        "uz": 17,
+        "no": 66,
+        "model:rmn": 15
+      },
+      "rawFragmentWinner": "da",
+      "contexts": [
+        {
+          "letters": 157,
+          "top": [
+            [
+              "da",
+              1
+            ],
+            [
+              "no",
+              0.9917834051724138
+            ],
+            [
+              "sv",
+              0.9295258620689655
+            ],
+            [
+              "af",
+              0.8277209051724138
+            ],
+            [
+              "de",
+              0.8271821120689655
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-da-10",
+      "truth": "da",
+      "result": {
+        "state": "reliable",
+        "languageId": "no"
+      },
+      "sampleLetters": 324,
+      "assigned": {
+        "no": 167,
+        "da": 124,
+        "model:tiv": 16
+      },
+      "rawFragmentWinner": "da",
+      "contexts": [
+        {
+          "letters": 324,
+          "top": [
+            [
+              "da",
+              1
+            ],
+            [
+              "no",
+              0.9838639009551469
+            ],
+            [
+              "af",
+              0.9252531827798155
+            ],
+            [
+              "nl",
+              0.9170411727150958
+            ],
+            [
+              "sv",
+              0.9151133532791708
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-da-15",
+      "truth": "da",
+      "result": {
+        "state": "reliable",
+        "languageId": "no"
+      },
+      "sampleLetters": 204,
+      "assigned": {
+        "da": 41,
+        "no": 125,
+        "fr": 9
+      },
+      "rawFragmentWinner": "da",
+      "contexts": [
+        {
+          "letters": 204,
+          "top": [
+            [
+              "da",
+              1
+            ],
+            [
+              "no",
+              0.9991720940501159
+            ],
+            [
+              "af",
+              0.9511259520918424
+            ],
+            [
+              "nl",
+              0.9440059609228392
+            ],
+            [
+              "sv",
+              0.9042664753284027
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-da-19",
+      "truth": "da",
+      "result": {
+        "state": "reliable",
+        "languageId": "no"
+      },
+      "sampleLetters": 126,
+      "assigned": {
+        "no": 89,
+        "af": 16,
+        "da": 13
+      },
+      "rawFragmentWinner": "da",
+      "contexts": [
+        {
+          "letters": 126,
+          "top": [
+            [
+              "da",
+              1
+            ],
+            [
+              "no",
+              0.989997153661611
+            ],
+            [
+              "sv",
+              0.8692310820152076
+            ],
+            [
+              "nl",
+              0.8669540113040296
+            ],
+            [
+              "af",
+              0.8624811938356443
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-cs-08",
+      "truth": "cs",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 156,
+      "assigned": {
+        "fr": 12,
+        "cs": 39,
+        "model:src": 15,
+        "sl": 12,
+        "pt": 33,
+        "ro": 15,
+        "no": 12
+      },
+      "rawFragmentWinner": "pt",
+      "contexts": [
+        {
+          "letters": 156,
+          "top": [
+            [
+              "pt",
+              1
+            ],
+            [
+              "gl",
+              0.992621545088342
+            ],
+            [
+              "model:vec",
+              0.9882742392214733
+            ],
+            [
+              "es",
+              0.9828101942328401
+            ],
+            [
+              "en",
+              0.9765883619830096
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-cs-16",
+      "truth": "cs",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 209,
+      "assigned": {
+        "hr": 13,
+        "cs": 51,
+        "st": 19,
+        "pt": 19,
+        "sk": 49,
+        "pl": 12
+      },
+      "rawFragmentWinner": "cs",
+      "contexts": [
+        {
+          "letters": 209,
+          "top": [
+            [
+              "cs",
+              1
+            ],
+            [
+              "sk",
+              0.9677810350659601
+            ],
+            [
+              "bs",
+              0.9654978013304769
+            ],
+            [
+              "hr",
+              0.9619742924794227
+            ],
+            [
+              "sr",
+              0.958676288194836
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-cs-18",
+      "truth": "cs",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 95,
+      "assigned": {
+        "model:ada": 14,
+        "cs": 44
+      },
+      "rawFragmentWinner": "cs",
+      "contexts": [
+        {
+          "letters": 95,
+          "top": [
+            [
+              "cs",
+              1
+            ],
+            [
+              "sk",
+              0.8749116607773851
+            ],
+            [
+              "bs",
+              0.8328621908127208
+            ],
+            [
+              "sr",
+              0.8236749116607773
+            ],
+            [
+              "hr",
+              0.8157243816254417
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-cs-19",
+      "truth": "cs",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 151,
+      "assigned": {
+        "gl": 21,
+        "cs": 51,
+        "lt": 21,
+        "ht": 9,
+        "model:yao": 22
+      },
+      "rawFragmentWinner": "cs",
+      "contexts": [
+        {
+          "letters": 151,
+          "top": [
+            [
+              "cs",
+              1
+            ],
+            [
+              "hr",
+              0.947058209889422
+            ],
+            [
+              "sr",
+              0.9398080534112248
+            ],
+            [
+              "bs",
+              0.9377738368453995
+            ],
+            [
+              "es",
+              0.9309931149593157
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-pl-08",
+      "truth": "pl",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 184,
+      "assigned": {
+        "da": 28,
+        "pl": 46,
+        "eo": 11,
+        "qu": 14
+      },
+      "rawFragmentWinner": "pl",
+      "contexts": [
+        {
+          "letters": 184,
+          "top": [
+            [
+              "pl",
+              1
+            ],
+            [
+              "model:vec",
+              0.9659702705448143
+            ],
+            [
+              "en",
+              0.948532150475739
+            ],
+            [
+              "model:sco",
+              0.9469068499644465
+            ],
+            [
+              "eo",
+              0.9441980157789591
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-id-12",
+      "truth": "id",
+      "result": {
+        "state": "reliable",
+        "languageId": "ms"
+      },
+      "sampleLetters": 240,
+      "assigned": {
+        "id": 84,
+        "ms": 89,
+        "lua": 14,
+        "model:mad": 17
+      },
+      "rawFragmentWinner": "id",
+      "contexts": [
+        {
+          "letters": 240,
+          "top": [
+            [
+              "id",
+              1
+            ],
+            [
+              "ms",
+              0.9983110327096665
+            ],
+            [
+              "jv",
+              0.9423123838834988
+            ],
+            [
+              "su",
+              0.9319909171092386
+            ],
+            [
+              "model:ilo",
+              0.9241466023608009
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-id-13",
+      "truth": "id",
+      "result": {
+        "state": "reliable",
+        "languageId": "ms"
+      },
+      "sampleLetters": 147,
+      "assigned": {
+        "ms": 93,
+        "id": 16,
+        "jv": 9,
+        "gl": 8
+      },
+      "rawFragmentWinner": "ms",
+      "contexts": [
+        {
+          "letters": 147,
+          "top": [
+            [
+              "ms",
+              1
+            ],
+            [
+              "jv",
+              0.9680092889173607
+            ],
+            [
+              "su",
+              0.9494714926329276
+            ],
+            [
+              "id",
+              0.9405028827674567
+            ],
+            [
+              "model:ace",
+              0.8950192184497117
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-id-15",
+      "truth": "id",
+      "result": {
+        "state": "reliable",
+        "languageId": "ms"
+      },
+      "sampleLetters": 265,
+      "assigned": {
+        "uz": 12,
+        "ms": 138,
+        "eo": 8,
+        "id": 58
+      },
+      "rawFragmentWinner": "ms",
+      "contexts": [
+        {
+          "letters": 265,
+          "top": [
+            [
+              "ms",
+              1
+            ],
+            [
+              "id",
+              0.983434106029303
+            ],
+            [
+              "su",
+              0.9415834265243844
+            ],
+            [
+              "model:mad",
+              0.9129816713736045
+            ],
+            [
+              "jv",
+              0.9102143710077901
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-id-16",
+      "truth": "id",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 64,
+      "assigned": {
+        "model:lun": 13,
+        "uz": 8,
+        "id": 30,
+        "model:emk": 9
+      },
+      "rawFragmentWinner": "id",
+      "contexts": [
+        {
+          "letters": 64,
+          "top": [
+            [
+              "id",
+              1
+            ],
+            [
+              "ms",
+              0.93214251043588
+            ],
+            [
+              "jv",
+              0.8075914959712649
+            ],
+            [
+              "model:emk",
+              0.8059411707601204
+            ],
+            [
+              "su",
+              0.8013785069410737
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-id-17",
+      "truth": "id",
+      "result": {
+        "state": "reliable",
+        "languageId": "ms"
+      },
+      "sampleLetters": 227,
+      "assigned": {
+        "id": 54,
+        "ms": 105,
+        "model:bem": 22
+      },
+      "rawFragmentWinner": "ms",
+      "contexts": [
+        {
+          "letters": 227,
+          "top": [
+            [
+              "ms",
+              1
+            ],
+            [
+              "id",
+              0.9668743996962184
+            ],
+            [
+              "pam",
+              0.9111885456454243
+            ],
+            [
+              "su",
+              0.8892537246755567
+            ],
+            [
+              "model:ilo",
+              0.8892090509057606
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-id-19",
+      "truth": "id",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 115,
+      "assigned": {
+        "id": 29,
+        "ts": 17,
+        "lua": 21,
+        "ms": 20,
+        "fil": 12
+      },
+      "rawFragmentWinner": "id",
+      "contexts": [
+        {
+          "letters": 115,
+          "top": [
+            [
+              "id",
+              1
+            ],
+            [
+              "ms",
+              0.9992421180274859
+            ],
+            [
+              "su",
+              0.9595291026677445
+            ],
+            [
+              "model:ace",
+              0.9397736459175424
+            ],
+            [
+              "ha",
+              0.9329021827000809
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-id-20",
+      "truth": "id",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 215,
+      "assigned": {
+        "model:kmb": 33,
+        "model:hil": 21,
+        "id": 52,
+        "ms": 56,
+        "model:men": 8,
+        "model:kng": 18
+      },
+      "rawFragmentWinner": "ms",
+      "contexts": [
+        {
+          "letters": 215,
+          "top": [
+            [
+              "ms",
+              1
+            ],
+            [
+              "id",
+              0.989742325237332
+            ],
+            [
+              "jv",
+              0.936382690173838
+            ],
+            [
+              "model:ace",
+              0.934508691899889
+            ],
+            [
+              "model:ban",
+              0.9299963013191962
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-ja-13",
+      "truth": "ja",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 66,
+      "assigned": {
+        "ja": 25
+      },
+      "rawFragmentWinner": "ja",
+      "contexts": [
+        {
+          "letters": 66,
+          "top": [
+            [
+              "ja",
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-ja-16",
+      "truth": "ja",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 72,
+      "assigned": {
+        "ja": 26
+      },
+      "rawFragmentWinner": "ja",
+      "contexts": [
+        {
+          "letters": 72,
+          "top": [
+            [
+              "ja",
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-ja-19",
+      "truth": "ja",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 72,
+      "assigned": {
+        "ja": 32
+      },
+      "rawFragmentWinner": "ja",
+      "contexts": [
+        {
+          "letters": 72,
+          "top": [
+            [
+              "ja",
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-zh-08",
+      "truth": "zh",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 64,
+      "assigned": {
+        "zh": 33
+      },
+      "rawFragmentWinner": "zh",
+      "contexts": [
+        {
+          "letters": 64,
+          "top": [
+            [
+              "zh",
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-zh-12",
+      "truth": "zh",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 73,
+      "assigned": {
+        "zh": 11
+      },
+      "rawFragmentWinner": "zh",
+      "contexts": [
+        {
+          "letters": 73,
+          "top": [
+            [
+              "zh",
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-zh-13",
+      "truth": "zh",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 49,
+      "assigned": {
+        "zh": 15
+      },
+      "rawFragmentWinner": "zh",
+      "contexts": [
+        {
+          "letters": 49,
+          "top": [
+            [
+              "zh",
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-zh-16",
+      "truth": "zh",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 56,
+      "assigned": {
+        "zh": 8
+      },
+      "rawFragmentWinner": "zh",
+      "contexts": [
+        {
+          "letters": 56,
+          "top": [
+            [
+              "zh",
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-zh-19",
+      "truth": "zh",
+      "result": {
+        "state": "unknown",
+        "reason": "unsupported"
+      },
+      "sampleLetters": 50,
+      "assigned": {},
+      "rawFragmentWinner": "zh",
+      "contexts": [
+        {
+          "letters": 50,
+          "top": [
+            [
+              "zh",
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-fa-15",
+      "truth": "fa",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 66,
+      "assigned": {
+        "ps": 8,
+        "model:skr": 8,
+        "fa": 35
+      },
+      "rawFragmentWinner": "fa",
+      "contexts": [
+        {
+          "letters": 66,
+          "top": [
+            [
+              "fa",
+              1
+            ],
+            [
+              "ur",
+              0.9564816367600202
+            ],
+            [
+              "ms",
+              0.9510313600536643
+            ],
+            [
+              "ar",
+              0.9503605567667281
+            ],
+            [
+              "model:skr",
+              0.9486835485493879
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sampleId": "acceptance-fa-18",
+      "truth": "fa",
+      "result": {
+        "state": "unknown",
+        "reason": "insufficient-evidence"
+      },
+      "sampleLetters": 71,
+      "assigned": {
+        "model:skr": 11,
+        "fa": 36
+      },
+      "rawFragmentWinner": "fa",
+      "contexts": [
+        {
+          "letters": 71,
+          "top": [
+            [
+              "fa",
+              1
+            ],
+            [
+              "model:skr",
+              0.9019325064897606
+            ],
+            [
+              "ur",
+              0.8822228631862321
+            ],
+            [
+              "ps",
+              0.8540524949524084
+            ],
+            [
+              "ar",
+              0.8298240553792905
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

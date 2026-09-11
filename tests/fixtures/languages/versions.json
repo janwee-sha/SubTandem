@@ -33,7 +33,7 @@
       "sourceCatalogHash": "769d3ea1098b0847a0eb44c34fb1ac042ede474c06d83ad65a25e5179142b1c1",
       "evaluation": {
         "state": "evaluated",
-        "algorithmSha256": "b84309d0a9df46125b609d4f6e5d051ad4839a50a15f565d9c02bd1cf28344c0",
+        "algorithmSha256": "534e68a85f3bb1d0b4045ab368ccf9ee4bc3027f64c21a2b23e51ffdf0298cb7",
         "evidence": "specs/022-fix-language-detection/verification.md"
       }
     },
@@ -65,10 +65,10 @@
       "sourceCatalogHash": "769d3ea1098b0847a0eb44c34fb1ac042ede474c06d83ad65a25e5179142b1c1",
       "evaluation": {
         "state": "evaluated",
-        "algorithmSha256": "b84309d0a9df46125b609d4f6e5d051ad4839a50a15f565d9c02bd1cf28344c0",
+        "algorithmSha256": "534e68a85f3bb1d0b4045ab368ccf9ee4bc3027f64c21a2b23e51ffdf0298cb7",
         "evidence": "specs/022-fix-language-detection/verification.md"
       }
     }
   ],
-  "manifestHash": "5d481a9599789ea3e09b3425fec289dc85a32f9b5980e70ab4bcb6c22988be54"
+  "manifestHash": "eeaa06ddaedd1fa39891d09f61d0a30861ba70b1155618f62597ea6bb8b859b8"
 }

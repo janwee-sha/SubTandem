@@ -25,7 +25,13 @@ npm ci
 npm test -- tests/contract/language-corpus.test.ts
 ```
 
-前置任务通过后才允许校准及验收。冻结阈值配置后运行下一节；若数据或阈值调整，按[校准门禁](contracts/language-detection.md#校准门禁)重新建立独立验收版本。
+前置任务通过后才允许校准及验收。冻结阈值配置后运行下一节；独立留出集一旦被评估，再次改进算法或调参前须按[校准门禁](contracts/language-detection.md#校准门禁)另建独立留出版本。留出尚未评估时，可继续仅使用校准材料开发。
+
+校准失败时，可先运行以下默认关闭的归因入口。它仅使用当前校准材料，输出候选、非重叠区间、字母计数、归属与拒绝原因及受控对比，写入当前语料版本的 `diagnosis-result.json`；不记录正文、不评估留出集。基线对比及当前质量状态见 [verification.md](verification.md)。
+
+```sh
+SUBTANDEM_LANGUAGE_DIAGNOSIS=1 npm test -- tests/unit/language-diagnosis.test.ts
+```
 
 ## 2. 聚焦自动化与性能
 

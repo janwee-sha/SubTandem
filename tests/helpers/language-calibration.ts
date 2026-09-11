@@ -17,16 +17,17 @@ import {
 import { summarizeLanguageMetrics } from "./language-metrics.js";
 
 export const CALIBRATION_SEARCH = Object.freeze({
-  minimumLatinLetters: [35, 65],
-  minimumOtherLetters: [18, 40],
-  shortMargin: [0.001, 0.005, 0.01],
-  longMargin: [0.001],
-  minimumSegmentLetters: [5, 10],
-  minimumModelCoverage: [0.15, 0.25],
-  contextWeight: [0.5, 0.8, 0.95],
+  minimumLatinLetters: [65],
+  minimumOtherLetters: [18],
+  shortMargin: [0.001, 0.005, 0.02, 0.04],
+  longMargin: [0.0001, 0.001],
+  minimumSegmentLetters: [3, 5],
+  minimumModelCoverage: [0.2, 0.3, 0.4],
+  contextWeight: [0.95, 1],
+  independentEvidence: [3, 6],
 });
 export const CALIBRATION_SELECTION =
-  "First require overall wrong-reliable <=1%, negative-reliable <=1%, and all prelabelled semantics; then minimize maximum per-work wrong rate, maximize macro per-work and overall correct rate, prefer the highest fixed seven-parameter vector. If infeasible, report failure and the candidate with minimum constraint excess; never relax the gates.";
+  "First require overall wrong-reliable <=1%, negative-reliable <=1%, and all prelabelled semantics; then minimize maximum per-work wrong rate, maximize macro per-work and overall correct rate, prefer the highest fixed parameter vector. If infeasible, report failure and the candidate with minimum constraint excess; never relax the gates.";
 export function calibrateLanguageDetection() {
   validateCorpusPurpose(loadCorpusVersionIndex(), "holdout");
   const corpus = loadVersionedLanguageCorpus("calibration");
@@ -35,7 +36,7 @@ export function calibrateLanguageDetection() {
   const classifier = (text: string): Array<[string, number]> => {
     const found = cache.get(text);
     if (found) return found;
-    const result = francAll(text);
+    const result = francAll(text, { minLength: 1 });
     cache.set(text, result);
     return result;
   };
@@ -47,15 +48,17 @@ export function calibrateLanguageDetection() {
           for (const minimumSegmentLetters of CALIBRATION_SEARCH.minimumSegmentLetters)
             for (const minimumModelCoverage of CALIBRATION_SEARCH.minimumModelCoverage)
               for (const contextWeight of CALIBRATION_SEARCH.contextWeight)
-                candidates.push({
-                  minimumLatinLetters,
-                  minimumOtherLetters,
-                  shortMargin,
-                  longMargin,
-                  minimumSegmentLetters,
-                  contextWeight,
-                  minimumModelCoverage,
-                });
+                for (const independentEvidence of CALIBRATION_SEARCH.independentEvidence)
+                  candidates.push({
+                    minimumLatinLetters,
+                    minimumOtherLetters,
+                    shortMargin,
+                    longMargin,
+                    minimumSegmentLetters,
+                    contextWeight,
+                    minimumModelCoverage,
+                    independentEvidence,
+                  });
   const results = candidates.map((parameters) => {
     const rows = corpus.tracks.map(({ record, cues }) => ({
       record,
@@ -154,6 +157,11 @@ export function calibrateLanguageDetection() {
       completeCompetition: "franc@6.2.0; no only/ignore filters",
       mixedCases: mixed.cases.length,
     },
+    candidates: results.map((result) => ({
+      parameters: result.parameters,
+      ...result.summary.overall,
+      mixedFailures: result.mixedFailures,
+    })),
   };
 }
 export function writeLanguageCalibration(

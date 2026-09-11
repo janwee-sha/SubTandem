@@ -175,6 +175,39 @@ describe("subtitle language sampling", () => {
 });
 
 describe("language reliability", () => {
+  it.each([
+    "calibration-zh-03",
+    "acceptance-zh-19",
+    "calibration-en-02",
+    "acceptance-da-10",
+    "acceptance-ru-13",
+  ])("retains sufficient evidence across short natural lines (%s)", (id) => {
+    const sample = calibration.find(({ record }) => record.sampleId === id)!;
+    expect(detectSubtitleLanguage(sample.cues)).toEqual({
+      state: "reliable",
+      languageId: sample.record.languageTruth.languageId,
+    });
+  });
+  it("keeps each macro-language score paired with its highest-scoring model", () => {
+    for (const candidates of [
+      [
+        ["nob", 1],
+        ["nno", 0.4],
+        ["swe", 0.3],
+      ],
+      [
+        ["nno", 0.4],
+        ["swe", 0.3],
+        ["nob", 1],
+      ],
+    ] as Array<Array<[string, number]>>) {
+      const decisions = [
+        ...createLanguageDetectionWork(english, { classifier: () => candidates }),
+      ].flatMap((step) => (step.evidence ? [step.evidence] : []));
+      expect(decisions.length).toBeGreaterThan(0);
+      expect(decisions.every((decision) => decision.modelCode === "nob")).toBe(true);
+    }
+  });
   it("preserves mixed-language weights when bilingual lines share one cue", () => {
     for (const { record, cues } of loadMixedLanguageCases().cases.filter(({ record }) =>
       ["mixed-v2-55-45", "mixed-v2-tie", "mixed-v2-cross-script"].includes(record.caseId),
@@ -263,7 +296,7 @@ it.skipIf(process.env.SUBTANDEM_LANGUAGE_CALIBRATION !== "1")(
     const result = calibrateLanguageDetection();
     writeLanguageCalibration(result);
     console.info("language-calibration", JSON.stringify(result));
-    expect(result.candidateCount).toBe(144);
+    expect(result.candidateCount).toBe(192);
     expect(
       result.feasibleCandidateCount,
       "No parameter candidate satisfies the frozen calibration constraints",

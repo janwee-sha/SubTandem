@@ -19,6 +19,29 @@ export interface LanguageDetectionStep {
   readonly fragment?: number;
   readonly processedCues: number;
   readonly processedCodeUnits: number;
+  readonly evidence?: LanguageEvidenceDecision;
+}
+export interface LanguageEvidenceDecision {
+  readonly start: number;
+  readonly end: number;
+  readonly letters: number;
+  readonly localLeader: string;
+  readonly contextLeader: string;
+  readonly modelCode: string;
+  readonly language: string | null;
+  readonly reason:
+    | "assigned"
+    | "letters"
+    | "diversity"
+    | "proper-names"
+    | "romanized"
+    | "rhythmic"
+    | "unsupported"
+    | "coverage"
+    | "single-model"
+    | "margin";
+  readonly margin: number;
+  readonly coverage: number;
 }
 export type LanguageDetectionWork = Iterator<LanguageDetectionStep, LanguageDetectionResult>;
 export interface LanguageDetectionParameters {
@@ -29,15 +52,17 @@ export interface LanguageDetectionParameters {
   readonly minimumSegmentLetters: number;
   readonly contextWeight: number;
   readonly minimumModelCoverage: number;
+  readonly independentEvidence: number;
 }
 export const LANGUAGE_DETECTION_PARAMETERS: LanguageDetectionParameters = Object.freeze({
   minimumLatinLetters: 65,
-  minimumOtherLetters: 40,
+  minimumOtherLetters: 18,
   shortMargin: 0.001,
   longMargin: 0.0001,
-  minimumSegmentLetters: 8,
-  contextWeight: 0.5,
+  minimumSegmentLetters: 3,
+  contextWeight: 1,
   minimumModelCoverage: 0.2,
+  independentEvidence: 3,
 });
 
 export interface LanguageDetectionOptions {
@@ -279,7 +304,11 @@ export function sampleSubtitleCues(cues: readonly SubtitleCue[]): LanguageDetect
     if (step.done) return step.value;
   }
 }
-function fragments(text: string): string[] {
+function fragments(sample: LanguageDetectionSample): string[] {
+  const text = sample.text;
+  const windows = sample.windows.filter((window) => window.text.length > 0);
+  if (text.length > 2048 && windows.every((window) => window.text.length < 2048))
+    return windows.map((window, index) => window.text + (index < windows.length - 1 ? "\n" : ""));
   const result: string[] = [];
   for (let offset = 0; offset < text.length && result.length < 4;) {
     let part = safePrefix(text.slice(offset, offset + 2049), 2048);
@@ -362,12 +391,15 @@ interface Classification {
   codes: Map<string, string>;
 }
 const modelTrigrams = new Map<string, Set<string> | null>();
-function modelCoverage(text: string, code: string): number {
+function modelFor(code: string): Set<string> | null {
   if (!modelTrigrams.has(code)) {
     const models = Object.values(modelData).flatMap((group) => (group[code] ? [group[code]!] : []));
     modelTrigrams.set(code, models.length ? new Set(models.join("|").split("|")) : null);
   }
-  const model = modelTrigrams.get(code);
+  return modelTrigrams.get(code) ?? null;
+}
+function modelCoverage(text: string, code: string): number {
+  const model = modelFor(code);
   if (!model) return 1;
   const normalized = ` ${text
     .replace(/[\u0021-\u0040]+/g, " ")
@@ -390,18 +422,23 @@ function classify(
     ([code, score]) => code !== "und" && Number.isFinite(score),
   );
   const scores = new Map<string, number>();
+  const codes = new Map<string, string>();
   for (const [code, score] of candidates) {
     const key = identity(code);
-    scores.set(key, Math.max(scores.get(key) ?? 0, Math.max(0, Math.min(1, score))));
+    const bounded = Math.max(0, Math.min(1, score));
+    if (!scores.has(key) || bounded > scores.get(key)!) {
+      scores.set(key, bounded);
+      codes.set(key, code);
+    }
   }
   const leader = [...scores].sort((left, right) => right[1] - left[1])[0]?.[0] ?? "";
-  const code = candidates.find(([code]) => identity(code) === leader)?.[0] ?? "und";
+  const code = codes.get(leader) ?? "und";
   return {
     weight: letters(text),
     leader,
     code,
     scores,
-    codes: new Map(candidates.map(([candidate]) => [identity(candidate), candidate])),
+    codes,
   };
 }
 function assignEvidence(
@@ -409,19 +446,30 @@ function assignEvidence(
   result: Classification,
   parameters: LanguageDetectionParameters,
   context: Classification,
-): string | null {
+): Omit<LanguageEvidenceDecision, "start" | "end"> {
   const value = evidence(text);
-  if (
-    value.count < parameters.minimumSegmentLetters ||
-    value.unique < 5 ||
-    value.properNames ||
-    value.romaji ||
-    value.rhythmic
-  )
-    return null;
+  const decision = {
+    letters: value.count,
+    localLeader: result.leader,
+    contextLeader: context.leader,
+    modelCode: result.code,
+    language: null,
+    margin: 0,
+    coverage: 0,
+  };
+  if (value.count < parameters.minimumSegmentLetters) return { ...decision, reason: "letters" };
+  if (value.unique < (result.scores.size === 1 ? 2 : 5))
+    return { ...decision, reason: "diversity" };
+  if (value.properNames) return { ...decision, reason: "proper-names" };
+  if (value.romaji) return { ...decision, reason: "romanized" };
+  if (value.rhythmic) return { ...decision, reason: "rhythmic" };
   const local = [...result.scores].sort((left, right) => right[1] - left[1]);
   const contextWeight =
-    local.length > 1 && local[0]![1] - local[1]![1] >= 0.05 ? 0 : parameters.contextWeight;
+    value.count >= 35 &&
+    local.length > 1 &&
+    (local[0]![1] - local[1]![1]) * value.count >= parameters.independentEvidence
+      ? 0
+      : parameters.contextWeight;
   const ranked = [...result.scores]
     .map(
       ([language, score]) =>
@@ -434,25 +482,33 @@ function assignEvidence(
     )
     .sort((left, right) => right[1] - left[1]);
   const first = ranked[0];
-  if (!first) return null;
+  if (!first) return { ...decision, reason: "unsupported" };
   const code = result.codes.get(first[0]) ?? result.code;
-  if (modelCoverage(text, code) < parameters.minimumModelCoverage) return null;
+  const scored = {
+    ...decision,
+    modelCode: code,
+    margin: first[1] - (ranked[1]?.[1] ?? first[1]),
+    coverage: modelCoverage(text, code),
+  };
+  if (scored.coverage < parameters.minimumModelCoverage) return { ...scored, reason: "coverage" };
   if (ranked.length === 1) {
     const supported = value.counts.get(code) ?? 0;
     const kana = text.match(/[\p{Script=Hiragana}\p{Script=Katakana}]/gu)?.length ?? 0;
     if (
       supported < parameters.minimumSegmentLetters ||
-      value.unique < 5 ||
+      value.unique < 2 ||
       (code === "cmn" && kana > 0) ||
-      (code === "jpn" && kana < 5)
+      (code === "jpn" && kana < 1)
     )
-      return null;
+      return { ...scored, reason: "single-model" };
   } else if (
     first[1] - ranked[1]![1] <
-    (value.count < 200 ? parameters.shortMargin : parameters.longMargin)
+    ((contextWeight > 0 ? context.weight : value.count) < 200
+      ? parameters.shortMargin
+      : parameters.longMargin)
   )
-    return null;
-  return first[0];
+    return { ...scored, reason: "margin" };
+  return { ...scored, language: first[0], reason: "assigned" };
 }
 const evidenceScripts = Object.entries(scriptExpressions)
   .filter(([script]) => script !== "cmn")
@@ -504,9 +560,9 @@ export function* createLanguageDetectionWork(
     let available = false;
     let offset = 0;
     let fragmentIndex = 0;
-    for (const fragment of fragments(sample.text)) {
+    for (const fragment of fragments(sample)) {
       const end = offset + fragment.length;
-      const context = classify(fragment, options.classifier ?? francAll);
+      const context = classify(fragment, options.classifier ?? classifyWithFranc);
       yield {
         phase: "classifying",
         fragment: fragmentIndex,
@@ -520,9 +576,10 @@ export function* createLanguageDetectionWork(
           Math.min(end, interval.end),
         )) {
           const text = sample.text.slice(part.start, part.end);
-          const result = classify(text, options.classifier ?? francAll);
+          const result = classify(text, options.classifier ?? classifyWithFranc);
           available ||= result.scores.size > 0;
-          const language = assignEvidence(text, result, parameters, context);
+          const assignment = assignEvidence(text, result, parameters, context);
+          const language = assignment.language;
           if (language) {
             weights.set(language, (weights.get(language) ?? 0) + result.weight);
             minimums.set(
@@ -537,6 +594,7 @@ export function* createLanguageDetectionWork(
             fragment: fragmentIndex,
             processedCues: 0,
             processedCodeUnits: text.length,
+            evidence: { ...part, ...assignment },
           };
         }
       }
@@ -553,6 +611,9 @@ export function* createLanguageDetectionWork(
   } catch {
     return unknown("error");
   }
+}
+function classifyWithFranc(text: string): Array<[string, number]> {
+  return francAll(text, { minLength: 1 });
 }
 export function detectSubtitleLanguage(
   cues: readonly SubtitleCue[],
