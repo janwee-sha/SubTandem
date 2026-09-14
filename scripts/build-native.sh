@@ -42,7 +42,8 @@ lipo -create "$STYLE_PICKER_ARM" "$STYLE_PICKER_INTEL" -output "$OUTPUT_DIR/subt
 for HELPER in "$OUTPUT_DIR/subtandem-transport" "$OUTPUT_DIR/subtandem-subtitle-extractor" "$OUTPUT_DIR/subtandem-style-picker"; do
   chmod 755 "$HELPER"
   codesign --force --sign - "$HELPER"
-  lipo "$HELPER" -verify_arch arm64 x86_64
+  lipo "$HELPER" -verify_arch arm64
+  lipo "$HELPER" -verify_arch x86_64
   codesign --verify --strict "$HELPER"
   if otool -L "$HELPER" | awk '/^[[:space:]]+\//{print $1}' | grep -Ev '^(/usr/lib/|/System/Library/)' | grep -q .; then
     echo "Native executable has a non-system dynamic dependency: $HELPER" >&2

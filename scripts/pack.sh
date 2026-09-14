@@ -21,6 +21,11 @@ case "$ARTIFACT" in
   *) echo "Refusing to replace unexpected artifact path: $ARTIFACT" >&2; exit 1 ;;
 esac
 
+if ! "$ROOT_DIR/scripts/verify-package.sh" "$ROOT_DIR"; then
+  echo "Package inputs failed verification. Run npm run build:native and npm run build successfully before npm run pack." >&2
+  exit 1
+fi
+
 mkdir -p "$STAGE_DIR"
 find "$STAGE_DIR" -mindepth 1 -delete
 cp -p "$ROOT_DIR/Info.json" "$ROOT_DIR/README.md" "$ROOT_DIR/LICENSE" "$ROOT_DIR/THIRD_PARTY_NOTICES.txt" "$STAGE_DIR/"

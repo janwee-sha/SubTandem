@@ -169,6 +169,16 @@ describe("IINA package manifest", () => {
     expect(verify).toContain("plugin-update-metadata.mjs");
   });
 
+  it("verifies each native architecture separately for both Apple lipo implementations", () => {
+    for (const path of ["scripts/build-native.sh", "scripts/verify-package.sh"]) {
+      const checks = rootFile(path).match(/^\s*lipo "\$HELPER" -verify_arch .+$/gm);
+      expect(checks?.map((check) => check.trim())).toEqual([
+        'lipo "$HELPER" -verify_arch arm64',
+        'lipo "$HELPER" -verify_arch x86_64',
+      ]);
+    }
+  });
+
   it("describes the authenticated style picker without widening network destinations", () => {
     const manifest = JSON.parse(rootFile("Info.json")) as {
       allowedDomains: string[];

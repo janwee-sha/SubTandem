@@ -7,7 +7,7 @@ SubTandem 是面向 IINA 1.4+ 的实时双语字幕插件。本文档供开发�
 - macOS 12 或更高版本
 - IINA 1.4.0 或更高版本
 - Node.js 24、npm 11
-- Swift 6 工具链
+- Swift 6 工具链，包含 macOS 12 所需的 arm64 与 x86_64 兼容库
 - `curl`、`shasum`、`lipo`、`codesign` 与 Xcode Command Line Tools
 
 安装锁定依赖：
@@ -28,6 +28,16 @@ npm run build
 npm run verify:package
 npm run pack
 ```
+
+`pack` 只归档已构建的文件，不代替 `build:native` 或 `build`。构建输入必须先通过审计，才会更新打包暂存区；缺少 `dist/native/subtandem-*` 时，必须成功重跑 native 构建，不能用旧安装包替代本次验证。
+
+如果当前 Command Line Tools 的 Swift 兼容库不含 x86_64，链接会报告 `fat file missing arch 'x86_64'` 或 `__swift_FORCE_LOAD_$_swiftCompatibility56`。已安装完整 Xcode 时，在当前终端选择其工具链后，重新执行上述完整流程：
+
+```sh
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+```
+
+该环境变量不会修改系统全局 `xcode-select` 设置；Xcode 安装位置不同时应使用实际路径。
 
 主要命令的职责如下：
 
