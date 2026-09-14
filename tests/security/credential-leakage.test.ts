@@ -261,6 +261,7 @@ describe("credential and content leakage boundaries", () => {
     const output = JSON.stringify(task);
 
     expect(JSON.parse(task.userMessage)).toEqual({
+      target_language: "Chinese (Simplified) [zh-Hans]",
       targets: [
         {
           id: "c1",

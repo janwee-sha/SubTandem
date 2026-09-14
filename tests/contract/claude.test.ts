@@ -122,6 +122,7 @@ describe("Claude provider", () => {
         model: "exact-model-id",
         max_tokens: 8192,
         stream: false,
+        thinking: { type: "disabled" },
       });
       expect(body.system).toEqual(expect.any(String));
       expect(body.messages).toEqual([
@@ -147,7 +148,6 @@ describe("Claude provider", () => {
         "format",
         "output_config",
         "tools",
-        "thinking",
         "metadata",
       ])
         expect(body).not.toHaveProperty(forbidden);
@@ -157,6 +157,62 @@ describe("Claude provider", () => {
       expect.stringContaining("Spanish [es]"),
       expect.stringContaining("Chinese (Simplified) [zh-Hans]"),
     ]);
+  });
+
+  it("retries once without thinking only when a compatible service explicitly rejects it", async () => {
+    const requests: ProviderTransportRequest[] = [];
+    const value = provider({
+      request: async (request) => {
+        requests.push(request);
+        if (requests.length === 1)
+          return {
+            statusCode: 400,
+            headers: {},
+            bodyText: JSON.stringify({
+              type: "error",
+              error: {
+                type: "invalid_request_error",
+                message: '"thinking.type.disabled" is not supported for this model',
+              },
+            }),
+          };
+        return successResponse(request);
+      },
+    });
+
+    await expect(value.attempt(makeProviderRequest())).resolves.toMatchObject({
+      translations: [{ id: "c1" }, { id: "c2" }],
+    });
+
+    expect(requests.map((request) => request.jobId)).toEqual([
+      "request-part-1",
+      "request-part-1-without-thinking",
+    ]);
+    expect(requests[0]!.body).toMatchObject({ thinking: { type: "disabled" } });
+    expect(requests[1]!.body).not.toHaveProperty("thinking");
+  });
+
+  it("does not retry a rejected request that is unrelated to thinking compatibility", async () => {
+    const requests: ProviderTransportRequest[] = [];
+    const value = provider({
+      request: async (request) => {
+        requests.push(request);
+        return {
+          statusCode: 400,
+          headers: {},
+          bodyText: JSON.stringify({
+            type: "error",
+            error: { type: "invalid_request_error", message: "invalid messages" },
+          }),
+        };
+      },
+    });
+
+    await expect(value.attempt(makeProviderRequest())).rejects.toMatchObject({
+      category: "configuration",
+      retryable: false,
+    });
+    expect(requests).toHaveLength(1);
   });
 
   it("runs every Test as a fresh validated Messages request without selecting", async () => {

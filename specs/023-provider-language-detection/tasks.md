@@ -128,6 +128,12 @@ description: "翻译服务自动识别源语言的可执行任务列表"
 - [ ] T039 仅在用户明确批准网络及潜在费用后执行 `specs/023-provider-language-detection/quickstart.md` 的三组 live Provider 命令；未获批准时在交付报告明确记录为未执行且不得推断通过
 - [ ] T040 使用最终 `.iinaplgz` 按 `specs/023-provider-language-detection/quickstart.md` 完成单人 IINA 短轨、未知源语言、同语言、目标变体、失败、生命周期、多窗口及卸载验收并记录包版本或 SHA-256 与环境
 
+### 翻译方向与时延可靠性
+
+- [X] T041 [US1] 先补失败契约测试，断言四类 Provider 的 user payload 重复可信精确目标、Ollama 任务禁止在源语言不确定时回显非目标正文，并断言 Claude-compatible 显式关闭 thinking、只对明确字段不兼容执行一次省略降级于 `tests/contract/provider-output.test.ts`、`tests/contract/ollama.test.ts` 和 `tests/contract/claude.test.ts`
+- [X] T042 [US1] 强化共同任务的目标显著性与输出前复核，并为 Claude-compatible 实现显式关闭 thinking 及一次有界不兼容降级于 `src/providers/translation-task.ts` 和 `src/providers/claude.ts`
+- [X] T043 重跑 023 聚焦测试及 `npm test`、`npm run typecheck`、`npm run lint`、`npm run build:native`、`npm run test:native`、`npm run build`、`npm run verify:package`、`npm run pack`；T040 必须使用该次最终包重新验收
+
 ---
 
 ## Dependencies & Execution Order
@@ -139,7 +145,7 @@ description: "翻译服务自动识别源语言的可执行任务列表"
 - **US1（Phase 3）**：依赖 T002；T003–T010 先建立失败测试，T011–T012 可并行，T013–T017 按契约到协调层顺序收敛，T018–T021 在 T017 后并行，最后执行 T022。
 - **US2（Phase 4）**：依赖 US1；同语言服务调用必须先移除本地同语言短路。T023–T027 可先并行补测试，随后按 T028 → T029 → T030 实现字符保真链路。
 - **US3（Phase 5）**：依赖 US1 已停止产生检测状态；T031 先失败，T032–T034 可在独立 worktree 并行。
-- **Polish（Phase 6）**：依赖计划交付的全部用户故事；T035 与 T036 可并行，T037 后执行 T038，T039 受用户授权约束，T040 依赖 T038 生成的最终包。
+- **Polish（Phase 6）**：依赖计划交付的全部用户故事；T035 与 T036 可并行，T037 后执行 T038。按 T041 → T042 → T043 收敛翻译方向与 Claude-compatible 时延可靠性；T039 受用户授权约束，T040 依赖 T043 生成的最终包。
 
 ### User Story Dependencies
 

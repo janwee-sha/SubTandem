@@ -21,6 +21,7 @@ export class ClaudeProvider implements ConfiguredProvider {
   private readonly activeJobs = new Set<string>();
   private readonly activeRequests = new Set<string>();
   private readonly cancelledRequests = new Set<string>();
+  private thinkingCapability: "disabled" | "omitted" = "disabled";
 
   constructor(
     private readonly config: {
@@ -42,6 +43,7 @@ export class ClaudeProvider implements ConfiguredProvider {
     this.activeRequests.add(testId);
     try {
       const response = await this.send(
+        testId,
         testId,
         [{ id: "c1", text: "hello" }],
         "es",
@@ -67,6 +69,7 @@ export class ClaudeProvider implements ConfiguredProvider {
         request,
         async (jobId, items) => {
           const response = await this.send(
+            request.requestId,
             jobId,
             items,
             request.targetLanguage,
@@ -106,12 +109,34 @@ export class ClaudeProvider implements ConfiguredProvider {
   }
 
   private async send(
+    scopeId: string,
     jobId: string,
     items: WireTranslationTarget[],
     targetLanguage: string,
     timeoutMs: number,
   ): Promise<ProviderTransportResponse> {
     const task = buildClaudeTranslationTask({ targetLanguage, targets: items });
+    const capability = this.thinkingCapability;
+    let response = await this.sendRequest(jobId, task, timeoutMs, capability);
+    this.throwIfCancelled(scopeId);
+    if (capability === "omitted" || !this.isThinkingIncompatibility(response)) return response;
+    this.thinkingCapability = "omitted";
+    response = await this.sendRequest(
+      `${jobId}-without-thinking`,
+      task,
+      timeoutMs,
+      "omitted",
+    );
+    this.throwIfCancelled(scopeId);
+    return response;
+  }
+
+  private async sendRequest(
+    jobId: string,
+    task: ReturnType<typeof buildClaudeTranslationTask>,
+    timeoutMs: number,
+    capability: "disabled" | "omitted",
+  ): Promise<ProviderTransportResponse> {
     this.activeJobs.add(jobId);
     try {
       return await this.transport.request({
@@ -124,6 +149,7 @@ export class ClaudeProvider implements ConfiguredProvider {
           model: this.config.model,
           max_tokens: 8192,
           stream: false,
+          ...(capability === "disabled" ? { thinking: { type: "disabled" } } : {}),
           system: task.systemMessage,
           messages: [{ role: "user", content: task.userMessage }],
         },
@@ -133,6 +159,13 @@ export class ClaudeProvider implements ConfiguredProvider {
     } finally {
       this.activeJobs.delete(jobId);
     }
+  }
+
+  private isThinkingIncompatibility(response: ProviderTransportResponse): boolean {
+    if (response.statusCode !== 400 && response.statusCode !== 422) return false;
+    const detail = response.bodyText.slice(0, 16_384);
+    return /thinking/i.test(detail) &&
+      /(disabled|unsupported|not supported|unknown|unrecognized|unexpected|invalid)/i.test(detail);
   }
 
   private parseResponse(

@@ -156,6 +156,7 @@ describe("strict provider output", () => {
     });
 
     expect(JSON.parse(task.userMessage)).toEqual({
+      target_language: "Chinese (Simplified) [zh-Hans]",
       targets: [
         {
           id: "c1",
@@ -169,6 +170,8 @@ describe("strict provider output", () => {
     expect(task.systemMessage).toMatch(/source language.*independently/i);
     expect(task.systemMessage).toMatch(/character-for-character/i);
     expect(task.systemMessage).toMatch(/exact target language and variant/i);
+    expect(task.systemMessage).toMatch(/uncertain.*must not.*copy/i);
+    expect(task.systemMessage).toMatch(/before returning.*verify/i);
     expect(task.systemMessage).toMatch(/leading and trailing spaces.*line breaks.*blank lines/i);
     expect(task.systemMessage).toContain("untrusted data");
     expect(task.systemMessage).toContain("only translation target");

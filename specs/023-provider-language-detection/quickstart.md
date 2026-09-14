@@ -21,6 +21,7 @@ npm test -- tests/integration/provider-language-detection.test.ts tests/contract
 
 - 短/中/长轨、罗马字、混合语言、错误/缺失标签和同语言正文均直接进入当前 Provider，且请求无 source 字段或独立检测请求。
 - 四类 Provider 的 task 都包含精确目标变体、逐条自动理解、同语言原样和上下文只读规则。
+- system task 与 user payload 携带同一可信精确目标；Claude-compatible 默认关闭 thinking，只有服务明确拒绝该字段时才省略并重试一次。
 - 首个 attempt 在正文和配置就绪后 500ms 内发生；测试使用可控时钟或数值时间戳，不以目测判断。
 - 首尾空格、大小写、标点、换行和内部空行从 Provider parser 到 cache/Overlay 严格保持；纯空白和错误 ID 仍拒绝。
 - 未启用或未选 Profile 不外发；换轨/片/目标/Profile/禁用/关窗和多窗口迟到结果仍被隔离。

@@ -153,11 +153,14 @@ describe("Ollama native provider", () => {
     expect(systemMessage).not.toMatch(/from English \[en\]/);
     expect(userMessage).toContain('"id":"c1"');
     expect(JSON.parse(userMessage!)).toEqual({
+      target_language: "Chinese (Simplified) [zh-Hans]",
       targets: [
         { id: "c1", text: "one", context_next: "two" },
         { id: "c2", text: "two", context_previous: "one" },
       ],
     });
+    expect(systemMessage).toMatch(/uncertain.*must not.*copy/i);
+    expect(systemMessage).toMatch(/before returning.*verify/i);
     expect(userMessage).not.toContain("srt:0:0:1000");
     expect(systemMessage).toBe(
       buildTranslationTask({
