@@ -6,7 +6,7 @@
 
 ## 摘要
 
-删除本地检测器、源语言目录、检测状态、轨道语言保存、旧偏好键及 `franc` 依赖。Main 在字幕可读、翻译启用、目标语言和 Profile 有效且位置可用时，直接构造只含精确目标语言的翻译任务；四类正式 Provider 共用逐条自动理解和同语言逐字符原样规则。结果校验、会话缓存和 Overlay 只用 `trim()` 判空，始终保存及传递原字符串。既有授权、有限前瞻、批次、重试、跨窗口路由、会话清理和播放安全边界保持不变。
+删除本地检测器、源语言目录、检测状态、轨道语言保存、旧偏好键及 `franc` 依赖。Main 在字幕可读、翻译启用、目标语言和 Profile 有效且位置可用时，直接构造只含精确目标语言的翻译任务；四类正式 Provider 共用逐条自动理解和同语言逐字符原样规则，Claude-compatible 优先使用当前 wire 的 JSON Schema，并仅对明确能力拒绝有界降级。结果校验、会话缓存和 Overlay 只用 `trim()` 判空，始终保存及传递原字符串。既有授权、有限前瞻、批次、重试、跨窗口路由、会话清理和播放安全边界保持不变。
 
 ## 技术上下文
 
@@ -90,13 +90,13 @@ tests/
 
 1. **移除源语言状态**：字幕源与 Controller 不再读取或保存轨道语言；删除检测协调器、检测门禁、同语言短路、四个失效状态、Sidebar 检测字段、旧 preference default 和启动时旧键写入。
 2. **收紧跨运行时请求**：`TranslationBatchRequest` 与缓存身份删除 `sourceLanguage`；目标目录删除仅服务 source 的特殊标签分支；Main/Global 对完整请求形状、精确目标语言、身份和大小边界做运行时校验，拒绝额外 source 字段。
-3. **统一 Provider 语义**：共同任务构造器只接收目标语言及冻结条目，并在 system task 与结构化 user payload 中重复同一可信目标；四类 Provider 和连接测试共用逐条自动理解、精确变体、同语言原样、上下文只读和结构化 ID 规则。Claude-compatible 请求优先显式关闭 thinking，仅在服务明确拒绝该字段时省略后原样重试一次；其余 HTTP 封装与有限能力 fallback 保持不变。
+3. **统一 Provider 语义**：共同任务构造器只接收目标语言及冻结条目，并在 system task 与结构化 user payload 中重复同一可信目标；四类 Provider 和连接测试共用逐条自动理解、精确变体、同语言原样、上下文只读和结构化 ID 规则。Claude-compatible 请求携带当前 wire ID 对应的 `output_config.format` JSON Schema 并显式关闭 thinking；仅当 400/422 响应明确拒绝对应字段时，分别省略该字段后有界重试并按 Provider 实例缓存能力。无 Schema 的兼容响应只接受完整单 JSON 围栏或精确 ID 字符串映射，再执行严格全量校验。
 4. **保证字符保真**：Provider validator、progress/result、Controller、session cache 和 Overlay 都只判定“是否全空白”，不裁剪合法结果；Overlay 允许包含内部空行的非空文本。相同正文是普通成功结果并正常缓存。
 5. **清理依赖与披露**：删除 detector-only 测试/语料和 `franc`，同步 `package-lock.json`、`THIRD_PARTY_NOTICES.txt`、`Info.json`、README、多语言 README 及工程/验证文档；历史 release 文档和其他规格保持不变。
 
 ## 验证策略
 
-- 用受控 transport 覆盖四类 Provider 的请求体、共同语义、system/user 目标一致性、目标变体、结构化 ID、部分/严格提交差异、Claude thinking 关闭与有界兼容降级，以及原样字符串回传。
+- 用受控 transport 覆盖四类 Provider 的请求体、共同语义、system/user 目标一致性、目标变体、结构化 ID、部分/严格提交差异、Claude JSON Schema、thinking 关闭、两类有界兼容降级、受控响应规范化及原样字符串回传。
 - 用集成测试证明短轨、中等轨、长轨、罗马字、混合语言、错误/缺失轨道标签及同语言正文均不经检测直接 attempt；以可控时钟证明首批启动不超过 500ms。
 - 逐层断言首尾空格、大小写、标点、换行和内部空行经过 validator、跨运行时 progress/result、Controller、cache 与 Overlay 后保持；纯空白、缺失、重复或未知 ID 仍无效。
 - 保留未启用/未选 Profile 不外发、有限窗口与批次、换轨/换片/seek/目标/Profile/禁用/关窗、多窗口隔离、迟到结果拒绝和服务失败不阻塞播放的现有回归。

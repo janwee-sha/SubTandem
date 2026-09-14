@@ -7,9 +7,13 @@ import type {
   ProviderTransportResponse,
 } from "../../src/providers/transport.js";
 import { makeProviderRequest } from "./provider-test-helpers.js";
+import { providerOutputSchema } from "../../src/providers/wire-items.js";
 
 const successFixture = JSON.parse(
   readFileSync("tests/fixtures/providers/claude-success.json", "utf8"),
+) as Record<string, unknown>;
+const aihubmixHaikuSuccessFixture = JSON.parse(
+  readFileSync("tests/fixtures/providers/claude-aihubmix-haiku-success.json", "utf8"),
 ) as Record<string, unknown>;
 
 function successResponse(request: ProviderTransportRequest): ProviderTransportResponse {
@@ -64,9 +68,7 @@ describe("Claude provider", () => {
           headers: {},
           bodyText: JSON.stringify({
             ...successFixture,
-            content: [
-              { type: "text", text: JSON.stringify({ translations: targets }) },
-            ],
+            content: [{ type: "text", text: JSON.stringify({ translations: targets }) }],
           }),
         };
       },
@@ -134,6 +136,14 @@ describe("Claude provider", () => {
       expect(JSON.parse((body.messages as Array<{ content: string }>)[0]!.content)).toMatchObject({
         targets: expect.any(Array),
       });
+      const targetIds = (
+        JSON.parse((body.messages as Array<{ content: string }>)[0]!.content) as {
+          targets: Array<{ id: string }>;
+        }
+      ).targets.map((target) => target.id);
+      expect(body.output_config).toEqual({
+        format: { type: "json_schema", schema: providerOutputSchema(targetIds) },
+      });
       expect(String(body.system)).toMatch(/untrusted data|untrusted/i);
       expect(String(body.system)).toMatch(/Spanish \[es\]|Chinese \(Simplified\) \[zh-Hans\]/);
       expect(String(body.system)).toMatch(/source language.*independently/i);
@@ -146,17 +156,85 @@ describe("Claude provider", () => {
         "top_k",
         "response_format",
         "format",
-        "output_config",
         "tools",
         "metadata",
       ])
         expect(body).not.toHaveProperty(forbidden);
       expect(request.headers).not.toHaveProperty("X-Session-Id");
     }
-    expect(requests.map((request) => String((request.body as Record<string, unknown>).system))).toEqual([
+    expect(
+      requests.map((request) => String((request.body as Record<string, unknown>).system)),
+    ).toEqual([
       expect.stringContaining("Spanish [es]"),
       expect.stringContaining("Chinese (Simplified) [zh-Hans]"),
     ]);
+  });
+
+  it.each([
+    [400, '"output_config.format" is not supported'],
+    [422, "JSON Schema structured output is unsupported"],
+  ])(
+    "retries once without structured output after an explicit HTTP %s rejection and caches it",
+    async (statusCode, message) => {
+      const requests: ProviderTransportRequest[] = [];
+      const value = provider({
+        request: async (request) => {
+          requests.push(request);
+          if (requests.length === 1)
+            return {
+              statusCode,
+              headers: {},
+              bodyText: JSON.stringify({
+                type: "error",
+                error: { type: "invalid_request_error", message },
+              }),
+            };
+          return successResponse(request);
+        },
+      });
+
+      await expect(value.attempt(makeProviderRequest())).resolves.toMatchObject({
+        translations: [{ id: "c1" }, { id: "c2" }],
+      });
+      await expect(value.testConnection("cached-structured-output-test")).resolves.toEqual({
+        model: "exact-model-id",
+      });
+
+      expect(requests.map((request) => request.jobId)).toEqual([
+        "request-part-1",
+        "request-part-1-without-output-config",
+        "cached-structured-output-test",
+      ]);
+      expect(requests[0]!.body).toHaveProperty("output_config");
+      expect(requests[1]!.body).not.toHaveProperty("output_config");
+      expect(requests[2]!.body).not.toHaveProperty("output_config");
+    },
+  );
+
+  it.each([
+    [400, "invalid messages"],
+    [401, '"output_config" is not supported'],
+    [404, '"output_config" is not supported'],
+    [402, '"output_config" is not supported'],
+  ])("does not omit structured output for HTTP %s: %s", async (statusCode, message) => {
+    const requests: ProviderTransportRequest[] = [];
+    const value = provider({
+      request: async (request) => {
+        requests.push(request);
+        return {
+          statusCode,
+          headers: {},
+          bodyText: JSON.stringify({
+            type: "error",
+            error: { type: "invalid_request_error", message },
+          }),
+        };
+      },
+    });
+
+    await expect(value.attempt(makeProviderRequest())).rejects.toMatchObject({ retryable: false });
+    expect(requests).toHaveLength(1);
+    expect(requests[0]!.body).toHaveProperty("output_config");
   });
 
   it("retries once without thinking only when a compatible service explicitly rejects it", async () => {
@@ -254,6 +332,47 @@ describe("Claude provider", () => {
     );
     expect(result.usage).toEqual({ input: 72, output: 54 });
     expect(result.providerRequestId).toBe("safe-request-1");
+  });
+
+  it("accepts the fenced requested-ID map returned by the AIHubMix Haiku fixture", async () => {
+    const value = provider({
+      request: async () => ({
+        statusCode: 200,
+        headers: {},
+        bodyText: JSON.stringify(aihubmixHaikuSuccessFixture),
+      }),
+    });
+
+    await expect(value.attempt(makeProviderRequest())).resolves.toEqual({
+      translations: [
+        { id: "c1", text: "Fictional translation A" },
+        { id: "c2", text: "Fictional translation B" },
+      ],
+      usage: { input: 24, output: 18 },
+    });
+  });
+
+  it("reports a successful HTTP response with incompatible output as a protocol failure without retrying", async () => {
+    const requests: ProviderTransportRequest[] = [];
+    const value = provider({
+      request: async (request) => {
+        requests.push(request);
+        return {
+          statusCode: 200,
+          headers: {},
+          bodyText: JSON.stringify({
+            ...successFixture,
+            content: [{ type: "text", text: "not-json" }],
+          }),
+        };
+      },
+    });
+
+    await expect(value.testConnection("protocol-test")).rejects.toMatchObject({
+      category: "protocol",
+      retryable: false,
+    });
+    expect(requests).toHaveLength(1);
   });
 
   it.each([

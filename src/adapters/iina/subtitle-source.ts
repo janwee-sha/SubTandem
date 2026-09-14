@@ -179,7 +179,7 @@ export class IinaSubtitleSourcePort implements SubtitleSourcePort {
       try {
         if (this.subtitle.currentTrack?.id === id) track = this.subtitle.currentTrack;
       } catch {
-        /* IINA can expose the selected ID before currentTrack is ready. */
+        track = undefined;
       }
     }
     if (!track) return null;
@@ -192,15 +192,16 @@ export class IinaSubtitleSourcePort implements SubtitleSourcePort {
 
   readBinary(path: string): Uint8Array | null {
     let handle: IINA.API.FileHandle | null = null;
+    let bytes: Uint8Array | null = null;
     try {
       handle = this.file.handle(path, "read");
-      const bytes = handle.readToEnd();
-      if (bytes) return bytes;
+      bytes = handle.readToEnd() ?? null;
     } catch {
-      /* Fall through to IINA's text reader for UTF-8 subtitles. */
+      bytes = null;
     } finally {
       handle?.close();
     }
+    if (bytes) return bytes;
     try {
       const text = this.file.read(path);
       return typeof text === "string" ? utf8Encode(text) : null;

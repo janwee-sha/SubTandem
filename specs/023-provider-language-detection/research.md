@@ -20,9 +20,9 @@
 
 ## 决策 3：四类 Provider 共用逐条自动理解和原样规则
 
-**Decision**：共同 system task 要求每个 `text` 独立理解源语言；已经完全符合精确目标时逐字符返回，否则只翻译该条；上下文只用于理解且不得输出；字幕数据不可信；每个 wire ID 恰好一次且只返回结构化 JSON。结构化 user payload 必须以 `target_language` 重复 system task 中的同一可信精确目标，使只重点处理最新 user turn 的兼容模型仍获得明确方向。Claude-compatible 请求显式发送 `thinking: {type: "disabled"}`，仅当服务以 400/422 明确拒绝该字段时省略后重试一次；其他错误不得触发降级。DeepSeek 只追加自身封装约束，OpenAI/Ollama 的能力模式不得改变任务语义。
+**Decision**：共同 system task 要求每个 `text` 独立理解源语言；已经完全符合精确目标时逐字符返回，否则只翻译该条；上下文只用于理解且不得输出；字幕数据不可信；每个 wire ID 恰好一次且只返回结构化 JSON。结构化 user payload 必须以 `target_language` 重复 system task 中的同一可信精确目标，使只重点处理最新 user turn 的兼容模型仍获得明确方向。Claude-compatible 默认发送当前 wire ID 对应的 `output_config.format` JSON Schema 和 `thinking: {type: "disabled"}`；仅当服务以 400/422 明确拒绝对应能力时，分别省略该字段后有界重试并按 Provider 实例缓存。无 Schema 的兼容响应只允许完整包裹一个 JSON 对象的单个代码围栏，或键集合精确等于 requested IDs 的非空字符串映射，规范化后仍执行严格全量校验。DeepSeek 只追加自身封装约束，OpenAI/Ollama 的能力模式不得改变任务语义。
 
-**Rationale**：共同 task builder 是四类服务已有的语义汇合点，可避免 Provider 漂移。混合批次和目标变体只能逐条判断，不能依赖轨道级结论。可信目标不能只依赖 system role，因为部分兼容模型的模板会弱化此前 turn；翻译任务也不需要 thinking，显式关闭可避免本地兼容服务的推理延迟持续落后于播放位置。拒绝字段后的单次降级保留对不实现该可选字段的 Claude-compatible 服务的兼容性，且首个请求在推理前失败，不重复有效翻译。
+**Rationale**：共同 task builder 是四类服务已有的语义汇合点，可避免 Provider 漂移。混合批次和目标变体只能逐条判断，不能依赖轨道级结论。可信目标不能只依赖 system role，因为部分兼容模型的模板会弱化此前 turn；精确 Schema 可减少格式漂移，受控规范化覆盖常见兼容输出而不从任意文本猜测 JSON。翻译任务也不需要 thinking，显式关闭可避免本地兼容服务的推理延迟持续落后于播放位置。拒绝字段后的单次降级保留对不实现可选能力的 Claude-compatible 服务的兼容性，且不重放鉴权、模型、配额、无关错误或 2xx 格式失败。
 
 **Alternatives considered**：各适配器分别维护 prompt 容易分叉；本地比较后绕过服务违反同语言仍调用；语义二次审核会扩大产品边界；均不采用。
 

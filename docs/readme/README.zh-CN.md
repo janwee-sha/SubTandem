@@ -120,7 +120,7 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 ### Claude
 
 - 默认 API root 为 `https://api.anthropic.com`。请填写该 root 或 Claude-compatible root，不要填写完整的 `/v1/messages` 或 `/v1/models` URL；远程 endpoint 必须使用 HTTPS。
-- SubTandem 使用 `/v1/messages` 的原生非流式 Messages 请求，并从 `/v1/models` 获取模型目录。兼容服务必须支持这些路由以及 Claude 认证和版本 header。
+- SubTandem 使用 `/v1/messages` 的原生非流式 Messages 请求，并从 `/v1/models` 获取模型目录。兼容服务必须支持这些路由以及 Claude 认证和版本 header。翻译请求会优先使用 Claude structured JSON output；若兼容服务明确拒绝该能力，SubTandem 会省略该字段重试一次，该额外请求可能产生费用。
 - API key 必填。新建 Profile 时，先填写 Key 再手动刷新模型；自动刷新绝不会发送未保存的 Key。可选择返回的模型或填写准确的自定义 Model ID。
 - 严格按 **Save → Test → Select** 操作。Save 和 Test 不授权发送字幕文字；Select 前只有不含字幕的模型目录请求可以到达 endpoint。
 - Claude 可能收取 Messages 请求费用，并限制认证、模型访问、spend limit、配额和请求速率，也可能拒绝内容。保存后的 Key 只写且不会再次显示。

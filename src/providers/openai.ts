@@ -94,7 +94,7 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
         this.capability = capability;
         return capability;
       } catch {
-        /* Try the next capability only for a fixed probe. */
+        continue;
       }
     }
     throw protocolError("OPENAI_CAPABILITY_PROBE_FAILED", "configuration");

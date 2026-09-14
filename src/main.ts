@@ -201,9 +201,6 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     });
   };
 
-  // Only post while handling a message sent by the live webview. IINA 1.4.4
-  // traps in native code if a background callback posts after the sidebar has
-  // been torn down during a plugin reload.
   const flushSidebar = (): void => {
     runtime.sidebar.postMessage("state:update", sidebarState);
     for (const message of sidebarMessages.drain()) {
@@ -396,8 +393,6 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     sourceSelectionTimer = setTimeout(attemptSourceReload, 250);
   };
 
-  // IINA clears the sidebar message hub when loadFile() is called, so load the
-  // webview before registering any of its message handlers.
   runtime.sidebar.loadFile("dist/ui/sidebar.html");
   runtime.sidebar.onMessage("ui:ready", () => {
     if (!loadSource(false)) scheduleSourceReload();

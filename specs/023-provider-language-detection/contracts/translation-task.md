@@ -33,7 +33,7 @@
 | OpenAI-compatible | Chat Completions；strict schema / JSON object / prompt JSON | 接受唯一 requested ID 的合法非空子集 |
 | Ollama | `/api/chat`；JSON Schema 或一次有界 prompt JSON fallback | 接受唯一 requested ID 的合法非空子集 |
 | DeepSeek | Chat Completions；JSON object、thinking disabled | 当前 wire 精确、完整、全有或全无 |
-| Claude-compatible | Messages；顶层 system、单 user、`thinking: disabled`、`end_turn`；仅在 400/422 明确拒绝 thinking 字段时省略并重试一次 | 当前 wire 精确、完整、全有或全无 |
+| Claude-compatible | Messages；顶层 system、单 user、当前 wire 的 `output_config.format` JSON Schema、`thinking: disabled`、`end_turn`；仅在 400/422 明确拒绝对应能力时分别省略并有界重试 | 当前 wire 精确、完整、全有或全无；无 Schema 响应只受控接受单 JSON 围栏或精确 ID 字符串映射 |
 
 HTTP endpoint、header、代理、凭据、响应大小、超时、能力探测和错误分类沿用现有 Provider 契约。不得新增独立检测 endpoint 或请求。
 
@@ -42,6 +42,7 @@ HTTP endpoint、header、代理、凭据、响应大小、超时、能力探测�
 - 结果校验仅以 `text.trim().length > 0` 判断非全空白；一旦合法，必须传递原始 `text`。
 - `text` 与对应请求正文完全相同仍是成功，进入 progress/result、Controller、会话缓存和 Overlay，不触发跳过、拒绝或重试。
 - 重复、未知或缺失 ID、不可解析结构和全空白正文仍按既有无效结果处理。
+- Claude-compatible 的受控规范化不得从外围说明或多个围栏中提取 JSON；映射键必须与当前 requested IDs 完全相等，值必须是非空字符串，规范化后仍使用严格校验。
 - Overlay message 可以包含空字符串行，但整组 lines 必须至少有一个非空白字符；空行位置不得被过滤。
 - 相同正文的不同 ID 不得合并。
 

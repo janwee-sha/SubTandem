@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { buildTranslationTask } from "../../src/providers/translation-task.js";
-import { validateIdOutput, validateStrictIdOutput } from "../../src/providers/validation.js";
+import {
+  normalizeClaudeOutput,
+  validateIdOutput,
+  validateStrictIdOutput,
+} from "../../src/providers/validation.js";
 import { encodeWireItems, providerOutputSchema } from "../../src/providers/wire-items.js";
 
 describe("strict provider output", () => {
@@ -211,5 +215,46 @@ describe("strict provider output", () => {
       }),
     ).toMatchObject({ translations: [], missingIds: ["c1", "c2"] });
     expect(() => validateIdOutput(["c1"], "not-json")).toThrow(/MALFORMED_PROVIDER_OUTPUT/);
+  });
+});
+
+describe("Claude-compatible output normalization", () => {
+  it.each([
+    [
+      "one complete JSON code fence",
+      '```json\n{"translations":[{"id":"c1","text":"  One  "},{"id":"c2","text":"Two"}]}\n```',
+    ],
+    ["one exact requested-ID map", '{"c2":"Two","c1":"  One  "}'],
+  ])("accepts %s", (_name, output) => {
+    expect(
+      validateStrictIdOutput(["c1", "c2"], normalizeClaudeOutput(["c1", "c2"], output)),
+    ).toEqual({
+      translations: [
+        { id: "c1", text: "  One  " },
+        { id: "c2", text: "Two" },
+      ],
+    });
+  });
+
+  it.each([
+    ["surrounding text", 'Result: {"c1":"One","c2":"Two"}'],
+    [
+      "multiple code fences",
+      '```json\n{"c1":"One","c2":"Two"}\n```\n```json\n{"c1":"Other","c2":"Other"}\n```',
+    ],
+    ["missing requested ID", '{"c1":"One"}'],
+    ["unknown requested ID", '{"c1":"One","outside":"Two"}'],
+    ["extra requested ID", '{"c1":"One","c2":"Two","c3":"Three"}'],
+    ["duplicate requested ID", '{"c1":"One","c1":"Again","c2":"Two"}'],
+    ["blank mapped text", '{"c1":" ","c2":"Two"}'],
+    ["non-string mapped text", '{"c1":1,"c2":"Two"}'],
+    [
+      "extra standard field",
+      '{"translations":[{"id":"c1","text":"One"},{"id":"c2","text":"Two"}],"note":"x"}',
+    ],
+  ])("rejects %s", (_name, output) => {
+    expect(() =>
+      validateStrictIdOutput(["c1", "c2"], normalizeClaudeOutput(["c1", "c2"], output)),
+    ).toThrow(/MALFORMED_PROVIDER_OUTPUT/);
   });
 });

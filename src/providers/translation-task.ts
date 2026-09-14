@@ -57,7 +57,7 @@ export function buildDeepSeekTranslationTask(input: {
 export function buildClaudeTranslationTask(input: {
     targetLanguage: string;
     targets: readonly WireTranslationTarget[];
-}): Pick<TranslationTask, "systemMessage" | "userMessage"> {
+}): TranslationTask {
     const task = buildTranslationTask(input);
     const ids = input.targets.map((target) => target.id);
     return {
@@ -71,5 +71,6 @@ export function buildClaudeTranslationTask(input: {
             "Do not add surrounding text, code fences, or extra fields."
         ].join(" "),
         userMessage: task.userMessage,
+        outputSchema: task.outputSchema,
     };
 }

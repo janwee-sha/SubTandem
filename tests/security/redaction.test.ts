@@ -58,6 +58,51 @@ describe("allowlist-only diagnostics", () => {
     expect(JSON.stringify(failure)).not.toMatch(/PRIVATE|authorization|x-private|unknown/i);
   });
 
+  it("redacts both responses from a rejected Claude structured-output fallback", async () => {
+    const sensitive = "PRIVATE_STRUCTURED_OUTPUT_RESPONSE";
+    let attempts = 0;
+    const provider = new ClaudeProvider(
+      {
+        endpoint: "https://api.anthropic.com",
+        model: "exact-model",
+        apiKey: "private-key",
+      },
+      {
+        request: async () => {
+          attempts += 1;
+          return attempts === 1
+            ? {
+                statusCode: 422,
+                headers: { "request-id": `bad\n${sensitive}` },
+                bodyText: JSON.stringify({
+                  error: {
+                    type: "invalid_request_error",
+                    message: `JSON Schema structured output is not supported: ${sensitive}`,
+                  },
+                }),
+              }
+            : {
+                statusCode: 400,
+                headers: { "request-id": `bad\n${sensitive}` },
+                bodyText: JSON.stringify({
+                  error: { type: "invalid_request_error", message: sensitive },
+                }),
+              };
+        },
+      },
+    );
+
+    const failure = await provider.attempt(makeProviderRequest()).catch((error) => error);
+
+    expect(attempts).toBe(2);
+    expect(failure).toMatchObject({
+      category: "configuration",
+      retryable: false,
+      statusCode: 400,
+    });
+    expect(JSON.stringify({ failure, diagnostic: diagnostic(failure) })).not.toContain(sensitive);
+  });
+
   it("never writes Claude subtitle context or translations to the translation log", async () => {
     const messages: string[] = [];
     const controller = new PlaybackController({

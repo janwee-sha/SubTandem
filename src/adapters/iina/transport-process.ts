@@ -99,19 +99,19 @@ export function discoverHelperExecutable(
   locator: HelperExecutableLocator,
   pluginId = "io.subtandem.iina",
 ): string {
-  // IINA's utils.exec rejects relative paths, and @plugin is not a supported
-  // pseudo-folder. @data lives at <plugins>/.data/<pluginId>, so derive the
-  // installed package root from the one absolute plugin path IINA exposes.
-  const dataDirectory = locator.resolvePath("@data/.").replace(/\/+$/, "");
-  const suffix = `/.data/${pluginId}`;
-  if (!dataDirectory.endsWith(suffix)) throw new Error("PLUGIN_DATA_PATH_UNEXPECTED");
-  const pluginsDirectory = dataDirectory.slice(0, -suffix.length);
-  const candidate = `${pluginsDirectory}/${pluginId}.iinaplugin/dist/native/subtandem-transport`;
+  const absoluteDataDirectory = locator.resolvePath("@data/.").replace(/\/+$/, "");
+  const pluginDataSuffix = `/.data/${pluginId}`;
+  if (!absoluteDataDirectory.endsWith(pluginDataSuffix))
+    throw new Error("PLUGIN_DATA_PATH_UNEXPECTED");
+  const pluginsDirectory = absoluteDataDirectory.slice(0, -pluginDataSuffix.length);
+  const installedExecutable = `${pluginsDirectory}/${pluginId}.iinaplugin/dist/native/subtandem-transport`;
+  let installedExecutableExists = false;
   try {
-    if (locator.exists(candidate)) return candidate;
+    installedExecutableExists = locator.exists(installedExecutable);
   } catch {
-    /* Fall through to a sanitized startup error. */
+    installedExecutableExists = false;
   }
+  if (installedExecutableExists) return installedExecutable;
   const matches: string[] = [];
   if (locator.list && locator.read) {
     let entries: Array<{ filename: string; path: string; isDir: boolean }> = [];
@@ -121,9 +121,6 @@ export function discoverHelperExecutable(
       entries = [];
     }
     for (const entry of entries) {
-      // IINA reports development package symlinks as non-directories on some
-      // releases, so validate candidates by package name, identifier and the
-      // helper itself instead of trusting isDir.
       if (!/^[^/]+\.iinaplugin(?:-dev)?$/.test(entry.filename)) continue;
       const root = `${pluginsDirectory}/${entry.filename}`;
       try {
@@ -134,7 +131,7 @@ export function discoverHelperExecutable(
         const helper = `${root}/dist/native/subtandem-transport`;
         if (locator.exists(helper)) matches.push(helper);
       } catch {
-        /* Ignore malformed or inaccessible unrelated plugin packages. */
+        continue;
       }
     }
   }

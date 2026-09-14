@@ -11,7 +11,7 @@ import { claudeApiError, claudeApiUrl, claudeRequestHeaders } from "./claude-api
 import { protocolError } from "./errors.js";
 import { buildClaudeTranslationTask } from "./translation-task.js";
 import { runTranslationBatches } from "./translation-batches.js";
-import { validateStrictIdOutput } from "./validation.js";
+import { normalizeClaudeOutput, validateStrictIdOutput } from "./validation.js";
 
 const REQUEST_TIMEOUT_MS = 60_000;
 
@@ -22,6 +22,7 @@ export class ClaudeProvider implements ConfiguredProvider {
   private readonly activeRequests = new Set<string>();
   private readonly cancelledRequests = new Set<string>();
   private thinkingCapability: "disabled" | "omitted" = "disabled";
+  private structuredOutputCapability: "json-schema" | "omitted" = "json-schema";
 
   constructor(
     private readonly config: {
@@ -116,26 +117,45 @@ export class ClaudeProvider implements ConfiguredProvider {
     timeoutMs: number,
   ): Promise<ProviderTransportResponse> {
     const task = buildClaudeTranslationTask({ targetLanguage, targets: items });
-    const capability = this.thinkingCapability;
-    let response = await this.sendRequest(jobId, task, timeoutMs, capability);
-    this.throwIfCancelled(scopeId);
-    if (capability === "omitted" || !this.isThinkingIncompatibility(response)) return response;
-    this.thinkingCapability = "omitted";
-    response = await this.sendRequest(
-      `${jobId}-without-thinking`,
-      task,
-      timeoutMs,
-      "omitted",
-    );
-    this.throwIfCancelled(scopeId);
-    return response;
+    let thinkingCapability = this.thinkingCapability;
+    let structuredOutputCapability = this.structuredOutputCapability;
+    const fallbackNames: string[] = [];
+    while (true) {
+      const activeJobId =
+        fallbackNames.length === 0 ? jobId : `${jobId}-${fallbackNames.join("-")}`;
+      const response = await this.sendRequest(
+        activeJobId,
+        task,
+        timeoutMs,
+        thinkingCapability,
+        structuredOutputCapability,
+      );
+      this.throwIfCancelled(scopeId);
+      if (
+        structuredOutputCapability === "json-schema" &&
+        this.isStructuredOutputIncompatibility(response)
+      ) {
+        this.structuredOutputCapability = "omitted";
+        structuredOutputCapability = "omitted";
+        fallbackNames.push("without-output-config");
+        continue;
+      }
+      if (thinkingCapability === "disabled" && this.isThinkingIncompatibility(response)) {
+        this.thinkingCapability = "omitted";
+        thinkingCapability = "omitted";
+        fallbackNames.push("without-thinking");
+        continue;
+      }
+      return response;
+    }
   }
 
   private async sendRequest(
     jobId: string,
     task: ReturnType<typeof buildClaudeTranslationTask>,
     timeoutMs: number,
-    capability: "disabled" | "omitted",
+    thinkingCapability: "disabled" | "omitted",
+    structuredOutputCapability: "json-schema" | "omitted",
   ): Promise<ProviderTransportResponse> {
     this.activeJobs.add(jobId);
     try {
@@ -149,7 +169,14 @@ export class ClaudeProvider implements ConfiguredProvider {
           model: this.config.model,
           max_tokens: 8192,
           stream: false,
-          ...(capability === "disabled" ? { thinking: { type: "disabled" } } : {}),
+          ...(thinkingCapability === "disabled" ? { thinking: { type: "disabled" } } : {}),
+          ...(structuredOutputCapability === "json-schema"
+            ? {
+                output_config: {
+                  format: { type: "json_schema", schema: task.outputSchema },
+                },
+              }
+            : {}),
           system: task.systemMessage,
           messages: [{ role: "user", content: task.userMessage }],
         },
@@ -166,6 +193,17 @@ export class ClaudeProvider implements ConfiguredProvider {
     const detail = response.bodyText.slice(0, 16_384);
     return /thinking/i.test(detail) &&
       /(disabled|unsupported|not supported|unknown|unrecognized|unexpected|invalid)/i.test(detail);
+  }
+
+  private isStructuredOutputIncompatibility(response: ProviderTransportResponse): boolean {
+    if (response.statusCode !== 400 && response.statusCode !== 422) return false;
+    const detail = response.bodyText.slice(0, 16_384);
+    return (
+      /(output[_ .-]?config|json[_ -]?schema|structured[_ -]?outputs?)/i.test(detail) &&
+      /(not supported|unsupported|does not support|unknown|unrecognized|unexpected|not allowed|not permitted)/i.test(
+        detail,
+      )
+    );
   }
 
   private parseResponse(
@@ -213,14 +251,9 @@ export class ClaudeProvider implements ConfiguredProvider {
     });
     const candidate = textBlocks.join("");
     if (textBlocks.length === 0 || !candidate.trim()) throw protocolError("CLAUDE_EMPTY_OUTPUT");
-    let output: unknown;
-    try {
-      output = JSON.parse(candidate);
-    } catch {
-      throw protocolError("CLAUDE_MALFORMED_OUTPUT");
-    }
     let validated: TranslationBatchResult;
     try {
+      const output = normalizeClaudeOutput(requestedIds, candidate);
       validated = validateStrictIdOutput(requestedIds, output);
     } catch {
       throw protocolError("CLAUDE_MALFORMED_OUTPUT");

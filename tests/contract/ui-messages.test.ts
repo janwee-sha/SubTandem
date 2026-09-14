@@ -26,6 +26,7 @@ const providerTestStatusMessage = (
     subtandemProviderTestStatusMessage(result: {
       ok?: boolean;
       category?: string;
+      statusCode?: number;
       userAction?: string;
       providerKind?: "openai" | "claude" | "deepseek" | "ollama";
     }): string;
@@ -251,6 +252,17 @@ describe("Sidebar/Main/Global security messages", () => {
     expect(
       providerTestStatusMessage({
         ok: false,
+        category: "protocol",
+        userAction: "CHECK_ENDPOINT",
+        providerKind: "claude",
+      }),
+    ).toBe(
+      "Provider response was incompatible. Check that the selected model supports structured JSON output.",
+    );
+    expect(sidebarSource).toContain('protocol: "Provider response was incompatible"');
+    expect(
+      providerTestStatusMessage({
+        ok: false,
         category: "authentication",
         userAction: "CHECK_CREDENTIALS",
       }),
@@ -275,6 +287,7 @@ describe("Sidebar/Main/Global security messages", () => {
     expect(
       providerTestStatusMessage({
         ok: false,
+        category: "configuration",
         userAction: "CHECK_ENDPOINT",
         providerKind: "ollama",
       }),
@@ -364,8 +377,9 @@ describe("Sidebar/Main/Global security messages", () => {
 
   it("accepts only an exact target-only provider attempt payload", () => {
     const request = makeProviderRequest();
-    expect(parseProviderAttempt({ requestId: request.requestId, revision: 1, payload: request }))
-      .toEqual({ requestId: request.requestId, revision: 1, payload: request });
+    expect(
+      parseProviderAttempt({ requestId: request.requestId, revision: 1, payload: request }),
+    ).toEqual({ requestId: request.requestId, revision: 1, payload: request });
 
     for (const extra of [
       { sourceLanguage: "en" },
@@ -392,11 +406,20 @@ describe("Sidebar/Main/Global security messages", () => {
       { ...request, profileRevision: 0 },
       { ...request, targetLanguage: "invalid" },
       { ...request, items: [] },
-      { ...request, items: Array.from({ length: 26 }, (_, index) => ({ id: `c${index}`, text: "x" })) },
+      {
+        ...request,
+        items: Array.from({ length: 26 }, (_, index) => ({ id: `c${index}`, text: "x" })),
+      },
       { ...request, items: [{ id: "c1", text: "x".repeat(5_001) }] },
       { ...request, items: [{ id: "c1", text: " " }] },
       { ...request, items: [{ id: "c1", text: "x", contextPrevious: "x".repeat(501) }] },
-      { ...request, items: [{ id: "same", text: "x" }, { id: "same", text: "y" }] },
+      {
+        ...request,
+        items: [
+          { id: "same", text: "x" },
+          { id: "same", text: "y" },
+        ],
+      },
       { ...request, items: [{ id: "c1", text: "x", sourceLanguage: "en" }] },
     ];
     for (const payload of invalidPayloads)

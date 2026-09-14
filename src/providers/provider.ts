@@ -5,7 +5,6 @@ import type {
 } from "./types.js";
 
 export interface TranslationProvider {
-  /** Executes exactly one provider attempt. Retry policy belongs to the player session. */
   attempt(
     request: TranslationBatchRequest,
     onProgress?: TranslationProgressHandler,

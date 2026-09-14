@@ -120,11 +120,11 @@ function restoreProfileMetadata(): void {
             : {}),
         });
       } catch {
-        /* Ignore one invalid preference entry without losing valid profiles. */
+        continue;
       }
     }
   } catch {
-    /* Corrupt non-secret metadata is equivalent to no saved profiles. */
+    return;
   }
 }
 
@@ -403,9 +403,6 @@ function supportedProviderKind(value: unknown): "openai" | "claude" | "deepseek"
   throw new Error("UNSUPPORTED_PROVIDER_KIND");
 }
 
-// IINA 1.4.4 traps when a global handler synchronously posts back through
-// JavascriptAPIGlobalController. Crossing a timer boundary also keeps every
-// reply outside the originating JavaScriptCore callback.
 const postToPlayer = createDeferredPlayerPost(
   (playerId, name, data) => iina.global.postMessage(playerId, name, data),
   setTimeout,

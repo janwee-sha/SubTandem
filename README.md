@@ -121,7 +121,7 @@ If the endpoint, model, key, or network route changes, save the updated profile 
 ### Claude
 
 - The default API root is `https://api.anthropic.com`. Enter that root or a Claude-compatible root, not a complete `/v1/messages` or `/v1/models` URL; remote endpoints must use HTTPS.
-- SubTandem uses native, non-streaming Messages requests at `/v1/messages` and model discovery at `/v1/models`. A compatible service must implement those routes and Claude authentication/version headers.
+- SubTandem uses native, non-streaming Messages requests at `/v1/messages` and model discovery at `/v1/models`. A compatible service must implement those routes and Claude authentication/version headers. Translation requests use Claude structured JSON output when supported; if a compatible service explicitly rejects that capability, SubTandem retries once without it, and the additional request may be billed.
 - A key is required. For a new profile, enter it before manually refreshing models; automatic refresh never sends an unsaved key. Choose a returned model or enter an exact custom Model ID.
 - Follow **Save → Test → Select**. Save and Test do not authorize subtitle text; before Select, only a subtitle-free model-list request may reach the endpoint.
 - Claude may charge for Messages requests and enforce authentication, model access, spend limits, quotas, rate limits, or refusals. The saved key is write-only and is never shown again.

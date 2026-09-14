@@ -93,7 +93,7 @@ open build/package/SubTandem-X.Y.Z.iinaplgz
 - OpenAI、Claude、DeepSeek 和 Ollama 的凭据由 helper 写入插件私有数据目录的 `credentials.json`；目录权限为 `0700`，文件权限为 `0600`。凭据不得进入 preferences、日志、诊断、进程参数或安装包。
 - 翻译结果仅缓存在当前视频会话中。换片、播放结束或关窗时清理，不写入持久缓存。
 - OpenAI 与 Ollama 可使用完整 HTTP(S) endpoint；OpenAI 继续支持兼容其契约的自定义服务。Claude 默认 root 为 `https://api.anthropic.com`，也接受实现 `/v1/messages`、`/v1/models` 及 Claude 认证/版本 header 的 compatible HTTPS root。DeepSeek 固定默认 root 为 `https://api.deepseek.com`。四种服务沿用同一 transport、凭据与代理边界，不新增 native RPC、依赖或权限。
-- Claude 翻译使用顶层 system、单条 user message、`max_tokens: 8192`、`stream: false` 和精确 ID JSON；只接受 `end_turn` 与按序 text block，拒绝、截断、畸形或不完整 wire 均零提交。模型目录按 `last_id/after_id` 分页，每页发送前后复核完整 owner；preview Key 只用于当前手动刷新，不进入状态、日志或诊断。
+- Claude 翻译使用顶层 system、单条 user message、`max_tokens: 8192`、`stream: false` 和当前 wire ID 对应的 `output_config.format` JSON Schema；只接受 `end_turn` 与按序 text block，拒绝、截断、畸形或不完整 wire 均零提交。仅当 400/422 响应明确拒绝 structured output 时，当前 Provider 实例才缓存该能力缺失并省略字段重试一次；该额外请求可能产生费用，且不得越过 Profile、取消、正文最小化和诊断脱敏边界。模型目录按 `last_id/after_id` 分页，每页发送前后复核完整 owner；preview Key 只用于当前手动刷新，不进入状态、日志或诊断。
 - DeepSeek 翻译固定使用 `/chat/completions`、JSON object 输出、关闭 thinking 并严格校验 ID wire；模型目录使用 `/models`。产品不得预选、推荐或猜测 DeepSeek Model ID，也不持久化 Provider capability。
 - 已配置或正在编辑的 endpoint 可在 Select 前接收不含字幕的模型目录请求，其中包括默认 Claude 与 DeepSeek root；需要认证的新 Profile 仅在用户填写 API key 并手动刷新时临时使用该 Key，自动刷新不发送未保存 Key。只有用户明确 Select 的 Profile 修订版才会接收用于翻译的字幕正文。
 - 翻译请求只携带准确目标语言，不携带本地推测的源语言。四类 Provider 在同一请求内逐条理解源语言；短轨、源语言不明及已经符合准确目标语言的正文仍会发送到所选服务，并可能产生费用。同语言结果必须逐字符原样返回。

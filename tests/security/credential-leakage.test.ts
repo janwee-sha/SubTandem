@@ -11,6 +11,9 @@ import {
 } from "../../src/providers/translation-task.js";
 import { discoverProviderModels } from "../../src/providers/model-discovery.js";
 import { RecordingProvider } from "../helpers/fake-provider.js";
+import { ClaudeProvider } from "../../src/providers/claude.js";
+import type { ProviderTransportRequest } from "../../src/providers/transport.js";
+import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 
 describe("credential and content leakage boundaries", () => {
   it("keeps style-picker token, bodies and native failures out of user-visible source", () => {
@@ -85,6 +88,104 @@ describe("credential and content leakage boundaries", () => {
     });
     for (const value of sensitive) expect(output).not.toContain(value);
     expect(view).toMatchObject({ credentialConfigured: true });
+  });
+
+  it("keeps the Claude structured-output fallback on the same minimal provider request", async () => {
+    const requests: ProviderTransportRequest[] = [];
+    const value = new ClaudeProvider(
+      {
+        endpoint: "https://api.anthropic.com",
+        model: "current-model",
+        apiKey: "PRIVATE_FALLBACK_KEY",
+      },
+      {
+        request: async (request) => {
+          requests.push(request);
+          if (requests.length === 1)
+            return {
+              statusCode: 400,
+              headers: {},
+              bodyText: JSON.stringify({
+                type: "error",
+                error: {
+                  type: "invalid_request_error",
+                  message: "structured output is not supported",
+                },
+              }),
+            };
+          const body = request.body as { messages: Array<{ content: string }> };
+          const targets = (
+            JSON.parse(body.messages[0]!.content) as {
+              targets: Array<{ id: string }>;
+            }
+          ).targets;
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              type: "message",
+              role: "assistant",
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify({
+                    translations: targets.map(({ id }) => ({ id, text: `safe-${id}` })),
+                  }),
+                },
+              ],
+              stop_reason: "end_turn",
+            }),
+          };
+        },
+      },
+    );
+    const request = makeProviderRequest();
+    request.items = [{ id: "private-cue", text: "PRIVATE_FALLBACK_SUBTITLE" }];
+
+    await value.attempt(request);
+
+    expect(requests).toHaveLength(2);
+    for (const sent of requests) {
+      expect(sent.url).toBe("https://api.anthropic.com/v1/messages");
+      expect(sent.headers["x-api-key"]).toBe("PRIVATE_FALLBACK_KEY");
+      expect(JSON.stringify(sent.body)).not.toMatch(/profile|session|player|endpointFingerprint/);
+      const body = sent.body as {
+        messages: Array<{ content: string }>;
+      };
+      expect(JSON.parse(body.messages[0]!.content)).toEqual({
+        target_language: "Chinese (Simplified) [zh-Hans]",
+        targets: [{ id: "c1", text: "PRIVATE_FALLBACK_SUBTITLE" }],
+      });
+    }
+    expect(JSON.stringify(requests.map((sent) => sent.body))).not.toContain("PRIVATE_FALLBACK_KEY");
+  });
+
+  it("does not start the Claude capability fallback after the request is cancelled", async () => {
+    const requests: ProviderTransportRequest[] = [];
+    const value = new ClaudeProvider(
+      {
+        endpoint: "https://api.anthropic.com",
+        model: "current-model",
+        apiKey: "fictional-key",
+      },
+      {
+        request: async (request) => {
+          requests.push(request);
+          await value.cancel("request");
+          return {
+            statusCode: 400,
+            headers: {},
+            bodyText: '{"error":{"message":"output_config is not supported"}}',
+          };
+        },
+      },
+    );
+
+    await expect(value.attempt(makeProviderRequest())).rejects.toMatchObject({
+      category: "cancelled",
+      providerCode: "REQUEST_CANCELLED",
+    });
+    expect(requests).toHaveLength(1);
   });
 
   it("rejects secret and raw response fields in model refresh results", () => {
