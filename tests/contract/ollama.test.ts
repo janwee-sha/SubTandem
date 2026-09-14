@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest";
 import { OllamaProvider } from "../../src/providers/ollama.js";
 import type { ProviderTransport } from "../../src/providers/transport.js";
 import { buildOllamaTranslationTask } from "../../src/providers/translation-task.js";
+import {
+  loadOllamaQualityAcceptanceFixture,
+  ollamaQualityIssues,
+} from "../helpers/provider-language-detection.js";
 import { makeProviderRequest } from "./provider-test-helpers.js";
 
 interface OllamaPromptPayload {
@@ -29,6 +33,7 @@ const contaminationFixture = JSON.parse(
     "utf8",
   ),
 ) as { cases: ContaminationCase[] };
+const qualityFixture = loadOllamaQualityAcceptanceFixture();
 
 function parseOllamaPromptPayload(content: string): OllamaPromptPayload {
   const delimited = /INPUT_JSON_BEGIN\n([\s\S]*?)\nINPUT_JSON_END/.exec(content);
@@ -72,10 +77,13 @@ describe("Ollama native provider", () => {
 
     expect(result.translations).toEqual(request.items.map(({ id, text }) => ({ id, text })));
     expect(systemMessage).toMatch(/character-for-character/i);
+    expect(systemMessage).toMatch(/do not trim|never trim/i);
+    expect(systemMessage).toMatch(/never treat.*target variant|different script or regional variant/i);
     expect(systemMessage).toMatch(/context.*must not.*output/i);
   });
 
-  it("restores presentation-only normalization for an otherwise exact model copy", async () => {
+  it("preserves the model response when a same-language value is normalized", async () => {
+    const progress: Array<Array<{ id: string; text: string }>> = [];
     const provider = new OllamaProvider(
       { endpoint: "http://127.0.0.1:11434", model: "model" },
       {
@@ -98,13 +106,12 @@ describe("Ollama native provider", () => {
     );
     const request = makeProviderRequest();
     request.targetLanguage = "en";
-    request.items = [
-      { id: "leading", text: "  Keep leading spaces." },
-      { id: "trailing", text: "Keep trailing spaces.  " },
-      { id: "case", text: "WHAT, exactly?" },
-    ];
+    request.items = [{ id: "same-language", text: "  HELLO\n\n" }];
 
-    await expect(provider.attempt(request)).resolves.toEqual({ translations: request.items });
+    await expect(
+      provider.attempt(request, (value) => progress.push(value.translations)),
+    ).resolves.toEqual({ translations: [{ id: "same-language", text: "hello" }] });
+    expect(progress).toEqual([[{ id: "same-language", text: "hello" }]]);
   });
 
   it("uses the same optional Bearer for version, tags and chat", async () => {
@@ -228,6 +235,38 @@ describe("Ollama native provider", () => {
     );
     expect(result.translations).toEqual([{ id: "srt:0:0:1000", text: "一" }]);
   });
+
+  it.each(["quoted-source-echo", "cross-cue-completion", "translated-context-merge"])(
+    "keeps the current subtitle fragment isolated for $id",
+    (id) => {
+      const testCase = qualityFixture.cases.find((item) => item.id === id)!;
+      const task = buildOllamaTranslationTask({
+        targetLanguage: testCase.targetLanguage,
+        targets: [
+          {
+            id: testCase.id,
+            text: testCase.inputText,
+            context_previous: testCase.contextPrevious,
+            context_next: testCase.contextNext,
+          },
+        ],
+      });
+
+      expect(task.userMessage).toMatch(/subtitle fragment/i);
+      expect(task.userMessage).toMatch(/do not complete.*(?:sentence|quotation).*context/i);
+      expect(task.userMessage).toMatch(/unmatched.*quotation mark.*fragment punctuation/i);
+      expect(task.userMessage).toMatch(/do not prepend|do not append/i);
+      expect(task.userMessage).toMatch(/one current `text` value/i);
+      expect(parseOllamaPromptPayload(task.userMessage).targets).toEqual([
+        {
+          id: testCase.id,
+          text: testCase.inputText,
+          context_previous: testCase.contextPrevious,
+          context_next: testCase.contextNext,
+        },
+      ]);
+    },
+  );
 
   it("disables thinking during connection tests and every isolated wire without changing the task", async () => {
     const bodies: Array<{ think?: boolean; messages: Array<{ role: string; content: string }> }> =
@@ -454,6 +493,47 @@ describe("Ollama native provider", () => {
     },
   );
 
+  it.each(qualityFixture.cases)(
+    "replays $id through the production parser and quality gate",
+    async (testCase) => {
+      const provider = new OllamaProvider(
+        { endpoint: "http://127.0.0.1:11434", model: "synthetic-model" },
+        {
+          request: async () => ({
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              message: {
+                content: JSON.stringify({
+                  translations: [{ id: "c1", text: testCase.replayOutput }],
+                }),
+              },
+            }),
+          }),
+        },
+      );
+      const request = makeProviderRequest();
+      request.targetLanguage = testCase.targetLanguage;
+      request.items = [
+        {
+          id: testCase.id,
+          text: testCase.inputText,
+          contextPrevious: testCase.contextPrevious,
+          contextNext: testCase.contextNext,
+        },
+      ];
+
+      const result = await provider.attempt(request);
+      const output = result.translations.find((item) => item.id === testCase.id)?.text;
+      const valid = ollamaQualityIssues(testCase, output).length === 0;
+
+      expect(valid).toBe(testCase.expectedReplayValid);
+      if (testCase.expectedReplayValid) {
+        expect(result.translations).toEqual([{ id: testCase.id, text: testCase.replayOutput }]);
+      }
+    },
+  );
+
   it("preserves an exact same-language string even when it resembles model metadata", async () => {
     const literal = '</think> {"context_previous":"literal subtitle"}';
     const provider = new OllamaProvider(
@@ -509,6 +589,50 @@ describe("Ollama native provider", () => {
     await expect(provider.attempt(request)).resolves.toEqual({
       translations: [{ id: "current", text: "See you tomorrow." }],
     });
+  });
+
+  it.each([
+    {
+      name: "a proper name shared with adjacent context",
+      inputText: "Merci, Alice.",
+      contextPrevious: "Alice",
+      outputText: "Thank you, Alice.",
+    },
+    {
+      name: "a retained phrase in mixed-language text",
+      inputText: "Rendez-vous at Café Luna.",
+      contextPrevious: "Café Luna",
+      outputText: "Meet me at Café Luna.",
+    },
+  ])("accepts $name without retrying", async ({ inputText, contextPrevious, outputText }) => {
+    let calls = 0;
+    const provider = new OllamaProvider(
+      { endpoint: "http://127.0.0.1:11434", model: "synthetic-model" },
+      {
+        request: async () => {
+          calls += 1;
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              message: {
+                content: JSON.stringify({
+                  translations: [{ id: "c1", text: outputText }],
+                }),
+              },
+            }),
+          };
+        },
+      },
+    );
+    const request = makeProviderRequest();
+    request.targetLanguage = "en";
+    request.items = [{ id: "current", text: inputText, contextPrevious }];
+
+    await expect(provider.attempt(request)).resolves.toEqual({
+      translations: [{ id: "current", text: outputText }],
+    });
+    expect(calls).toBe(1);
   });
 
   it("uses prompt-only JSON for Ollama Cloud and accepts one complete JSON code block", async () => {

@@ -16,6 +16,25 @@ interface ProviderLanguageDetectionFixture {
   cases: ProviderLanguageDetectionCase[];
 }
 
+export interface OllamaQualityAcceptanceCase {
+  id: string;
+  targetLanguage: string;
+  inputText: string;
+  contextPrevious: string;
+  contextNext: string;
+  replayOutput: string;
+  expectedReplayValid: boolean;
+  exact?: boolean;
+  requiredScript?: "han";
+  requiredAny?: string[][];
+  forbiddenFragments?: string[];
+}
+
+interface OllamaQualityAcceptanceFixture {
+  version: number;
+  cases: OllamaQualityAcceptanceCase[];
+}
+
 export function loadProviderLanguageDetectionFixture(): ProviderLanguageDetectionFixture {
   const fixture = JSON.parse(
     readFileSync(
@@ -25,6 +44,19 @@ export function loadProviderLanguageDetectionFixture(): ProviderLanguageDetectio
   ) as ProviderLanguageDetectionFixture;
   if (fixture.version !== 1 || !Array.isArray(fixture.cases) || fixture.cases.length === 0) {
     throw new Error("Invalid provider language detection fixture");
+  }
+  return fixture;
+}
+
+export function loadOllamaQualityAcceptanceFixture(): OllamaQualityAcceptanceFixture {
+  const fixture = JSON.parse(
+    readFileSync(
+      new URL("../fixtures/providers/ollama-quality-acceptance.json", import.meta.url),
+      "utf8",
+    ),
+  ) as OllamaQualityAcceptanceFixture;
+  if (fixture.version !== 1 || !Array.isArray(fixture.cases) || fixture.cases.length === 0) {
+    throw new Error("Invalid Ollama quality acceptance fixture");
   }
   return fixture;
 }
@@ -53,6 +85,47 @@ export function freezeFixtureTargets(
     return cue;
   });
   return freezeTranslationTargets({ windowCues, targetCues });
+}
+
+export function freezeOllamaQualityTarget(
+  testCase: OllamaQualityAcceptanceCase,
+): FrozenTranslationTarget[] {
+  return [
+    {
+      id: testCase.id,
+      text: testCase.inputText,
+      contextPrevious: testCase.contextPrevious,
+      contextNext: testCase.contextNext,
+    },
+  ];
+}
+
+export function ollamaQualityIssues(
+  testCase: OllamaQualityAcceptanceCase,
+  output: string | undefined,
+): string[] {
+  if (output === undefined) return ["missing-output"];
+  if (!output.trim()) return ["blank-output"];
+  const issues: string[] = [];
+  if (testCase.exact) {
+    if (output !== testCase.inputText) issues.push("not-character-exact");
+  } else if (output === testCase.inputText) {
+    issues.push("unchanged-non-target");
+  }
+  if (testCase.requiredScript === "han" && !/\p{Script=Han}/u.test(output)) {
+    issues.push("missing-han-script");
+  }
+  for (const requiredGroup of testCase.requiredAny ?? []) {
+    if (!requiredGroup.some((fragment) => output.includes(fragment))) {
+      issues.push("missing-required-fragment");
+    }
+  }
+  for (const fragment of testCase.forbiddenFragments ?? []) {
+    if (output.toLocaleLowerCase().includes(fragment.toLocaleLowerCase())) {
+      issues.push("forbidden-fragment");
+    }
+  }
+  return [...new Set(issues)];
 }
 
 export function expectExactText(actual: string, expected: string): void {

@@ -98,17 +98,25 @@ export class OllamaProvider implements ConfiguredProvider {
     try {
       const wire = encodeWireItems(request.items);
       const combined: TranslationBatchResult = { translations: [] };
+      let isolatedFailure: unknown;
       for (let offset = 0; offset < wire.items.length; offset += MAX_ITEMS_PER_CHAT_REQUEST) {
         this.throwIfCancelled(request.requestId);
         const items = wire.items.slice(offset, offset + MAX_ITEMS_PER_CHAT_REQUEST);
         const part = Math.floor(offset / MAX_ITEMS_PER_CHAT_REQUEST) + 1;
-        const parsed = await this.validatedChat(
-          request.requestId,
-          `${request.requestId}-part-${part}`,
-          items,
-          request.targetLanguage,
-          60_000,
-        );
+        let parsed: TranslationBatchResult;
+        try {
+          parsed = await this.validatedChat(
+            request.requestId,
+            `${request.requestId}-part-${part}`,
+            items,
+            request.targetLanguage,
+            60_000,
+          );
+        } catch (error) {
+          if (wire.items.length <= 1 || !this.isIsolatedWireFailure(error)) throw error;
+          isolatedFailure = error;
+          continue;
+        }
         this.throwIfCancelled(request.requestId);
         const progress = wire.restore(parsed);
         if (progress.translations.length > 0) onProgress?.(progress);
@@ -121,6 +129,7 @@ export class OllamaProvider implements ConfiguredProvider {
         }
       }
       this.throwIfCancelled(request.requestId);
+      if (combined.translations.length === 0 && isolatedFailure) throw isolatedFailure;
       return wire.restore(combined);
     } finally {
       this.activeRequests.delete(request.requestId);
@@ -261,6 +270,12 @@ export class OllamaProvider implements ConfiguredProvider {
     return jobId.endsWith("-schema") ? `${jobId.slice(0, -7)}-prompt` : `${jobId}-prompt`;
   }
 
+  private isIsolatedWireFailure(error: unknown): boolean {
+    if (!error || typeof error !== "object" || Array.isArray(error)) return false;
+    const category = (error as Record<string, unknown>).category;
+    return category === "timeout" || category === "protocol";
+  }
+
   private isStructuredOutputIncompatibility(response: ProviderTransportResponse): boolean {
     if (response.statusCode !== 400 && response.statusCode !== 422) return false;
     const message = response.bodyText.slice(0, 16_384);
@@ -306,7 +321,7 @@ export class OllamaProvider implements ConfiguredProvider {
         return [
           {
             ...translation,
-            text: this.restoreCharacterExactText(target.text, translation.text),
+            text: translation.text,
           },
         ];
       }),
@@ -319,21 +334,10 @@ export class OllamaProvider implements ConfiguredProvider {
     };
   }
 
-  private restoreCharacterExactText(source: string, output: string): string {
-    return output.trim().toLowerCase() === source.trim().toLowerCase() ? source : output;
-  }
-
   private isContaminatedText(target: WireTranslationTarget, text: string): boolean {
     if (text === target.text) return false;
     const lines = text.split(/\r?\n/);
     if (lines.some((line) => line === target.text)) return true;
-    if (
-      [target.context_previous, target.context_next].some(
-        (context) =>
-          context && context !== target.text && text !== context && text.includes(context),
-      )
-    )
-      return true;
     return (
       /["'](?:target_language|targets|translations|context_previous|context_next|id|text)["']\s*:/i.test(
         text,

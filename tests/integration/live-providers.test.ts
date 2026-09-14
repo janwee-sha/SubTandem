@@ -15,7 +15,10 @@ import type {
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 import {
   freezeFixtureTargets,
+  freezeOllamaQualityTarget,
   loadProviderLanguageDetectionFixture,
+  loadOllamaQualityAcceptanceFixture,
+  ollamaQualityIssues,
 } from "../helpers/provider-language-detection.js";
 
 class FetchTransport implements ProviderTransport {
@@ -49,6 +52,7 @@ const live = process.env.SUBTANDEM_LIVE_PROVIDER_TEST === "1";
 const liveDeepSeek = process.env.SUBTANDEM_LIVE_DEEPSEEK_TEST === "1";
 const liveClaude = process.env.SUBTANDEM_LIVE_CLAUDE_TEST === "1";
 const languageFixture = loadProviderLanguageDetectionFixture();
+const ollamaQualityFixture = loadOllamaQualityAcceptanceFixture();
 const languageMatrix = [
   { caseId: "same-language-preservation", exactIndexes: [0, 1, 2, 3, 4, 5] },
   { caseId: "mixed-language-batch", exactIndexes: [2, 5] },
@@ -221,6 +225,39 @@ async function runLanguageMatrix(
   }
 }
 
+async function runOllamaQualityMatrix(
+  provider: OllamaProvider,
+  identity: Omit<LiveEvidenceIdentity, "caseId">,
+): Promise<void> {
+  for (const testCase of ollamaQualityFixture.cases) {
+    const request = {
+      ...makeProviderRequest(),
+      targetLanguage: testCase.targetLanguage,
+      items: freezeOllamaQualityTarget(testCase),
+    };
+    const result = await withSafeProviderDiagnostics(provider.attempt(request));
+    const output = result.translations.find((item) => item.id === testCase.id)?.text;
+    const issueCount = ollamaQualityIssues(testCase, output).length;
+    const evidence = {
+      ...identity,
+      caseId: testCase.id,
+      complete: result.translations.length === 1 && output !== undefined,
+      ordered: result.translations[0]?.id === testCase.id,
+      valid: issueCount === 0,
+      issueCount,
+    };
+    console.info(JSON.stringify({ liveProviderEvidence: evidence }));
+    expect.soft(evidence, testCase.id).toEqual({
+      ...identity,
+      caseId: testCase.id,
+      complete: true,
+      ordered: true,
+      valid: true,
+      issueCount: 0,
+    });
+  }
+}
+
 async function withSafeProviderDiagnostics<T>(
   operation: Promise<T>,
   safeCounts: () => Record<string, number> = () => ({}),
@@ -295,6 +332,7 @@ describe.skipIf(!live)("authorized live provider smoke tests", () => {
       caseId: "fifty-cue",
     });
     await runLanguageMatrix(provider, { provider: "ollama", model: model! });
+    await runOllamaQualityMatrix(provider, { provider: "ollama", model: model! });
   }, 600_000);
 });
 

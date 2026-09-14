@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { PlaybackController, type TranslationOverlaySink } from "../../src/app/controller.js";
+import { OllamaProvider } from "../../src/providers/ollama.js";
 import type { TranslationProvider } from "../../src/providers/provider.js";
 import { RecordingProvider } from "../helpers/fake-provider.js";
 import {
@@ -29,6 +30,14 @@ function sourceFor(testCase: (typeof fixture.cases)[number], contentHash = testC
     contentHash,
     format: "srt" as const,
   };
+}
+
+function ollamaTarget(content: string): { id: string; text: string } {
+  const payload = /INPUT_JSON_BEGIN\n([\s\S]*?)\nINPUT_JSON_END/.exec(content)?.[1];
+  const parsed = JSON.parse(payload ?? content) as {
+    targets: Array<{ id: string; text: string }>;
+  };
+  return parsed.targets[0]!;
 }
 
 describe("provider language detection", () => {
@@ -172,7 +181,223 @@ describe("provider language detection", () => {
 
     expect(providers[0]!.requests[0]!.playerId).toContain("window-0");
     expect(providers[1]!.requests[0]!.playerId).toContain("window-1");
-    expect(providers.flatMap((provider) => provider.requests).every((request) => request.items.length <= 25)).toBe(true);
+    expect(
+      providers
+        .flatMap((provider) => provider.requests)
+        .every((request) => request.items.length <= 25),
+    ).toBe(true);
     expect(overlays[0]!.frames.flat()).not.toEqual(overlays[1]!.frames.flat());
+  });
+
+  it("keeps a normalized Ollama response unchanged through progress, Controller and cache", async () => {
+    let calls = 0;
+    const provider = new OllamaProvider(
+      { endpoint: "http://127.0.0.1:11434", model: "synthetic-model" },
+      {
+        request: async (request) => {
+          calls += 1;
+          const content = (request.body as { messages: Array<{ content: string }> }).messages.at(-1)!
+            .content;
+          const target = ollamaTarget(content);
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              message: {
+                content: JSON.stringify({
+                  translations: [{ id: target.id, text: "hello" }],
+                }),
+              },
+            }),
+          };
+        },
+      },
+    );
+    const overlay = new RecordingOverlay();
+    const controller = new PlaybackController({
+      playerId: "normalized-response",
+      provider,
+      providerKind: "ollama",
+      overlay,
+      targetLanguage: "en",
+    });
+    controller.setSource({
+      contentHash: "normalized-response",
+      format: "srt",
+      cues: [
+        {
+          id: "same-language",
+          index: 0,
+          startMs: 0,
+          endMs: 2_000,
+          sourceText: "  HELLO\n\n",
+          normalizedText: "  HELLO\n\n",
+        },
+      ],
+    });
+
+    controller.tick(0);
+    await controller.whenIdle();
+    expect(overlay.frames.at(-1)).toEqual(["hello"]);
+    expect(controller.cacheSize).toBe(1);
+    expect(calls).toBe(1);
+
+    controller.onSeek(0);
+    controller.tick(0);
+    await controller.whenIdle();
+    expect(overlay.frames.at(-1)).toEqual(["hello"]);
+    expect(calls).toBe(1);
+  });
+
+  it("submits a legal translation that shares ordinary text with adjacent context", async () => {
+    let calls = 0;
+    const outputs = new Map([
+      ["Bonjour.", "Hello."],
+      ["Merci, Alice.", "Thank you, Alice."],
+      ["Alice", "Alice"],
+    ]);
+    const provider = new OllamaProvider(
+      { endpoint: "http://127.0.0.1:11434", model: "synthetic-model" },
+      {
+        request: async (request) => {
+          calls += 1;
+          const content = (request.body as { messages: Array<{ content: string }> }).messages.at(-1)!
+            .content;
+          const target = ollamaTarget(content);
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              message: {
+                content: JSON.stringify({
+                  translations: [{ id: target.id, text: outputs.get(target.text)! }],
+                }),
+              },
+            }),
+          };
+        },
+      },
+    );
+    const overlay = new RecordingOverlay();
+    const controller = new PlaybackController({
+      playerId: "shared-context",
+      provider,
+      providerKind: "ollama",
+      overlay,
+      targetLanguage: "en",
+    });
+    controller.setSource({
+      contentHash: "shared-context",
+      format: "srt",
+      cues: ["Bonjour.", "Merci, Alice.", "Alice"].map((text, index) => ({
+        id: `shared-${index}`,
+        index,
+        startMs: index * 2_000,
+        endMs: index * 2_000 + 1_800,
+        sourceText: text,
+        normalizedText: text,
+      })),
+    });
+
+    controller.tick(2_000);
+    await controller.whenIdle();
+
+    expect(overlay.frames.at(-1)).toEqual(["Thank you, Alice."]);
+    expect(controller.cacheSize).toBe(2);
+    expect(calls).toBe(2);
+  });
+
+  it("keeps later Ollama cues moving when one isolated wire times out", async () => {
+    vi.useFakeTimers();
+    try {
+      const timeoutError = {
+        category: "timeout",
+        retryable: true,
+        providerCode: "PROVIDER_TIMEOUT",
+        userAction: "CHECK_NETWORK",
+      } as const;
+      const requestedTexts: string[] = [];
+      let rejectFirstStall: ((reason: typeof timeoutError) => void) | undefined;
+      let announceFirstStall: (() => void) | undefined;
+      const firstStallStarted = new Promise<void>((resolve) => {
+        announceFirstStall = resolve;
+      });
+      const provider = new OllamaProvider(
+        { endpoint: "http://127.0.0.1:11434", model: "synthetic-model" },
+        {
+          request: async (request) => {
+            const content = (request.body as { messages: Array<{ content: string }> }).messages.at(-1)!
+              .content;
+            const target = ollamaTarget(content);
+            requestedTexts.push(target.text);
+            if (target.text === "Stalled.") {
+              if (!rejectFirstStall) {
+                announceFirstStall?.();
+                return new Promise((_, reject) => {
+                  rejectFirstStall = reject;
+                });
+              }
+              throw timeoutError;
+            }
+            return {
+              statusCode: 200,
+              headers: {},
+              bodyText: JSON.stringify({
+                message: {
+                  content: JSON.stringify({
+                    translations: [{ id: target.id, text: `T:${target.text}` }],
+                  }),
+                },
+              }),
+            };
+          },
+        },
+      );
+      let announceLaterShown: (() => void) | undefined;
+      const laterShown = new Promise<void>((resolve) => {
+        announceLaterShown = resolve;
+      });
+      const overlay = new RecordingOverlay();
+      const recordShow = overlay.show.bind(overlay);
+      overlay.show = (lines) => {
+        recordShow(lines);
+        if (lines.includes("T:Later.")) announceLaterShown?.();
+      };
+      const controller = new PlaybackController({
+        playerId: "isolated-timeout",
+        provider,
+        providerKind: "ollama",
+        overlay,
+        targetLanguage: "zh-Hans",
+        random: () => 0,
+      });
+      controller.setSource({
+        contentHash: "isolated-timeout",
+        format: "srt",
+        cues: ["First.", "Stalled.", "Later."].map((text, index) => ({
+          id: `timeout-${index}`,
+          index,
+          startMs: index * 1_000,
+          endMs: index * 1_000 + 900,
+          sourceText: text,
+          normalizedText: text,
+        })),
+      });
+
+      controller.tick(0);
+      await firstStallStarted;
+      controller.tick(2_000);
+      rejectFirstStall?.(timeoutError);
+      await laterShown;
+
+      expect(requestedTexts).toContain("Later.");
+      expect(controller.cacheSize).toBe(2);
+      expect(overlay.frames.at(-1)).toEqual(["T:Later."]);
+
+      await vi.runAllTimersAsync();
+      await controller.whenIdle();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

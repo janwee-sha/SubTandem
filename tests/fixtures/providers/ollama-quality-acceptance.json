@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "quoted-source-echo",
+      "targetLanguage": "zh-Hans",
+      "inputText": "\"The meeting will begin",
+      "contextPrevious": "The notice was published.",
+      "contextNext": "The doors remain closed.",
+      "replayOutput": "“The meeting will begin",
+      "expectedReplayValid": false,
+      "requiredScript": "han",
+      "forbiddenFragments": ["The meeting will begin", "The doors remain closed"]
+    },
+    {
+      "id": "cross-cue-completion",
+      "targetLanguage": "zh-Hans",
+      "inputText": "The synthetic convoy departs",
+      "contextPrevious": "The route is clear.",
+      "contextNext": "before sunrise.",
+      "replayOutput": "合成车队将在日出前出发。",
+      "expectedReplayValid": false,
+      "requiredScript": "han",
+      "forbiddenFragments": ["日出"]
+    },
+    {
+      "id": "translated-context-merge",
+      "targetLanguage": "zh-Hans",
+      "inputText": "Hold position.",
+      "contextPrevious": "Wait here.",
+      "contextNext": "The synthetic signal is red.",
+      "replayOutput": "在这里等候。保持位置。",
+      "expectedReplayValid": false,
+      "requiredScript": "han",
+      "forbiddenFragments": ["在这里等候"]
+    },
+    {
+      "id": "adjacent-repeat",
+      "targetLanguage": "zh-Hans",
+      "inputText": "Hold position.",
+      "contextPrevious": "Hold position.",
+      "contextNext": "Proceed on the synthetic signal.",
+      "replayOutput": "保持位置。保持位置。",
+      "expectedReplayValid": false,
+      "requiredScript": "han",
+      "forbiddenFragments": ["保持位置。保持位置。"]
+    },
+    {
+      "id": "mixed-target-output",
+      "targetLanguage": "zh-Hans",
+      "inputText": "The synthetic gate is open.",
+      "contextPrevious": "The synthetic key worked.",
+      "contextNext": "Enter now.",
+      "replayOutput": "合成门 to 已打开。",
+      "expectedReplayValid": false,
+      "requiredScript": "han",
+      "forbiddenFragments": [" to ", "The synthetic gate"]
+    },
+    {
+      "id": "same-language-exact",
+      "targetLanguage": "en",
+      "inputText": "  Keep Alice here.\n\n",
+      "contextPrevious": "Alice arrived.",
+      "contextNext": "Alice will wait.",
+      "replayOutput": "  Keep Alice here.\n\n",
+      "expectedReplayValid": true,
+      "exact": true
+    },
+    {
+      "id": "proper-name-retention",
+      "targetLanguage": "zh-Hans",
+      "inputText": "Merci, Alice.",
+      "contextPrevious": "Alice",
+      "contextNext": "À demain.",
+      "replayOutput": "谢谢，Alice。",
+      "expectedReplayValid": true,
+      "requiredScript": "han",
+      "requiredAny": [["Alice", "爱丽丝", "艾丽丝"]],
+      "forbiddenFragments": ["Merci"]
+    },
+    {
+      "id": "simplified-chinese-variant",
+      "targetLanguage": "zh-Hans",
+      "inputText": "檔案已經準備好了。",
+      "contextPrevious": "歡迎回來。",
+      "contextNext": "請確認設定。",
+      "replayOutput": "文件已经准备好了。",
+      "expectedReplayValid": true,
+      "requiredScript": "han",
+      "requiredAny": [["已经"], ["准备"]],
+      "forbiddenFragments": ["已經", "準備"]
+    },
+    {
+      "id": "traditional-chinese-variant",
+      "targetLanguage": "zh-Hant",
+      "inputText": "文件已经准备好了。",
+      "contextPrevious": "欢迎回来。",
+      "contextNext": "请确认设置。",
+      "replayOutput": "檔案已經準備好了。",
+      "expectedReplayValid": true,
+      "requiredScript": "han",
+      "requiredAny": [["已經"], ["準備"]],
+      "forbiddenFragments": ["已经", "准备"]
+    },
+    {
+      "id": "portuguese-portugal-variant",
+      "targetLanguage": "pt-PT",
+      "inputText": "O ônibus está chegando.",
+      "contextPrevious": "A parada fica perto.",
+      "contextNext": "Vou pegar o trem amanhã.",
+      "replayOutput": "O autocarro está a chegar.",
+      "expectedReplayValid": true,
+      "requiredAny": [["autocarro"]],
+      "forbiddenFragments": ["ônibus"]
+    }
+  ]
+}
