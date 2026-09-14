@@ -341,7 +341,7 @@ describe("US3 provider broker integration", () => {
     ]);
     for (const request of requests.filter((item) => item.body)) {
       expect(request.body).not.toHaveProperty("format");
-      expect(request.body).not.toHaveProperty("think");
+      expect(request.body).toHaveProperty("think", false);
       const messages = request.body!.messages as Array<{ content: string }>;
       expect(messages[0]!.content).toContain('"required":["translations"]');
     }

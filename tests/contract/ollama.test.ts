@@ -142,7 +142,7 @@ describe("Ollama native provider", () => {
       timeoutMs: 60_000,
       body: { stream: false, options: { temperature: 0 } },
     });
-    expect((calls[0] as { body: Record<string, unknown> }).body).not.toHaveProperty("think");
+    expect((calls[0] as { body: Record<string, unknown> }).body).toHaveProperty("think", false);
     const userMessage = (
       calls[0] as { body: { messages: Array<{ content: string }> } }
     ).body.messages.at(-1)?.content;
@@ -172,6 +172,67 @@ describe("Ollama native provider", () => {
       }).systemMessage,
     );
     expect(result.translations).toEqual([{ id: "srt:0:0:1000", text: "一" }]);
+  });
+
+  it("disables thinking during connection tests and every two-item wire without changing the task", async () => {
+    const bodies: Array<{ think?: boolean; messages: Array<{ role: string; content: string }> }> =
+      [];
+    const provider = new OllamaProvider(
+      { endpoint: "http://localhost:11434", model: "qwen3:14b" },
+      {
+        request: async (request) => {
+          if (request.url.endsWith("/api/version"))
+            return { statusCode: 200, headers: {}, bodyText: '{"version":"local"}' };
+          if (request.url.endsWith("/api/tags"))
+            return { statusCode: 200, headers: {}, bodyText: '{"models":[{"model":"qwen3:14b"}]}' };
+          const body = request.body as (typeof bodies)[number];
+          bodies.push(body);
+          const targets = JSON.parse(body.messages.at(-1)!.content).targets as Array<{
+            id: string;
+            text: string;
+          }>;
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              message: {
+                content: JSON.stringify({
+                  translations: targets.map(({ id, text }) => ({ id, text })),
+                }),
+              },
+            }),
+          };
+        },
+      },
+    );
+
+    await provider.testConnection("local-test");
+    const request = makeProviderRequest();
+    request.targetLanguage = "en";
+    request.items = [
+      { id: "first", text: "  Keep leading spaces." },
+      { id: "second", text: "Keep trailing spaces.  " },
+      { id: "third", text: "Line one.\n\nLine three." },
+    ];
+    const result = await provider.attempt(request);
+
+    expect(result.translations).toEqual(request.items);
+    expect(bodies).toHaveLength(3);
+    for (const body of bodies) {
+      expect(body.think).toBe(false);
+      expect(body.messages.map(({ role }) => role)).toEqual(["system", "user"]);
+    }
+    expect(JSON.parse(bodies[0]!.messages[1]!.content).targets).toEqual([
+      { id: "probe", text: "hello" },
+    ]);
+    for (const body of bodies.slice(1)) {
+      const payload = JSON.parse(body.messages[1]!.content);
+      expect(body.messages[0]!.content).toBe(
+        buildTranslationTask({ targetLanguage: "en", targets: payload.targets }).systemMessage,
+      );
+      expect(payload.target_language).toBe("English [en]");
+      expect(payload.targets.length).toBeLessThanOrEqual(2);
+    }
   });
 
   it("sends larger batches as two-item chats without dropping or duplicating cues", async () => {
@@ -349,7 +410,7 @@ describe("Ollama native provider", () => {
     expect(bodies).toHaveLength(2);
     for (const body of bodies) {
       expect(body).not.toHaveProperty("format");
-      expect(body).not.toHaveProperty("think");
+      expect(body).toHaveProperty("think", false);
       const messages = body.messages as Array<{ content: string }>;
       expect(messages[0]!.content).toContain('"additionalProperties":false');
       expect(messages[0]!.content).toContain('"required":["translations"]');
@@ -394,8 +455,33 @@ describe("Ollama native provider", () => {
     expect(bodies).toHaveLength(2);
     expect(bodies[0]).toHaveProperty("format");
     expect(bodies[1]).not.toHaveProperty("format");
-    expect(bodies.every((body) => !("think" in body))).toBe(true);
+    expect(bodies.every((body) => body.think === false)).toBe(true);
   });
+
+  it.each([400, 422])(
+    "does not replay a thinking or unrelated capability rejection (%s)",
+    async (statusCode) => {
+      for (const message of [
+        "thinking is not supported",
+        "unknown field: think",
+        "unsupported model",
+        "unsupported options",
+      ]) {
+        let calls = 0;
+        const provider = new OllamaProvider(
+          { endpoint: "http://localhost:11434", model: "configured-model" },
+          {
+            request: async () => {
+              calls += 1;
+              return { statusCode, headers: {}, bodyText: JSON.stringify({ error: message }) };
+            },
+          },
+        );
+        await expect(provider.attempt(makeProviderRequest())).rejects.toMatchObject({ statusCode });
+        expect(calls, message).toBe(1);
+      }
+    },
+  );
 
   it("does not retry a non-capability request rejection", async () => {
     let chatCalls = 0;

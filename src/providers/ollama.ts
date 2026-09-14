@@ -190,6 +190,7 @@ export class OllamaProvider implements ConfiguredProvider {
         body: {
           model: this.config.model,
           stream: false,
+          think: false,
           ...(capability === "json-schema" ? { format: task.outputSchema } : {}),
           options: { temperature: 0 },
           messages: [
@@ -272,8 +273,12 @@ export class OllamaProvider implements ConfiguredProvider {
 
   private isStructuredOutputIncompatibility(response: ProviderTransportResponse): boolean {
     if (response.statusCode !== 400 && response.statusCode !== 422) return false;
-    return /(unsupported|not supported|format|json.?schema|structured output)/i.test(
-      response.bodyText.slice(0, 16_384),
+    const message = response.bodyText.slice(0, 16_384);
+    return (
+      /\b(?:format|json.?schema|structured output)\b/i.test(message) &&
+      /unsupported|not supported|does not support|not implemented|unrecognized|unknown|invalid/i.test(
+        message,
+      )
     );
   }
 

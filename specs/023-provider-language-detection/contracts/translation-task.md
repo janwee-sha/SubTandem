@@ -31,11 +31,13 @@
 | Provider | 保持的封装 | 提交规则 |
 | --- | --- | --- |
 | OpenAI-compatible | Chat Completions；strict schema / JSON object / prompt JSON | 接受唯一 requested ID 的合法非空子集 |
-| Ollama | `/api/chat`；JSON Schema 或一次有界 prompt JSON fallback | 接受唯一 requested ID 的合法非空子集 |
+| Ollama | `/api/chat`；连接测试和翻译均 `think: false`；JSON Schema 或一次有界 prompt JSON fallback，降级时仍关闭 thinking | 接受唯一 requested ID 的合法非空子集 |
 | DeepSeek | Chat Completions；JSON object、thinking disabled | 当前 wire 精确、完整、全有或全无 |
 | Claude-compatible | Messages；顶层 system、单 user、当前 wire 的 `output_config.format` JSON Schema、`thinking: disabled`、`end_turn`；仅在 400/422 明确拒绝对应能力时分别省略并有界重试 | 当前 wire 精确、完整、全有或全无；无 Schema 响应只受控接受单 JSON 围栏或精确 ID 字符串映射 |
 
 HTTP endpoint、header、代理、凭据、响应大小、超时、能力探测和错误分类沿用现有 Provider 契约。不得新增独立检测 endpoint 或请求。
+
+Ollama 的 400/422 格式降级必须同时包含格式字段（`format`、JSON Schema 或 structured output）和明确的不兼容/无效说明；仅拒绝 thinking、模型或其他字段时不得触发格式降级，也不省略 thinking 重试。
 
 ## 结果与字符保真
 

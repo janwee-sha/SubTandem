@@ -271,3 +271,7 @@ Task T034: ui/sidebar.html + ui/sidebar.ts
 - [X] T047 [US2] 让 `src/providers/translation-task.ts` 向 Claude 暴露现有 `providerOutputSchema`，并在 `src/providers/claude.ts` 默认发送 Anthropic `output_config.format` `json_schema`；只对响应正文明确指出 `output_config`、JSON Schema 或 structured output 不受支持的 400/422 响应省略该字段后重试一次，按 Provider 实例缓存能力，和 thinking 降级分别有界且不得对 2xx 格式错误、鉴权、模型、配额或无关失败重放请求 per FR-008 / SC-003 (partial)
 - [X] T048 [US2] 在 `src/providers/claude.ts` 与 `src/providers/validation.ts` 增加 Claude 专用受控规范化：只剥离完整包裹单个 JSON 对象的一个 `json`/无语言标记代码围栏，并只把键集合与 requested IDs 完全相等、值全为非空字符串的 ID 映射转换为标准 `translations` 数组；禁止从外围说明或多个候选中提取 JSON，规范化后仍调用 `validateStrictIdOutput` 保持全有或全无、字段白名单和逐字符文本保真 per FR-010 / US2/AC2 (partial)
 - [X] T049 [US3] 在 `ui/provider-status.ts` 及其 `tests/contract/ui-messages.test.ts` 契约中优先按 `category: protocol` 将连接测试失败说明为服务返回格式不兼容并建议检查模型输出能力，保留真实 HTTP/configuration 的 Endpoint 指引，确保翻译期 `Provider response was incompatible` 与连接测试语义一致 per FR-013 / SC-004 (contradicts)
+
+## Phase 8: Convergence
+
+- [X] T050 [US2] 先补充 Ollama 连接测试、每次 wire、格式降级均关闭 thinking 及无关能力错误不重放的失败契约，再在 `src/providers/ollama.ts` 显式发送 `think: false` 并收紧格式能力拒绝判定，保留共同任务语义；使用可遵循结构化翻译契约的本地模型，确认需翻译条目不回显、同语言条目逐字符原样且 50 cue 与三组语言矩阵在 600 秒内通过；不得增加源语言字段、本地语义检测、网络目的地或额外重试，完成后重跑聚焦测试、全量测试/编译/打包及经授权的本地 Ollama live 验收 per FR-008 / FR-009 / SC-003 (partial)

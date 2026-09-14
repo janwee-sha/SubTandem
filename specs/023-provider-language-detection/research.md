@@ -24,6 +24,8 @@
 
 **Rationale**：共同 task builder 是四类服务已有的语义汇合点，可避免 Provider 漂移。混合批次和目标变体只能逐条判断，不能依赖轨道级结论。可信目标不能只依赖 system role，因为部分兼容模型的模板会弱化此前 turn；精确 Schema 可减少格式漂移，受控规范化覆盖常见兼容输出而不从任意文本猜测 JSON。翻译任务也不需要 thinking，显式关闭可避免本地兼容服务的推理延迟持续落后于播放位置。拒绝字段后的单次降级保留对不实现可选能力的 Claude-compatible 服务的兼容性，且不重放鉴权、模型、配额、无关错误或 2xx 格式失败。
 
+Ollama 连接测试与每次翻译 wire 使用 `think: false`，沿用共同任务和两项批次。格式能力降级保持该设置；thinking 或无关字段拒绝不触发格式重放。依据 [Ollama thinking 文档](https://docs.ollama.com/capabilities/thinking)，支持该能力的模型默认开启推理，显式关闭可减少不必要的推理时延；仅支持推理级别的模型仍受自身能力限制。
+
 **Alternatives considered**：各适配器分别维护 prompt 容易分叉；本地比较后绕过服务违反同语言仍调用；语义二次审核会扩大产品边界；均不采用。
 
 ## 决策 4：判空与字符串保存分离

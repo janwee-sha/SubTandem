@@ -91,6 +91,7 @@ tests/
 1. **移除源语言状态**：字幕源与 Controller 不再读取或保存轨道语言；删除检测协调器、检测门禁、同语言短路、四个失效状态、Sidebar 检测字段、旧 preference default 和启动时旧键写入。
 2. **收紧跨运行时请求**：`TranslationBatchRequest` 与缓存身份删除 `sourceLanguage`；目标目录删除仅服务 source 的特殊标签分支；Main/Global 对完整请求形状、精确目标语言、身份和大小边界做运行时校验，拒绝额外 source 字段。
 3. **统一 Provider 语义**：共同任务构造器只接收目标语言及冻结条目，并在 system task 与结构化 user payload 中重复同一可信目标；四类 Provider 和连接测试共用逐条自动理解、精确变体、同语言原样、上下文只读和结构化 ID 规则。Claude-compatible 请求携带当前 wire ID 对应的 `output_config.format` JSON Schema 并显式关闭 thinking；仅当 400/422 响应明确拒绝对应字段时，分别省略该字段后有界重试并按 Provider 实例缓存能力。无 Schema 的兼容响应只接受完整单 JSON 围栏或精确 ID 字符串映射，再执行严格全量校验。
+   Ollama 的连接测试及所有翻译 wire 均发送 `think: false`；格式降级也保留该设置，仅对明确的格式能力拒绝执行既有降级，不因 thinking 或无关字段错误重放请求。用户选择的模型必须具备自动理解源语言、结构化翻译和同语言字符保真能力。
 4. **保证字符保真**：Provider validator、progress/result、Controller、session cache 和 Overlay 都只判定“是否全空白”，不裁剪合法结果；Overlay 允许包含内部空行的非空文本。相同正文是普通成功结果并正常缓存。
 5. **清理依赖与披露**：删除 detector-only 测试/语料和 `franc`，同步 `package-lock.json`、`THIRD_PARTY_NOTICES.txt`、`Info.json`、README、多语言 README 及工程/验证文档；历史 release 文档和其他规格保持不变。
 

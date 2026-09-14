@@ -65,7 +65,15 @@ SUBTANDEM_LIVE_DEEPSEEK_TEST=1 npm test -- tests/integration/live-providers.test
 SUBTANDEM_LIVE_CLAUDE_TEST=1 npm test -- tests/integration/live-providers.test.ts
 ```
 
-四类服务均运行冻结的同语言、混合语言和目标变体场景。同语言条目以 `===` 比较，需翻译条目不得套用“禁止 source echo”到原样场景。证据只记录 Provider 类型、case ID、计数、布尔结果和安全错误类别，不记录 endpoint、key、字幕、译文或原始响应。未获授权时保持未验收。
+四类服务均运行冻结的同语言、混合语言和目标变体场景。同语言条目以 `===` 比较，需翻译条目不得套用“禁止 source echo”到原样场景。证据只记录 Provider 类型、公开模型 ID、case ID、计数、布尔结果和安全错误类别，不记录 endpoint、key、字幕、译文或原始响应。未获授权时保持未验收。
+
+仅回归本地 Ollama 时，先配置 `SUBTANDEM_OLLAMA_ENDPOINT`、`SUBTANDEM_OLLAMA_MODEL` 和必要的 `SUBTANDEM_OLLAMA_KEY`，再运行：
+
+```sh
+SUBTANDEM_LIVE_PROVIDER_TEST=1 npm test -- tests/integration/live-providers.test.ts -t 'probes and translates with the configured Ollama service'
+```
+
+该用例保留 50 cue、三组语言矩阵与 600 秒上限。Ollama 请求显式关闭 thinking；模型必须支持结构化翻译和同语言保真，接口兼容不保证任意模型通过。其他 Provider 被过滤后仍未验收，不能据此勾选整个 T039。
 
 ## IINA 正式包单人验收
 
