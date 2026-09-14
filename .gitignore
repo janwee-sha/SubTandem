@@ -37,12 +37,3 @@ Thumbs.db
 
 # IINA packages
 *.iinaplgz
-# Private development assets live in the independent SubTandemAgent repository.
-/AGENTS.md
-/.agents/
-/.specify/
-/specs/
-/docs/engineering/
-/docs/validation/
-/docs/providers/
-/docs/local/
