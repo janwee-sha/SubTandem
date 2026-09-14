@@ -11,6 +11,7 @@ AI Agent MUST NOT 主动将本目录中的任何文件纳入版本控制。
 2. `ollama-official`
 3. `deepseek`
 4. `openai-local`
+5. `claude-with-aihubmix`
 
 仅当优先级更高的 Provider 不可用、不适用，或用户明确指定其他 Provider 时，SHOULD 选择较低优先级的 Provider。
 无论选择何种 Provider，AI Agent MUST 在使用相关 API 信息或发起请求前征得用户明确同意。
