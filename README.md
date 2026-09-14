@@ -166,6 +166,38 @@ SubTandem does not perform audio transcription, OCR or extraction of image-based
 - **No rendered translation:** Confirm that the profile is tested and selected and **Translate** is enabled. Playback must also be within the time range of an available translated cue.
 - **A proxy blocks the service:** Try the default macOS proxy route first. If it rejects the service, switch that profile to **Connect directly**, save it, and select/test it again.
 
+## Building from Source
+
+The public repository contains the source, automated tests, synthetic fixtures, and all build and release scripts. No private repository or live translation service is required to build or run the default tests.
+
+Use macOS 12 or later, Node.js 24, npm 11, Swift 6, Xcode Command Line Tools, and IINA 1.4 or later. The build needs `curl`, `shasum`, `lipo`, `codesign`, `make`, and an SDK/toolchain supporting both arm64 and x86_64 with a macOS 12 deployment target. FFmpeg is downloaded from the source URL in `native/ffmpeg.lock.json`, verified, and built locally; a system FFmpeg installation is not required.
+
+Run from the repository root:
+
+```sh
+npm ci
+npm run test
+npm run typecheck
+npm run lint
+npm run build:native
+npm run test:native
+npm run build
+npm run verify:package
+npm run pack
+```
+
+The result is `build/package/SubTandem-X.Y.Z.iinaplgz`. `pack` archives an existing build; it does not compile missing native helpers. The packaging CLI defaults to `/Applications/IINA.app/Contents/MacOS/iina-plugin`; set `IINA_PLUGIN_BIN` if IINA is installed elsewhere. Live Provider tests require explicit environment switches and are skipped by default.
+
+If Command Line Tools lack x86_64 Swift compatibility libraries, select a complete Xcode toolchain for the current terminal before rebuilding:
+
+```sh
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+```
+
+For local iteration, run `/Applications/IINA.app/Contents/MacOS/iina-plugin link .` from the repository root. Before installing the packaged plugin, remove that development link with `/Applications/IINA.app/Contents/MacOS/iina-plugin unlink .`, then open the `.iinaplgz` file in IINA.
+
+SubTandem is licensed under [GPL-3.0-only](LICENSE). See [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt) and the locked FFmpeg source information for bundled third-party material. User release notes are maintained in `docs/releases/`; the public release workflow builds and audits the corresponding package and source assets.
+
 ## ☕ Support SubTandem
 
 If SubTandem helps you, you can voluntarily buy its creator a coffee through [Afdian](https://www.ifdian.net/item/ea1ff37a97ed11f19a9f52540025c377?utm_source=copylink&utm_medium=link) or [Ko-fi](https://ko-fi.com/ianhsia).
