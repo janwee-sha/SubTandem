@@ -125,7 +125,7 @@ description: "翻译服务自动识别源语言的可执行任务列表"
 - [X] T036 [P] 删除 `franc` 及只由其引入的传递依赖并同步第三方声明于 `package.json`、`package-lock.json` 和 `THIRD_PARTY_NOTICES.txt`
 - [X] T037 执行 `specs/023-provider-language-detection/quickstart.md` 的生产残留扫描和聚焦 Vitest 命令，修复后原样重跑直至通过
 - [X] T038 在最后一次代码变更后依次执行 `npm test`、`npm run typecheck`、`npm run lint`、`npm run build:native`、`npm run test:native`、`npm run build`、`npm run verify:package`、`npm run pack`，按 `specs/023-provider-language-detection/quickstart.md` 验收测试、编译和正式包
-- [ ] T039 仅在用户明确批准网络及潜在费用后执行 `specs/023-provider-language-detection/quickstart.md` 的三组 live Provider 命令；未获批准时在交付报告明确记录为未执行且不得推断通过
+- [X] T039 仅在用户明确批准网络及潜在费用后执行 `specs/023-provider-language-detection/quickstart.md` 的三组 live Provider 命令；未获批准时在交付报告明确记录为未执行且不得推断通过
 - [ ] T040 使用最终 `.iinaplgz` 按 `specs/023-provider-language-detection/quickstart.md` 完成单人 IINA 短轨、未知源语言、同语言、目标变体、失败、生命周期、多窗口及卸载验收并记录包版本或 SHA-256 与环境
 
 ### 翻译方向与时延可靠性
