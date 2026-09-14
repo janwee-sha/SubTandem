@@ -1,0 +1,16 @@
+{
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "```json\n{\"c1\":\"Fictional translation A\",\"c2\":\"Fictional translation B\"}\n```"
+    }
+  ],
+  "stop_reason": "end_turn",
+  "stop_details": null,
+  "usage": {
+    "input_tokens": 24,
+    "output_tokens": 18
+  }
+}
