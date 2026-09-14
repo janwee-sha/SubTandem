@@ -4,13 +4,16 @@ import { parseProviderModelsResult, sanitizedProfileView } from "../../src/domai
 import { readFileSync } from "node:fs";
 import { SubtitlePreparationCoordinator } from "../../src/app/subtitle-preparation.js";
 import { SubtitleExtractorError } from "../../src/adapters/iina/subtitle-extractor.js";
-import { detectSubtitleLanguage } from "../../src/subtitles/language-detection.js";
+import { PlaybackController } from "../../src/app/controller.js";
 import {
   buildClaudeTranslationTask,
   buildTranslationTask,
 } from "../../src/providers/translation-task.js";
-import type { SubtitleCue } from "../../src/subtitles/types.js";
 import { discoverProviderModels } from "../../src/providers/model-discovery.js";
+import { RecordingProvider } from "../helpers/fake-provider.js";
+import { ClaudeProvider } from "../../src/providers/claude.js";
+import type { ProviderTransportRequest } from "../../src/providers/transport.js";
+import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 
 describe("credential and content leakage boundaries", () => {
   it("keeps style-picker token, bodies and native failures out of user-visible source", () => {
@@ -67,7 +70,6 @@ describe("credential and content leakage boundaries", () => {
       credential: { apiKey: sensitive[0]! },
     });
     const task = buildClaudeTranslationTask({
-      sourceLanguage: "en",
       targetLanguage: "zh-Hans",
       targets: [{ id: "c1", text: "fictional source" }],
     });
@@ -86,6 +88,104 @@ describe("credential and content leakage boundaries", () => {
     });
     for (const value of sensitive) expect(output).not.toContain(value);
     expect(view).toMatchObject({ credentialConfigured: true });
+  });
+
+  it("keeps the Claude structured-output fallback on the same minimal provider request", async () => {
+    const requests: ProviderTransportRequest[] = [];
+    const value = new ClaudeProvider(
+      {
+        endpoint: "https://api.anthropic.com",
+        model: "current-model",
+        apiKey: "PRIVATE_FALLBACK_KEY",
+      },
+      {
+        request: async (request) => {
+          requests.push(request);
+          if (requests.length === 1)
+            return {
+              statusCode: 400,
+              headers: {},
+              bodyText: JSON.stringify({
+                type: "error",
+                error: {
+                  type: "invalid_request_error",
+                  message: "structured output is not supported",
+                },
+              }),
+            };
+          const body = request.body as { messages: Array<{ content: string }> };
+          const targets = (
+            JSON.parse(body.messages[0]!.content) as {
+              targets: Array<{ id: string }>;
+            }
+          ).targets;
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              type: "message",
+              role: "assistant",
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify({
+                    translations: targets.map(({ id }) => ({ id, text: `safe-${id}` })),
+                  }),
+                },
+              ],
+              stop_reason: "end_turn",
+            }),
+          };
+        },
+      },
+    );
+    const request = makeProviderRequest();
+    request.items = [{ id: "private-cue", text: "PRIVATE_FALLBACK_SUBTITLE" }];
+
+    await value.attempt(request);
+
+    expect(requests).toHaveLength(2);
+    for (const sent of requests) {
+      expect(sent.url).toBe("https://api.anthropic.com/v1/messages");
+      expect(sent.headers["x-api-key"]).toBe("PRIVATE_FALLBACK_KEY");
+      expect(JSON.stringify(sent.body)).not.toMatch(/profile|session|player|endpointFingerprint/);
+      const body = sent.body as {
+        messages: Array<{ content: string }>;
+      };
+      expect(JSON.parse(body.messages[0]!.content)).toEqual({
+        target_language: "Chinese (Simplified) [zh-Hans]",
+        targets: [{ id: "c1", text: "PRIVATE_FALLBACK_SUBTITLE" }],
+      });
+    }
+    expect(JSON.stringify(requests.map((sent) => sent.body))).not.toContain("PRIVATE_FALLBACK_KEY");
+  });
+
+  it("does not start the Claude capability fallback after the request is cancelled", async () => {
+    const requests: ProviderTransportRequest[] = [];
+    const value = new ClaudeProvider(
+      {
+        endpoint: "https://api.anthropic.com",
+        model: "current-model",
+        apiKey: "fictional-key",
+      },
+      {
+        request: async (request) => {
+          requests.push(request);
+          await value.cancel("request");
+          return {
+            statusCode: 400,
+            headers: {},
+            bodyText: '{"error":{"message":"output_config is not supported"}}',
+          };
+        },
+      },
+    );
+
+    await expect(value.attempt(makeProviderRequest())).rejects.toMatchObject({
+      category: "cancelled",
+      providerCode: "REQUEST_CANCELLED",
+    });
+    expect(requests).toHaveLength(1);
   });
 
   it("rejects secret and raw response fields in model refresh results", () => {
@@ -215,29 +315,40 @@ describe("credential and content leakage boundaries", () => {
     for (const value of sensitive) expect(output).not.toContain(value);
   });
 
-  it("keeps detector samples, candidates, scores and exceptions out of results", () => {
-    const sensitive = "PRIVATE_SUBTITLE_SAMPLE /private/media/title.srt";
-    const cues: SubtitleCue[] = Array.from({ length: 20 }, (_, index) => ({
-      id: String(index),
-      index,
-      startMs: index * 1_000,
-      endMs: index * 1_000 + 900,
-      sourceText: `${sensitive} ${index}`,
-      normalizedText: `${sensitive} ${index}`,
-    }));
-    const result = detectSubtitleLanguage(cues, {
-      classifier: () => {
-        throw new Error(`${sensitive} eng=1.0 fra=0.8 provider-secret`);
-      },
+  it("does not send subtitle text before translation and a Provider Profile are selected", async () => {
+    const provider = new RecordingProvider();
+    const controller = new PlaybackController({
+      playerId: "not-authorized",
+      provider,
+      overlay: { show: () => undefined, clear: () => undefined },
+      targetLanguage: "zh-Hans",
+      requiresProviderSelection: true,
     });
-    expect(result).toEqual({ state: "unknown" });
-    expect(JSON.stringify(result)).not.toMatch(/PRIVATE|private|eng|fra|score|secret/);
+    controller.setSource({
+      cues: [
+        {
+          id: "c1",
+          index: 0,
+          startMs: 0,
+          endMs: 1_000,
+          sourceText: "PRIVATE_SUBTITLE_SAMPLE",
+          normalizedText: "PRIVATE_SUBTITLE_SAMPLE",
+        },
+      ],
+      contentHash: "private-content",
+      format: "srt",
+    });
+
+    controller.tick(0);
+    await controller.whenIdle();
+
+    expect(provider.requests).toEqual([]);
+    expect(controller.status).toBe("waitingForConfiguration");
   });
 
   it("keeps credentials, authorization and endpoints out of the shared translation task", () => {
     const sensitive = ["provider-secret", "Bearer private", "https://private.example/v1"];
     const task = buildTranslationTask({
-      sourceLanguage: "en",
       targetLanguage: "zh-Hans",
       targets: [
         {
@@ -251,6 +362,7 @@ describe("credential and content leakage boundaries", () => {
     const output = JSON.stringify(task);
 
     expect(JSON.parse(task.userMessage)).toEqual({
+      target_language: "Chinese (Simplified) [zh-Hans]",
       targets: [
         {
           id: "c1",

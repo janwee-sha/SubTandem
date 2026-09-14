@@ -10,7 +10,6 @@ export interface SubtitleTrackIdentity {
   codec: EmbeddedSubtitleCodec | "external";
   ffIndex?: number;
   sourceId?: number;
-  language?: string;
   title?: string;
 }
 
@@ -71,7 +70,6 @@ export interface PreparedSubtitleSource {
   origin: "embedded";
   codec: EmbeddedSubtitleCodec;
   contentHash: Sha256Hex;
-  trackLanguage: string | null;
   cues: SubtitleCue[];
 }
 
@@ -104,7 +102,6 @@ export interface SubtitleSource {
   isExternal: true;
   format: "srt" | "ass";
   contentHash: Sha256Hex;
-  trackLanguage: string | null;
   decode: { encoding: string; bom: boolean; warnings: string[] };
   cues: SubtitleCue[];
 }

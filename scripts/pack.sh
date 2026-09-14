@@ -5,7 +5,7 @@ ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 STAGE_PARENT="$ROOT_DIR/build/package"
 STAGE_DIR="$STAGE_PARENT/SubTandem"
 PLUGIN_CLI=${IINA_PLUGIN_BIN:-/Applications/IINA.app/Contents/MacOS/iina-plugin}
-ARTIFACT="$STAGE_PARENT/SubTandem-0.1.3.iinaplgz"
+ARTIFACT="$STAGE_PARENT/SubTandem-0.1.4.iinaplgz"
 
 if [ ! -x "$PLUGIN_CLI" ]; then
   echo "IINA plugin CLI not found or not executable: $PLUGIN_CLI" >&2
@@ -17,9 +17,14 @@ case "$STAGE_DIR" in
   *) echo "Refusing to clean unexpected staging path: $STAGE_DIR" >&2; exit 1 ;;
 esac
 case "$ARTIFACT" in
-  "$ROOT_DIR"/build/package/SubTandem-0.1.3.iinaplgz) ;;
+  "$ROOT_DIR"/build/package/SubTandem-0.1.4.iinaplgz) ;;
   *) echo "Refusing to replace unexpected artifact path: $ARTIFACT" >&2; exit 1 ;;
 esac
+
+if ! "$ROOT_DIR/scripts/verify-package.sh" "$ROOT_DIR"; then
+  echo "Package inputs failed verification. Run npm run build:native and npm run build successfully before npm run pack." >&2
+  exit 1
+fi
 
 mkdir -p "$STAGE_DIR"
 find "$STAGE_DIR" -mindepth 1 -delete

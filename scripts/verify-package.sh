@@ -38,7 +38,8 @@ for HELPER in "$TRANSPORT" "$EXTRACTOR" "$STYLE_PICKER"; do
     echo "Native helper is not executable: $HELPER" >&2
     exit 1
   fi
-  lipo "$HELPER" -verify_arch arm64 x86_64
+  lipo "$HELPER" -verify_arch arm64
+  lipo "$HELPER" -verify_arch x86_64
   codesign --verify --strict "$HELPER"
   MINOS=$(otool -l "$HELPER" | awk '/minos /{print $2}')
   if [ -z "$MINOS" ] || printf '%s\n' "$MINOS" | grep -Ev "^$MINIMUM_MACOS$" | grep -q .; then

@@ -15,17 +15,20 @@ function decodeUtf16(bytes: Uint8Array, littleEndian: boolean): string {
     const second = bytes[index + 1] ?? 0;
     output += String.fromCharCode(littleEndian ? first | (second << 8) : (first << 8) | second);
   }
-  // Validate surrogate pairing by round-tripping through the strict UTF-8 encoder's semantics.
-  for (let index = 0; index < output.length; index += 1) {
-    const code = output.charCodeAt(index);
+  assertValidUtf16Surrogates(output);
+  return output;
+}
+
+function assertValidUtf16Surrogates(text: string): void {
+  for (let index = 0; index < text.length; index += 1) {
+    const code = text.charCodeAt(index);
     if (code >= 0xd800 && code <= 0xdbff) {
-      const low = output.charCodeAt(++index);
+      const low = text.charCodeAt(++index);
       if (low < 0xdc00 || low > 0xdfff) throw new Error("Malformed UTF-16 surrogate");
     } else if (code >= 0xdc00 && code <= 0xdfff) {
       throw new Error("Malformed UTF-16 surrogate");
     }
   }
-  return output;
 }
 
 export function decodeSubtitleBytes(bytes: Uint8Array): DecodedSubtitle | null {

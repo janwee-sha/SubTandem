@@ -29,6 +29,8 @@ interface CredentialStatus {
 
 function providerTestStatusMessage(result: ProviderTestStatus): string {
   if (result.ok) return "Connection test passed.";
+  if (result.category === "protocol")
+    return "Provider response was incompatible. Check that the selected model supports structured JSON output.";
   switch (result.userAction) {
     case "CHECK_CREDENTIALS":
       return "Authentication failed. Re-enter the API key and test again.";

@@ -6,8 +6,3 @@ native/.build/
 native/
 package-lock.json
 *.iinaplgz
-docs/validation/artifacts/
-providers/
-.agents/
-.specify/
-specs/

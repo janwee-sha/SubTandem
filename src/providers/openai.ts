@@ -53,7 +53,6 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
       const response = await this.send(
         `${testId}-probe-${capability}`,
         [{ id: "probe", text: "hello" }],
-        "en",
         "es",
         capability,
         10_000,
@@ -80,7 +79,6 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
       const response = await this.send(
         `${scopeId}-probe-${capability}`,
         [{ id: "probe", text: "hello" }],
-        "en",
         "es",
         capability,
         10_000,
@@ -96,7 +94,7 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
         this.capability = capability;
         return capability;
       } catch {
-        /* Try the next capability only for a fixed probe. */
+        continue;
       }
     }
     throw protocolError("OPENAI_CAPABILITY_PROBE_FAILED", "configuration");
@@ -117,7 +115,6 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
           const response = await this.send(
             jobId,
             items,
-            request.sourceLanguage,
             request.targetLanguage,
             capability,
             30_000,
@@ -165,12 +162,11 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
   private async send(
     jobId: string,
     items: WireTranslationTarget[],
-    sourceLanguage: string,
     targetLanguage: string,
     capability: Capability,
     timeoutMs: number,
   ): Promise<ProviderTransportResponse> {
-    const task = buildTranslationTask({ sourceLanguage, targetLanguage, targets: items });
+    const task = buildTranslationTask({ targetLanguage, targets: items });
     const apiRoot = this.endpoint.replace(/\/+$/, "");
     const responseFormat =
       capability === "strict-json-schema"
@@ -205,7 +201,10 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
           messages: [
             {
               role: "system",
-              content: task.systemMessage,
+              content:
+                capability === "prompt-json"
+                  ? `${task.systemMessage} The response must validate against this exact JSON Schema: ${JSON.stringify(task.outputSchema)}`
+                  : task.systemMessage,
             },
             { role: "user", content: task.userMessage },
           ],

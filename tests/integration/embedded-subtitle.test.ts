@@ -60,7 +60,6 @@ describe("embedded subtitle translation", () => {
         codec: "ass",
         ffIndex: 3,
         sourceId: 12,
-        language: "en",
       },
     );
     expect(prepared?.cues).toHaveLength(1);
@@ -83,10 +82,8 @@ describe("embedded subtitle translation", () => {
     controller.setSource({
       cues: prepared!.cues,
       contentHash: prepared!.contentHash,
-      language: null,
       format: "srt",
     });
-    controller.setLanguageDetection({ languageId: "en" });
     controller.tick(1_000);
     await controller.whenIdle();
 
@@ -139,7 +136,6 @@ describe("embedded subtitle translation", () => {
         },
       ],
       contentHash: "hash",
-      language: "en",
       format: "srt",
     });
     controller.onSeek(1_000);

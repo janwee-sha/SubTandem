@@ -50,7 +50,6 @@ interface MpvSubtitleTrackNode {
   codec?: unknown;
   "ff-index"?: unknown;
   "src-id"?: unknown;
-  lang?: unknown;
   title?: unknown;
 }
 
@@ -87,14 +86,12 @@ function localPath(mediaUrl: string): string | null {
 function exactTrackIdentity(node: MpvSubtitleTrackNode): SubtitleTrackIdentity | null {
   if (!Number.isInteger(node.id)) return null;
   const trackId = node.id as number;
-  const language = typeof node.lang === "string" && node.lang.trim() ? node.lang.trim() : undefined;
   const title = typeof node.title === "string" && node.title.trim() ? node.title.trim() : undefined;
   if (node.external === true)
     return {
       trackId,
       origin: "external",
       codec: "external",
-      ...(language ? { language } : {}),
       ...(title ? { title } : {}),
     };
   const codec = normalizeSubtitleCodec(node.codec);
@@ -108,7 +105,6 @@ function exactTrackIdentity(node: MpvSubtitleTrackNode): SubtitleTrackIdentity |
     codec,
     ffIndex: node["ff-index"] as number,
     ...(typeof sourceId === "number" ? { sourceId } : {}),
-    ...(language ? { language } : {}),
     ...(title ? { title } : {}),
   };
 }
@@ -183,7 +179,7 @@ export class IinaSubtitleSourcePort implements SubtitleSourcePort {
       try {
         if (this.subtitle.currentTrack?.id === id) track = this.subtitle.currentTrack;
       } catch {
-        /* IINA can expose the selected ID before currentTrack is ready. */
+        track = undefined;
       }
     }
     if (!track) return null;
@@ -191,21 +187,21 @@ export class IinaSubtitleSourcePort implements SubtitleSourcePort {
       id: track.id,
       isExternal: track.isExternal,
       ...(track.title === null ? {} : { title: track.title }),
-      ...(track.lang === null ? {} : { lang: track.lang }),
     };
   }
 
   readBinary(path: string): Uint8Array | null {
     let handle: IINA.API.FileHandle | null = null;
+    let bytes: Uint8Array | null = null;
     try {
       handle = this.file.handle(path, "read");
-      const bytes = handle.readToEnd();
-      if (bytes) return bytes;
+      bytes = handle.readToEnd() ?? null;
     } catch {
-      /* Fall through to IINA's text reader for UTF-8 subtitles. */
+      bytes = null;
     } finally {
       handle?.close();
     }
+    if (bytes) return bytes;
     try {
       const text = this.file.read(path);
       return typeof text === "string" ? utf8Encode(text) : null;

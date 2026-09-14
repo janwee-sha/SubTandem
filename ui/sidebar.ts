@@ -1,10 +1,6 @@
 type SessionStatus =
   | "disabled"
   | "waitingForSubtitle"
-  | "detectingLanguage"
-  | "languageUnrecognized"
-  | "languageUnsupported"
-  | "noTranslationNeeded"
   | "waitingForConfiguration"
   | "preparing"
   | "running"
@@ -48,10 +44,6 @@ type SourcePreparationState =
 const labels: Record<SessionStatus, string> = {
   disabled: "Translation is off",
   waitingForSubtitle: "Select a readable external SRT or ASS subtitle",
-  detectingLanguage: "Detecting subtitle language…",
-  languageUnrecognized: "Subtitle language could not be identified; playback continues",
-  languageUnsupported: "This subtitle language is not supported; playback continues",
-  noTranslationNeeded: "The subtitle already matches the target language",
   waitingForConfiguration: "Select and test a translation service",
   preparing: "Preparing nearby translations…",
   running: "Translations are running",
@@ -1664,7 +1656,6 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     source?: {
       format: string;
       cueCount: number;
-      detectedLanguage?: string | null;
     } | null;
     cacheSize?: number;
     boundedWork?: string;
@@ -1751,8 +1742,6 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     document.querySelector<HTMLElement>("#source-format")!.textContent =
       view.source.format.toUpperCase();
     document.querySelector<HTMLElement>("#source-cues")!.textContent = String(view.source.cueCount);
-    document.querySelector<HTMLElement>("#source-detected-language")!.textContent =
-      view.source.detectedLanguage ?? "Unknown";
   } else if (view.source === null) {
     sourceSummary.hidden = true;
   }

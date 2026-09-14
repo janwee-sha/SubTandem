@@ -1,10 +1,6 @@
 export const SESSION_STATUSES = [
   "disabled",
   "waitingForSubtitle",
-  "detectingLanguage",
-  "languageUnrecognized",
-  "languageUnsupported",
-  "noTranslationNeeded",
   "waitingForConfiguration",
   "preparing",
   "running",

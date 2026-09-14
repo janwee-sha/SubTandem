@@ -1,17 +1,12 @@
 node_modules/
 .git/
 .github/
-.specify/
-.agents/
 .idea/
 .vscode/
-specs/
 tests/
-providers/
 coverage/
 build/
 native/.build/
-docs/validation/
 *.log
 .env*
 @data/

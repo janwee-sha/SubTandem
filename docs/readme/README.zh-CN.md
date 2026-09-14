@@ -99,7 +99,7 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 ## 🌍 快速开始
 
 1. 打开本地视频，并在 IINA 中选择受支持的内嵌文本字幕或外部 SRT/ASS 作为主字幕。
-2. 在 **Languages** 中选择母语。如果 IINA 无法识别字幕语言，请手动确认，然后保存语言设置。
+2. 在 **Subtitle** 中选择准确的目标语言。当前翻译服务会在翻译请求内逐条理解源语言，无需手动确认源语言。
 3. 在 **Translation service** 中创建 OpenAI、Claude、DeepSeek 或 Ollama Profile。服务需要认证时，先填写 API key，再手动刷新模型列表；选择返回的模型，或填写准确的自定义 Model ID。
 4. 保存并测试 Profile，然后点击 **Select**。选择 Profile 即明确授权 SubTandem 向界面显示的 endpoint 发送播放位置附近的字幕文字。
 5. 打开 **Translate**。原字幕仍由 IINA 正常显示，译文会出现在 SubTandem 覆盖层中。可在 **Subtitle** 中用 **Position** 将覆盖层从顶部（`0`）调整到底部（`100`）。
@@ -120,7 +120,7 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 ### Claude
 
 - 默认 API root 为 `https://api.anthropic.com`。请填写该 root 或 Claude-compatible root，不要填写完整的 `/v1/messages` 或 `/v1/models` URL；远程 endpoint 必须使用 HTTPS。
-- SubTandem 使用 `/v1/messages` 的原生非流式 Messages 请求，并从 `/v1/models` 获取模型目录。兼容服务必须支持这些路由以及 Claude 认证和版本 header。
+- SubTandem 使用 `/v1/messages` 的原生非流式 Messages 请求，并从 `/v1/models` 获取模型目录。兼容服务必须支持这些路由以及 Claude 认证和版本 header。翻译请求会优先使用 Claude structured JSON output；若兼容服务明确拒绝该能力，SubTandem 会省略该字段重试一次，该额外请求可能产生费用。
 - API key 必填。新建 Profile 时，先填写 Key 再手动刷新模型；自动刷新绝不会发送未保存的 Key。可选择返回的模型或填写准确的自定义 Model ID。
 - 严格按 **Save → Test → Select** 操作。Save 和 Test 不授权发送字幕文字；Select 前只有不含字幕的模型目录请求可以到达 endpoint。
 - Claude 可能收取 Messages 请求费用，并限制认证、模型访问、spend limit、配额和请求速率，也可能拒绝内容。保存后的 Key 只写且不会再次显示。
@@ -144,14 +144,14 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 
 ## 🔒 隐私、凭据与费用
 
-- SubTandem 只向你明确选择的 Profile 发送播放位置附近的字幕文字、语言方向、不透明的字幕 ID 和少量相邻上下文，不会发送视频或音频内容。
+- SubTandem 只向你明确选择的 Profile 发送播放位置附近的字幕文字、准确的目标语言、不透明的字幕 ID 和少量相邻上下文；服务会在该翻译请求内理解源语言。SubTandem 不会发送视频或音频内容。
 - `video-overlay` 权限只用于在本地非交互式 Overlay 中显示当前译文。Overlay 不接受输入，不支持在播放器画面拖动，不使用网络或 WebView storage，并随播放会话清理。
 - OpenAI、Claude、DeepSeek 与 Ollama API key 以本地明文保存在插件私有的 `credentials.json` 中。其目录权限为 `0700`，文件权限为 `0600`。密钥不会写入 IINA preferences、日志、诊断、Sidebar 状态或插件安装包，保存后也不会再次显示。
 - 文件权限可以防止其他 macOS 账号和普通意外访问，但无法抵御已经能以当前 macOS 用户身份读取文件的进程。
 - 随附的 transport helper 只监听临时的 `127.0.0.1` 端口。已配置或正在编辑的 endpoint 可在 Select 前接收不含字幕的模型目录请求，其中包括默认 Claude root `https://api.anthropic.com` 和 DeepSeek root `https://api.deepseek.com`；只有明确 Select 的 Profile 修订版才会接收用于翻译的字幕文字。跨源重定向和 URL 中嵌入的凭据会被拒绝。
 - 处理内嵌文本字幕时，随附的 extractor 只读取当前本地媒体中选中的轨道，并生成会话级临时 SRT；远程媒体和图形字幕不会被提取，解析、取消、超时或退出后会清理临时数据。
 - 译文只在当前视频会话内缓存；换片、播放结束或关闭窗口时会被清除。
-- 翻译服务可能收费，并适用其自身的数据与内容政策。批量处理和缓存可以减少调用次数，但不保证费用上限。
+- 短轨、源语言不明及已经符合准确目标语言的正文仍会发送到所选服务，并可能产生费用。服务适用其自身的数据与内容政策；批量处理和会话缓存可以减少调用次数，但不保证费用上限。
 
 ## 📌 当前范围
 
@@ -160,10 +160,9 @@ SubTandem 不提供音频转写、图形字幕 OCR/提取、远程媒体内嵌�
 ## 🛠️ 故障排查
 
 - **Select a supported text subtitle：** 在 IINA 中选择本地内嵌 SubRip/ASS/SSA/`mov_text` 或外部 SRT/ASS 作为主字幕。远程内嵌和图形字幕不受支持；可按状态提示重新选轨，或对失败的准备操作执行 Retry。
-- **Confirm the subtitle language：** 输入 BCP 47 语言标签，例如 `en-US`，然后保存语言设置。
 - **Translation service unavailable：** 测试 Profile，并检查 endpoint、准确的 Model ID、API key、网络路由或 Ollama 进程。Claude 还需要确认填写的是 API root 而非完整资源 URL，并检查 Messages 兼容性、认证/版本支持、模型权限、spend limit、配额、rate limit 和拒绝状态；DeepSeek 还需检查余额、配额、rate limit 和固定 API 路由。视频和原字幕会继续正常播放。
 - **Credential could not be saved：** 使用正式 Release 安装包，不要使用内容不完整的开发副本；确认插件数据目录可写，并完全退出后重启 IINA。
-- **没有显示译文：** 确认 Profile 已测试并选中、源语言与母语不同，并且已开启 **Translate**；播放位置还需要处于已有译文的字幕时段内。
+- **没有显示译文：** 确认 Profile 已测试并选中，且已开启 **Translate**；播放位置还需要处于已有译文的字幕时段内。
 - **代理阻止服务连接：** 先尝试默认的 macOS 代理路由。如果代理拒绝该服务，将 Profile 改为 **Connect directly**，保存后重新 Select/Test。
 
 ## ☕ 支持 SubTandem

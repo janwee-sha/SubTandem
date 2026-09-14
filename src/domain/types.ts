@@ -24,7 +24,6 @@ export interface ProviderFingerprint {
 export interface SourceSummaryView {
   format: "srt" | "ass";
   cueCount: number;
-  language: string | null;
   warnings: readonly string[];
 }
 

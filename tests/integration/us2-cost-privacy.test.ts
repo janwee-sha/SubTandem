@@ -23,7 +23,7 @@ const longCues = Array.from({ length: 720 }, (_, index): SubtitleCue => ({
 }));
 
 describe("US2 cost/privacy acceptance", () => {
-  it("makes zero calls for native or unknown source languages", async () => {
+  it("calls the selected service once for same-language and unknown-source text", async () => {
     const provider = new RecordingProvider();
     const controller = new PlaybackController({
       playerId: "A",
@@ -31,15 +31,20 @@ describe("US2 cost/privacy acceptance", () => {
       overlay: new Sink(),
       targetLanguage: "en-US",
     });
-    controller.setSource({ cues: longCues, contentHash: "hash", language: "en-GB", format: "srt" });
+    provider.enqueue(async (request) => ({
+      translations: request.items.map((item) => ({ id: item.id, text: item.text })),
+    }));
+    controller.setSource({ cues: longCues, contentHash: "same", format: "srt" });
     controller.tick(0);
     await controller.whenIdle();
-    expect(provider.requests).toHaveLength(0);
-    expect(controller.status).toBe("noTranslationNeeded");
-    controller.setSource({ cues: longCues, contentHash: "hash", language: null, format: "srt" });
+    expect(provider.requests).toHaveLength(1);
+    expect(controller.status).toBe("running");
+    expect(provider.requests[0]).not.toHaveProperty("sourceLanguage");
+    const previousCalls = provider.requests.length;
+    controller.setSource({ cues: longCues, contentHash: "unknown", format: "srt" });
     controller.tick(0);
-    expect(controller.status).toBe("detectingLanguage");
-    expect(provider.requests).toHaveLength(0);
+    await controller.whenIdle();
+    expect(provider.requests).toHaveLength(previousCalls + 1);
   });
 
   it("sends only bounded nearby text/languages/minimal context during ten-minute viewing", async () => {

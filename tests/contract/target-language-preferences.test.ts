@@ -70,19 +70,17 @@ describe("target language preferences", () => {
     expect(Object.fromEntries(store.values)).toEqual({ targetLanguage: "kri" });
   });
 
-  it("keeps legacy cleanup property-list safe so a saved target survives restart", () => {
+  it("does not read or rewrite obsolete source language preferences", () => {
     const store = new Store();
-    store.rejectNull = true;
     store.values.set("targetLanguage", "ko");
     store.values.set("sourceLanguage", "ja");
     store.values.set("sourceLanguageMode", "manual");
     const preferences = new TargetLanguagePreferences(store);
 
-    preferences.clearLegacySourcePreferences();
     preferences.save("pt-PT");
 
-    expect(store.values.get("sourceLanguage")).toBe("");
-    expect(store.values.get("sourceLanguageMode")).toBe("");
+    expect(store.values.get("sourceLanguage")).toBe("ja");
+    expect(store.values.get("sourceLanguageMode")).toBe("manual");
     expect(new TargetLanguagePreferences(store).read()).toEqual({
       targetLanguage: "pt-PT",
       source: "saved",

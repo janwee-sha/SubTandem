@@ -13,6 +13,53 @@ describe("OpenAI-compatible provider", () => {
     expect(source).not.toContain("chat-completions");
   });
 
+  it("preserves same-language and mixed-batch text character-for-character", async () => {
+    let systemMessage = "";
+    const provider = new OpenAICompatibleProvider(
+      {
+        endpoint: "https://example.test/v1",
+        model: "model",
+        capability: "json-object",
+        sessionId: "session",
+      },
+      {
+        request: async (request) => {
+          const messages = (request.body as { messages: Array<{ content: string }> }).messages;
+          systemMessage = messages[0]!.content;
+          const targets = JSON.parse(messages[1]!.content).targets as Array<{
+            id: string;
+            text: string;
+          }>;
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              choices: [
+                {
+                  finish_reason: "stop",
+                  message: {
+                    content: JSON.stringify({ translations: targets }),
+                  },
+                },
+              ],
+            }),
+          };
+        },
+      },
+    );
+    const request = makeProviderRequest();
+    request.items = [
+      { id: "same-a", text: "  Same.  " },
+      { id: "same-b", text: "Line one.\n\nLine three.\n" },
+    ];
+
+    const result = await provider.attempt(request);
+
+    expect(result.translations).toEqual(request.items.map(({ id, text }) => ({ id, text })));
+    expect(systemMessage).toMatch(/character-for-character/i);
+    expect(systemMessage).toMatch(/context.*must not.*output/i);
+  });
+
   it.each(["strict-json-schema", "json-object", "prompt-json"] as const)(
     "uses the shared directional target contract in %s mode",
     async (capability) => {
@@ -59,7 +106,6 @@ describe("OpenAI-compatible provider", () => {
       const messages = capturedBody!.messages as Array<{ content: string }>;
       const payload = JSON.parse(messages[1]!.content);
       const expectedTask = buildTranslationTask({
-        sourceLanguage: "en",
         targetLanguage: "zh-Hans",
         targets: [
           { id: "c1", text: "one", context_next: "two" },
@@ -67,7 +113,14 @@ describe("OpenAI-compatible provider", () => {
         ],
       });
       expect(payload).toEqual(JSON.parse(expectedTask.userMessage));
-      expect(messages[0]!.content).toBe(expectedTask.systemMessage);
+      expect(messages[0]!.content).toBe(
+        capability === "prompt-json"
+          ? `${expectedTask.systemMessage} The response must validate against this exact JSON Schema: ${JSON.stringify(expectedTask.outputSchema)}`
+          : expectedTask.systemMessage,
+      );
+      expect(messages[0]!.content).toContain("Chinese (Simplified) [zh-Hans]");
+      expect(messages[0]!.content).toMatch(/source language.*independently/i);
+      expect(messages[0]!.content).not.toContain("English [en]");
       expect(JSON.stringify(payload)).not.toContain('"items"');
       if (capability === "strict-json-schema")
         expect(
@@ -160,8 +213,9 @@ describe("OpenAI-compatible provider", () => {
     ).body.messages.at(-1)?.content;
     const systemMessage = (calls[0] as { body: { messages: Array<{ content: string }> } }).body
       .messages[0]?.content;
-    expect(systemMessage).toContain("English [en]");
     expect(systemMessage).toContain("Chinese (Simplified) [zh-Hans]");
+    expect(systemMessage).toMatch(/source language.*independently/i);
+    expect(systemMessage).not.toMatch(/from English \[en\]/);
     expect(userMessage).toContain('"id":"c1"');
     expect(userMessage).not.toContain("srt:0:0:1000");
     expect(result.translations).toEqual([{ id: "srt:0:0:1000", text: "一" }]);

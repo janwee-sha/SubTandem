@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { buildTranslationTask } from "../../src/providers/translation-task.js";
-import { validateIdOutput, validateStrictIdOutput } from "../../src/providers/validation.js";
+import {
+  normalizeClaudeOutput,
+  validateIdOutput,
+  validateStrictIdOutput,
+} from "../../src/providers/validation.js";
 import { encodeWireItems, providerOutputSchema } from "../../src/providers/wire-items.js";
 
 describe("strict provider output", () => {
@@ -14,7 +18,7 @@ describe("strict provider output", () => {
       }),
     ).toEqual({
       translations: [
-        { id: "c2", text: "two" },
+        { id: "c2", text: " two " },
         { id: "c1", text: "one" },
       ],
     });
@@ -144,7 +148,6 @@ describe("strict provider output", () => {
 
   it("builds one shared task whose user message contains JSON data only", () => {
     const task = buildTranslationTask({
-      sourceLanguage: "en",
       targetLanguage: "zh-Hans",
       targets: [
         {
@@ -157,6 +160,7 @@ describe("strict provider output", () => {
     });
 
     expect(JSON.parse(task.userMessage)).toEqual({
+      target_language: "Chinese (Simplified) [zh-Hans]",
       targets: [
         {
           id: "c1",
@@ -166,12 +170,33 @@ describe("strict provider output", () => {
         },
       ],
     });
-    expect(task.systemMessage).toContain("English [en]");
     expect(task.systemMessage).toContain("Chinese (Simplified) [zh-Hans]");
+    expect(task.systemMessage).toMatch(/source language.*independently/i);
+    expect(task.systemMessage).toMatch(/character-for-character/i);
+    expect(task.systemMessage).toMatch(/exact target language and variant/i);
+    expect(task.systemMessage).toMatch(/uncertain.*must not.*copy/i);
+    expect(task.systemMessage).toMatch(/before returning.*verify/i);
+    expect(task.systemMessage).toMatch(/leading and trailing spaces.*line breaks.*blank lines/i);
     expect(task.systemMessage).toContain("untrusted data");
     expect(task.systemMessage).toContain("only translation target");
     expect(task.systemMessage).toContain("must not be translated, copied, summarized, explained");
     expect(task.outputSchema).toEqual(providerOutputSchema(["c1"]));
+  });
+
+  it("preserves exact same-language and translated strings for distinct IDs", () => {
+    const output = validateIdOutput(["same-1", "same-2", "translated"], {
+      translations: [
+        { id: "same-1", text: "  Repeat me.  " },
+        { id: "same-2", text: "  Repeat me.  " },
+        { id: "translated", text: "Line one.\n\nLine three.\n" },
+      ],
+    });
+    expect(output.translations).toEqual([
+      { id: "same-1", text: "  Repeat me.  " },
+      { id: "same-2", text: "  Repeat me.  " },
+      { id: "translated", text: "Line one.\n\nLine three.\n" },
+    ]);
+    expect(output.missingIds).toEqual([]);
   });
 
   it("rejects missing, duplicate, unknown, blank and unparseable provider results", () => {
@@ -190,5 +215,46 @@ describe("strict provider output", () => {
       }),
     ).toMatchObject({ translations: [], missingIds: ["c1", "c2"] });
     expect(() => validateIdOutput(["c1"], "not-json")).toThrow(/MALFORMED_PROVIDER_OUTPUT/);
+  });
+});
+
+describe("Claude-compatible output normalization", () => {
+  it.each([
+    [
+      "one complete JSON code fence",
+      '```json\n{"translations":[{"id":"c1","text":"  One  "},{"id":"c2","text":"Two"}]}\n```',
+    ],
+    ["one exact requested-ID map", '{"c2":"Two","c1":"  One  "}'],
+  ])("accepts %s", (_name, output) => {
+    expect(
+      validateStrictIdOutput(["c1", "c2"], normalizeClaudeOutput(["c1", "c2"], output)),
+    ).toEqual({
+      translations: [
+        { id: "c1", text: "  One  " },
+        { id: "c2", text: "Two" },
+      ],
+    });
+  });
+
+  it.each([
+    ["surrounding text", 'Result: {"c1":"One","c2":"Two"}'],
+    [
+      "multiple code fences",
+      '```json\n{"c1":"One","c2":"Two"}\n```\n```json\n{"c1":"Other","c2":"Other"}\n```',
+    ],
+    ["missing requested ID", '{"c1":"One"}'],
+    ["unknown requested ID", '{"c1":"One","outside":"Two"}'],
+    ["extra requested ID", '{"c1":"One","c2":"Two","c3":"Three"}'],
+    ["duplicate requested ID", '{"c1":"One","c1":"Again","c2":"Two"}'],
+    ["blank mapped text", '{"c1":" ","c2":"Two"}'],
+    ["non-string mapped text", '{"c1":1,"c2":"Two"}'],
+    [
+      "extra standard field",
+      '{"translations":[{"id":"c1","text":"One"},{"id":"c2","text":"Two"}],"note":"x"}',
+    ],
+  ])("rejects %s", (_name, output) => {
+    expect(() =>
+      validateStrictIdOutput(["c1", "c2"], normalizeClaudeOutput(["c1", "c2"], output)),
+    ).toThrow(/MALFORMED_PROVIDER_OUTPUT/);
   });
 });

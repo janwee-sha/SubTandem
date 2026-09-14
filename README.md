@@ -100,7 +100,7 @@ After any installation method, approve the requested plugin permissions if promp
 ## 🌍 Quick Start
 
 1. Load a local video and select a supported embedded text subtitle or external SRT/ASS subtitle as the primary subtitle in IINA.
-2. Under **Languages**, select your mother language. Confirm the subtitle language if IINA cannot identify it, then save the language settings.
+2. Under **Subtitle**, select the exact target language. The selected translation service understands each cue's source language inside the translation request; there is no source-language confirmation step.
 3. Under **Translation service**, create an OpenAI, Claude, DeepSeek, or Ollama profile. If the service requires authentication, enter its API key before manually refreshing the model list. Select a returned model, or enter an exact custom Model ID.
 4. Save and test the profile, then click **Select**. Selecting a profile explicitly authorizes SubTandem to send nearby subtitle text to the displayed endpoint.
 5. Turn on **Translate**. The original subtitle remains selected in IINA; translated cues appear in SubTandem's overlay. Under **Subtitle**, use **Position** to move the overlay from top (`0`) to bottom (`100`).
@@ -121,7 +121,7 @@ If the endpoint, model, key, or network route changes, save the updated profile 
 ### Claude
 
 - The default API root is `https://api.anthropic.com`. Enter that root or a Claude-compatible root, not a complete `/v1/messages` or `/v1/models` URL; remote endpoints must use HTTPS.
-- SubTandem uses native, non-streaming Messages requests at `/v1/messages` and model discovery at `/v1/models`. A compatible service must implement those routes and Claude authentication/version headers.
+- SubTandem uses native, non-streaming Messages requests at `/v1/messages` and model discovery at `/v1/models`. A compatible service must implement those routes and Claude authentication/version headers. Translation requests use Claude structured JSON output when supported; if a compatible service explicitly rejects that capability, SubTandem retries once without it, and the additional request may be billed.
 - A key is required. For a new profile, enter it before manually refreshing models; automatic refresh never sends an unsaved key. Choose a returned model or enter an exact custom Model ID.
 - Follow **Save → Test → Select**. Save and Test do not authorize subtitle text; before Select, only a subtitle-free model-list request may reach the endpoint.
 - Claude may charge for Messages requests and enforce authentication, model access, spend limits, quotas, rate limits, or refusals. The saved key is write-only and is never shown again.
@@ -145,14 +145,14 @@ For any service, start with **Use macOS proxy settings**. Choose **Connect direc
 
 ## 🔒 Privacy, Credentials, and Cost
 
-- SubTandem sends only nearby subtitle cue text, language direction, opaque cue identifiers, and limited neighboring context to the profile you explicitly select. It does not send video or audio content.
+- SubTandem sends only nearby subtitle cue text, the exact target language, opaque cue identifiers, and limited neighboring context to the profile you explicitly select. The service understands the source language inside that translation request. It does not send video or audio content.
 - The `video-overlay` permission displays the current translation in a local, non-interactive overlay. The overlay does not accept input or enable dragging on the video, does not use network or WebView storage, and is cleared with the playback session.
 - OpenAI, Claude, DeepSeek, and Ollama keys are stored as local plaintext in the plugin's private `credentials.json` file. Its directory uses mode `0700` and the file uses mode `0600`. Keys are not written to IINA preferences, logs, diagnostics, the sidebar state, or the plugin package, and are not shown again after saving.
 - File permissions protect the key from other macOS accounts and ordinary accidental access. They cannot protect it from a process that can already read files as your current macOS user.
 - The bundled transport helper listens only on a temporary `127.0.0.1` port. A configured or currently edited endpoint may receive a subtitle-free model-list request before Select; this includes the default Claude root at `https://api.anthropic.com` and DeepSeek root at `https://api.deepseek.com`. Only the explicitly selected profile revision receives nearby subtitle text for translation. Cross-origin redirects and credentials embedded in URLs are rejected.
 - For embedded text subtitles, the bundled extractor reads only the selected stream from the current local media into a session-only temporary SRT. It does not support remote media or image-based subtitles, and removes temporary extraction data after parsing, cancellation, timeout, or shutdown.
 - Translations are cached only for the current video session and are cleared when the video changes, playback ends, or the window closes.
-- Your translation provider may charge for requests and apply its own data and content policies. Batching and caching reduce calls but do not guarantee a maximum cost.
+- Short tracks, unknown-source text, and text already matching the exact target language are still sent to the selected service and may incur charges. Your provider applies its own data and content policies; batching and session caching reduce calls but do not guarantee a maximum cost.
 
 ## 📌 Current Scope
 
@@ -161,10 +161,9 @@ SubTandem does not perform audio transcription, OCR or extraction of image-based
 ## 🛠️ Troubleshooting
 
 - **Select a supported text subtitle:** Select a local embedded SubRip/ASS/SSA/`mov_text` track or an external SRT/ASS track as IINA's primary subtitle. Remote embedded and image-based tracks are not supported; use the displayed state to reselect a text track or retry a failed preparation.
-- **Confirm the subtitle language:** Enter a BCP 47 language tag such as `en-US`, then save the language settings.
 - **Translation service unavailable:** Test the profile and check its endpoint, exact model ID, key, network route, or Ollama process. For Claude, also check the API root rather than a full resource URL, Messages compatibility, authentication/version support, model access, spend limits, quotas, rate limits, and refusals. For DeepSeek, check account balance, quota, rate limits, and access to the fixed API route. Playback and the original subtitle continue normally.
 - **Credential could not be saved:** Install the release package rather than using an incomplete development copy, make sure the plugin data directory is writable, and fully restart IINA.
-- **No rendered translation:** Confirm that the profile is tested and selected, the source and mother languages differ, and **Translate** is enabled. Playback must also be within the time range of an available translated cue.
+- **No rendered translation:** Confirm that the profile is tested and selected and **Translate** is enabled. Playback must also be within the time range of an available translated cue.
 - **A proxy blocks the service:** Try the default macOS proxy route first. If it rejects the service, switch that profile to **Connect directly**, save it, and select/test it again.
 
 ## ☕ Support SubTandem

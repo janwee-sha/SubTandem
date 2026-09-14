@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { utf8Encode } from "../../src/domain/codec.js";
+import { sha256Hex } from "../../src/domain/identity.js";
 import {
   classifySubtitleSelection,
   IinaSubtitleSourcePort,
   normalizeSubtitleCodec,
   readSelectedSubtitle,
 } from "../../src/adapters/iina/subtitle-source.js";
-import { loadSubtitleSource } from "../../src/subtitles/source.js";
+import { loadPreparedSubtitleSource, loadSubtitleSource } from "../../src/subtitles/source.js";
 
 describe("selected subtitle source", () => {
   const content = "1\n00:00:01,000 --> 00:00:02,000\nHello\n";
@@ -18,10 +19,38 @@ describe("selected subtitle source", () => {
     );
     expect(loaded.ok).toBe(true);
     if (!loaded.ok) return;
-    expect(loaded.source).toMatchObject({ trackId: 7, format: "srt", trackLanguage: "en-US" });
+    expect(loaded.source).toMatchObject({ trackId: 7, format: "srt" });
+    expect(loaded.source).not.toHaveProperty("trackLanguage");
     expect(loaded.source.decode).toMatchObject({ encoding: "utf-8", bom: true });
     expect(loaded.source.contentHash).toMatch(/^[a-f0-9]{64}$/);
     expect(loaded.source.cues).toHaveLength(1);
+  });
+
+  it("keeps embedded cue identity and content metadata without persisting a track label", () => {
+    const bytes = utf8Encode(content);
+    const loaded = loadPreparedSubtitleSource(
+      {
+        trackId: 7,
+        origin: "embedded",
+        codec: "subrip",
+        ffIndex: 3,
+        sourceId: 12,
+        title: "English",
+      },
+      bytes,
+      {
+        jobId: "job",
+        state: "ready",
+        resultId: "result",
+        format: "srt",
+        cueCount: 1,
+        byteCount: bytes.length,
+        sha256: sha256Hex(bytes),
+      },
+    );
+
+    expect(loaded).toMatchObject({ trackId: 7, origin: "embedded", codec: "subrip" });
+    expect(loaded).not.toHaveProperty("trackLanguage");
   });
 
   it("returns safe unsupported results for embedded, unreadable, malformed and unknown tracks", () => {
@@ -139,6 +168,7 @@ describe("selected subtitle source", () => {
       media: { playerId: "player-A", mediaEpoch: 4, localPath: "/private/media/movie.mkv" },
       track: { trackId: 7, codec: "ass", ffIndex: 3, sourceId: 12 },
     });
+    if (result.kind === "embedded") expect(result.track).not.toHaveProperty("language");
   });
 
   it("fails closed for missing, ambiguous, remote, graphic, unknown, and conflicting tracks", () => {

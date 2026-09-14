@@ -12,7 +12,7 @@ import type {
 } from "../../providers/transport.js";
 import type { ProcessLauncher } from "./transport-process.js";
 
-function helperErrorCode(value: unknown): TransportRpcErrorCode | undefined {
+function allowlistedHelperErrorCode(value: unknown): TransportRpcErrorCode | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
   const response = value as Record<string, unknown>;
   const data = response.data;
@@ -41,12 +41,10 @@ export class IinaLocalHttpBridge implements LocalHttpBridge {
         data: body as Record<string, unknown>,
       });
     } catch (error) {
-      // IINA rejects its Promise for every non-2xx response. Preserve only the
-      // helper's allowlisted safe code; never surface response text or tokens.
-      throw new TransportRpcError(helperErrorCode(error) ?? "helper-rpc-failed");
+      throw new TransportRpcError(allowlistedHelperErrorCode(error) ?? "helper-rpc-failed");
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw new TransportRpcError(helperErrorCode(response) ?? "helper-rpc-failed");
+      throw new TransportRpcError(allowlistedHelperErrorCode(response) ?? "helper-rpc-failed");
     }
     if (response.data && typeof response.data === "object") return response.data as T;
     try {

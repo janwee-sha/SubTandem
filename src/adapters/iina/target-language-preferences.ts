@@ -16,12 +16,6 @@ export class TargetLanguagePreferenceError extends Error {
 export class TargetLanguagePreferences {
   constructor(private readonly store: TargetLanguagePreferenceStore) {}
 
-  clearLegacySourcePreferences(): void {
-    this.store.set("sourceLanguage", "");
-    this.store.set("sourceLanguageMode", "");
-    this.store.sync();
-  }
-
   read(): { targetLanguage: string; source: "saved" | "default" } {
     const value = this.store.get("targetLanguage");
     return isTargetLanguageId(value)

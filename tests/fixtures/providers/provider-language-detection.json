@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "short-five-cues",
+      "targetLanguage": "zh-Hans",
+      "trackLanguage": "en",
+      "cues": [
+        "Wait.",
+        "Did you hear that?",
+        "Nothing but the wind.",
+        "Stay close.",
+        "Let's go."
+      ]
+    },
+    {
+      "id": "short-eleven-cues-missing-label",
+      "targetLanguage": "ja",
+      "trackLanguage": null,
+      "cues": [
+        "The train is late.",
+        "Again?",
+        "Only by ten minutes.",
+        "We can wait here.",
+        "Do you want coffee?",
+        "Yes, please.",
+        "No sugar.",
+        "The platform changed.",
+        "Which one?",
+        "Platform four.",
+        "Let's hurry."
+      ]
+    },
+    {
+      "id": "medium-natural-dialogue",
+      "targetLanguage": "fr",
+      "trackLanguage": "zz-WRONG",
+      "cues": [
+        "Morning.",
+        "You're here early.",
+        "I couldn't sleep.",
+        "The lights were on all night.",
+        "At the old house?",
+        "Across the river.",
+        "Nobody lives there.",
+        "That's what I thought.",
+        "Did you call anyone?",
+        "Not yet.",
+        "We should tell Mara.",
+        "She won't believe us.",
+        "Bring the photographs.",
+        "They're in my bag.",
+        "Then we have proof.",
+        "Or a very strange reflection.",
+        "Either way, she should see it.",
+        "Meet me after sunset.",
+        "I'll be there."
+      ]
+    },
+    {
+      "id": "romanized-dialogue",
+      "targetLanguage": "en",
+      "trackLanguage": "ja",
+      "cues": [
+        "Ohayou, Haru.",
+        "Kyou wa samui ne.",
+        "Un, demo tenki wa ii yo.",
+        "Eki made arukou ka?",
+        "Sou shiyou.",
+        "Kippu wa motta?"
+      ]
+    },
+    {
+      "id": "mixed-language-batch",
+      "targetLanguage": "en",
+      "trackLanguage": null,
+      "cues": [
+        "Bonjour, are you ready?",
+        "Sí, vamos.",
+        "The door is open.",
+        "Danke schön.",
+        "また明日。",
+        "See you tomorrow."
+      ]
+    },
+    {
+      "id": "same-language-preservation",
+      "targetLanguage": "en",
+      "trackLanguage": "en-US",
+      "cues": [
+        "  Keep both leading spaces.",
+        "Keep both trailing spaces.  ",
+        "Line one.\n\nLine three.",
+        "WHAT, exactly?",
+        "Repeat me.",
+        "Repeat me."
+      ]
+    },
+    {
+      "id": "simplified-chinese-target",
+      "targetLanguage": "zh-Hans",
+      "trackLanguage": "zh-Hant",
+      "cues": ["歡迎回來。", "檔案已經準備好了。", "請確認設定。", "現在開始播放。", "謝謝。"]
+    },
+    {
+      "id": "traditional-chinese-target",
+      "targetLanguage": "zh-Hant",
+      "trackLanguage": "zh-Hans",
+      "cues": ["欢迎回来。", "文件已经准备好了。", "请确认设置。", "现在开始播放。", "谢谢。"]
+    },
+    {
+      "id": "portuguese-portugal-target",
+      "targetLanguage": "pt-PT",
+      "trackLanguage": "pt-BR",
+      "cues": [
+        "O ônibus está chegando.",
+        "Vou pegar o trem amanhã.",
+        "O arquivo está salvo.",
+        "Você pode verificar?",
+        "Tudo certo."
+      ]
+    }
+  ]
+}

@@ -34,6 +34,20 @@ describe("Overlay WebView lifecycle", () => {
     ]);
   });
 
+  it("renders a later successful cue after an earlier pending frame is cleared", () => {
+    const { event, host, overlay } = createOverlay();
+    overlay.show(["earlier"]);
+    overlay.clear();
+    overlay.show(["later"]);
+
+    event.trigger("iina.plugin-overlay-loaded");
+    host.trigger("overlay:ready");
+
+    expect(host.messages.filter((message) => message.name === "overlay:render")).toEqual([
+      expect.objectContaining({ data: expect.objectContaining({ lines: ["later"] }) }),
+    ]);
+  });
+
   it("recovers when the page's first ready message arrives before the host listener", () => {
     const { event, host, overlay } = createOverlay();
     overlay.show(["current"]);

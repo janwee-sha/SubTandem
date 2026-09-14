@@ -22,6 +22,15 @@ import {
   modelCatalogContextToken,
 } from "../../src/adapters/iina/model-catalog-sync.js";
 
+function parseTranslationPayload(content: string): {
+  targets: Array<{ id: string; text?: string }>;
+} {
+  const delimited = /INPUT_JSON_BEGIN\n([\s\S]*?)\nINPUT_JSON_END/.exec(content);
+  return JSON.parse(delimited?.[1] ?? content) as {
+    targets: Array<{ id: string; text?: string }>;
+  };
+}
+
 describe("US3 provider broker integration", () => {
   it("keeps four Provider kinds coexisting with exact revision selection in the current window", async () => {
     let sequence = 0;
@@ -231,9 +240,9 @@ describe("US3 provider broker integration", () => {
             headers: {},
             bodyText: '{"models":[{"model":"qwen","name":"qwen"}]}',
           };
-        const targets = JSON.parse(
+        const targets = parseTranslationPayload(
           (request.body as { messages: Array<{ content: string }> }).messages.at(-1)!.content,
-        ).targets as Array<{ id: string }>;
+        ).targets;
         return {
           statusCode: 200,
           headers: {},
@@ -268,7 +277,14 @@ describe("US3 provider broker integration", () => {
     );
     await provider.testConnection("test");
     await provider.attempt(makeProviderRequest());
-    expect(paths).toEqual(["/api/tags", "/api/version", "/api/tags", "/api/chat", "/api/chat"]);
+    expect(paths).toEqual([
+      "/api/tags",
+      "/api/version",
+      "/api/tags",
+      "/api/chat",
+      "/api/chat",
+      "/api/chat",
+    ]);
   });
 
   it("uses one Bearer with prompt-only JSON across official Ollama Cloud flows", async () => {
@@ -289,7 +305,7 @@ describe("US3 provider broker integration", () => {
             bodyText: '{"models":[{"model":"cloud-model"}]}',
           };
         const messages = (request.body as { messages: Array<{ content: string }> }).messages;
-        const targets = JSON.parse(messages.at(-1)!.content).targets as Array<{ id: string }>;
+        const targets = parseTranslationPayload(messages.at(-1)!.content).targets;
         const hasExactSchema =
           messages[0]!.content.includes('"required":["translations"]') &&
           targets.every((target) => messages[0]!.content.includes(`"${target.id}"`));
@@ -338,10 +354,11 @@ describe("US3 provider broker integration", () => {
       "/api/tags",
       "/api/chat",
       "/api/chat",
+      "/api/chat",
     ]);
     for (const request of requests.filter((item) => item.body)) {
       expect(request.body).not.toHaveProperty("format");
-      expect(request.body).not.toHaveProperty("think");
+      expect(request.body).toHaveProperty("think", false);
       const messages = request.body!.messages as Array<{ content: string }>;
       expect(messages[0]!.content).toContain('"required":["translations"]');
     }
@@ -453,11 +470,7 @@ describe("US3 provider broker integration", () => {
               bodyText: '{"models":[{"name":"model"}]}',
             };
           const messages = (request.body as { messages: Array<{ content: string }> }).messages;
-          const targets = (
-            JSON.parse(messages.at(-1)!.content) as {
-              targets: Array<{ id: string; text: string }>;
-            }
-          ).targets;
+          const targets = parseTranslationPayload(messages.at(-1)!.content).targets;
           const content = JSON.stringify({
             translations: targets.map((target) => ({ id: target.id, text: `T:${target.text}` })),
           });

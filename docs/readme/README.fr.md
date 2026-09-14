@@ -99,7 +99,7 @@ Quelle que soit la méthode choisie, approuvez les autorisations demandées si I
 ## 🌍 Démarrage rapide
 
 1. Ouvrez une vidéo locale et sélectionnez dans IINA une piste texte intégrée prise en charge ou un SRT/ASS externe comme sous-titre principal.
-2. Dans **Languages**, sélectionnez votre langue maternelle. Si IINA ne peut pas identifier la langue du sous-titre, confirmez-la manuellement, puis enregistrez les réglages.
+2. Dans **Subtitle**, sélectionnez la langue cible exacte. Le service de traduction sélectionné détermine la langue source de chaque cue dans la requête de traduction ; aucune confirmation de langue source n'est requise.
 3. Dans **Translation service**, créez un Profile OpenAI, Claude, DeepSeek ou Ollama. Si le service exige une authentification, saisissez son API key avant d'actualiser manuellement la liste des modèles. Choisissez ensuite un modèle retourné ou saisissez un Model ID personnalisé exact.
 4. Enregistrez et testez le Profile, puis cliquez sur **Select**. La sélection autorise explicitement SubTandem à envoyer le texte des sous-titres proches à l'endpoint affiché.
 5. Activez **Translate**. Le sous-titre d'origine reste affiché par IINA et les cue traduits apparaissent dans la surcouche de SubTandem. Sous **Subtitle**, utilisez **Position** pour déplacer la surcouche du haut (`0`) vers le bas (`100`).
@@ -144,13 +144,13 @@ Pour chaque service, commencez par **Use macOS proxy settings**. Ne choisissez *
 
 ## 🔒 Confidentialité, identifiants et coûts
 
-- SubTandem envoie uniquement au Profile explicitement sélectionné le texte des cue proches, la direction des langues, des identifiants de cue opaques et un contexte voisin limité. Aucun contenu vidéo ou audio n'est envoyé.
+- SubTandem envoie uniquement au Profile explicitement sélectionné le texte des cue proches, la langue cible exacte, des identifiants de cue opaques et un contexte voisin limité. Le service comprend la langue source dans cette même requête. Aucun contenu vidéo ou audio n'est envoyé.
 - L'autorisation `video-overlay` affiche la traduction actuelle dans un Overlay local et non interactif. Cet Overlay n'accepte aucune saisie ni déplacement sur la vidéo, n'utilise ni réseau ni stockage WebView et est effacé avec la session de lecture.
 - Les API key OpenAI, Claude, DeepSeek et Ollama sont stockées localement en clair dans le fichier privé `credentials.json` du plugin. Son répertoire utilise le mode `0700` et le fichier le mode `0600`. La key n'est inscrite ni dans les preferences IINA, ni dans les journaux, diagnostics, l'état de la Sidebar ou le paquet du plugin, et elle n'est plus affichée après l'enregistrement.
 - Les autorisations du fichier protègent la key contre les autres comptes macOS et les accès accidentels ordinaires. Elles ne la protègent pas d'un processus déjà capable de lire les fichiers au nom de votre utilisateur macOS actuel.
 - Le transport helper inclus n'écoute que sur un port temporaire `127.0.0.1`. Un endpoint configuré ou en cours d'édition, y compris les API root Claude `https://api.anthropic.com` et DeepSeek `https://api.deepseek.com` par défaut, peut recevoir une liste de modèles sans sous-titres avant Select ; seule la révision du Profile sélectionné reçoit le texte des sous-titres. Les redirect inter-origines et les identifiants inclus dans les URL sont refusés.
 - Les traductions ne sont mises en cache que pendant la session vidéo actuelle et sont effacées lors d'un changement de vidéo, à la fin de la lecture ou à la fermeture de la fenêtre.
-- Votre Provider de traduction peut facturer les requêtes et appliquer ses propres politiques relatives aux données et au contenu. Le traitement par lots et le cache réduisent les appels, mais ne garantissent pas un coût maximal.
+- Les pistes courtes, les textes de langue source inconnue et ceux déjà conformes à la langue cible exacte sont quand même envoyés au service sélectionné et peuvent être facturés. Le Provider applique ses propres politiques ; le traitement par lots et le cache de session réduisent les appels sans garantir un coût maximal.
 
 ## 📌 Périmètre actuel
 
@@ -159,10 +159,9 @@ SubTandem n'effectue pas de transcription audio, d'OCR ou d'extraction de sous-t
 ## 🛠️ Dépannage
 
 - **Select a supported text subtitle :** sélectionnez une piste locale intégrée SubRip/ASS/SSA/`mov_text` ou un SRT/ASS externe. Les pistes graphiques et intégrées distantes ne sont pas prises en charge ; suivez l'état pour resélectionner ou utiliser Retry après un échec.
-- **Confirm the subtitle language :** saisissez un tag de langue BCP 47, par exemple `en-US`, puis enregistrez les réglages.
 - **Translation service unavailable :** testez le Profile et vérifiez son endpoint, son Model ID exact, son API key, sa route réseau ou le processus Ollama. Pour Claude, vérifiez l'API root, la compatibilité Messages, l'authentification/version, l'accès au modèle, les limites de dépenses, quotas, débit et les refus. Pour DeepSeek, vérifiez aussi le solde, le quota, le débit et la route API fixe. La lecture continue normalement.
 - **Credential could not be saved :** installez le paquet Release plutôt qu'une copie de développement incomplète, vérifiez que le répertoire de données du plugin est accessible en écriture, puis quittez complètement et relancez IINA.
-- **Aucune traduction affichée :** vérifiez que le Profile est testé et sélectionné, que la langue source diffère de votre langue maternelle, que **Translate** est activé et que la lecture se trouve dans l'intervalle d'un cue déjà traduit.
+- **Aucune traduction affichée :** vérifiez que le Profile est testé et sélectionné, que **Translate** est activé et que la lecture se trouve dans l'intervalle d'un cue déjà traduit.
 - **Le proxy bloque le service :** essayez d'abord la route proxy macOS par défaut. Si elle refuse le service, passez ce Profile à **Connect directly**, enregistrez-le, puis relancez Select/Test.
 
 ## ☕ Soutenir SubTandem

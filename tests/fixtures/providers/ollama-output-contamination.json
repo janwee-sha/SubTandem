@@ -1,0 +1,25 @@
+{
+  "cases": [
+    {
+      "id": "source-copy",
+      "inputText": "Synthetic source sentence.",
+      "contextPrevious": "Synthetic earlier context.",
+      "contextNext": "Synthetic later context.",
+      "outputText": "Synthetic source sentence.\n合成目标文本。"
+    },
+    {
+      "id": "context-json",
+      "inputText": "Synthetic current sentence.",
+      "contextPrevious": "Synthetic private previous context.",
+      "contextNext": "Synthetic private next context.",
+      "outputText": "合成目标文本。\",\"context_previous\":\"Synthetic private previous context.\",\"context_next\":\"Synthetic private next context.\""
+    },
+    {
+      "id": "thinking-wrapper",
+      "inputText": "Synthetic reasoning target.",
+      "contextPrevious": "Synthetic first context.",
+      "contextNext": "Synthetic second context.",
+      "outputText": "合成目标文本。</think>\nExplanation: synthetic reasoning"
+    }
+  ]
+}

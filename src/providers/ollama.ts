@@ -11,9 +11,9 @@ import { providerHttpError, protocolError } from "./errors.js";
 import { normalizeProviderEndpoint } from "./profiles.js";
 import { validateIdOutput } from "./validation.js";
 import { encodeWireItems } from "./wire-items.js";
-import { buildTranslationTask } from "./translation-task.js";
+import { buildOllamaTranslationTask } from "./translation-task.js";
 
-const MAX_ITEMS_PER_CHAT_REQUEST = 2;
+const MAX_ITEMS_PER_CHAT_REQUEST = 1;
 type OllamaOutputCapability = "json-schema" | "prompt-json";
 
 export class OllamaProvider implements ConfiguredProvider {
@@ -82,7 +82,6 @@ export class OllamaProvider implements ConfiguredProvider {
       scopeId,
       `${scopeId}-schema`,
       [{ id: "probe", text: "hello" }],
-      "en",
       "es",
       15_000,
     );
@@ -99,18 +98,25 @@ export class OllamaProvider implements ConfiguredProvider {
     try {
       const wire = encodeWireItems(request.items);
       const combined: TranslationBatchResult = { translations: [] };
+      let isolatedFailure: unknown;
       for (let offset = 0; offset < wire.items.length; offset += MAX_ITEMS_PER_CHAT_REQUEST) {
         this.throwIfCancelled(request.requestId);
         const items = wire.items.slice(offset, offset + MAX_ITEMS_PER_CHAT_REQUEST);
         const part = Math.floor(offset / MAX_ITEMS_PER_CHAT_REQUEST) + 1;
-        const parsed = await this.validatedChat(
-          request.requestId,
-          `${request.requestId}-part-${part}`,
-          items,
-          request.sourceLanguage,
-          request.targetLanguage,
-          60_000,
-        );
+        let parsed: TranslationBatchResult;
+        try {
+          parsed = await this.validatedChat(
+            request.requestId,
+            `${request.requestId}-part-${part}`,
+            items,
+            request.targetLanguage,
+            60_000,
+          );
+        } catch (error) {
+          if (wire.items.length <= 1 || !this.isIsolatedWireFailure(error)) throw error;
+          isolatedFailure = error;
+          continue;
+        }
         this.throwIfCancelled(request.requestId);
         const progress = wire.restore(parsed);
         if (progress.translations.length > 0) onProgress?.(progress);
@@ -123,6 +129,7 @@ export class OllamaProvider implements ConfiguredProvider {
         }
       }
       this.throwIfCancelled(request.requestId);
+      if (combined.translations.length === 0 && isolatedFailure) throw isolatedFailure;
       return wire.restore(combined);
     } finally {
       this.activeRequests.delete(request.requestId);
@@ -171,12 +178,11 @@ export class OllamaProvider implements ConfiguredProvider {
   private async chat(
     jobId: string,
     items: WireTranslationTarget[],
-    sourceLanguage: string,
     targetLanguage: string,
     timeoutMs: number,
     capability = this.outputCapability,
   ): Promise<ProviderTransportResponse> {
-    const task = buildTranslationTask({ sourceLanguage, targetLanguage, targets: items });
+    const task = buildOllamaTranslationTask({ targetLanguage, targets: items });
     this.activeJobs.add(jobId);
     try {
       return await this.transport.request({
@@ -193,18 +199,10 @@ export class OllamaProvider implements ConfiguredProvider {
         body: {
           model: this.config.model,
           stream: false,
+          think: false,
           ...(capability === "json-schema" ? { format: task.outputSchema } : {}),
           options: { temperature: 0 },
-          messages: [
-            {
-              role: "system",
-              content:
-                capability === "prompt-json"
-                  ? `${task.systemMessage} The response must validate against this exact JSON Schema: ${JSON.stringify(task.outputSchema)}`
-                  : task.systemMessage,
-            },
-            { role: "user", content: task.userMessage },
-          ],
+          messages: [{ role: "user", content: task.userMessage }],
         },
         timeoutMs,
         maxResponseBytes: 1_048_576,
@@ -218,16 +216,13 @@ export class OllamaProvider implements ConfiguredProvider {
     scopeId: string,
     jobId: string,
     items: WireTranslationTarget[],
-    sourceLanguage: string,
     targetLanguage: string,
     timeoutMs: number,
   ): Promise<TranslationBatchResult> {
-    const requestedIds = items.map((item) => item.id);
     const initialCapability = this.outputCapability;
     let response = await this.chat(
       jobId,
       items,
-      sourceLanguage,
       targetLanguage,
       timeoutMs,
       initialCapability,
@@ -243,7 +238,6 @@ export class OllamaProvider implements ConfiguredProvider {
       response = await this.chat(
         this.fallbackJobId(jobId),
         items,
-        sourceLanguage,
         targetLanguage,
         timeoutMs,
         "prompt-json",
@@ -251,17 +245,16 @@ export class OllamaProvider implements ConfiguredProvider {
       this.throwIfCancelled(scopeId);
       if (response.statusCode < 200 || response.statusCode >= 300)
         throw providerHttpError(response.statusCode, response.headers);
-      return this.parse(requestedIds, response);
+      return this.parse(items, response);
     }
     try {
-      return this.parse(requestedIds, response);
+      return this.parse(items, response);
     } catch (error) {
       if (initialCapability !== "json-schema") throw error;
       this.outputCapability = "prompt-json";
       const fallback = await this.chat(
         this.fallbackJobId(jobId),
         items,
-        sourceLanguage,
         targetLanguage,
         timeoutMs,
         "prompt-json",
@@ -269,7 +262,7 @@ export class OllamaProvider implements ConfiguredProvider {
       this.throwIfCancelled(scopeId);
       if (fallback.statusCode < 200 || fallback.statusCode >= 300)
         throw providerHttpError(fallback.statusCode, fallback.headers);
-      return this.parse(requestedIds, fallback);
+      return this.parse(items, fallback);
     }
   }
 
@@ -277,10 +270,20 @@ export class OllamaProvider implements ConfiguredProvider {
     return jobId.endsWith("-schema") ? `${jobId.slice(0, -7)}-prompt` : `${jobId}-prompt`;
   }
 
+  private isIsolatedWireFailure(error: unknown): boolean {
+    if (!error || typeof error !== "object" || Array.isArray(error)) return false;
+    const category = (error as Record<string, unknown>).category;
+    return category === "timeout" || category === "protocol";
+  }
+
   private isStructuredOutputIncompatibility(response: ProviderTransportResponse): boolean {
     if (response.statusCode !== 400 && response.statusCode !== 422) return false;
-    return /(unsupported|not supported|format|json.?schema|structured output)/i.test(
-      response.bodyText.slice(0, 16_384),
+    const message = response.bodyText.slice(0, 16_384);
+    return (
+      /\b(?:format|json.?schema|structured output)\b/i.test(message) &&
+      /unsupported|not supported|does not support|not implemented|unrecognized|unknown|invalid/i.test(
+        message,
+      )
     );
   }
 
@@ -295,9 +298,10 @@ export class OllamaProvider implements ConfiguredProvider {
   }
 
   private parse(
-    requestedIds: string[],
+    items: WireTranslationTarget[],
     response: ProviderTransportResponse,
   ): TranslationBatchResult {
+    const requestedIds = items.map((item) => item.id);
     const parsed = this.json(response.bodyText);
     const message = parsed.message as Record<string, unknown> | undefined;
     if (typeof message?.content !== "string") throw protocolError("OLLAMA_MALFORMED_OUTPUT");
@@ -309,8 +313,18 @@ export class OllamaProvider implements ConfiguredProvider {
     } catch {
       throw protocolError("OLLAMA_MALFORMED_OUTPUT");
     }
+    const targets = new Map(items.map((item) => [item.id, item]));
     return {
-      translations: validated.translations,
+      translations: validated.translations.flatMap((translation) => {
+        const target = targets.get(translation.id);
+        if (!target || this.isContaminatedText(target, translation.text)) return [];
+        return [
+          {
+            ...translation,
+            text: translation.text,
+          },
+        ];
+      }),
       usage: {
         ...(typeof parsed.prompt_eval_count === "number"
           ? { input: parsed.prompt_eval_count }
@@ -318,5 +332,18 @@ export class OllamaProvider implements ConfiguredProvider {
         ...(typeof parsed.eval_count === "number" ? { output: parsed.eval_count } : {}),
       },
     };
+  }
+
+  private isContaminatedText(target: WireTranslationTarget, text: string): boolean {
+    if (text === target.text) return false;
+    const lines = text.split(/\r?\n/);
+    if (lines.some((line) => line === target.text)) return true;
+    return (
+      /["'](?:target_language|targets|translations|context_previous|context_next|id|text)["']\s*:/i.test(
+        text,
+      ) ||
+      /<\/?thin(?:k(?:ing)?)?\b|```/i.test(text) ||
+      /^\s*(?:translation|translated text|note|explanation|reasoning)\s*[:：]/i.test(text)
+    );
   }
 }

@@ -39,7 +39,6 @@ export function buildProviderRequest(input: {
   profileId: string;
   profileRevision: number;
   endpointFingerprint: string;
-  sourceLanguage: string;
   targetLanguage: string;
   targets: readonly FrozenTranslationTarget[];
 }): TranslationBatchRequest {
@@ -53,7 +52,6 @@ export function buildProviderRequest(input: {
     profileId: input.profileId,
     profileRevision: input.profileRevision,
     endpointFingerprint: input.endpointFingerprint,
-    sourceLanguage: input.sourceLanguage,
     targetLanguage: input.targetLanguage,
     items: input.targets.map((target) => ({ ...target })),
   } as TranslationBatchRequest;

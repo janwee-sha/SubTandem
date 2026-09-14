@@ -1,10 +1,44 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { WebViewTranslationOverlay } from "../../src/adapters/iina/webview-translation-overlay.js";
 
 const rootFile = (path: string): string =>
   readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
 
 describe("translation overlay WebView contract", () => {
+  it("preserves split-line positions and clears only an all-whitespace translation", () => {
+    const posts: Array<{ name: string; data: unknown }> = [];
+    const messages = new Map<string, (data: unknown) => void>();
+    let loaded!: () => void;
+    const adapter = new WebViewTranslationOverlay(
+      {
+        simpleMode: () => undefined,
+        loadFile: () => undefined,
+        setClickable: () => undefined,
+        show: () => undefined,
+        hide: () => undefined,
+        postMessage: (name, data) => posts.push({ name, data }),
+        onMessage: (name, callback) => messages.set(name, callback),
+      },
+      {
+        on: (_name, callback) => {
+          loaded = callback;
+          return "lifecycle";
+        },
+        off: () => undefined,
+      },
+    );
+    loaded();
+    messages.get("overlay:ready")?.({});
+    adapter.show(["  first\n\nthird  \n"]);
+
+    const render = posts.findLast((post) => post.name === "overlay:render")!;
+    expect(render.data).toMatchObject({ lines: ["  first", "", "third  ", ""] });
+
+    adapter.show([" \n\t "]);
+    expect(posts.at(-1)?.name).toBe("overlay:clear");
+  });
+
   it("uses tracked local classic-script assets and a network-denying CSP", () => {
     const html = rootFile("ui/overlay.html");
     const packageJson = JSON.parse(rootFile("package.json")) as {

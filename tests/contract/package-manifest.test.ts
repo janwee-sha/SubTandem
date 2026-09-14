@@ -17,9 +17,9 @@ describe("IINA package manifest", () => {
       "show-alert",
       "video-overlay",
     ]);
-    expect(manifest.version).toBe("0.1.3");
+    expect(manifest.version).toBe("0.1.4");
     expect(manifest.ghRepo).toBe("janwee-sha/SubTandem");
-    expect(manifest.ghVersion).toBe(1003);
+    expect(manifest.ghVersion).toBe(1004);
   });
 
   it("describes self-rendered translations without temporary display files", () => {
@@ -150,6 +150,12 @@ describe("IINA package manifest", () => {
     expect(scripts).toContain("native/ffmpeg.lock.json");
   });
 
+  it("pins the native SwiftPM backend for stable architecture output paths", () => {
+    const nativeBuild = rootFile("scripts/build-native.sh");
+
+    expect(nativeBuild.match(/swift build --build-system native/g)).toHaveLength(3);
+  });
+
   it("requires compliance files and exactly three universal packaged native executables", () => {
     const verify = rootFile("scripts/verify-package.sh");
     const pack = rootFile("scripts/pack.sh");
@@ -167,6 +173,16 @@ describe("IINA package manifest", () => {
     expect(verify).toContain("otool -L");
     expect(verify).toContain("12.0");
     expect(verify).toContain("plugin-update-metadata.mjs");
+  });
+
+  it("verifies each native architecture separately for both Apple lipo implementations", () => {
+    for (const path of ["scripts/build-native.sh", "scripts/verify-package.sh"]) {
+      const checks = rootFile(path).match(/^\s*lipo "\$HELPER" -verify_arch .+$/gm);
+      expect(checks?.map((check) => check.trim())).toEqual([
+        'lipo "$HELPER" -verify_arch arm64',
+        'lipo "$HELPER" -verify_arch x86_64',
+      ]);
+    }
   });
 
   it("describes the authenticated style picker without widening network destinations", () => {

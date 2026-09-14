@@ -13,17 +13,20 @@ import {
   parseProviderModelsRequest,
   parseProviderModelsPreviewRequest,
   parseProviderModelsResult,
+  parseProviderAttempt,
   sanitizedProfileView,
 } from "../../src/domain/messages.js";
 import { normalizeProviderError } from "../../src/domain/errors.js";
 import { SESSION_STATUSES, USER_ACTIONS } from "../../src/domain/status.js";
 import "../../ui/provider-status.js";
+import { makeProviderRequest } from "./provider-test-helpers.js";
 
 const providerTestStatusMessage = (
   globalThis as typeof globalThis & {
     subtandemProviderTestStatusMessage(result: {
       ok?: boolean;
       category?: string;
+      statusCode?: number;
       userAction?: string;
       providerKind?: "openai" | "claude" | "deepseek" | "ollama";
     }): string;
@@ -249,6 +252,17 @@ describe("Sidebar/Main/Global security messages", () => {
     expect(
       providerTestStatusMessage({
         ok: false,
+        category: "protocol",
+        userAction: "CHECK_ENDPOINT",
+        providerKind: "claude",
+      }),
+    ).toBe(
+      "Provider response was incompatible. Check that the selected model supports structured JSON output.",
+    );
+    expect(sidebarSource).toContain('protocol: "Provider response was incompatible"');
+    expect(
+      providerTestStatusMessage({
+        ok: false,
         category: "authentication",
         userAction: "CHECK_CREDENTIALS",
       }),
@@ -273,6 +287,7 @@ describe("Sidebar/Main/Global security messages", () => {
     expect(
       providerTestStatusMessage({
         ok: false,
+        category: "configuration",
         userAction: "CHECK_ENDPOINT",
         providerKind: "ollama",
       }),
@@ -360,6 +375,59 @@ describe("Sidebar/Main/Global security messages", () => {
     );
   });
 
+  it("accepts only an exact target-only provider attempt payload", () => {
+    const request = makeProviderRequest();
+    expect(
+      parseProviderAttempt({ requestId: request.requestId, revision: 1, payload: request }),
+    ).toEqual({ requestId: request.requestId, revision: 1, payload: request });
+
+    for (const extra of [
+      { sourceLanguage: "en" },
+      { trackLanguage: "en" },
+      { detectedLanguage: "en" },
+      { languageDetection: "reliable" },
+      { unknown: true },
+    ])
+      expect(() =>
+        parseProviderAttempt({
+          requestId: request.requestId,
+          revision: 1,
+          payload: { ...request, ...extra },
+        }),
+      ).toThrow();
+  });
+
+  it("validates provider attempt identity, target, item, and size boundaries", () => {
+    const request = makeProviderRequest();
+    const invalidPayloads = [
+      { ...request, requestId: "different" },
+      { ...request, sessionEpoch: -1 },
+      { ...request, windowEpoch: 1.5 },
+      { ...request, profileRevision: 0 },
+      { ...request, targetLanguage: "invalid" },
+      { ...request, items: [] },
+      {
+        ...request,
+        items: Array.from({ length: 26 }, (_, index) => ({ id: `c${index}`, text: "x" })),
+      },
+      { ...request, items: [{ id: "c1", text: "x".repeat(5_001) }] },
+      { ...request, items: [{ id: "c1", text: " " }] },
+      { ...request, items: [{ id: "c1", text: "x", contextPrevious: "x".repeat(501) }] },
+      {
+        ...request,
+        items: [
+          { id: "same", text: "x" },
+          { id: "same", text: "y" },
+        ],
+      },
+      { ...request, items: [{ id: "c1", text: "x", sourceLanguage: "en" }] },
+    ];
+    for (const payload of invalidPayloads)
+      expect(() =>
+        parseProviderAttempt({ requestId: request.requestId, revision: 1, payload }),
+      ).toThrow();
+  });
+
   it("accepts only target language in language save messages", () => {
     expect(
       parseTargetLanguageSave({
@@ -397,18 +465,16 @@ describe("Sidebar/Main/Global security messages", () => {
     ).toMatchObject({ targetLanguageRevision: 2 });
   });
 
-  it("publishes only fixed automatic detection states and removes manual confirmation", () => {
-    expect(SESSION_STATUSES).toEqual(
-      expect.arrayContaining([
-        "detectingLanguage",
-        "languageUnrecognized",
-        "languageUnsupported",
-        "noTranslationNeeded",
-      ]),
-    );
-    expect(SESSION_STATUSES).not.toEqual(
-      expect.arrayContaining(["waitingForLanguage", "nativeNoTranslation"]),
-    );
+  it("publishes only actionable subtitle, configuration, running, and service states", () => {
+    expect(SESSION_STATUSES).toEqual([
+      "disabled",
+      "waitingForSubtitle",
+      "waitingForConfiguration",
+      "preparing",
+      "running",
+      "partialFailure",
+      "serviceUnavailable",
+    ]);
     expect(USER_ACTIONS).not.toContain("CONFIRM_SOURCE_LANGUAGE");
   });
 

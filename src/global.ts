@@ -10,6 +10,7 @@ import {
   parseSubtitleStylePickerOpen,
   parseProviderModelsPreviewRequest,
   parseProviderModelsRequest,
+  parseProviderAttempt,
   parseSecretSet,
   parseTargetLanguageSave,
   parseTranslationBatchProgress,
@@ -81,12 +82,6 @@ function advanceCredentialEpoch(profileId: string): number {
   return next;
 }
 
-try {
-  targetLanguagePreferences.clearLegacySourcePreferences();
-} catch (error) {
-  void error;
-}
-
 function restoreProfileMetadata(): void {
   const raw = iina.preferences.get("providerProfilesJson");
   if (typeof raw !== "string") return;
@@ -125,11 +120,11 @@ function restoreProfileMetadata(): void {
             : {}),
         });
       } catch {
-        /* Ignore one invalid preference entry without losing valid profiles. */
+        continue;
       }
     }
   } catch {
-    /* Corrupt non-secret metadata is equivalent to no saved profiles. */
+    return;
   }
 }
 
@@ -408,9 +403,6 @@ function supportedProviderKind(value: unknown): "openai" | "claude" | "deepseek"
   throw new Error("UNSUPPORTED_PROVIDER_KIND");
 }
 
-// IINA 1.4.4 traps when a global handler synchronously posts back through
-// JavascriptAPIGlobalController. Crossing a timer boundary also keeps every
-// reply outside the originating JavaScriptCore callback.
 const postToPlayer = createDeferredPlayerPost(
   (playerId, name, data) => iina.global.postMessage(playerId, name, data),
   setTimeout,
@@ -1280,8 +1272,11 @@ iina.global.onMessage("provider:attempt", async (raw: unknown, playerId?: string
   if (!playerId) return;
   const id = requestId(raw);
   try {
-    const request = payload(raw) as unknown as TranslationBatchRequest;
-    if (request.requestId !== id) throw new Error("REQUEST_ID_MISMATCH");
+    const parsed = parseProviderAttempt(raw);
+    const request = {
+      ...parsed.payload,
+      playerId: playerId as TranslationBatchRequest["playerId"],
+    };
     const result = await broker.attempt(playerId, request, (progress) => {
       try {
         postToPlayer(playerId, "provider:attempt-progress", {

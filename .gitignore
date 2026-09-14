@@ -24,7 +24,6 @@ Packages/
 @tmp/
 credentials.json
 *.credentials.json
-docs/validation/artifacts/
 manual-tests/
 docs/open_issues/
 docs/plans/
@@ -38,10 +37,3 @@ Thumbs.db
 
 # IINA packages
 *.iinaplgz
-/docs/providers/ollama-official.md
-/docs/providers/openai-local.md
-/docs/providers/ollama-local.md
-/docs/local/
-/docs/providers/deepseek.md
-/docs/providers/claude-with-ollama.md
-/docs/providers/claude-with-vercel.md

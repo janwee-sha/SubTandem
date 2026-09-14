@@ -39,7 +39,6 @@ export class DeepSeekProvider implements ConfiguredProvider {
       const response = await this.send(
         testId,
         [{ id: "probe", text: "hello" }],
-        "en",
         "es",
         10_000,
       );
@@ -65,7 +64,6 @@ export class DeepSeekProvider implements ConfiguredProvider {
           const response = await this.send(
             jobId,
             items,
-            request.sourceLanguage,
             request.targetLanguage,
             30_000,
           );
@@ -105,11 +103,10 @@ export class DeepSeekProvider implements ConfiguredProvider {
   private async send(
     jobId: string,
     items: WireTranslationTarget[],
-    sourceLanguage: string,
     targetLanguage: string,
     timeoutMs: number,
   ): Promise<ProviderTransportResponse> {
-    const task = buildDeepSeekTranslationTask({ sourceLanguage, targetLanguage, targets: items });
+    const task = buildDeepSeekTranslationTask({ targetLanguage, targets: items });
     this.activeJobs.add(jobId);
     try {
       return await this.transport.request({

@@ -60,8 +60,8 @@ export class WebViewTranslationOverlay {
   }
 
   show(lines: readonly string[]): void {
-    const current = lines.flatMap((line) => line.split(/\r\n|\r|\n/)).filter((line) => line.trim());
-    if (current.length === 0) {
+    const current = lines.flatMap((line) => line.split(/\r\n|\r|\n/));
+    if (!current.some((line) => line.trim())) {
       this.clear();
       return;
     }
