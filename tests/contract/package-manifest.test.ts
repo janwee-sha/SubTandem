@@ -17,9 +17,9 @@ describe("IINA package manifest", () => {
       "show-alert",
       "video-overlay",
     ]);
-    expect(manifest.version).toBe("0.1.3");
+    expect(manifest.version).toBe("0.1.4");
     expect(manifest.ghRepo).toBe("janwee-sha/SubTandem");
-    expect(manifest.ghVersion).toBe(1003);
+    expect(manifest.ghVersion).toBe(1004);
   });
 
   it("describes self-rendered translations without temporary display files", () => {
@@ -148,6 +148,12 @@ describe("IINA package manifest", () => {
     expect(scripts).toContain("subtandem-subtitle-extractor");
     expect(scripts).toContain("subtandem-style-picker");
     expect(scripts).toContain("native/ffmpeg.lock.json");
+  });
+
+  it("pins the native SwiftPM backend for stable architecture output paths", () => {
+    const nativeBuild = rootFile("scripts/build-native.sh");
+
+    expect(nativeBuild.match(/swift build --build-system native/g)).toHaveLength(3);
   });
 
   it("requires compliance files and exactly three universal packaged native executables", () => {

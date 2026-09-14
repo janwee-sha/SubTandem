@@ -23,10 +23,10 @@ swift package --package-path "$STYLE_PICKER_PACKAGE" clean
 "$ROOT_DIR/scripts/build-ffmpeg.sh" "${SUBTANDEM_FFMPEG_SOURCE:-$ROOT_DIR/native/.build/ffmpeg/downloads/ffmpeg-8.1.2.tar.xz}"
 
 for ARCH in arm64 x86_64; do
-  swift build --disable-sandbox --package-path "$TRANSPORT_PACKAGE" -c release --arch "$ARCH"
+  swift build --build-system native --disable-sandbox --package-path "$TRANSPORT_PACKAGE" -c release --arch "$ARCH"
   SUBTANDEM_FFMPEG_PREFIX="$ROOT_DIR/native/.build/ffmpeg/$ARCH" \
-    swift build --disable-sandbox --package-path "$EXTRACTOR_PACKAGE" -c release --arch "$ARCH"
-  swift build --disable-sandbox --package-path "$STYLE_PICKER_PACKAGE" -c release --arch "$ARCH"
+    swift build --build-system native --disable-sandbox --package-path "$EXTRACTOR_PACKAGE" -c release --arch "$ARCH"
+  swift build --build-system native --disable-sandbox --package-path "$STYLE_PICKER_PACKAGE" -c release --arch "$ARCH"
 done
 
 TRANSPORT_ARM="$TRANSPORT_PACKAGE/.build/arm64-apple-macosx/release/subtandem-transport"
