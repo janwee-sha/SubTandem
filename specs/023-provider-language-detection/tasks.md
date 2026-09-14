@@ -275,3 +275,8 @@ Task T034: ui/sidebar.html + ui/sidebar.ts
 ## Phase 8: Convergence
 
 - [X] T050 [US2] 先补充 Ollama 连接测试、每次 wire、格式降级均关闭 thinking 及无关能力错误不重放的失败契约，再在 `src/providers/ollama.ts` 显式发送 `think: false` 并收紧格式能力拒绝判定，保留共同任务语义；使用可遵循结构化翻译契约的本地模型，确认需翻译条目不回显、同语言条目逐字符原样且 50 cue 与三组语言矩阵在 600 秒内通过；不得增加源语言字段、本地语义检测、网络目的地或额外重试，完成后重跑聚焦测试、全量测试/编译/打包及经授权的本地 Ollama live 验收 per FR-008 / FR-009 / SC-003 (partial)
+
+## Phase 9: Convergence
+
+- [ ] T051 CRITICAL：[US2] 以不包含真实字幕、译文、endpoint 或原始响应的合成 fixture，将本轮本地 Ollama 验收观察到的需翻译条目原文回显、`text` 混入 `context_previous`/`context_next` 或 JSON 字段、`text` 混入 thinking 标记或外围说明三类失败形状固化为 `tests/contract/ollama.test.ts` 的先失败回归，并使默认关闭的 `tests/integration/live-providers.test.ts` 对每个获授权模型分别报告非敏感计数；T040 必须保持未验收，直至 T052 后以最终包复测通过 per Constitution I / T050 (contradicts)
+- [ ] T052 [US2] 在不新增源语言字段、本地语言检测、语义审核、网络目的地或重试的前提下，收敛 `src/providers/translation-task.ts` 与 `src/providers/ollama.ts` 的 Ollama 指令、目标封装及合法输出门禁，使 `gemma3:latest`、`qwen3:14b` 与 `translategemma:12b` 的简体中文目标验收不会把非目标原文、相邻上下文、JSON 字段或 thinking 片段作为译文提交；保留同语言逐字符原样、每次 wire 最多两项、`think: false` 和一次格式降级，随后重跑 023 聚焦测试及 `npm test`、`npm run typecheck`、`npm run lint`、`npm run build:native`、`npm run test:native`、`npm run build`、`npm run verify:package`、`npm run pack`，并用最终 `.iinaplgz` 完成 T040 与三个模型矩阵 per FR-008 / FR-009 / FR-011 / SC-003 (partial)
