@@ -17,7 +17,6 @@ import {
   freezeFixtureTargets,
   loadProviderLanguageDetectionFixture,
 } from "../helpers/provider-language-detection.js";
-import { createTranslationAlignmentFixture } from "../helpers/translation-alignment.js";
 
 class FetchTransport implements ProviderTransport {
   async request(request: ProviderTransportRequest) {
@@ -56,9 +55,38 @@ const languageMatrix = [
   { caseId: "traditional-chinese-target", exactIndexes: [] },
 ] as const;
 
+interface LiveEvidenceIdentity {
+  provider: "openai" | "ollama" | "deepseek" | "claude";
+  model: string;
+  caseId: string;
+}
+
+interface LiveTranslationCounts {
+  adjacentContext: number;
+  sourceEcho: number;
+  romanization: number;
+  fieldName: number;
+  languageLabel: number;
+  explanation: number;
+  thinking: number;
+  unknownId: number;
+}
+
 function makeLiveAcceptanceRequest(count = 50): TranslationBatchRequest {
-  const { continuousCues } = createTranslationAlignmentFixture();
-  const cues = continuousCues.slice(0, count);
+  const sourcePool = ["short-five-cues", "short-eleven-cues-missing-label", "medium-natural-dialogue"]
+    .flatMap((caseId) => languageFixture.cases.find((entry) => entry.id === caseId)?.cues ?? []);
+  const cues = Array.from({ length: count }, (_, index) => {
+    const sourceText = sourcePool[index % sourcePool.length]!;
+    return {
+      id: `live-safe-${index + 1}`,
+      index: index + 1,
+      startMs: index * 2_000,
+      endMs: index * 2_000 + 1_800,
+      sourceText,
+      normalizedText: sourceText,
+      contextText: sourceText,
+    };
+  });
   return {
     ...makeProviderRequest(),
     items: freezeTranslationTargets({ windowCues: cues, targetCues: cues }),
@@ -68,25 +96,37 @@ function makeLiveAcceptanceRequest(count = 50): TranslationBatchRequest {
 function expectCleanLiveTranslations(
   request: TranslationBatchRequest,
   result: TranslationBatchResult,
+  identity: LiveEvidenceIdentity,
+  allowedExactIds: ReadonlySet<string> = new Set(),
 ): void {
   const byId = new Map(request.items.map((target) => [target.id, target]));
-  const counts = {
+  const counts: LiveTranslationCounts = {
     adjacentContext: 0,
     sourceEcho: 0,
     romanization: 0,
     fieldName: 0,
     languageLabel: 0,
     explanation: 0,
+    thinking: 0,
+    unknownId: 0,
   };
   for (const translation of result.translations) {
-    const target = byId.get(translation.id)!;
+    const target = byId.get(translation.id);
+    if (!target) {
+      counts.unknownId += 1;
+      continue;
+    }
     if (
       [target.contextPrevious, target.contextNext].some(
         (context) => context && translation.text.includes(context),
       )
     )
       counts.adjacentContext += 1;
-    if (translation.text.includes(target.text)) counts.sourceEcho += 1;
+    if (
+      translation.text.includes(target.text) &&
+      (!allowedExactIds.has(target.id) || translation.text !== target.text)
+    )
+      counts.sourceEcho += 1;
     if (/\b(?:pinyin|romanization|romaji)\b/i.test(translation.text)) counts.romanization += 1;
     if (/\b(?:targets?|context_previous|context_next|text|id)\b/i.test(translation.text))
       counts.fieldName += 1;
@@ -94,24 +134,38 @@ function expectCleanLiveTranslations(
       counts.languageLabel += 1;
     if (/(?:^|\n)\s*(?:translation|note|explanation)\s*[:：]/i.test(translation.text))
       counts.explanation += 1;
+    if (/<\/?think(?:ing)?\b/i.test(translation.text)) counts.thinking += 1;
   }
-  expect.soft(result.translations.length).toBe(request.items.length);
-  expect.soft(result.translations.every((item, index) => item.id === request.items[index]?.id)).toBe(
-    true,
-  );
-  expect.soft(counts).toEqual({
-    adjacentContext: 0,
-    sourceEcho: 0,
-    romanization: 0,
-    fieldName: 0,
-    languageLabel: 0,
-    explanation: 0,
+  const evidence = {
+    ...identity,
+    complete: result.translations.length === request.items.length,
+    ordered: result.translations.every((item, index) => item.id === request.items[index]?.id),
+    counts,
+  };
+  console.info(JSON.stringify({ liveProviderEvidence: evidence }));
+  expect.soft(evidence, `${identity.provider}:${identity.model}:${identity.caseId}`).toEqual({
+    ...identity,
+    complete: true,
+    ordered: true,
+    counts: {
+      adjacentContext: 0,
+      sourceEcho: 0,
+      romanization: 0,
+      fieldName: 0,
+      languageLabel: 0,
+      explanation: 0,
+      thinking: 0,
+      unknownId: 0,
+    },
   });
 }
 
-async function runLanguageMatrix(provider: {
-  attempt(request: TranslationBatchRequest): Promise<TranslationBatchResult>;
-}): Promise<void> {
+async function runLanguageMatrix(
+  provider: {
+    attempt(request: TranslationBatchRequest): Promise<TranslationBatchResult>;
+  },
+  identity: Omit<LiveEvidenceIdentity, "caseId">,
+): Promise<void> {
   for (const matrixCase of languageMatrix) {
     const testCase = languageFixture.cases.find((entry) => entry.id === matrixCase.caseId)!;
     const request = {
@@ -142,6 +196,8 @@ async function runLanguageMatrix(provider: {
       ];
     });
     const evidence = {
+      ...identity,
+      caseId: matrixCase.caseId,
       complete: result.translations.length === request.items.length,
       exact: exactMatches === matrixCase.exactIndexes.length,
       exactByIndex,
@@ -150,7 +206,10 @@ async function runLanguageMatrix(provider: {
       mismatches,
       nonblank: result.translations.every((item) => item.text.trim().length > 0),
     };
+    console.info(JSON.stringify({ liveProviderEvidence: evidence }));
     expect.soft(evidence, matrixCase.caseId).toEqual({
+      ...identity,
+      caseId: matrixCase.caseId,
       complete: true,
       exact: true,
       exactByIndex: matrixCase.exactIndexes.map(() => true),
@@ -208,8 +267,12 @@ describe.skipIf(!live)("authorized live provider smoke tests", () => {
     );
     const request = makeLiveAcceptanceRequest();
     const result = await withSafeProviderDiagnostics(provider.attempt(request));
-    expectCleanLiveTranslations(request, result);
-    await runLanguageMatrix(provider);
+    expectCleanLiveTranslations(request, result, {
+      provider: "openai",
+      model: model!,
+      caseId: "fifty-cue",
+    });
+    await runLanguageMatrix(provider, { provider: "openai", model: model! });
   }, 300_000);
 
   it("probes and translates with the configured Ollama service", async () => {
@@ -226,8 +289,12 @@ describe.skipIf(!live)("authorized live provider smoke tests", () => {
     await expect(withSafeProviderDiagnostics(provider.probe())).resolves.toMatchObject({ model });
     const request = makeLiveAcceptanceRequest();
     const result = await withSafeProviderDiagnostics(provider.attempt(request));
-    expectCleanLiveTranslations(request, result);
-    await runLanguageMatrix(provider);
+    expectCleanLiveTranslations(request, result, {
+      provider: "ollama",
+      model: model!,
+      caseId: "fifty-cue",
+    });
+    await runLanguageMatrix(provider, { provider: "ollama", model: model! });
   }, 600_000);
 });
 
@@ -251,8 +318,12 @@ describe.skipIf(!liveDeepSeek)("authorized DeepSeek live acceptance", () => {
     const request = makeLiveAcceptanceRequest(40);
     const result = await withSafeProviderDiagnostics(provider.attempt(request));
     expect(request.items).toHaveLength(40);
-    expectCleanLiveTranslations(request, result);
-    await runLanguageMatrix(provider);
+    expectCleanLiveTranslations(request, result, {
+      provider: "deepseek",
+      model: model!,
+      caseId: "forty-cue",
+    });
+    await runLanguageMatrix(provider, { provider: "deepseek", model: model! });
   }, 600_000);
 });
 
@@ -280,7 +351,11 @@ describe.skipIf(!liveClaude)("authorized Claude-compatible live acceptance", () 
       () => ({ completedTargets }),
     );
     expect(request.items).toHaveLength(40);
-    expectCleanLiveTranslations(request, result);
-    await runLanguageMatrix(provider);
+    expectCleanLiveTranslations(request, result, {
+      provider: "claude",
+      model: model!,
+      caseId: "forty-cue",
+    });
+    await runLanguageMatrix(provider, { provider: "claude", model: model! });
   }, 600_000);
 });

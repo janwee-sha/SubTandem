@@ -11,9 +11,9 @@ import { providerHttpError, protocolError } from "./errors.js";
 import { normalizeProviderEndpoint } from "./profiles.js";
 import { validateIdOutput } from "./validation.js";
 import { encodeWireItems } from "./wire-items.js";
-import { buildTranslationTask } from "./translation-task.js";
+import { buildOllamaTranslationTask } from "./translation-task.js";
 
-const MAX_ITEMS_PER_CHAT_REQUEST = 2;
+const MAX_ITEMS_PER_CHAT_REQUEST = 1;
 type OllamaOutputCapability = "json-schema" | "prompt-json";
 
 export class OllamaProvider implements ConfiguredProvider {
@@ -173,7 +173,7 @@ export class OllamaProvider implements ConfiguredProvider {
     timeoutMs: number,
     capability = this.outputCapability,
   ): Promise<ProviderTransportResponse> {
-    const task = buildTranslationTask({ targetLanguage, targets: items });
+    const task = buildOllamaTranslationTask({ targetLanguage, targets: items });
     this.activeJobs.add(jobId);
     try {
       return await this.transport.request({
@@ -193,16 +193,7 @@ export class OllamaProvider implements ConfiguredProvider {
           think: false,
           ...(capability === "json-schema" ? { format: task.outputSchema } : {}),
           options: { temperature: 0 },
-          messages: [
-            {
-              role: "system",
-              content:
-                capability === "prompt-json"
-                  ? `${task.systemMessage} The response must validate against this exact JSON Schema: ${JSON.stringify(task.outputSchema)}`
-                  : task.systemMessage,
-            },
-            { role: "user", content: task.userMessage },
-          ],
+          messages: [{ role: "user", content: task.userMessage }],
         },
         timeoutMs,
         maxResponseBytes: 1_048_576,
@@ -219,7 +210,6 @@ export class OllamaProvider implements ConfiguredProvider {
     targetLanguage: string,
     timeoutMs: number,
   ): Promise<TranslationBatchResult> {
-    const requestedIds = items.map((item) => item.id);
     const initialCapability = this.outputCapability;
     let response = await this.chat(
       jobId,
@@ -246,10 +236,10 @@ export class OllamaProvider implements ConfiguredProvider {
       this.throwIfCancelled(scopeId);
       if (response.statusCode < 200 || response.statusCode >= 300)
         throw providerHttpError(response.statusCode, response.headers);
-      return this.parse(requestedIds, response);
+      return this.parse(items, response);
     }
     try {
-      return this.parse(requestedIds, response);
+      return this.parse(items, response);
     } catch (error) {
       if (initialCapability !== "json-schema") throw error;
       this.outputCapability = "prompt-json";
@@ -263,7 +253,7 @@ export class OllamaProvider implements ConfiguredProvider {
       this.throwIfCancelled(scopeId);
       if (fallback.statusCode < 200 || fallback.statusCode >= 300)
         throw providerHttpError(fallback.statusCode, fallback.headers);
-      return this.parse(requestedIds, fallback);
+      return this.parse(items, fallback);
     }
   }
 
@@ -293,9 +283,10 @@ export class OllamaProvider implements ConfiguredProvider {
   }
 
   private parse(
-    requestedIds: string[],
+    items: WireTranslationTarget[],
     response: ProviderTransportResponse,
   ): TranslationBatchResult {
+    const requestedIds = items.map((item) => item.id);
     const parsed = this.json(response.bodyText);
     const message = parsed.message as Record<string, unknown> | undefined;
     if (typeof message?.content !== "string") throw protocolError("OLLAMA_MALFORMED_OUTPUT");
@@ -307,8 +298,18 @@ export class OllamaProvider implements ConfiguredProvider {
     } catch {
       throw protocolError("OLLAMA_MALFORMED_OUTPUT");
     }
+    const targets = new Map(items.map((item) => [item.id, item]));
     return {
-      translations: validated.translations,
+      translations: validated.translations.flatMap((translation) => {
+        const target = targets.get(translation.id);
+        if (!target || this.isContaminatedText(target, translation.text)) return [];
+        return [
+          {
+            ...translation,
+            text: this.restoreCharacterExactText(target.text, translation.text),
+          },
+        ];
+      }),
       usage: {
         ...(typeof parsed.prompt_eval_count === "number"
           ? { input: parsed.prompt_eval_count }
@@ -316,5 +317,29 @@ export class OllamaProvider implements ConfiguredProvider {
         ...(typeof parsed.eval_count === "number" ? { output: parsed.eval_count } : {}),
       },
     };
+  }
+
+  private restoreCharacterExactText(source: string, output: string): string {
+    return output.trim().toLowerCase() === source.trim().toLowerCase() ? source : output;
+  }
+
+  private isContaminatedText(target: WireTranslationTarget, text: string): boolean {
+    if (text === target.text) return false;
+    const lines = text.split(/\r?\n/);
+    if (lines.some((line) => line === target.text)) return true;
+    if (
+      [target.context_previous, target.context_next].some(
+        (context) =>
+          context && context !== target.text && text !== context && text.includes(context),
+      )
+    )
+      return true;
+    return (
+      /["'](?:target_language|targets|translations|context_previous|context_next|id|text)["']\s*:/i.test(
+        text,
+      ) ||
+      /<\/?thin(?:k(?:ing)?)?\b|```/i.test(text) ||
+      /^\s*(?:translation|translated text|note|explanation|reasoning)\s*[:：]/i.test(text)
+    );
   }
 }

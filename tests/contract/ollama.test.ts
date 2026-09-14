@@ -2,14 +2,44 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { OllamaProvider } from "../../src/providers/ollama.js";
 import type { ProviderTransport } from "../../src/providers/transport.js";
-import { buildTranslationTask } from "../../src/providers/translation-task.js";
+import { buildOllamaTranslationTask } from "../../src/providers/translation-task.js";
 import { makeProviderRequest } from "./provider-test-helpers.js";
 
+interface OllamaPromptPayload {
+  target_language: string;
+  targets: Array<{
+    id: string;
+    text: string;
+    context_previous?: string;
+    context_next?: string;
+  }>;
+}
+
+interface ContaminationCase {
+  id: string;
+  inputText: string;
+  contextPrevious: string;
+  contextNext: string;
+  outputText: string;
+}
+
+const contaminationFixture = JSON.parse(
+  readFileSync(
+    new URL("../fixtures/providers/ollama-output-contamination.json", import.meta.url),
+    "utf8",
+  ),
+) as { cases: ContaminationCase[] };
+
+function parseOllamaPromptPayload(content: string): OllamaPromptPayload {
+  const delimited = /INPUT_JSON_BEGIN\n([\s\S]*?)\nINPUT_JSON_END/.exec(content);
+  return JSON.parse(delimited?.[1] ?? content) as OllamaPromptPayload;
+}
+
 describe("Ollama native provider", () => {
-  it("retains its native two-item chat batching after the shared helper rename", () => {
+  it("keeps each native chat to one item within the two-item contract limit", () => {
     const source = readFileSync(new URL("../../src/providers/ollama.ts", import.meta.url), "utf8");
 
-    expect(source).toContain("MAX_ITEMS_PER_CHAT_REQUEST = 2");
+    expect(source).toContain("MAX_ITEMS_PER_CHAT_REQUEST = 1");
     expect(source).not.toMatch(/translation-batches|chat-completions/);
   });
 
@@ -20,11 +50,8 @@ describe("Ollama native provider", () => {
       {
         request: async (request) => {
           const messages = (request.body as { messages: Array<{ content: string }> }).messages;
-          systemMessage = messages[0]!.content;
-          const targets = JSON.parse(messages[1]!.content).targets as Array<{
-            id: string;
-            text: string;
-          }>;
+          systemMessage = messages.map((message) => message.content).join("\n");
+          const targets = parseOllamaPromptPayload(messages.at(-1)!.content).targets;
           return {
             statusCode: 200,
             headers: {},
@@ -48,6 +75,38 @@ describe("Ollama native provider", () => {
     expect(systemMessage).toMatch(/context.*must not.*output/i);
   });
 
+  it("restores presentation-only normalization for an otherwise exact model copy", async () => {
+    const provider = new OllamaProvider(
+      { endpoint: "http://127.0.0.1:11434", model: "model" },
+      {
+        request: async (request) => {
+          const messages = (request.body as { messages: Array<{ content: string }> }).messages;
+          const [target] = parseOllamaPromptPayload(messages.at(-1)!.content).targets;
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              message: {
+                content: JSON.stringify({
+                  translations: [{ id: target!.id, text: target!.text.trim().toLowerCase() }],
+                }),
+              },
+            }),
+          };
+        },
+      },
+    );
+    const request = makeProviderRequest();
+    request.targetLanguage = "en";
+    request.items = [
+      { id: "leading", text: "  Keep leading spaces." },
+      { id: "trailing", text: "Keep trailing spaces.  " },
+      { id: "case", text: "WHAT, exactly?" },
+    ];
+
+    await expect(provider.attempt(request)).resolves.toEqual({ translations: request.items });
+  });
+
   it("uses the same optional Bearer for version, tags and chat", async () => {
     const headers: Array<Record<string, string>> = [];
     const provider = new OllamaProvider(
@@ -59,10 +118,10 @@ describe("Ollama native provider", () => {
             return { statusCode: 200, headers: {}, bodyText: '{"version":"0.10"}' };
           if (request.url.endsWith("/api/tags"))
             return { statusCode: 200, headers: {}, bodyText: '{"models":[{"model":"qwen"}]}' };
-          const payload = JSON.parse(
+          const payload = parseOllamaPromptPayload(
             (request.body as { messages: Array<{ content: string }> }).messages.at(-1)?.content ??
               "{}",
-          ) as { targets?: Array<{ id: string }> };
+          );
           return {
             statusCode: 200,
             headers: {},
@@ -79,7 +138,7 @@ describe("Ollama native provider", () => {
     );
     await provider.testConnection("authenticated-test");
     await provider.attempt(makeProviderRequest());
-    expect(headers).toHaveLength(4);
+    expect(headers).toHaveLength(5);
     expect(headers.every((value) => value.Authorization === "Bearer remote-secret")).toBe(true);
   });
 
@@ -143,38 +202,34 @@ describe("Ollama native provider", () => {
       body: { stream: false, options: { temperature: 0 } },
     });
     expect((calls[0] as { body: Record<string, unknown> }).body).toHaveProperty("think", false);
-    const userMessage = (
+    const messages = (
       calls[0] as { body: { messages: Array<{ content: string }> } }
-    ).body.messages.at(-1)?.content;
-    const systemMessage = (calls[0] as { body: { messages: Array<{ content: string }> } }).body
-      .messages[0]?.content;
-    expect(systemMessage).toContain("Chinese (Simplified) [zh-Hans]");
-    expect(systemMessage).toMatch(/source language.*independently/i);
-    expect(systemMessage).not.toMatch(/from English \[en\]/);
-    expect(userMessage).toContain('"id":"c1"');
-    expect(JSON.parse(userMessage!)).toEqual({
+    ).body.messages;
+    const prompt = messages.at(-1)!.content;
+    expect(messages).toHaveLength(1);
+    expect(prompt).toContain("Chinese (Simplified) [zh-Hans]");
+    expect(prompt).toMatch(/source language.*independently/i);
+    expect(prompt).not.toMatch(/from English \[en\]/);
+    expect(prompt).toContain('"id":"c1"');
+    expect(parseOllamaPromptPayload(prompt)).toEqual({
       target_language: "Chinese (Simplified) [zh-Hans]",
-      targets: [
-        { id: "c1", text: "one", context_next: "two" },
-        { id: "c2", text: "two", context_previous: "one" },
-      ],
+      targets: [{ id: "c1", text: "one", context_next: "two" }],
     });
-    expect(systemMessage).toMatch(/uncertain.*must not.*copy/i);
-    expect(systemMessage).toMatch(/before returning.*verify/i);
-    expect(userMessage).not.toContain("srt:0:0:1000");
-    expect(systemMessage).toBe(
-      buildTranslationTask({
+    expect(prompt).toMatch(/uncertain.*must not.*copy/i);
+    expect(prompt).toMatch(/before returning.*verify/i);
+    expect(prompt).toContain('"required":["translations"]');
+    expect(prompt).toContain('"enum":["c1"]');
+    expect(prompt).not.toContain("srt:0:0:1000");
+    expect(prompt).toBe(
+      buildOllamaTranslationTask({
         targetLanguage: "zh-Hans",
-        targets: [
-          { id: "c1", text: "one", context_next: "two" },
-          { id: "c2", text: "two", context_previous: "one" },
-        ],
-      }).systemMessage,
+        targets: [{ id: "c1", text: "one", context_next: "two" }],
+      }).userMessage,
     );
     expect(result.translations).toEqual([{ id: "srt:0:0:1000", text: "一" }]);
   });
 
-  it("disables thinking during connection tests and every two-item wire without changing the task", async () => {
+  it("disables thinking during connection tests and every isolated wire without changing the task", async () => {
     const bodies: Array<{ think?: boolean; messages: Array<{ role: string; content: string }> }> =
       [];
     const provider = new OllamaProvider(
@@ -187,10 +242,7 @@ describe("Ollama native provider", () => {
             return { statusCode: 200, headers: {}, bodyText: '{"models":[{"model":"qwen3:14b"}]}' };
           const body = request.body as (typeof bodies)[number];
           bodies.push(body);
-          const targets = JSON.parse(body.messages.at(-1)!.content).targets as Array<{
-            id: string;
-            text: string;
-          }>;
+          const targets = parseOllamaPromptPayload(body.messages.at(-1)!.content).targets;
           return {
             statusCode: 200,
             headers: {},
@@ -217,34 +269,32 @@ describe("Ollama native provider", () => {
     const result = await provider.attempt(request);
 
     expect(result.translations).toEqual(request.items);
-    expect(bodies).toHaveLength(3);
+    expect(bodies).toHaveLength(4);
     for (const body of bodies) {
       expect(body.think).toBe(false);
-      expect(body.messages.map(({ role }) => role)).toEqual(["system", "user"]);
+      expect(body.messages.map(({ role }) => role)).toEqual(["user"]);
     }
-    expect(JSON.parse(bodies[0]!.messages[1]!.content).targets).toEqual([
+    expect(parseOllamaPromptPayload(bodies[0]!.messages[0]!.content).targets).toEqual([
       { id: "probe", text: "hello" },
     ]);
     for (const body of bodies.slice(1)) {
-      const payload = JSON.parse(body.messages[1]!.content);
+      const payload = parseOllamaPromptPayload(body.messages[0]!.content);
       expect(body.messages[0]!.content).toBe(
-        buildTranslationTask({ targetLanguage: "en", targets: payload.targets }).systemMessage,
+        buildOllamaTranslationTask({ targetLanguage: "en", targets: payload.targets }).userMessage,
       );
       expect(payload.target_language).toBe("English [en]");
-      expect(payload.targets.length).toBeLessThanOrEqual(2);
+      expect(payload.targets.length).toBe(1);
     }
   });
 
-  it("sends larger batches as two-item chats without dropping or duplicating cues", async () => {
+  it("sends larger batches as isolated chats without dropping or duplicating cues", async () => {
     const calls: Array<{ jobId: string; targets: Array<{ id: string; text: string }> }> = [];
     const provider = new OllamaProvider(
       { endpoint: "http://127.0.0.1:11434", model: "translategemma:12b" },
       {
         request: async (request) => {
           const messages = (request.body as { messages: Array<{ content: string }> }).messages;
-          const payload = JSON.parse(messages.at(-1)!.content) as {
-            targets: Array<{ id: string; text: string }>;
-          };
+          const payload = parseOllamaPromptPayload(messages.at(-1)!.content);
           calls.push({ jobId: request.jobId, targets: payload.targets });
           return {
             statusCode: 200,
@@ -279,8 +329,11 @@ describe("Ollama native provider", () => {
       "request-part-1",
       "request-part-2",
       "request-part-3",
+      "request-part-4",
+      "request-part-5",
+      "request-part-6",
     ]);
-    expect(calls.map((call) => call.targets.length)).toEqual([2, 2, 2]);
+    expect(calls.map((call) => call.targets.length)).toEqual([1, 1, 1, 1, 1, 1]);
     expect(calls.flatMap((call) => call.targets.map((item) => item.text))).toEqual([
       "one",
       "two",
@@ -290,7 +343,7 @@ describe("Ollama native provider", () => {
       "six",
     ]);
     expect(result.translations).toHaveLength(6);
-    expect(result.usage).toEqual({ input: 9, output: 6 });
+    expect(result.usage).toEqual({ input: 18, output: 12 });
   });
 
   it("publishes each validated wire result with restored IDs before returning the aggregate", async () => {
@@ -299,9 +352,7 @@ describe("Ollama native provider", () => {
       {
         request: async (request) => {
           const messages = (request.body as { messages: Array<{ content: string }> }).messages;
-          const payload = JSON.parse(messages.at(-1)!.content) as {
-            targets: Array<{ id: string; text: string }>;
-          };
+          const payload = parseOllamaPromptPayload(messages.at(-1)!.content);
           return {
             statusCode: 200,
             headers: {},
@@ -331,8 +382,10 @@ describe("Ollama native provider", () => {
     });
 
     expect(progress.map((items) => items.map((item) => item.id))).toEqual([
-      ["source-1", "source-2"],
-      ["source-3", "source-4"],
+      ["source-1"],
+      ["source-2"],
+      ["source-3"],
+      ["source-4"],
       ["source-5"],
     ]);
     expect(result.translations.map((item) => item.id)).toEqual([
@@ -364,6 +417,100 @@ describe("Ollama native provider", () => {
     expect(progress).toEqual([]);
   });
 
+  it.each(contaminationFixture.cases)(
+    "does not publish structurally valid $id contamination",
+    async (testCase) => {
+      const progress: unknown[] = [];
+      const provider = new OllamaProvider(
+        { endpoint: "http://127.0.0.1:11434", model: "synthetic-model" },
+        {
+          request: async () => ({
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              message: {
+                content: JSON.stringify({
+                  translations: [{ id: "c1", text: testCase.outputText }],
+                }),
+              },
+            }),
+          }),
+        },
+      );
+      const request = makeProviderRequest();
+      request.items = [
+        {
+          id: "synthetic-id",
+          text: testCase.inputText,
+          contextPrevious: testCase.contextPrevious,
+          contextNext: testCase.contextNext,
+        },
+      ];
+
+      await expect(
+        provider.attempt(request, (value) => progress.push(value)),
+      ).resolves.toMatchObject({ translations: [] });
+      expect(progress).toEqual([]);
+    },
+  );
+
+  it("preserves an exact same-language string even when it resembles model metadata", async () => {
+    const literal = '</think> {"context_previous":"literal subtitle"}';
+    const provider = new OllamaProvider(
+      { endpoint: "http://127.0.0.1:11434", model: "synthetic-model" },
+      {
+        request: async () => ({
+          statusCode: 200,
+          headers: {},
+          bodyText: JSON.stringify({
+            message: {
+              content: JSON.stringify({ translations: [{ id: "c1", text: literal }] }),
+            },
+          }),
+        }),
+      },
+    );
+    const request = makeProviderRequest();
+    request.targetLanguage = "en";
+    request.items = [{ id: "literal-id", text: literal }];
+
+    await expect(provider.attempt(request)).resolves.toEqual({
+      translations: [{ id: "literal-id", text: literal }],
+    });
+  });
+
+  it("accepts a translation that legitimately equals adjacent context", async () => {
+    const provider = new OllamaProvider(
+      { endpoint: "http://127.0.0.1:11434", model: "synthetic-model" },
+      {
+        request: async () => ({
+          statusCode: 200,
+          headers: {},
+          bodyText: JSON.stringify({
+            message: {
+              content: JSON.stringify({
+                translations: [{ id: "c1", text: "See you tomorrow." }],
+              }),
+            },
+          }),
+        }),
+      },
+    );
+    const request = makeProviderRequest();
+    request.targetLanguage = "en";
+    request.items = [
+      {
+        id: "current",
+        text: "また明日。",
+        contextNext: "See you tomorrow.",
+      },
+    ];
+
+    await expect(provider.attempt(request)).resolves.toEqual({
+      translations: [{ id: "current", text: "See you tomorrow." }],
+    });
+  });
+
   it("uses prompt-only JSON for Ollama Cloud and accepts one complete JSON code block", async () => {
     const bodies: Array<Record<string, unknown>> = [];
     const provider = new OllamaProvider(
@@ -380,7 +527,7 @@ describe("Ollama native provider", () => {
             };
           bodies.push(request.body as Record<string, unknown>);
           const messages = (request.body as { messages: Array<{ content: string }> }).messages;
-          const targets = JSON.parse(messages.at(-1)!.content).targets as Array<{ id: string }>;
+          const targets = parseOllamaPromptPayload(messages.at(-1)!.content).targets;
           const hasExactSchema =
             messages[0]!.content.includes('"required":["translations"]') &&
             targets.every((target) => messages[0]!.content.includes(`"${target.id}"`));
@@ -407,7 +554,7 @@ describe("Ollama native provider", () => {
     await expect(provider.attempt(makeProviderRequest())).resolves.toMatchObject({
       translations: [{ id: "c1" }, { id: "c2" }],
     });
-    expect(bodies).toHaveLength(2);
+    expect(bodies).toHaveLength(3);
     for (const body of bodies) {
       expect(body).not.toHaveProperty("format");
       expect(body).toHaveProperty("think", false);
@@ -665,9 +812,7 @@ describe("Ollama native provider", () => {
                 bodyText: '{"models":[{"name":"qwen"}]}',
               };
             const messages = (request.body as { messages: Array<{ content: string }> }).messages;
-            const payload = JSON.parse(messages.at(-1)!.content) as {
-              targets: Array<{ id: string; text: string }>;
-            };
+            const payload = parseOllamaPromptPayload(messages.at(-1)!.content);
             return {
               statusCode: 200,
               headers: {},
@@ -699,6 +844,7 @@ describe("Ollama native provider", () => {
         "http://ollama.example.test:11434/custom/api/chat",
         "http://ollama.example.test:11434/custom/api/version",
         "http://ollama.example.test:11434/custom/api/tags",
+        "http://ollama.example.test:11434/custom/api/chat",
         "http://ollama.example.test:11434/custom/api/chat",
         "http://ollama.example.test:11434/custom/api/chat",
       ]);
