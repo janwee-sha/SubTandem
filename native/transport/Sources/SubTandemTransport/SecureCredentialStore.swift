@@ -267,8 +267,8 @@ actor SecureCredentialStore: CredentialStoreAccess {
         commitID: String,
         expectedStoreRevision: Int,
         requestDigest: String,
-        idempotentContentMatches: (Document) -> Bool = { _ in true },
-        update: (inout Document) throws -> Void
+        idempotentContentMatches: @Sendable (Document) -> Bool = { _ in true },
+        update: @Sendable (inout Document) throws -> Void
     ) throws -> ProfileStoreSnapshot {
         try Self.validateCommitID(commitID)
         guard expectedStoreRevision >= 0 else { throw TransportProtocolError.invalidRequest }

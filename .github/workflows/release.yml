@@ -40,6 +40,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          xcode-select --print-path
+          xcodebuild -version
+          swift --version
           test "$(uname -m)" = "arm64"
           test "$(node --version)" = "v24.18.0"
           npm --version | grep -Eq '^11\.'
