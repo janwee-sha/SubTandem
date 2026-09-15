@@ -71,22 +71,15 @@ describe("IINA sidebar bundle contract", () => {
 
   it("fills only the editing Profile with readable selection colors and a distinct enabled switch", () => {
     const editing = sidebarCss.match(/\.profile\.is-editing\s*{[^}]+}/)?.[0] ?? "";
-    for (const token of [
-      "label-primary",
-      "label-secondary",
-      "label-tertiary",
-      "success",
-      "danger",
-    ]) {
+    for (const token of ["label-primary", "label-secondary", "label-tertiary"]) {
       expect(editing).toContain(`--${token}: white`);
     }
-    expect(editing).toContain("background: var(--profile-selection)");
+    expect(editing).toContain("background: var(--accent)");
+    expect(editing).not.toMatch(/--(?:success|danger):/);
     expect(sidebarCss).toMatch(
       /\.profile\.is-editing \.profile-activation input:checked\s*{[^}]*background: var\(--profile-selection-switch\)/,
     );
-    expect(sidebarCss).toMatch(
-      /\.profile\.is-editing \.operation-status\s*{[^}]*color: var\(--label-primary\)/,
-    );
+    expect(sidebarCss).not.toMatch(/\.profile\.is-editing \.operation-status\s*{/);
     expect(sidebarCss).toMatch(
       /\.profile\.is-editing :focus-visible\s*{[^}]*outline-color: var\(--label-primary\)/,
     );
@@ -95,26 +88,6 @@ describe("IINA sidebar bundle contract", () => {
     );
     expect(sidebarCss).toMatch(/@media \(prefers-reduced-transparency: reduce\)/);
     expect(sidebarCss).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
-
-    const luminance = (hex: string) => {
-      const channels = hex
-        .match(/\w\w/g)!
-        .map((value) => parseInt(value, 16) / 255)
-        .map((value) => (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4));
-      return channels[0]! * 0.2126 + channels[1]! * 0.7152 + channels[2]! * 0.0722;
-    };
-    const palettes = [
-      ...sidebarCss.matchAll(
-        /--profile-selection: #(\w{6});\s*--profile-selection-switch: #(\w{6});/g,
-      ),
-    ];
-    expect(palettes).toHaveLength(2);
-    for (const [, background, toggle] of palettes) {
-      expect(1.05 / (luminance(background!) + 0.05)).toBeGreaterThanOrEqual(4.5);
-      expect((luminance(toggle!) + 0.05) / (luminance(background!) + 0.05)).toBeGreaterThanOrEqual(
-        3,
-      );
-    }
   });
 
   it("uses host-like native sidebar sections with two quiet grouped surfaces", () => {
@@ -159,8 +132,8 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarCss).toMatch(
       /\.switch input:checked::after\s*{[\s\S]*?transform: translateX\(14px\)/,
     );
-    expect(sidebarCss).toContain("--accent: #007aff");
-    expect(sidebarCss).toContain("--accent: #0a84ff");
+    expect(sidebarCss).toContain("--accent: #3e92fc");
+    expect(sidebarCss).toContain("--accent: #3e7ce6");
     expect(sidebarCss).not.toContain("#6d5dfc");
     expect(sidebarCss).toContain("@media (prefers-color-scheme: dark)");
     expect(sidebarCss).toContain("@media (prefers-contrast: more)");

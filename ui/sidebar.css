@@ -5,7 +5,7 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  --accent: #007aff;
+  --accent: #3e92fc;
   --accent-label: white;
   --label-primary: CanvasText;
   --label-secondary: color-mix(in srgb, CanvasText 62%, transparent);
@@ -23,14 +23,13 @@
   --warning: #b66a00;
   --danger: #c72d32;
   --destructive-fill: #c72d32;
-  --profile-selection: #0058d0;
-  --profile-selection-switch: #75bbff;
-  --profile-selection-control: #00449d;
+  --profile-selection-switch: color-mix(in srgb, var(--accent) 45%, white);
+  --profile-selection-control: color-mix(in srgb, var(--accent) 12%, white);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --accent: #0a84ff;
+    --accent: #3e7ce6;
     --group-surface: color-mix(in srgb, CanvasText 7%, transparent);
     --group-surface-opaque: color-mix(in srgb, CanvasText 7%, Canvas);
     --control-surface: color-mix(in srgb, CanvasText 8%, transparent);
@@ -44,9 +43,6 @@
     --warning: #f2a33a;
     --danger: #ff6961;
     --destructive-fill: #c93432;
-    --profile-selection: #064b9f;
-    --profile-selection-switch: #75bbff;
-    --profile-selection-control: #073571;
   }
 }
 
@@ -271,19 +267,17 @@ button.secondary {
   --label-primary: white;
   --label-secondary: white;
   --label-tertiary: white;
-  --success: white;
-  --danger: white;
-  --secondary-control-surface: var(--profile-selection-control);
   color: var(--label-primary);
-  background: var(--profile-selection);
+  background: var(--accent);
 }
 
 .profile.is-editing .profile-activation input:checked {
   background: var(--profile-selection-switch);
 }
 
-.profile.is-editing .operation-status {
-  color: var(--label-primary);
+.profile.is-editing button[data-action="test"] {
+  color: #1d1d1f;
+  background: var(--profile-selection-control);
 }
 
 .profile.is-editing :focus-visible {
@@ -1095,8 +1089,6 @@ dd {
     --label-primary: HighlightText;
     --label-secondary: HighlightText;
     --label-tertiary: HighlightText;
-    --success: HighlightText;
-    --danger: HighlightText;
     background: Highlight;
   }
 
