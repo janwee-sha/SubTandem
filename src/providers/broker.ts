@@ -1,3 +1,4 @@
+import { SubTandemError } from "../domain/errors.js";
 import type { TranslationProvider } from "./provider.js";
 import type { ProfileActivationAuthority } from "./profile-activation.js";
 import type { ProviderProfiles } from "./profiles.js";
@@ -8,9 +9,11 @@ import type {
   TranslationProgressHandler,
 } from "./types.js";
 
-export class ProviderBrokerError extends Error {
-  constructor(readonly code: string) {
-    super(code);
+export class ProviderBrokerError extends SubTandemError {
+  constructor(
+    code: "PROFILE_NOT_ACTIVE" | "PROFILE_NOT_FOUND" | "REQUEST_CANCELLED" | "DUPLICATE_REQUEST",
+  ) {
+    super(code, code === "DUPLICATE_REQUEST" ? "protocol" : "cancelled", "NONE");
   }
 }
 

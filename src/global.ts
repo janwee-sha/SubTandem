@@ -347,6 +347,7 @@ function providerFor(profile: ProviderProfileSnapshot): Promise<ConfiguredProvid
 
 let profileAuthority!: ProfileActivationAuthority;
 let broker!: ProviderBroker;
+const profilePlayers = new Set<string>();
 
 const profileReady = (async () => {
   profileAuthority = await restoreProfileActivationAuthority({
@@ -665,7 +666,12 @@ async function profileViews(): Promise<unknown[]> {
 }
 
 function publishProfileAuthority(playerId: string | null = null): void {
-  postToPlayer(playerId, "profile-activation:state", profileAuthority.snapshot);
+  const snapshot = profileAuthority.snapshot;
+  if (playerId !== null) {
+    postToPlayer(playerId, "profile-activation:state", snapshot);
+    return;
+  }
+  for (const target of profilePlayers) postToPlayer(target, "profile-activation:state", snapshot);
 }
 
 iina.global.onMessage("defaults:save", (raw: unknown, playerId?: string) => {
@@ -899,6 +905,7 @@ iina.global.onMessage("profile-activation:get", async (raw: unknown, playerId?: 
   if (!playerId) return;
   try {
     const message = parseProfileActivationGet(raw);
+    profilePlayers.add(playerId);
     await profileReady;
     postToPlayer(playerId, "profile-activation:state", {
       requestId: message.requestId,
