@@ -69,20 +69,30 @@ describe("IINA sidebar bundle contract", () => {
     );
   });
 
-  it("fills only the editing Profile with readable selection colors and a distinct enabled switch", () => {
+  it("uses neutral editing surfaces while sharing the sidebar controls and focus style", () => {
     const editing = sidebarCss.match(/\.profile\.is-editing\s*{[^}]+}/)?.[0] ?? "";
-    for (const token of ["label-primary", "label-secondary", "label-tertiary"]) {
-      expect(editing).toContain(`--${token}: white`);
-    }
-    expect(editing).toContain("background: var(--accent)");
-    expect(editing).not.toMatch(/--(?:success|danger):/);
+    expect(sidebarCss).toContain("--profile-selection-strength: 10%");
     expect(sidebarCss).toMatch(
-      /\.profile\.is-editing \.profile-activation input:checked\s*{[^}]*background: var\(--profile-selection-switch\)/,
+      /@media \(prefers-color-scheme: dark\)[\s\S]*?--profile-selection-strength: 14%/,
     );
+    expect(sidebarCss).toMatch(
+      /--profile-selection-surface: color-mix\(\s*in srgb,\s*CanvasText var\(--profile-selection-strength\),\s*transparent\s*\)/,
+    );
+    expect(editing).toContain("border-radius: 6px");
+    expect(editing).toContain("border-top-color: transparent");
+    expect(sidebarCss).toMatch(
+      /\.profile\.is-editing \+ \.profile\s*{[^}]*border-top-color: transparent/,
+    );
+    expect(editing).toContain("background: var(--profile-selection-surface)");
+    expect(editing).toMatch(/--label-secondary: color-mix\([^;]+CanvasText/);
+    expect(editing).toMatch(/--label-tertiary: color-mix\([^;]+CanvasText/);
+    expect(editing).not.toMatch(/--(?:label-primary|success|danger):/);
+    expect(sidebarCss).not.toContain("--profile-selection-switch");
+    expect(sidebarCss).not.toContain("--profile-selection-control");
+    expect(sidebarCss).not.toMatch(/\.profile-activation input/);
+    expect(sidebarCss).not.toMatch(/\.profile\.is-editing[^{}]*:focus/);
+    expect(sidebarCss).not.toMatch(/\.profile\.is-editing button\[data-action="test"\]/);
     expect(sidebarCss).not.toMatch(/\.profile\.is-editing \.operation-status\s*{/);
-    expect(sidebarCss).toMatch(
-      /\.profile\.is-editing :focus-visible\s*{[^}]*outline-color: var\(--label-primary\)/,
-    );
     expect(sidebarCss).toMatch(
       /@media \(forced-colors: active\)[\s\S]*?\.profile\.is-editing\s*{[^}]*--label-primary: HighlightText;[^}]*background: Highlight/,
     );
@@ -90,7 +100,7 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarCss).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
   });
 
-  it("uses host-like native sidebar sections with two quiet grouped surfaces", () => {
+  it("keeps Profiles on the host surface and groups only the session status", () => {
     expect(html).not.toContain("IINA live translation");
     expect(html).toContain('<label class="setting-row">');
     expect(html).not.toContain('class="sidebar-header"');
@@ -99,9 +109,14 @@ describe("IINA sidebar bundle contract", () => {
     );
     expect(html.match(/class="sidebar-section/g)).toHaveLength(3);
     expect(html).not.toContain('class="card');
-    expect(html).toContain('id="profiles" class="profiles group-surface"');
+    expect(html).toContain('id="profiles" class="profiles"');
     expect(html).toContain('class="session-group group-surface"');
-    expect(html.match(/group-surface/g)).toHaveLength(2);
+    expect(html.match(/group-surface/g)).toHaveLength(1);
+    const profilesRule = sidebarCss.match(/\.profiles\s*{[^}]+}/)?.[0] ?? "";
+    expect(profilesRule).toContain("min-width: 0");
+    expect(profilesRule).not.toMatch(/background|border|box-shadow|overflow/);
+    const profileRule = sidebarCss.match(/\.profile\s*{[^}]+}/)?.[0] ?? "";
+    expect(profileRule).toContain("background: transparent");
     expect(sidebarCss).toMatch(/html,\s*body\s*{[\s\S]*?background: transparent/);
     expect(sidebarCss).toMatch(
       /\.sidebar-section\s*{[\s\S]*?width: 100%[\s\S]*?padding:[^;]*20px[\s\S]*?border-bottom: 1px solid var\(--separator\)/,

@@ -23,13 +23,18 @@
   --warning: #b66a00;
   --danger: #c72d32;
   --destructive-fill: #c72d32;
-  --profile-selection-switch: color-mix(in srgb, var(--accent) 45%, white);
-  --profile-selection-control: color-mix(in srgb, var(--accent) 12%, white);
+  --profile-selection-strength: 10%;
+  --profile-selection-surface: color-mix(
+    in srgb,
+    CanvasText var(--profile-selection-strength),
+    transparent
+  );
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --accent: #3e7ce6;
+    --profile-selection-strength: 14%;
     --group-surface: color-mix(in srgb, CanvasText 7%, transparent);
     --group-surface-opaque: color-mix(in srgb, CanvasText 7%, Canvas);
     --control-surface: color-mix(in srgb, CanvasText 8%, transparent);
@@ -246,8 +251,8 @@ button.secondary {
 
 .profiles {
   display: grid;
+  min-width: 0;
   gap: 0;
-  overflow: hidden;
 }
 
 .profile {
@@ -264,24 +269,15 @@ button.secondary {
 }
 
 .profile.is-editing {
-  --label-primary: white;
-  --label-secondary: white;
-  --label-tertiary: white;
-  color: var(--label-primary);
-  background: var(--accent);
+  --label-secondary: color-mix(in srgb, CanvasText 70%, transparent);
+  --label-tertiary: color-mix(in srgb, CanvasText 64%, transparent);
+  border-top-color: transparent;
+  border-radius: 6px;
+  background: var(--profile-selection-surface);
 }
 
-.profile.is-editing .profile-activation input:checked {
-  background: var(--profile-selection-switch);
-}
-
-.profile.is-editing button[data-action="test"] {
-  color: #1d1d1f;
-  background: var(--profile-selection-control);
-}
-
-.profile.is-editing :focus-visible {
-  outline-color: var(--label-primary);
+.profile.is-editing + .profile {
+  border-top-color: transparent;
 }
 
 .profile-heading {
@@ -309,26 +305,6 @@ button.secondary {
 .profile-activation {
   flex: none;
   padding-top: 1px;
-}
-
-.profile-activation input {
-  width: 36px;
-  min-width: 36px;
-  height: 16px;
-  min-height: 16px;
-  border-radius: 8px;
-}
-
-.profile-activation input::after {
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 12px;
-  border-radius: 6px;
-}
-
-.profile-activation input:checked::after {
-  transform: translateX(12px);
 }
 
 .profile strong {
@@ -1044,11 +1020,9 @@ dd {
   }
 
   .profile.is-editing {
+    --label-secondary: CanvasText;
+    --label-tertiary: CanvasText;
     box-shadow: inset 0 0 0 1px var(--label-primary);
-  }
-
-  .profile.is-editing button.secondary {
-    outline-color: var(--label-primary);
   }
 
   .profile-delete-dialog {
@@ -1058,6 +1032,11 @@ dd {
 
 @media (prefers-reduced-transparency: reduce) {
   :root {
+    --profile-selection-surface: color-mix(
+      in srgb,
+      CanvasText var(--profile-selection-strength),
+      Canvas
+    );
     --group-surface: var(--group-surface-opaque);
     --control-surface: Canvas;
     --secondary-control-surface: Canvas;
