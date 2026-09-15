@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   acceptProfileListResult,
+  acceptVersionedProfileListResult,
+  bindProfileAuthority,
   beginProfileListRequest,
   createProfileListSyncState,
   markProfileCredentialConfigured,
@@ -14,6 +16,35 @@ interface Profile {
 }
 
 describe("Main profile list synchronization", () => {
+  it("merges list metadata only for the current authority version", () => {
+    let state = bindProfileAuthority(createProfileListSyncState<Profile>(), "authority-1", 4, [
+      { profileId: "confirmed", revision: 1 },
+    ]);
+    const request = beginProfileListRequest(state, "window-a");
+    state = request.state;
+
+    state = acceptVersionedProfileListResult(state, {
+      requestId: request.requestId,
+      authorityId: "authority-1",
+      stateVersion: 3,
+      profiles: [{ profileId: "stale", revision: 1 }],
+    });
+    expect(state.profiles).toEqual([{ profileId: "confirmed", revision: 1 }]);
+    state = acceptVersionedProfileListResult(state, {
+      requestId: request.requestId,
+      authorityId: "authority-2",
+      stateVersion: 4,
+      profiles: [{ profileId: "foreign", revision: 1 }],
+    });
+    expect(state.profiles).toEqual([{ profileId: "confirmed", revision: 1 }]);
+    state = acceptVersionedProfileListResult(state, {
+      requestId: request.requestId,
+      authorityId: "authority-1",
+      stateVersion: 4,
+      profiles: [{ profileId: "current", revision: 2 }],
+    });
+    expect(state.profiles).toEqual([{ profileId: "current", revision: 2 }]);
+  });
   it("commits only the latest request when A and B resolve in reverse order", () => {
     let state = createProfileListSyncState<Profile>([{ profileId: "initial", revision: 1 }]);
     const first = beginProfileListRequest(state, "window-A");

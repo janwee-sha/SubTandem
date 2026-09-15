@@ -18,6 +18,10 @@ import {
   parseProviderModelsRequest,
   parseProviderModelsPreviewRequest,
   parseProviderModelsResult,
+  parseProfileActivationResult,
+  parseProfileActivationSet,
+  parseProfileActivationState,
+  parseProfileDeleteRequest,
   parseRetrySubtitlePreparation,
   parseLanguageOperationError,
   parseOverlayPositionPreview,
@@ -50,19 +54,19 @@ import {
 } from "./domain/subtitle-style.js";
 import { OverlayRegionRuntime } from "./adapters/iina/overlay-region-runtime.js";
 import { SidebarMessageBuffer } from "./adapters/iina/sidebar-message-buffer.js";
+import { ProfileActivationSync } from "./adapters/iina/profile-activation-sync.js";
 import {
-  acceptProfileListResult,
+  acceptVersionedProfileListResult,
+  bindProfileAuthority,
   beginProfileListRequest,
   createProfileListSyncState,
-  markProfileCredentialConfigured,
-  removeDeletedProfile,
-  upsertCreatedProfile,
 } from "./adapters/iina/profile-list-sync.js";
 import type {
   PreparedSubtitleSource,
   SourcePreparationView,
   SubtitleTrackIdentity,
 } from "./subtitles/types.js";
+import type { AuthorityProfile } from "./domain/types.js";
 
 interface MainRuntime {
   console: IINA.API.Console;
@@ -121,6 +125,8 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     revision: number;
     endpointFingerprint: string;
     kind: "openai" | "claude" | "deepseek" | "ollama";
+    authorityId: string;
+    activationGeneration: number;
   } | null = null;
   const boundedWork = "120 s / 40 cues; 25 cues / 5,000 code points per request";
   let sidebarState: Record<string, unknown> = {
@@ -138,11 +144,9 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     subtitleStyle: subtitleStyle.snapshot,
   };
   const sidebarMessages = new SidebarMessageBuffer();
-  let profileListState = createProfileListSyncState<{
-    profileId: string;
-    credentialConfigured?: boolean;
-    [key: string]: unknown;
-  }>();
+  let profileListState = createProfileListSyncState<AuthorityProfile>();
+  const activationGetRequestId = `profile-activation.init.${playerId}`;
+  const profileActivationSync = new ProfileActivationSync(activationGetRequestId);
   const modelCatalogSync = new ModelCatalogSync();
 
   const effectiveSubtitleStyle = (): SubtitleTextStyle => {
@@ -183,6 +187,57 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
       revision: 1,
       payload: {},
     });
+  };
+
+  const requestProfileActivation = (): void => {
+    runtime.global.postMessage("profile-activation:get", {
+      requestId: activationGetRequestId,
+      revision: 1,
+      payload: {},
+    });
+  };
+
+  const applyProfileAuthority = (
+    authority: ReturnType<typeof parseProfileActivationState>,
+    correlatedRequestId?: string,
+  ): boolean => {
+    if (!profileActivationSync.accept(authority, correlatedRequestId)) return false;
+    const confirmed = profileActivationSync.snapshot!;
+    profileListState = bindProfileAuthority(
+      profileListState,
+      confirmed.authorityId,
+      confirmed.stateVersion,
+      confirmed.profiles,
+    );
+    const activation = confirmed.ready ? confirmed.activation : null;
+    if (activation) {
+      const changed =
+        !currentSelection ||
+        currentSelection.authorityId !== confirmed.authorityId ||
+        currentSelection.activationGeneration !== confirmed.activationGeneration ||
+        currentSelection.profileId !== activation.profileId ||
+        currentSelection.revision !== activation.profileRevision ||
+        currentSelection.endpointFingerprint !== activation.endpointFingerprint;
+      currentSelection = {
+        profileId: activation.profileId,
+        revision: activation.profileRevision,
+        endpointFingerprint: activation.endpointFingerprint,
+        kind: activation.kind,
+        authorityId: confirmed.authorityId,
+        activationGeneration: confirmed.activationGeneration,
+      };
+      if (changed) controller.setProviderSelection(currentSelection);
+    } else if (currentSelection) {
+      currentSelection = null;
+      controller.clearProviderSelection();
+    }
+    updateSidebarState({
+      profileAuthority: confirmed,
+      profiles: profileListState.profiles,
+      selection: currentSelection,
+    });
+    queueSidebarMessage("profile-activation:state", confirmed);
+    return true;
   };
 
   const requestOverlayPosition = (): void => {
@@ -396,7 +451,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   runtime.sidebar.loadFile("dist/ui/sidebar.html");
   runtime.sidebar.onMessage("ui:ready", () => {
     if (!loadSource(false)) scheduleSourceReload();
-    requestProfiles();
+    requestProfileActivation();
     requestOverlayPosition();
     requestSubtitleStyle();
     flushSidebar();
@@ -538,7 +593,6 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   const forward: Array<[string, string]> = [
     ["profile:save", "profile:create-revision"],
     ["secret:set", "credential:set"],
-    ["profile:select", "profile:select"],
     ["provider:test", "provider:test"],
   ];
   for (const [sidebarName, globalName] of forward) {
@@ -546,6 +600,17 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
       runtime.global.postMessage(globalName, raw),
     );
   }
+  runtime.sidebar.onMessage("profile-activation:set", (raw: unknown) => {
+    try {
+      runtime.global.postMessage("profile-activation:set", parseProfileActivationSet(raw));
+    } catch {
+      queueSidebarMessage("operation:error", {
+        requestId: (raw as { requestId?: unknown })?.requestId,
+        code: "INVALID_MESSAGE",
+        userAction: "NONE",
+      });
+    }
+  });
   runtime.sidebar.onMessage("provider:models", (raw: unknown) => {
     try {
       const message = parseProviderModelsRequest(raw);
@@ -582,40 +647,56 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     }
   });
   runtime.sidebar.onMessage("profile:delete-request", (raw: unknown) => {
-    const source = raw as {
-      requestId?: unknown;
-      revision?: unknown;
-      payload?: { displayName?: unknown };
-    };
-    let confirmed = false;
     try {
-      const displayName =
-        typeof source.payload?.displayName === "string"
-          ? source.payload.displayName
-          : "this profile";
-      confirmed = runtime.utils.ask(
-        `Delete ${displayName}? Its saved credential will be permanently removed.`,
-      );
+      runtime.global.postMessage("profile:delete", parseProfileDeleteRequest(raw));
     } catch {
-      confirmed = false;
-    }
-    if (!confirmed) {
-      queueSidebarMessage("operation:result", {
-        requestId: source.requestId,
-        ok: false,
-        cancelled: true,
-        action: "delete-profile",
+      queueSidebarMessage("operation:error", {
+        requestId: (raw as { requestId?: unknown })?.requestId,
+        code: "INVALID_MESSAGE",
+        userAction: "NONE",
       });
       flushSidebar();
+    }
+  });
+  runtime.global.onMessage("profile-activation:state", (raw: unknown) => {
+    try {
+      const wrapped = raw as { requestId?: unknown; authority?: unknown };
+      const hasWrappedAuthority =
+        raw !== null &&
+        typeof raw === "object" &&
+        !Array.isArray(raw) &&
+        typeof wrapped.requestId === "string" &&
+        wrapped.authority !== undefined;
+      const accepted = applyProfileAuthority(
+        parseProfileActivationState(hasWrappedAuthority ? wrapped.authority : raw),
+        hasWrappedAuthority ? (wrapped.requestId as string) : undefined,
+      );
+      if (accepted) requestProfiles();
+    } catch {
       return;
     }
-    runtime.global.postMessage("profile:delete", raw);
+  });
+  runtime.global.onMessage("profile-activation:result", (raw: unknown) => {
+    try {
+      const result = parseProfileActivationResult(raw);
+      applyProfileAuthority(result.authority);
+      queueSidebarMessage("profile-activation:result", result);
+    } catch {
+      return;
+    }
   });
   runtime.global.onMessage("profiles:result", (raw: unknown) => {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) return;
-    const result = raw as { requestId?: unknown; profiles?: unknown };
+    const result = raw as {
+      requestId?: unknown;
+      authorityId?: unknown;
+      stateVersion?: unknown;
+      profiles?: unknown;
+    };
     if (
       typeof result.requestId !== "string" ||
+      typeof result.authorityId !== "string" ||
+      !Number.isSafeInteger(result.stateVersion) ||
       !Array.isArray(result.profiles) ||
       !result.profiles.every(
         (profile) =>
@@ -625,11 +706,12 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
       )
     )
       return;
-    const accepted = acceptProfileListResult(
-      profileListState,
-      result.requestId,
-      result.profiles as Array<{ profileId: string; [key: string]: unknown }>,
-    );
+    const accepted = acceptVersionedProfileListResult(profileListState, {
+      requestId: result.requestId,
+      authorityId: result.authorityId,
+      stateVersion: result.stateVersion as number,
+      profiles: result.profiles as AuthorityProfile[],
+    });
     if (accepted === profileListState) return;
     profileListState = accepted;
     updateSidebarState({ profiles: profileListState.profiles });
@@ -710,42 +792,9 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     }
   });
   runtime.global.onMessage("profile:revision-created", (raw: unknown) => {
-    const result = raw as {
-      selectionInvalidated?: unknown;
-      profile?: { profileId?: unknown; [key: string]: unknown };
-    };
-    if (result.profile && typeof result.profile.profileId === "string") {
-      profileListState = upsertCreatedProfile(
-        profileListState,
-        result.profile as { profileId: string; [key: string]: unknown },
-      );
-      updateSidebarState({ profiles: profileListState.profiles });
-    }
-    if (
-      result.selectionInvalidated === true &&
-      currentSelection &&
-      result.profile?.profileId === currentSelection.profileId
-    ) {
-      runtime.global.postMessage("profile:release", {
-        requestId: `release-${Date.now()}`,
-        revision: 1,
-        payload: currentSelection,
-      });
-      currentSelection = null;
-      controller.clearProviderSelection();
-      updateSidebarState({ selection: null });
-    }
     queueSidebarMessage("profile:revision-created", raw);
   });
   runtime.global.onMessage("credential:result", (raw: unknown) => {
-    const profileId =
-      raw && typeof raw === "object" && !Array.isArray(raw)
-        ? (raw as { profileId?: unknown }).profileId
-        : undefined;
-    if (typeof profileId === "string") {
-      profileListState = markProfileCredentialConfigured(profileListState, profileId);
-      updateSidebarState({ profiles: profileListState.profiles });
-    }
     queueSidebarMessage("credential:state", raw);
   });
   runtime.global.onMessage("credential:state", (raw: unknown) =>
@@ -798,67 +847,10 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     }
     queueSidebarMessage("operation:error", raw);
   });
-  runtime.global.onMessage("profile:selected", (raw: unknown) => {
-    const selection = (
-      raw as {
-        selection?: {
-          profileId?: unknown;
-          revision?: unknown;
-          endpointFingerprint?: unknown;
-          kind?: unknown;
-        };
-      }
-    ).selection;
-    if (
-      !selection ||
-      typeof selection.profileId !== "string" ||
-      typeof selection.revision !== "number" ||
-      typeof selection.endpointFingerprint !== "string" ||
-      (selection.kind !== "openai" &&
-        selection.kind !== "claude" &&
-        selection.kind !== "deepseek" &&
-        selection.kind !== "ollama")
-    )
-      return;
-    if (currentSelection) {
-      runtime.global.postMessage("profile:release", {
-        requestId: `release-${Date.now()}`,
-        revision: 1,
-        payload: currentSelection,
-      });
-    }
-    currentSelection = {
-      profileId: selection.profileId,
-      revision: selection.revision,
-      endpointFingerprint: selection.endpointFingerprint,
-      kind: selection.kind,
-    };
-    controller.setProviderSelection({
-      ...currentSelection,
-      kind: currentSelection.kind,
-    });
-    updateSidebarState({
-      selection: currentSelection,
-    });
-    queueSidebarMessage("profile:selected", raw);
-  });
   runtime.global.onMessage("profile:deleted", (raw: unknown) => {
-    const result = raw as { profileId?: unknown; selectionInvalidated?: unknown };
-    profileListState = removeDeletedProfile(profileListState, String(result.profileId ?? ""));
-    if (
-      result.selectionInvalidated === true ||
-      (currentSelection && result.profileId === currentSelection.profileId)
-    ) {
-      currentSelection = null;
-      controller.clearProviderSelection();
-      updateSidebarState({ selection: null, profiles: profileListState.profiles });
-    } else {
-      updateSidebarState({ profiles: profileListState.profiles });
-    }
     queueSidebarMessage("profile:deleted", raw);
-    requestProfiles();
   });
-  requestProfiles();
+  requestProfileActivation();
 
   runtime.event.on("iina.file-loaded", () => {
     mediaEpoch += 1;
@@ -944,12 +936,6 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     });
     modelCatalogSync.remove(playerId);
     if (sourceSelectionTimer !== null) clearTimeout(sourceSelectionTimer);
-    if (currentSelection)
-      runtime.global.postMessage("profile:release", {
-        requestId: `release-${Date.now()}`,
-        revision: 1,
-        payload: currentSelection,
-      });
     currentSelection = null;
     targetLanguageSession.close();
     selectedSourceTrackId = null;

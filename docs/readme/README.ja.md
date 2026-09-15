@@ -34,7 +34,7 @@ SubTandemは元の字幕を表示したまま、選択した位置に翻訳字�
 - **翻訳サービスを選択可能：** OpenAI Chat CompletionsまたはClaude Messagesと互換性のあるendpoint、DeepSeek、ローカル/リモートのOllamaサーバーを利用できます。
 - **再生を優先：** 翻訳処理によって動画が停止したり、元の字幕が非表示になったりすることはありません。
 - **リクエスト範囲を制限：** 再生位置付近のcueだけを翻訳し、プレイヤーウインドウごとに同時処理を制限します。成功した翻訳は現在の動画セッション内でのみキャッシュします。
-- **複数のProfile：** 翻訳サービスのProfileを保存・テストし、字幕テキストの送信先となる正確なendpointを明示的に選択できます。
+- **複数のProfile：** Profileを保存・テストし、非コントロール領域をクリックして編集できます。スイッチで、全ウィンドウと再起動後に引き継がれる正確なendpointを1つだけグローバルに有効化します。
 - **プロキシ制御：** ProfileごとにmacOSのプロキシ設定または直接接続を選択できます。
 
 ## ✅ 動作要件
@@ -101,11 +101,11 @@ IINAの開発版では、利用可能なプラグイン一覧からSubTandemを�
 1. ローカル動画を開き、対応する埋め込みテキスト字幕または外部SRT/ASSをIINAの主字幕として選択します。
 2. **Subtitle**で正確なターゲット言語を選択します。選択した翻訳Providerが翻訳リクエスト内でcueごとのソース言語を理解するため、ソース言語の手動確認は不要です。
 3. **Translation service**でOpenAI、Claude、DeepSeek、またはOllamaのProfileを作成します。認証が必要な場合は、API keyを入力してからモデル一覧を手動で更新します。返されたモデルを選ぶか、正確なカスタムModel IDを入力します。
-4. Profileを保存してテストし、**Select**をクリックします。Profileを選択すると、表示されたendpointへ再生位置付近の字幕テキストを送信することをSubTandemに明示的に許可します。
+4. Profileを保存してテストし、そのスイッチをオンにします。正確なリビジョンが全ウィンドウと再起動後にグローバルで有効になります。SaveとTestだけでは有効にならず、**Translate**は独立したスイッチです。
 5. **Translate**をオンにします。元の字幕はIINAでそのまま表示され、翻訳されたcueはSubTandemのオーバーレイに表示されます。**Subtitle**の**Position**で、オーバーレイを上（`0`）から下（`100`）まで移動できます。
 6. **Font**、**Border**、**Background**の各グループで8項目のテキストスタイルを選びます。色のプリセットは直接保存され、**Show Colors…**はmacOSのカラーパネルを開きます。変更せずに閉じた場合は以前の値を保持します。
 
-Endpoint、モデル、API key、またはネットワーク経路を変更した場合は、更新したProfileを保存し、翻訳前に再選択してください。
+Profileの非コントロール領域をクリックすると編集できます。Endpoint、モデル、API key、またはネットワーク経路を変更した場合は、保存してテストし、翻訳前に新しいリビジョンを有効化してください。
 
 ## ⚙️ 翻訳サービス
 
@@ -122,7 +122,7 @@ Endpoint、モデル、API key、またはネットワーク経路を変更し�
 - デフォルトAPI rootは`https://api.anthropic.com`です。このrootまたはClaude互換rootを入力し、完全な`/v1/messages`や`/v1/models` URLは入力しないでください。リモートendpointにはHTTPSが必要です。
 - SubTandemは`/v1/messages`で非ストリーミングのネイティブMessagesを使い、`/v1/models`からモデル一覧を取得します。互換サービスには、このrouteとClaudeの認証・version headerが必要です。
 - API keyは必須です。新規Profileでは手動更新の前に入力してください。自動更新が未保存のkeyを送ることはありません。返されたモデルまたは正確なカスタムModel IDを選びます。
-- **Save → Test → Select**の順に操作します。SaveとTestは字幕テキストを許可せず、Select前にendpointへ届く可能性があるのは字幕を含まないモデル一覧だけです。
+- **Save → Test → Profileスイッチをオン**の順に操作します。SaveとTestは字幕テキストを許可せず、有効化前にendpointへ届く可能性があるのは字幕を含まないモデル一覧だけです。
 - ClaudeはMessagesリクエストを課金し、認証、モデルアクセス、spend limit、クォータ、rate limit、拒否を適用する場合があります。保存後のkeyは書き込み専用です。
 
 ### DeepSeek
@@ -130,7 +130,7 @@ Endpoint、モデル、API key、またはネットワーク経路を変更し�
 - 固定のデフォルトAPI rootは`https://api.deepseek.com`です。翻訳には`/chat/completions`、モデル一覧には`/models`を追加します。
 - モデル一覧を更新するか、正確なカスタムModel IDを入力します。SubTandemはDeepSeekモデルを事前選択、推奨、推測しません。
 - 公式サービスには利用可能なAPI keyが必要です。保存後の入力欄は書き込み専用で、keyは再表示されません。
-- **Save**と**Test**はProfileを選択せず、字幕テキストの送信も許可しません。明示的に**Select**してください。それまでは、字幕を含まないモデル一覧リクエストだけがデフォルトrootへ送信される場合があります。
+- **Save**と**Test**はProfileを有効化せず、字幕テキストの送信も許可しません。Profileスイッチを明示的にオンにしてください。それまでは、字幕を含まないモデル一覧リクエストだけがデフォルトrootへ送信される場合があります。
 - DeepSeekはリクエスト料金を請求し、残高、クォータ、rate limitを適用する場合があります。
 
 ### Ollama
@@ -146,9 +146,9 @@ Endpoint、モデル、API key、またはネットワーク経路を変更し�
 
 - SubTandemが明示的に選択したProfileへ送信するのは、再生位置付近の字幕テキスト、正確なターゲット言語、不透明なcue ID、少量の隣接コンテキストだけです。Providerは同じ翻訳リクエスト内でソース言語を理解します。動画や音声の内容は送信しません。
 - `video-overlay`権限は、現在の翻訳をローカルの非対話型Overlayに表示するためだけに使います。Overlayは入力や動画上でのドラッグを受け付けず、ネットワークやWebViewストレージを使用せず、再生セッションとともに消去されます。
-- OpenAI、Claude、DeepSeek、OllamaのAPI keyは、プラグイン専用の`credentials.json`にローカル平文で保存されます。ディレクトリの権限は`0700`、ファイルの権限は`0600`です。KeyはIINA preferences、ログ、診断、Sidebar状態、プラグインパッケージには書き込まれず、保存後に再表示されません。
+- プラグイン専用の`credentials.json`は、Profile、グローバルに有効なProfile参照、OpenAI、Claude、DeepSeek、OllamaのAPI keyを、原子的に置換する1つのローカル文書に保存します。Keyは平文のままで、ディレクトリの権限は`0700`、ファイルは`0600`です。KeyはIINA preferences、ログ、診断、Sidebar状態、パッケージには書き込まれず、保存後に再表示されません。
 - ファイル権限は、ほかのmacOSアカウントや通常の偶発的アクセスからkeyを保護しますが、現在のmacOSユーザーとしてすでにファイルを読み取れるプロセスからは保護できません。
-- 同梱のtransport helperは一時的な`127.0.0.1`ポートだけで待ち受けます。設定中または保存済みのendpoint（デフォルトのClaude root `https://api.anthropic.com`とDeepSeek root `https://api.deepseek.com`を含む）は、Select前に字幕を含まないモデル一覧リクエストを受け取る場合があります。字幕テキストを受け取るのは選択済みProfileのリビジョンだけです。
+- 同梱のtransport helperは一時的な`127.0.0.1`ポートだけで待ち受けます。設定中または保存済みのendpoint（デフォルトのClaude root `https://api.anthropic.com`とDeepSeek root `https://api.deepseek.com`を含む）は、有効化前に字幕を含まないモデル一覧リクエストを受け取る場合があります。字幕テキストを受け取るのはグローバルに有効なProfileリビジョンだけです。
 - 翻訳は現在の動画セッション内でのみキャッシュされ、動画の変更、再生終了、ウインドウを閉じたときに消去されます。
 - 短いトラック、ソース言語が不明なテキスト、正確なターゲット言語と同じテキストも選択済みProviderへ送信され、料金が発生する場合があります。Provider独自のポリシーが適用され、バッチ処理とセッションキャッシュは呼び出し回数を減らしますが料金上限は保証しません。
 
@@ -161,8 +161,8 @@ SubTandemは、音声文字起こし、画像ベース字幕のOCR/抽出、リ�
 - **Select a supported text subtitle:** ローカル埋め込みSubRip/ASS/SSA/`mov_text`または外部SRT/ASSを主字幕として選択してください。画像ベースとリモート埋め込み字幕は非対応です。状態表示に従って再選択するか、準備失敗後にRetryしてください。
 - **Translation service unavailable:** Profileをテストし、endpoint、正確なModel ID、API key、ネットワーク経路、Ollamaプロセスを確認してください。ClaudeではAPI root、Messages互換性、認証/version、モデルアクセス、spend limit、クォータ、rate limit、拒否を、DeepSeekでは残高、クォータ、rate limit、固定API routeを確認してください。再生と元字幕は継続します。
 - **Credential could not be saved:** 不完全な開発用コピーではなくReleaseパッケージをインストールし、プラグインデータディレクトリが書き込み可能であることを確認してから、IINAを完全に終了して再起動してください。
-- **翻訳が表示されない：** Profileがテスト済みで選択されていること、**Translate**が有効であること、再生位置が翻訳済みcueの時間範囲内にあることを確認してください。
-- **プロキシがサービスをブロックする：** まずデフォルトのmacOSプロキシ経路を試します。プロキシがサービスを拒否する場合、そのProfileを**Connect directly**に変更して保存し、再度Select/Testしてください。
+- **翻訳が表示されない：** 対象Profileのスイッチと**Translate**が両方オンであり、再生位置が翻訳済みcueの時間範囲内にあることを確認してください。
+- **プロキシがサービスをブロックする：** まずデフォルトのmacOSプロキシ経路を試します。プロキシがサービスを拒否する場合、そのProfileを**Connect directly**に変更し、保存、テスト、新しいリビジョンの有効化を行ってください。
 
 ## ☕ SubTandemを支援
 

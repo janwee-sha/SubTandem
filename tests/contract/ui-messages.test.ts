@@ -4,6 +4,11 @@ import {
   GLOBAL_MESSAGE_NAMES,
   PROVIDER_ATTEMPT_EVENT_NAMES,
   SIDEBAR_MESSAGE_NAMES,
+  parseProfileActivationGet,
+  parseProfileActivationResult,
+  parseProfileActivationSet,
+  parseProfileActivationState,
+  parseProfileDeleteRequest,
   parseProfileSelection,
   parseSecretSet,
   parseTargetLanguageSave,
@@ -340,8 +345,8 @@ describe("Sidebar/Main/Global security messages", () => {
     );
   });
 
-  it("uses exact translation-selection guidance without authorization wording", () => {
-    expect(sidebarSource).toContain("Profile updated. Select it again for translation.");
+  it("uses exact translation-activation guidance without authorization wording", () => {
+    expect(sidebarSource).toContain("Profile updated. Enable it when you are ready.");
     expect(providerTestStatusMessage({ ok: true })).not.toMatch(/select/i);
     expect(`${sidebarSource}\n${providerTestStatusMessage({ ok: true })}`).not.toContain(
       "to authorize translation",
@@ -358,10 +363,77 @@ describe("Sidebar/Main/Global security messages", () => {
     expect(credentialStatusMessage({ state: "ready" })).toMatch(/0600/i);
   });
 
-  it("uses the current credential message contract", () => {
-    expect(GLOBAL_MESSAGE_NAMES).toContain("profile:select");
+  it("uses the global activation and credential message contract", () => {
+    expect(GLOBAL_MESSAGE_NAMES).toContain("profile-activation:get");
+    expect(GLOBAL_MESSAGE_NAMES).toContain("profile-activation:set");
     expect(GLOBAL_MESSAGE_NAMES).toContain("credential:set");
+    expect(SIDEBAR_MESSAGE_NAMES).toContain("profile-activation:set");
+    expect(GLOBAL_MESSAGE_NAMES).not.toContain("profile:select");
+    expect(GLOBAL_MESSAGE_NAMES).not.toContain("profile:release");
+    expect(SIDEBAR_MESSAGE_NAMES).not.toContain("profile:select");
     expect(credentialStatusMessage({ state: "ready" })).toMatch(/private local file/i);
+  });
+
+  it("strictly parses activation requests, snapshots, results and delete confirmations", () => {
+    const authority = {
+      authorityId: "authority-1",
+      stateVersion: 2,
+      ready: true,
+      activationGeneration: 3,
+      activation: {
+        profileId: profile.profileId,
+        profileRevision: profile.revision,
+        kind: profile.kind,
+        endpointFingerprint: profile.endpointFingerprint,
+        credentialConfigured: true,
+      },
+      profiles: [sanitizedProfileView(profile)],
+    };
+    const get = { requestId: "activation.get.1", revision: 1, payload: {} };
+    const set = {
+      requestId: "activation.set.1",
+      revision: 1,
+      payload: {
+        authorityId: authority.authorityId,
+        profileId: profile.profileId,
+        profileRevision: profile.revision,
+        endpointFingerprint: profile.endpointFingerprint,
+        enabled: true,
+      },
+    };
+    const result = { requestId: set.requestId, outcome: "changed", authority };
+    const deletion = {
+      requestId: "profile.delete.1",
+      revision: 1,
+      payload: {
+        profileId: profile.profileId,
+        expectedRevision: profile.revision,
+        displayName: profile.displayName,
+      },
+    };
+
+    expect(parseProfileActivationGet(get)).toEqual(get);
+    expect(parseProfileActivationSet(set)).toEqual(set);
+    expect(parseProfileActivationState(authority)).toEqual(authority);
+    expect(parseProfileActivationResult(result)).toEqual(result);
+    expect(parseProfileDeleteRequest(deletion)).toEqual(deletion);
+
+    for (const invalid of [
+      { ...set, payload: { ...set.payload, enabled: "true" } },
+      { ...set, payload: { ...set.payload, extra: true } },
+      { ...set, payload: { ...set.payload, profileRevision: 0 } },
+      { ...set, payload: { ...set.payload, authorityId: "" } },
+    ])
+      expect(() => parseProfileActivationSet(invalid)).toThrow(/INVALID_MESSAGE/);
+    expect(() => parseProfileActivationState({ ...authority, credential: "secret" })).toThrow(
+      /INVALID_MESSAGE/,
+    );
+    expect(() => parseProfileActivationResult({ ...result, outcome: "success" })).toThrow(
+      /INVALID_MESSAGE/,
+    );
+    expect(() =>
+      parseProfileDeleteRequest({ ...deletion, payload: { ...deletion.payload, extra: true } }),
+    ).toThrow(/INVALID_MESSAGE/);
   });
 
   it("declares progressive provider events without exposing a credential channel", () => {

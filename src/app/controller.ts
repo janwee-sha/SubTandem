@@ -35,6 +35,8 @@ export interface PlaybackControllerOptions {
   overlay: TranslationOverlaySink;
   targetLanguage?: string;
   providerSemanticFingerprint?: string;
+  authorityId?: string;
+  activationGeneration?: number;
   profileId?: string;
   profileRevision?: number;
   endpointFingerprint?: string;
@@ -112,11 +114,15 @@ export class PlaybackController {
     endpointFingerprint: string;
     kind: "openai" | "claude" | "deepseek" | "ollama";
     providerSemanticFingerprint?: string;
+    authorityId?: string;
+    activationGeneration?: number;
   }): void {
     this.options.profileId = input.profileId;
     this.options.profileRevision = input.revision;
     this.options.endpointFingerprint = input.endpointFingerprint;
     this.options.providerKind = input.kind;
+    this.options.authorityId = input.authorityId ?? "legacy-authority";
+    this.options.activationGeneration = input.activationGeneration ?? 0;
     this.options.providerSemanticFingerprint =
       input.providerSemanticFingerprint ?? input.endpointFingerprint;
     this.session.onTrackChanged();
@@ -133,6 +139,8 @@ export class PlaybackController {
     delete this.options.profileRevision;
     delete this.options.endpointFingerprint;
     delete this.options.providerKind;
+    delete this.options.authorityId;
+    delete this.options.activationGeneration;
     delete this.options.providerSemanticFingerprint;
     this.session.onTrackChanged();
     this.translations.clear();
@@ -200,6 +208,8 @@ export class PlaybackController {
           fingerprint,
           requestId: `request-${requestNumber}-attempt-${attempt}`,
           batchId: `batch-${requestNumber}`,
+          authorityId: this.options.authorityId ?? "injected-authority",
+          activationGeneration: this.options.activationGeneration ?? 0,
           profileId: this.options.profileId ?? "injected-provider",
           profileRevision: this.options.profileRevision ?? 1,
           endpointFingerprint: this.options.endpointFingerprint ?? "injected",
@@ -391,6 +401,8 @@ export class PlaybackController {
       request.sessionId === fingerprint.sessionId &&
       request.sessionEpoch === fingerprint.sessionEpoch &&
       request.windowEpoch === fingerprint.windowEpoch &&
+      request.authorityId === (this.options.authorityId ?? "injected-authority") &&
+      request.activationGeneration === (this.options.activationGeneration ?? 0) &&
       request.profileId === (this.options.profileId ?? "injected-provider") &&
       request.profileRevision === (this.options.profileRevision ?? 1) &&
       request.endpointFingerprint === (this.options.endpointFingerprint ?? "injected") &&

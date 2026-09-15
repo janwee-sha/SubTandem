@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { SubTandemError } from "../../src/domain/errors.js";
 import type {
+  ProfileStateCommitResult,
+  ProfileStateStoreSnapshot,
   TransportRequest,
   TransportResponse,
   TransportRpcClient,
@@ -15,6 +17,16 @@ class FakeTransportClient implements TransportRpcClient {
   failRequestAfterDispatch = false;
   credentials = new Map<string, Record<string, string>>();
   shutdownCalls = 0;
+  commitCalls: Array<{ commitId: string; expectedStoreRevision: number; profileState: unknown }> =
+    [];
+  failProfileCommit = false;
+  profileSnapshot: ProfileStateStoreSnapshot = {
+    initialized: true,
+    storeRevision: 4,
+    lastCommit: null,
+    profileState: { profiles: [], activation: null },
+    credentialConfigured: {},
+  };
 
   async health(): Promise<void> {
     this.randomCalls += 1;
@@ -29,16 +41,41 @@ class FakeTransportClient implements TransportRpcClient {
     return fields ? { ...fields } : null;
   }
 
-  async credentialWrite(profileId: string, fields: Record<string, string>): Promise<void> {
+  async credentialWrite(
+    profileId: string,
+    fields: Record<string, string>,
+  ): Promise<ProfileStateCommitResult> {
     if (!this.available)
       throw new SubTandemError("HELPER_UNAVAILABLE", "network", "RESTART_IINA", true);
     this.credentials.set(profileId, { ...fields });
+    return { state: "committed", ...structuredClone(this.profileSnapshot) };
   }
 
-  async credentialDelete(profileId: string): Promise<void> {
-    if (!this.available)
+  async profileStateRead(): Promise<ProfileStateStoreSnapshot> {
+    return structuredClone(this.profileSnapshot);
+  }
+
+  async profileStateOpen(): Promise<ProfileStateCommitResult> {
+    return { state: "committed", ...structuredClone(this.profileSnapshot) };
+  }
+
+  async profileStateInitialize(): Promise<ProfileStateCommitResult> {
+    return { state: "committed", ...structuredClone(this.profileSnapshot) };
+  }
+
+  async profileStateCommit(
+    commitId: string,
+    expectedStoreRevision: number,
+    profileState: unknown,
+  ): Promise<ProfileStateCommitResult> {
+    this.commitCalls.push({
+      commitId,
+      expectedStoreRevision,
+      profileState: structuredClone(profileState),
+    });
+    if (this.failProfileCommit)
       throw new SubTandemError("HELPER_UNAVAILABLE", "network", "RESTART_IINA", true);
-    this.credentials.delete(profileId);
+    return { state: "committed", ...structuredClone(this.profileSnapshot) };
   }
 
   async request(request: TransportRequest): Promise<TransportResponse> {
@@ -145,8 +182,14 @@ describe("transport supervisor", () => {
     const profileId = "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae";
 
     await expect(
-      supervisor.credentialWrite(profileId, { apiKey: "private-key" }),
-    ).resolves.toBeUndefined();
+      supervisor.credentialWrite(
+        profileId,
+        { apiKey: "private-key" },
+        "00000000-0000-4000-8000-000000000100",
+        4,
+        1,
+      ),
+    ).resolves.toMatchObject({ state: "committed" });
     await expect(supervisor.credentialRead(profileId)).resolves.toEqual({ apiKey: "private-key" });
     expect(replacement.credentials.get(profileId)).toEqual({ apiKey: "private-key" });
     expect(starts).toBe(2);
@@ -172,6 +215,57 @@ describe("transport supervisor", () => {
     await expect(supervisor.request(providerRequest)).resolves.toMatchObject({ statusCode: 200 });
     expect(starts).toBe(2);
     expect(replacement.requestCalls).toBe(1);
+  });
+
+  it("replays one identical local Profile commit on a replacement helper only", async () => {
+    const expired = new FakeTransportClient();
+    expired.failProfileCommit = true;
+    const replacement = new FakeTransportClient();
+    replacement.profileSnapshot = {
+      ...replacement.profileSnapshot,
+      storeRevision: 5,
+      lastCommit: {
+        commitId: "00000000-0000-4000-8000-000000000101",
+        operation: "commit",
+        baseRevision: 4,
+        requestDigest: "safe-digest",
+      },
+    };
+    const clients = [expired, replacement];
+    const supervisor = new TransportSupervisor(async () => clients.shift()!);
+    await supervisor.health();
+    const state = { profiles: [], activation: null };
+
+    await expect(
+      supervisor.profileStateCommit("00000000-0000-4000-8000-000000000101", 4, state),
+    ).resolves.toMatchObject({ state: "committed", storeRevision: 5 });
+    expect(expired.commitCalls).toEqual([
+      {
+        commitId: "00000000-0000-4000-8000-000000000101",
+        expectedStoreRevision: 4,
+        profileState: state,
+      },
+    ]);
+    expect(replacement.commitCalls).toEqual(expired.commitCalls);
+  });
+
+  it("keeps an old read pending when a lost commit cannot be confirmed", async () => {
+    const expired = new FakeTransportClient();
+    expired.failProfileCommit = true;
+    const replacement = new FakeTransportClient();
+    replacement.failProfileCommit = true;
+    const clients = [expired, replacement];
+    const supervisor = new TransportSupervisor(async () => clients.shift()!);
+    await supervisor.health();
+
+    await expect(
+      supervisor.profileStateCommit("00000000-0000-4000-8000-000000000102", 4, {
+        profiles: [],
+        activation: null,
+      }),
+    ).resolves.toMatchObject({ state: "reconciling", storeRevision: 4 });
+    expect(expired.commitCalls).toHaveLength(1);
+    expect(replacement.commitCalls).toHaveLength(1);
   });
 
   it("does not restart or leak a helper for a valid protocol rejection", async () => {

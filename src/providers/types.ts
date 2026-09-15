@@ -1,6 +1,7 @@
 import type {
   BatchId,
   EndpointFingerprint,
+  PersistentProviderProfile,
   PlayerId,
   ProfileId,
   RequestId,
@@ -10,12 +11,7 @@ import type {
 export type ProviderKind = "openai" | "claude" | "deepseek" | "ollama" | "fake";
 
 export type ModelRefreshTrigger =
-  | "startup"
-  | "open"
-  | "endpoint"
-  | "profile"
-  | "credential"
-  | "manual";
+  "startup" | "open" | "endpoint" | "profile" | "credential" | "manual";
 
 export interface ModelDiscoveryContext {
   requestId: string;
@@ -71,6 +67,8 @@ export interface TranslationBatchRequest {
   sessionId: SessionId;
   sessionEpoch: number;
   windowEpoch: number;
+  authorityId: string;
+  activationGeneration: number;
   profileId: ProfileId;
   profileRevision: number;
   endpointFingerprint: EndpointFingerprint;
@@ -114,16 +112,7 @@ export interface ProviderAttemptError {
   userAction: string;
 }
 
-export interface ProviderProfileSnapshot {
-  profileId: ProfileId;
-  revision: number;
-  displayName: string;
-  kind: Exclude<ProviderKind, "fake">;
-  endpoint: string;
-  endpointFingerprint: EndpointFingerprint;
-  proxyMode?: "system" | "direct";
-  model?: string;
-  capability?: "strict-json-schema" | "json-object" | "prompt-json";
+export interface ProviderProfileSnapshot extends PersistentProviderProfile {
   credential?: Readonly<Record<string, string>>;
   modelCatalog?: Pick<ModelCatalog, "contextKey" | "models">;
 }

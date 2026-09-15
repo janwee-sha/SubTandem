@@ -1,5 +1,12 @@
 import { SubTandemError } from "../domain/errors.js";
-import type { TransportRequest, TransportResponse, TransportRpcClient } from "./client.js";
+import type {
+  ProfileStateCommitResult,
+  ProfileStateStoreSnapshot,
+  TransportRequest,
+  TransportResponse,
+  TransportRpcClient,
+} from "./client.js";
+import type { PersistentProviderProfile, ProfileState } from "../domain/types.js";
 
 function isExpiredSession(error: unknown): boolean {
   return error instanceof SubTandemError && error.code === "HELPER_UNAVAILABLE";
@@ -102,32 +109,58 @@ export class TransportSupervisor implements TransportRpcClient {
     return client.credentialRead(profileId);
   }
 
-  async credentialWrite(profileId: string, fields: Record<string, string>): Promise<void> {
-    let client = await this.liveClient();
-    try {
-      await client.credentialWrite(profileId, fields);
-      return;
-    } catch (error) {
-      if (!isExpiredSession(error)) throw error;
-      this.invalidate(client);
-    }
-    // Replacing all fields for one profile is idempotent, so a lost helper
-    // response may safely repeat the exact write on a replacement session.
-    client = await this.liveClient();
-    await client.credentialWrite(profileId, fields);
+  async credentialWrite(
+    profileId: string,
+    fields: Record<string, string>,
+    commitId: string,
+    expectedStoreRevision: number,
+    expectedProfileRevision: number,
+  ): Promise<ProfileStateCommitResult> {
+    return this.localMutation(commitId, (client) =>
+      client.credentialWrite(
+        profileId,
+        fields,
+        commitId,
+        expectedStoreRevision,
+        expectedProfileRevision,
+      ),
+    );
   }
 
-  async credentialDelete(profileId: string): Promise<void> {
+  async profileStateRead(): Promise<ProfileStateStoreSnapshot> {
     let client = await this.liveClient();
     try {
-      await client.credentialDelete(profileId);
-      return;
+      return await client.profileStateRead();
     } catch (error) {
       if (!isExpiredSession(error)) throw error;
       this.invalidate(client);
     }
     client = await this.liveClient();
-    await client.credentialDelete(profileId);
+    return client.profileStateRead();
+  }
+
+  profileStateOpen(commitId: string): Promise<ProfileStateCommitResult> {
+    return this.localMutation(commitId, (client) => client.profileStateOpen(commitId));
+  }
+
+  profileStateInitialize(
+    commitId: string,
+    expectedStoreRevision: number,
+    profiles: PersistentProviderProfile[],
+  ): Promise<ProfileStateCommitResult> {
+    return this.localMutation(commitId, (client) =>
+      client.profileStateInitialize(commitId, expectedStoreRevision, profiles),
+    );
+  }
+
+  profileStateCommit(
+    commitId: string,
+    expectedStoreRevision: number,
+    profileState: ProfileState,
+  ): Promise<ProfileStateCommitResult> {
+    return this.localMutation(commitId, (client) =>
+      client.profileStateCommit(commitId, expectedStoreRevision, profileState),
+    );
   }
 
   async request(request: TransportRequest): Promise<TransportResponse> {
@@ -168,6 +201,34 @@ export class TransportSupervisor implements TransportRpcClient {
       await client.shutdown();
     } catch (error) {
       if (!isExpiredSession(error)) throw error;
+    }
+  }
+
+  private async localMutation(
+    commitId: string,
+    attempt: (client: TransportRpcClient) => Promise<ProfileStateCommitResult>,
+  ): Promise<ProfileStateCommitResult> {
+    let client = await this.liveClient();
+    try {
+      return await attempt(client);
+    } catch (error) {
+      if (!isExpiredSession(error)) throw error;
+      this.invalidate(client);
+    }
+    client = await this.liveClient();
+    try {
+      return await attempt(client);
+    } catch {
+      try {
+        const snapshot = await client.profileStateRead();
+        return {
+          state: snapshot.lastCommit?.commitId === commitId ? "committed" : "reconciling",
+          ...snapshot,
+        };
+      } catch (error) {
+        if (isExpiredSession(error)) this.invalidate(client);
+        throw error;
+      }
     }
   }
 }

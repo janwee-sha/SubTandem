@@ -19,6 +19,38 @@ describe("IINA sidebar bundle contract", () => {
     expect(html.indexOf("./sidebar-state.ts")).toBeLessThan(html.indexOf("./sidebar.ts"));
   });
 
+  it("renders each Profile activation as a confirmed accessible switch", () => {
+    expect(sidebarSource).toContain('role = "switch"');
+    expect(sidebarSource).toContain("`Enable ${profile.displayName}`");
+    expect(sidebarSource).toMatch(/postMessage\(\s*"profile-activation:set"/);
+    expect(sidebarSource).not.toContain('postMessage("profile:select"');
+    expect(sidebarSource).not.toMatch(/\["select",[^\]]+\]/i);
+  });
+
+  it("uses the non-control Profile content as the pointer and keyboard edit entry", () => {
+    expect(sidebarSource).toContain("new ProfileCardInteractionCoordinator");
+    expect(sidebarSource).toContain("tabIndex = 0");
+    expect(sidebarSource).toContain("`Edit ${profile.displayName}`");
+    expect(sidebarSource).toContain("activateProfileEditor");
+    expect(sidebarSource).not.toMatch(/\["edit",\s*"Edit"\]/);
+    expect(sidebarCss).toContain(".profile.is-editing");
+  });
+
+  it("provides a local accessible delete confirmation layer and stable Test label slot", () => {
+    expect(html).toMatch(
+      /id="profile-delete-dialog"[\s\S]*?role="alertdialog"[\s\S]*?aria-modal="true"/,
+    );
+    expect(html).toContain('aria-labelledby="profile-delete-title"');
+    expect(html).toMatch(/aria-describedby="profile-delete-description(?: [^"]+)?"/);
+    expect(html).toMatch(/class="profile-delete-icon"[^>]*aria-hidden="true"/);
+    expect(html.indexOf('id="confirm-profile-delete"')).toBeLessThan(
+      html.indexOf('id="cancel-profile-delete"'),
+    );
+    expect(sidebarSource).toContain("test-button-placeholder");
+    expect(sidebarSource).toContain("Testing…");
+    expect(sidebarCss).toContain(".test-button-placeholder");
+  });
+
   it("uses host-like native sidebar sections with two quiet grouped surfaces", () => {
     expect(html).not.toContain("IINA live translation");
     expect(html).toContain('<label class="setting-row">');
@@ -200,9 +232,9 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarSource).not.toContain("profileEditorStatus.textContent = `Editing");
   });
 
-  it("keeps selection consent separate from credential and connection verification", () => {
-    expect(sidebarSource).toContain("Profile selected for translation.");
-    expect(sidebarSource).not.toContain("Profile selected. Translation is authorized.");
+  it("keeps activation separate from credential and connection verification", () => {
+    expect(sidebarSource).toMatch(/postMessage\(\s*"profile-activation:set"/);
+    expect(sidebarSource).not.toContain("Profile selected for translation.");
     expect(sidebarSource).toContain("window.subtandemCredentialStatusMessage");
     expect(html).toContain("private local file (mode 0600)");
     expect(sidebarSource).toContain('type ProfileTestState = "not tested" | "passed" | "failed"');

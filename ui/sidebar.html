@@ -297,7 +297,7 @@
         <div class="section-heading">
           <div>
             <h2 id="provider-heading">Translation service</h2>
-            <p>Subtitle text is sent only to the service you explicitly select.</p>
+            <p>Subtitle text is sent only to the Profile you explicitly enable.</p>
           </div>
         </div>
         <label class="field">
@@ -440,8 +440,37 @@
       </section>
       <p id="operation-announcer" class="assistive-only" role="status" aria-live="polite"></p>
     </main>
+    <div id="profile-delete-backdrop" class="profile-delete-backdrop" hidden>
+      <section
+        id="profile-delete-dialog"
+        class="profile-delete-dialog"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="profile-delete-title"
+        aria-describedby="profile-delete-description profile-delete-status"
+      >
+        <svg class="profile-delete-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+          <path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5" />
+        </svg>
+        <div class="profile-delete-copy">
+          <h2 id="profile-delete-title">Delete Profile?</h2>
+          <p id="profile-delete-description"></p>
+          <p
+            id="profile-delete-status"
+            class="operation-status"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </div>
+        <div class="profile-delete-actions">
+          <button id="confirm-profile-delete" class="danger" type="button">Delete</button>
+          <button id="cancel-profile-delete" class="secondary" type="button">Cancel</button>
+        </div>
+      </section>
+    </div>
     <script src="./provider-status.ts"></script>
     <script src="./sidebar-state.ts"></script>
+    <script src="./profile-card-interactions.ts"></script>
     <script src="./sidebar.ts"></script>
   </body>
 </html>

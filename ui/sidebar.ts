@@ -44,7 +44,7 @@ type SourcePreparationState =
 const labels: Record<SessionStatus, string> = {
   disabled: "Translation is off",
   waitingForSubtitle: "Select a readable external SRT or ASS subtitle",
-  waitingForConfiguration: "Select and test a translation service",
+  waitingForConfiguration: "Enable and test a translation service",
   preparing: "Preparing nearby translations…",
   running: "Translations are running",
   partialFailure: "Some cues could not be translated; playback continues",
@@ -139,6 +139,18 @@ const subtitleColorGrid = colorPalette.querySelector<HTMLElement>(".subtitle-col
 const subtitleShowColors = document.querySelector<HTMLButtonElement>("#subtitle-show-colors")!;
 const subtitleStyleError = document.querySelector<HTMLParagraphElement>("#subtitle-style-error")!;
 const operationAnnouncer = document.querySelector<HTMLParagraphElement>("#operation-announcer")!;
+const appElement = document.querySelector<HTMLElement>("#app")!;
+const profileDeleteBackdrop = document.querySelector<HTMLElement>("#profile-delete-backdrop")!;
+const profileDeleteDialog = document.querySelector<HTMLElement>("#profile-delete-dialog")!;
+const profileDeleteTitle = document.querySelector<HTMLHeadingElement>("#profile-delete-title")!;
+const profileDeleteDescription = document.querySelector<HTMLParagraphElement>(
+  "#profile-delete-description",
+)!;
+const profileDeleteStatus = document.querySelector<HTMLParagraphElement>("#profile-delete-status")!;
+const confirmProfileDeleteButton =
+  document.querySelector<HTMLButtonElement>("#confirm-profile-delete")!;
+const cancelProfileDeleteButton =
+  document.querySelector<HTMLButtonElement>("#cancel-profile-delete")!;
 
 const subtitleColorFamilies = [
   ["Red", 0],
@@ -249,7 +261,9 @@ const providerUi: Record<
 };
 const profiles = new Map<string, ProfileView>();
 const sidebarState = window.createSubTandemSidebarState();
-const profileUpdatedSelectionMessage = "Profile updated. Select it again for translation.";
+const profileCardInteractions = new ProfileCardInteractionCoordinator();
+const profileDeleteDialogInteractions = new ProfileDeleteDialogInteractionCoordinator();
+const profileUpdatedSelectionMessage = "Profile updated. Enable it when you are ready.";
 const profileCredentialPartialFailureMessage =
   "Profile saved, but the credential was not saved. Review the credential status and retry the profile update.";
 const profileTestStateLabels: Record<ProfileTestState, string> = {
@@ -262,7 +276,6 @@ const pendingProfileTests = new Map<string, { profileId: string; revision: numbe
 const pendingOperations = new Set<string>();
 let activeProviderKind: ProviderKind = "openai";
 let editingProfile: ProfileView | null = null;
-let selectedProfileId: string | null = null;
 let pendingProfileSave: {
   requestId: string;
   secret: string | null;
@@ -294,6 +307,9 @@ let pendingModelRefresh: {
 let subtitleStyleInteractionSequence = 0;
 let pendingFontPickerRequestId: string | null = null;
 let pendingColorPickerRequestId: string | null = null;
+let deleteDialogRestoreIndex = -1;
+let deleteDialogProfileId: string | null = null;
+let backgroundTabStops: Array<{ element: HTMLElement; tabIndex: string | null }> = [];
 
 function nextRequestId(): string {
   requestSequence += 1;
@@ -306,6 +322,96 @@ function envelope(
   revision = 1,
 ): Record<string, unknown> {
   return { requestId, revision, payload };
+}
+
+function setDeleteDialogBackgroundShielded(shielded: boolean): void {
+  if (shielded) {
+    if (backgroundTabStops.length) return;
+    backgroundTabStops = Array.from(
+      appElement.querySelectorAll<HTMLElement>("button,input,select,textarea,a,[tabindex]"),
+    ).map((element) => ({ element, tabIndex: element.getAttribute("tabindex") }));
+    for (const { element } of backgroundTabStops) element.setAttribute("tabindex", "-1");
+    appElement.setAttribute("aria-hidden", "true");
+    return;
+  }
+  appElement.removeAttribute("aria-hidden");
+  for (const { element, tabIndex } of backgroundTabStops) {
+    if (tabIndex === null) element.removeAttribute("tabindex");
+    else element.setAttribute("tabindex", tabIndex);
+  }
+  backgroundTabStops = [];
+}
+
+function deleteButtonForProfile(profileId: string): HTMLButtonElement | null {
+  return (
+    Array.from(
+      profilesElement.querySelectorAll<HTMLButtonElement>('button[data-action="delete"]'),
+    ).find((button) => button.dataset.profileId === profileId) ?? null
+  );
+}
+
+function focusAfterDeleteDialog(): void {
+  if (deleteDialogProfileId) {
+    const retainedButton = deleteButtonForProfile(deleteDialogProfileId);
+    if (retainedButton) {
+      retainedButton.focus();
+      return;
+    }
+  }
+  const target = profileDeleteDialogInteractions.focusAfterRemoval(deleteDialogRestoreIndex, [
+    ...profiles.keys(),
+  ]);
+  if (target.kind === "profile-delete") deleteButtonForProfile(target.profileId)?.focus();
+  else profileName.focus();
+}
+
+function closeDeleteDialog(restoreFocus: boolean): void {
+  profileDeleteBackdrop.hidden = true;
+  setDeleteDialogBackgroundShielded(false);
+  if (restoreFocus) focusAfterDeleteDialog();
+  deleteDialogRestoreIndex = -1;
+  deleteDialogProfileId = null;
+}
+
+function renderDeleteDialog(): void {
+  const confirmation = sidebarState.snapshot.deleteConfirmation;
+  if (!confirmation) {
+    if (!profileDeleteBackdrop.hidden) closeDeleteDialog(true);
+    return;
+  }
+  profileDeleteTitle.textContent = `Delete ${confirmation.displayName}?`;
+  profileDeleteDescription.textContent =
+    "This Profile configuration and its saved credential will be permanently deleted. This cannot be undone.";
+  const deleting = confirmation.phase === "deleting";
+  confirmProfileDeleteButton.disabled = deleting;
+  cancelProfileDeleteButton.disabled = deleting;
+  confirmProfileDeleteButton.setAttribute("aria-busy", String(deleting));
+  profileDeleteStatus.dataset.state = deleting ? "busy" : "";
+  profileDeleteStatus.textContent = deleting ? "Deleting…" : "";
+  if (profileDeleteBackdrop.hidden) {
+    setDeleteDialogBackgroundShielded(true);
+    profileDeleteBackdrop.hidden = false;
+    cancelProfileDeleteButton.focus();
+  }
+}
+
+function openDeleteDialog(profile: ProfileView): void {
+  if (
+    !sidebarState.openDeleteConfirmation({
+      profileId: profile.profileId,
+      expectedRevision: profile.revision,
+      displayName: profile.displayName,
+    })
+  )
+    return;
+  deleteDialogRestoreIndex = [...profiles.keys()].indexOf(profile.profileId);
+  deleteDialogProfileId = profile.profileId;
+  renderDeleteDialog();
+}
+
+function cancelDeleteDialog(): void {
+  if (!sidebarState.cancelDeleteConfirmation()) return;
+  closeDeleteDialog(true);
 }
 
 function renderOverlayPosition(): void {
@@ -474,10 +580,9 @@ function controlForAction(
   );
 }
 
-function idleLabelForAction(actionId: string, profileId?: string): string {
+function idleLabelForAction(actionId: string): string {
   if (actionId === "save-profile") return editingProfile ? "Update profile" : "Save profile";
   if (actionId === "retry-preparation") return "Retry";
-  if (actionId === "select") return selectedProfileId === profileId ? "Selected" : "Select";
   if (actionId === "test") return "Test";
   if (actionId === "delete") return "Delete";
   return "";
@@ -491,11 +596,14 @@ function setActionBusy(
 ): void {
   const control = controlForAction(actionId, profileId);
   if (!control) return;
-  control.disabled = busy || (actionId === "select" && selectedProfileId === profileId);
+  control.disabled = busy;
   if (busy) control.setAttribute("aria-busy", "true");
   else control.removeAttribute("aria-busy");
-  if (control instanceof HTMLButtonElement)
-    control.textContent = busy ? busyLabel : idleLabelForAction(actionId, profileId);
+  if (control instanceof HTMLButtonElement) {
+    const label = control.querySelector<HTMLElement>(".test-button-label");
+    if (label) label.textContent = busy ? busyLabel : idleLabelForAction(actionId);
+    else control.textContent = busy ? busyLabel : idleLabelForAction(actionId);
+  }
 }
 
 function updateSubtitleRetryControls(): void {
@@ -563,8 +671,9 @@ function beginOperation(
   busyLabel: string,
   profileId?: string,
   revision?: number,
+  fixedRequestId?: string,
 ): string {
-  const requestId = nextRequestId();
+  const requestId = fixedRequestId ?? nextRequestId();
   const previousId = sidebarState.snapshot.latestRequestByRegion[regionId]?.requestId;
   const previous = previousId ? sidebarState.snapshot.requests[previousId] : undefined;
   if (previous) setActionBusy(previous.actionId, previous.profileId, false);
@@ -915,13 +1024,41 @@ profileName.addEventListener("input", () => {
 });
 
 function loadEditor(profile: ProfileView, preservePendingSave = false): void {
+  const activation = sidebarState.activateProfileEditor(profile.profileId);
+  if (
+    !activation.changed &&
+    editingProfile?.profileId === profile.profileId &&
+    !preservePendingSave
+  )
+    return;
   if (!preservePendingSave) cancelPendingProfileSaveForContextChange();
   invalidatePendingModelRefresh();
+  if (activation.discardedProfileId) {
+    providerDrafts.openai = {
+      endpoint: "https://api.openai.com/v1",
+      model: "",
+      proxyMode: "system",
+    };
+    providerDrafts.claude = {
+      endpoint: "https://api.anthropic.com",
+      model: "",
+      proxyMode: "system",
+    };
+    providerDrafts.deepseek = {
+      endpoint: "https://api.deepseek.com",
+      model: "",
+      proxyMode: "system",
+    };
+    providerDrafts.ollama = {
+      endpoint: "http://127.0.0.1:11434",
+      model: "",
+      proxyMode: "system",
+    };
+  }
   editingProfile = profile;
   draftCredentialEpoch += 1;
   providerKey.value = "";
   sidebarState.setProfileContext({
-    editingProfileId: profile.profileId,
     credentialDisplayProfileId: profile.profileId,
   });
   providerKind.value = profile.kind;
@@ -1170,6 +1307,50 @@ saveProfileButton.addEventListener("click", () => {
 
 newProfileButton.addEventListener("click", resetEditor);
 
+cancelProfileDeleteButton.addEventListener("click", cancelDeleteDialog);
+
+confirmProfileDeleteButton.addEventListener("click", () => {
+  const requestId = nextRequestId();
+  const target = sidebarState.beginProfileDelete(requestId);
+  if (!target) {
+    renderDeleteDialog();
+    return;
+  }
+  beginOperation(
+    `profile-row:${target.profileId}`,
+    "delete",
+    "Deleting…",
+    target.profileId,
+    target.expectedRevision,
+    requestId,
+  );
+  renderDeleteDialog();
+  window.iina?.postMessage("profile:delete-request", envelope(target, requestId));
+});
+
+profileDeleteDialog.addEventListener("keydown", (event) => {
+  const confirmation = sidebarState.snapshot.deleteConfirmation;
+  if (!confirmation) return;
+  if (profileDeleteDialogInteractions.shouldCancel(event.key, confirmation.phase === "deleting")) {
+    event.preventDefault();
+    cancelDeleteDialog();
+    return;
+  }
+  if (event.key !== "Tab") return;
+  const controls = [confirmProfileDeleteButton, cancelProfileDeleteButton].filter(
+    (button) => !button.disabled,
+  );
+  if (!controls.length) {
+    event.preventDefault();
+    return;
+  }
+  event.preventDefault();
+  const currentIndex = controls.indexOf(document.activeElement as HTMLButtonElement);
+  controls[
+    profileDeleteDialogInteractions.nextFocusIndex(currentIndex, controls.length, event.shiftKey)
+  ]?.focus();
+});
+
 profilesElement.addEventListener("click", (event) => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>("button[data-action]");
   if (!button || button.disabled) return;
@@ -1181,21 +1362,6 @@ profilesElement.addEventListener("click", (event) => {
     endpointFingerprint: profile.endpointFingerprint,
   };
   switch (button.dataset.action) {
-    case "edit":
-      loadEditor(profile);
-      break;
-    case "select": {
-      loadEditor(profile);
-      const requestId = beginOperation(
-        `profile-row:${profile.profileId}`,
-        "select",
-        "Selecting…",
-        profile.profileId,
-        profile.revision,
-      );
-      window.iina?.postMessage("profile:select", envelope(selection, requestId));
-      break;
-    }
     case "test": {
       const requestId = beginOperation(
         `profile-row:${profile.profileId}`,
@@ -1212,27 +1378,85 @@ profilesElement.addEventListener("click", (event) => {
       break;
     }
     case "delete": {
-      const requestId = beginOperation(
-        `profile-row:${profile.profileId}`,
-        "delete",
-        "Confirming…",
-        profile.profileId,
-        profile.revision,
-      );
-      window.iina?.postMessage(
-        "profile:delete-request",
-        envelope(
-          {
-            profileId: profile.profileId,
-            expectedRevision: profile.revision,
-            displayName: profile.displayName,
-          },
-          requestId,
-        ),
-      );
+      openDeleteDialog(profile);
       break;
     }
   }
+});
+
+const profileScrollPosition = (): number => document.documentElement.scrollTop;
+const selectionCollapsed = (): boolean => window.getSelection()?.isCollapsed !== false;
+
+profilesElement.addEventListener("pointerdown", (event) => {
+  const entry = (event.target as HTMLElement).closest<HTMLElement>(".profile-details");
+  if (!entry) return;
+  profileCardInteractions.beginPointer({
+    profileId: entry.dataset.profileId ?? "",
+    clientX: event.clientX,
+    clientY: event.clientY,
+    scrollPosition: profileScrollPosition(),
+    controlAncestor: Boolean(
+      (event.target as HTMLElement).closest("button,input,select,textarea,a"),
+    ),
+    selectionCollapsed: selectionCollapsed(),
+    detail: event.detail,
+    primary: event.button === 0 && event.isPrimary,
+  });
+});
+
+profilesElement.addEventListener("pointerup", (event) => {
+  const profileId = profileCardInteractions.finishPointer({
+    clientX: event.clientX,
+    clientY: event.clientY,
+    scrollPosition: profileScrollPosition(),
+    selectionCollapsed: selectionCollapsed(),
+  });
+  const profile = profileId ? profiles.get(profileId) : null;
+  if (profile) loadEditor(profile);
+});
+
+profilesElement.addEventListener("pointercancel", () => profileCardInteractions.cancel());
+window.addEventListener("scroll", () => profileCardInteractions.cancel(), true);
+
+profilesElement.addEventListener("keydown", (event) => {
+  const entry = (event.target as HTMLElement).closest<HTMLElement>(".profile-details");
+  if (!entry) return;
+  const profileId = profileCardInteractions.activateKey(
+    entry.dataset.profileId ?? "",
+    event.key,
+    Boolean((event.target as HTMLElement).closest("button,input,select,textarea,a")),
+  );
+  const profile = profileId ? profiles.get(profileId) : null;
+  if (!profile) return;
+  event.preventDefault();
+  loadEditor(profile);
+});
+
+profilesElement.addEventListener("change", (event) => {
+  const activation = (event.target as HTMLElement).closest<HTMLInputElement>(
+    'input[data-action="activation"]',
+  );
+  if (!activation || activation.disabled) return;
+  const profile = profiles.get(activation.dataset.profileId ?? "");
+  const authority = sidebarState.snapshot.profileAuthority;
+  if (!profile || !authority) return;
+  const enabled = activation.checked;
+  const requestId = nextRequestId();
+  if (!sidebarState.beginProfileActivation(requestId, profile.profileId, enabled)) return;
+  renderProfileActivationControls();
+  window.iina?.postMessage(
+    "profile-activation:set",
+    envelope(
+      {
+        authorityId: authority.authorityId,
+        profileId: profile.profileId,
+        profileRevision: profile.revision,
+        endpointFingerprint: profile.endpointFingerprint,
+        enabled,
+      },
+      requestId,
+    ),
+  );
 });
 
 window.iina?.onMessage("profile:revision-created", (raw: unknown) => {
@@ -1281,11 +1505,17 @@ window.iina?.onMessage("profile:revision-created", (raw: unknown) => {
   window.iina?.postMessage("ui:ready", envelope({}));
 });
 
-window.iina?.onMessage("profile:selected", (raw: unknown) => {
-  const result = raw as { requestId?: string; selection?: { profileId?: string } };
-  selectedProfileId = result.selection?.profileId ?? selectedProfileId;
-  sidebarState.setProfileContext({ selectedProfileId });
-  finishOperation(result.requestId, "Profile selected for translation.");
+window.iina?.onMessage("profile-activation:state", (raw: unknown) => {
+  if (!sidebarState.applyProfileAuthority(raw as SidebarProfileAuthority)) return;
+  renderedProfilesSignature = "";
+  renderProfiles(sidebarState.snapshot.profiles as unknown as ProfileView[]);
+});
+
+window.iina?.onMessage("profile-activation:result", (raw: unknown) => {
+  const result = sidebarState.finishProfileActivation(raw as SidebarProfileActivationResult);
+  if (!result.accepted) return;
+  renderedProfilesSignature = "";
+  renderProfiles(sidebarState.snapshot.profiles as unknown as ProfileView[]);
 });
 
 window.iina?.onMessage("profile:deleted", (raw: unknown) => {
@@ -1297,10 +1527,6 @@ window.iina?.onMessage("profile:deleted", (raw: unknown) => {
     message: "Profile and saved credential deleted.",
   });
   if (editingProfile?.profileId === result.profileId) resetEditor();
-  if (selectedProfileId === result.profileId) {
-    selectedProfileId = null;
-    sidebarState.setProfileContext({ selectedProfileId: null });
-  }
   profileTestStates.delete(result.profileId);
   for (const [requestId, tested] of pendingProfileTests) {
     if (tested.profileId === result.profileId) pendingProfileTests.delete(requestId);
@@ -1535,14 +1761,49 @@ window.iina?.onMessage("operation:error", (raw: unknown) => {
     );
     return;
   }
+  const failedDelete =
+    typeof result.requestId === "string" &&
+    sidebarState.snapshot.deleteConfirmation?.requestId === result.requestId;
   finishOperation(
     result.requestId,
-    "The operation could not be completed. Review the service settings and try again.",
+    failedDelete
+      ? "The Profile could not be deleted. Review the latest Profile and try again."
+      : "The operation could not be completed. Review the service settings and try again.",
     "error",
   );
+  if (
+    failedDelete &&
+    typeof result.requestId === "string" &&
+    sidebarState.finishProfileDeleteFailure(result.requestId)
+  ) {
+    closeDeleteDialog(true);
+    return;
+  }
   if (pendingProfileSave?.requestId === result.requestId) pendingProfileSave = null;
   if (typeof result.requestId === "string") sidebarState.cancelProfileSave(result.requestId);
 });
+
+function renderProfileActivationControls(): void {
+  for (const input of Array.from(
+    profilesElement.querySelectorAll<HTMLInputElement>('input[data-action="activation"]'),
+  )) {
+    const profileId = input.dataset.profileId ?? "";
+    const view = sidebarState.profileActivationView(profileId);
+    input.checked = view.checked;
+    input.disabled = view.disabled;
+    input.setAttribute("aria-label", view.accessibleName);
+    input.setAttribute("aria-checked", String(view.checked));
+    if (view.busy) input.setAttribute("aria-busy", "true");
+    else input.removeAttribute("aria-busy");
+    const status = profilesElement.querySelector<HTMLParagraphElement>(
+      `.profile-operation-status[data-profile-id="${profileId}"]`,
+    );
+    if (status && (view.error || view.readinessMessage)) {
+      status.textContent = view.error ?? view.readinessMessage ?? "";
+      status.dataset.state = view.error ? "error" : "pending";
+    }
+  }
+}
 
 function renderProfiles(viewProfiles: ProfileView[]): void {
   profiles.clear();
@@ -1550,14 +1811,25 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
   if (!viewProfiles.length) {
     profilesElement.innerHTML = '<p class="empty">No saved profiles yet.</p>';
     renderActiveFeedback();
+    renderDeleteDialog();
     return;
   }
   for (const profile of viewProfiles) {
     profiles.set(profile.profileId, profile);
     const article = document.createElement("article");
-    article.className = `profile${selectedProfileId === profile.profileId ? " is-selected" : ""}`;
-    article.innerHTML = `<div><strong></strong><span class="profile-summary"></span><code></code></div><div class="profile-actions"></div>`;
+    article.className = `profile${sidebarState.snapshot.editingProfileId === profile.profileId ? " is-editing" : ""}`;
+    article.innerHTML = `<div class="profile-heading"><div class="profile-details"><strong></strong><span class="profile-summary"></span><code></code></div><label class="switch profile-activation"><input type="checkbox"></label></div><div class="profile-actions"></div>`;
     article.querySelector("strong")!.textContent = profile.displayName;
+    const editEntry = article.querySelector<HTMLElement>(".profile-details")!;
+    editEntry.dataset.profileId = profile.profileId;
+    editEntry.tabIndex = 0;
+    editEntry.setAttribute("role", "button");
+    editEntry.setAttribute("aria-label", `Edit ${profile.displayName}`);
+    const activation = article.querySelector<HTMLInputElement>(".profile-activation input")!;
+    activation.role = "switch";
+    activation.dataset.action = "activation";
+    activation.dataset.profileId = profile.profileId;
+    activation.setAttribute("aria-label", `Enable ${profile.displayName}`);
     article.querySelector<HTMLElement>(".profile-summary")!.textContent =
       `${providerLabels[profile.kind]}${profile.model ? ` · ${profile.model}` : ""}` +
       `${profile.proxyMode === "direct" ? " · direct" : " · macOS proxy"}` +
@@ -1576,18 +1848,18 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
     const actions = article.querySelector<HTMLElement>(".profile-actions")!;
     for (const [action, label] of [
       ["test", "Test"],
-      ["select", selectedProfileId === profile.profileId ? "Selected" : "Select"],
-      ["edit", "Edit"],
       ["delete", "Delete"],
     ] as const) {
       const button = document.createElement("button");
       button.type = "button";
-      button.className =
-        action === "select" ? "" : `secondary${action === "delete" ? " danger" : ""}`;
+      button.className = `secondary${action === "test" ? " test-button" : " danger"}`;
       button.dataset.action = action;
       button.dataset.profileId = profile.profileId;
-      button.textContent = label;
-      if (action === "select" && selectedProfileId === profile.profileId) button.disabled = true;
+      if (action === "test") {
+        button.innerHTML = `<span class="test-button-label">${label}</span><span class="test-button-placeholder" aria-hidden="true">Testing…</span>`;
+      } else {
+        button.textContent = label;
+      }
       actions.append(button);
     }
     const rowStatus = document.createElement("p");
@@ -1611,6 +1883,8 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
       );
   }
   renderActiveFeedback();
+  renderProfileActivationControls();
+  renderDeleteDialog();
 }
 
 window.iina?.onMessage("subtitle-style:state", (raw: unknown) => {
@@ -1660,7 +1934,7 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     cacheSize?: number;
     boundedWork?: string;
     profiles?: ProfileView[];
-    selection?: { profileId: string; revision: number } | null;
+    profileAuthority?: SidebarProfileAuthority;
     sourceIssue?: string | null;
     providerError?: SessionProviderError | null;
     sourcePreparation?: {
@@ -1678,6 +1952,7 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     renderOverlayPosition();
   if (view.subtitleStyle && sidebarState.applySubtitleStyleState(view.subtitleStyle))
     renderSubtitleStyle();
+  if (view.profileAuthority) sidebarState.applyProfileAuthority(view.profileAuthority);
   if (view.targetLanguages) {
     const signature = JSON.stringify(view.targetLanguages);
     if (signature !== renderedLanguageCatalogSignature) {
@@ -1749,14 +2024,13 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     document.querySelector<HTMLElement>("#cache-size")!.textContent = `${view.cacheSize} cues`;
   if (view.boundedWork)
     document.querySelector<HTMLElement>("#work-bound")!.textContent = view.boundedWork;
-  selectedProfileId = view.selection?.profileId ?? null;
-  sidebarState.setProfileContext({ selectedProfileId });
   if (view.profiles) {
     const visibleProfiles = sidebarState.applyProfiles(
       view.profiles as unknown as SidebarStateProfile[],
     ) as unknown as ProfileView[];
     const signature = JSON.stringify({
-      selectedProfileId,
+      profileAuthority: sidebarState.snapshot.profileAuthority,
+      profileActivationRequests: sidebarState.snapshot.profileActivationRequests,
       deletedProfileIds: sidebarState.snapshot.deletedProfileIds,
       profiles: visibleProfiles.map((profile) => [
         profile.profileId,

@@ -315,7 +315,7 @@ describe("credential and content leakage boundaries", () => {
     for (const value of sensitive) expect(output).not.toContain(value);
   });
 
-  it("does not send subtitle text before translation and a Provider Profile are selected", async () => {
+  it("does not send subtitle text before translation and a Provider Profile are activated", async () => {
     const provider = new RecordingProvider();
     const controller = new PlaybackController({
       playerId: "not-authorized",

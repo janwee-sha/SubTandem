@@ -1,16 +1,40 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { HelperCredentialStore, CredentialStoreError } from "../../src/credentials/store.js";
+import {
+  CredentialStoreError,
+  HelperCredentialStore,
+  HelperProfileStateStore,
+} from "../../src/credentials/store.js";
 import { SubTandemError } from "../../src/domain/errors.js";
-import type { TransportRpcClient } from "../../src/transport/client.js";
+import type { ProfileState } from "../../src/domain/types.js";
+import type {
+  ProfileStateCommitResult,
+  ProfileStateStoreSnapshot,
+  TransportRpcClient,
+} from "../../src/transport/client.js";
 
-const firstProfile = "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae";
-const secondProfile = "8a90a4e6-cc4f-4f59-99b7-8ff522f887ae";
+const profileId = "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae";
+const profile = {
+  profileId: profileId as ProfileState["profiles"][number]["profileId"],
+  revision: 1,
+  displayName: "A",
+  kind: "openai" as const,
+  endpoint: "https://example.test/v1",
+  endpointFingerprint: "fingerprint" as ProfileState["profiles"][number]["endpointFingerprint"],
+  proxyMode: "direct" as const,
+  model: "model-a",
+};
 
-class MemoryCredentialTransport {
+class MemoryStateTransport {
   readonly values = new Map<string, Record<string, string>>();
   fail = false;
   helperUnavailable = false;
+  snapshot: ProfileStateStoreSnapshot = {
+    initialized: true,
+    storeRevision: 1,
+    lastCommit: null,
+    profileState: { profiles: [profile], activation: null },
+    credentialConfigured: { [profileId]: false },
+  };
 
   private assertAvailable(): void {
     if (this.helperUnavailable)
@@ -18,106 +42,127 @@ class MemoryCredentialTransport {
     if (this.fail) throw new Error("private transport detail");
   }
 
-  async credentialRead(profileId: string): Promise<Record<string, string> | null> {
+  async credentialRead(id: string): Promise<Record<string, string> | null> {
     this.assertAvailable();
-    const fields = this.values.get(profileId);
+    const fields = this.values.get(id);
     return fields ? { ...fields } : null;
   }
 
-  async credentialWrite(profileId: string, fields: Record<string, string>): Promise<void> {
+  async credentialWrite(
+    id: string,
+    fields: Record<string, string>,
+    commitId: string,
+    expectedStoreRevision: number,
+    expectedProfileRevision: number,
+  ): Promise<ProfileStateCommitResult> {
     this.assertAvailable();
-    this.values.set(profileId, { ...fields });
+    if (expectedStoreRevision !== this.snapshot.storeRevision || expectedProfileRevision !== 1)
+      throw new SubTandemError("PROFILE_STATE_CONFLICT", "configuration", "NONE");
+    this.values.set(id, { ...fields });
+    this.snapshot = {
+      ...this.snapshot,
+      storeRevision: this.snapshot.storeRevision + 1,
+      lastCommit: {
+        commitId,
+        operation: "credential-write",
+        baseRevision: expectedStoreRevision,
+        requestDigest: "safe",
+      },
+      credentialConfigured: { [profileId]: true },
+    };
+    return { state: "committed", ...structuredClone(this.snapshot) };
   }
 
-  async credentialDelete(profileId: string): Promise<void> {
+  async profileStateRead(): Promise<ProfileStateStoreSnapshot> {
     this.assertAvailable();
-    this.values.delete(profileId);
+    return structuredClone(this.snapshot);
   }
 }
 
-describe("plugin-private credential store", () => {
-  it("replaces, retains and deletes a Claude key through the one-way helper boundary", async () => {
-    const transport = new MemoryCredentialTransport();
-    const store = new HelperCredentialStore(transport as unknown as TransportRpcClient);
-    await store.setSecret(firstProfile, { apiKey: "claude-key-one" });
-    await store.setSecret(firstProfile, { apiKey: "claude-key-two" });
-    await expect(store.getSecret(firstProfile)).resolves.toEqual({ apiKey: "claude-key-two" });
-    expect(transport.values.get(firstProfile)).toEqual({ apiKey: "claude-key-two" });
-    await store.deleteSecret(firstProfile);
-    await expect(store.getSecret(firstProfile)).resolves.toBeNull();
+function credentialOptions(storeRevision = 1) {
+  return {
+    commitId: "00000000-0000-4000-8000-000000000001",
+    expectedStoreRevision: storeRevision,
+    expectedProfileRevision: 1,
+  };
+}
 
-    const nativeSource = readFileSync(
-      new URL(
-        "../../native/transport/Sources/SubTandemTransport/SecureCredentialStore.swift",
-        import.meta.url,
-      ),
-      "utf8",
+describe("plugin-private Profile and credential stores", () => {
+  it("writes one secret through a versioned commit and returns only configured state", async () => {
+    const transport = new MemoryStateTransport();
+    const store = new HelperCredentialStore(transport as unknown as TransportRpcClient);
+    const result = await store.setSecret(profileId, { apiKey: "private-key" }, credentialOptions());
+
+    expect(result).toMatchObject({ state: "committed", storeRevision: 2 });
+    expect(result.credentialConfigured).toEqual({ [profileId]: true });
+    expect(JSON.stringify(result)).not.toMatch(/private-key|apiKey/);
+    await expect(store.getSecret(profileId)).resolves.toEqual({ apiKey: "private-key" });
+  });
+
+  it("does not expose an independent credential delete path", () => {
+    const store = new HelperCredentialStore(
+      new MemoryStateTransport() as unknown as TransportRpcClient,
     );
-    expect(nativeSource).toContain("fchmod(descriptor, 0o600)");
+    expect(store).not.toHaveProperty("deleteSecret");
   });
 
-  it("round-trips one write-only API key without returning mutable references", async () => {
-    const transport = new MemoryCredentialTransport();
-    const store = new HelperCredentialStore(transport as unknown as TransportRpcClient);
+  it("exposes Profile state with only a credentialConfigured projection", async () => {
+    const transport = new MemoryStateTransport();
+    transport.values.set(profileId, { apiKey: "private-key" });
+    transport.snapshot.credentialConfigured[profileId] = true;
+    const store = new HelperProfileStateStore(transport as unknown as TransportRpcClient);
 
-    await store.setSecret(firstProfile, { apiKey: "private-key" });
-    const loaded = await store.getSecret(firstProfile);
-    expect(loaded).toEqual({ apiKey: "private-key" });
+    const result = await store.read();
+    expect(result.credentialConfigured).toEqual({ [profileId]: true });
+    expect(JSON.stringify(result)).not.toMatch(/apiKey|private-key/);
+  });
+
+  it("returns cloned state and secret values", async () => {
+    const transport = new MemoryStateTransport();
+    const credentialStore = new HelperCredentialStore(transport as unknown as TransportRpcClient);
+    await credentialStore.setSecret(profileId, { apiKey: "private-key" }, credentialOptions());
+    const loaded = await credentialStore.getSecret(profileId);
     loaded!.apiKey = "mutated";
-    await expect(store.getSecret(firstProfile)).resolves.toEqual({ apiKey: "private-key" });
-  });
+    await expect(credentialStore.getSecret(profileId)).resolves.toEqual({ apiKey: "private-key" });
 
-  it("deletes one profile credential without changing another", async () => {
-    const transport = new MemoryCredentialTransport();
-    const store = new HelperCredentialStore(transport as unknown as TransportRpcClient);
-    await store.setSecret(firstProfile, { apiKey: "first" });
-    await store.setSecret(secondProfile, { apiKey: "second" });
-
-    await store.deleteSecret(firstProfile);
-
-    await expect(store.getSecret(firstProfile)).resolves.toBeNull();
-    await expect(store.getSecret(secondProfile)).resolves.toEqual({ apiKey: "second" });
-    await expect(store.deleteSecret(firstProfile)).resolves.toBeUndefined();
+    const stateStore = new HelperProfileStateStore(transport as unknown as TransportRpcClient);
+    const first = await stateStore.read();
+    first.credentialConfigured[profileId] = false;
+    await expect(stateStore.read()).resolves.toMatchObject({
+      credentialConfigured: { [profileId]: true },
+    });
   });
 
   it("rejects unsupported fields, empty values and invalid profile IDs before persistence", async () => {
     const store = new HelperCredentialStore(
-      new MemoryCredentialTransport() as unknown as TransportRpcClient,
+      new MemoryStateTransport() as unknown as TransportRpcClient,
     );
-
-    await expect(store.setSecret("not-a-uuid", { apiKey: "private-key" })).rejects.toBeInstanceOf(
-      CredentialStoreError,
-    );
-    await expect(store.setSecret(firstProfile, { apiKey: "" })).rejects.toBeInstanceOf(
-      CredentialStoreError,
-    );
-    await expect(store.setSecret(firstProfile, { password: "private" })).rejects.toBeInstanceOf(
-      CredentialStoreError,
-    );
+    await expect(
+      store.setSecret("not-a-uuid", { apiKey: "private-key" }, credentialOptions()),
+    ).rejects.toBeInstanceOf(CredentialStoreError);
+    await expect(
+      store.setSecret(profileId, { apiKey: "" }, credentialOptions()),
+    ).rejects.toBeInstanceOf(CredentialStoreError);
+    await expect(
+      store.setSecret(profileId, { password: "private" }, credentialOptions()),
+    ).rejects.toBeInstanceOf(CredentialStoreError);
   });
 
-  it("returns a stable safe storage error without exposing transport details", async () => {
-    const transport = new MemoryCredentialTransport();
-    transport.fail = true;
+  it("preserves safe helper errors and hides other transport details", async () => {
+    const transport = new MemoryStateTransport();
     const store = new HelperCredentialStore(transport as unknown as TransportRpcClient);
-
-    await expect(store.setSecret(firstProfile, { apiKey: "private-key" })).rejects.toMatchObject({
-      code: "CREDENTIAL_STORE_UNAVAILABLE",
-    });
-    await expect(store.setSecret(firstProfile, { apiKey: "private-key" })).rejects.not.toThrow(
-      /private transport detail|private-key/,
-    );
-  });
-
-  it("preserves expired-helper classification so the UI does not blame the credential file", async () => {
-    const transport = new MemoryCredentialTransport();
     transport.helperUnavailable = true;
-    const store = new HelperCredentialStore(transport as unknown as TransportRpcClient);
-
-    await expect(store.getSecret(firstProfile)).rejects.toMatchObject({
+    await expect(store.getSecret(profileId)).rejects.toMatchObject({
       code: "HELPER_UNAVAILABLE",
-      category: "network",
       userAction: "RESTART_IINA",
     });
+    transport.helperUnavailable = false;
+    transport.fail = true;
+    await expect(
+      store.setSecret(profileId, { apiKey: "private-key" }, credentialOptions()),
+    ).rejects.toMatchObject({ code: "CREDENTIAL_STORE_UNAVAILABLE" });
+    await expect(
+      store.setSecret(profileId, { apiKey: "private-key" }, credentialOptions()),
+    ).rejects.not.toThrow(/private transport detail|private-key/);
   });
 });

@@ -26,6 +26,16 @@ describe("Global provider client progress routing", () => {
     const request = makeProviderRequest();
     const progress: unknown[] = [];
     const pending = client.attempt(request, (value) => progress.push(value));
+    expect(port.posted[0]).toMatchObject({
+      name: "provider:attempt",
+      data: {
+        payload: {
+          playerId: request.playerId,
+          authorityId: request.authorityId,
+          activationGeneration: request.activationGeneration,
+        },
+      },
+    });
 
     port.emit("provider:attempt-progress", {
       requestId: request.requestId,

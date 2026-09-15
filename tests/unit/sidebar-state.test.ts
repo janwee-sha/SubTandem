@@ -11,6 +11,95 @@ function createState() {
   ]);
 }
 
+describe("Sidebar Profile delete confirmation", () => {
+  it("freezes the exact visible target and ignores duplicate confirmation", () => {
+    const state = createState();
+
+    expect(
+      state.openDeleteConfirmation({
+        profileId: "deleted",
+        expectedRevision: 2,
+        displayName: "Delete me",
+      }),
+    ).toBe(true);
+    expect(state.snapshot.deleteConfirmation).toEqual({
+      profileId: "deleted",
+      expectedRevision: 2,
+      displayName: "Delete me",
+      phase: "confirming",
+      requestId: null,
+    });
+    expect(
+      state.openDeleteConfirmation({
+        profileId: "retained",
+        expectedRevision: 1,
+        displayName: "Retained",
+      }),
+    ).toBe(false);
+    expect(state.beginProfileDelete("delete-request")).toEqual({
+      profileId: "deleted",
+      expectedRevision: 2,
+      displayName: "Delete me",
+    });
+    expect(state.beginProfileDelete("duplicate-request")).toBeNull();
+  });
+
+  it("cancels without changing Profile, editing or Test state", () => {
+    const state = createState();
+    state.setProfileContext({ editingProfileId: "deleted" });
+    state.setProfileTest("deleted", { revision: 2, state: "passed" });
+    state.openDeleteConfirmation({
+      profileId: "deleted",
+      expectedRevision: 2,
+      displayName: "Delete me",
+    });
+
+    expect(state.cancelDeleteConfirmation()).toMatchObject({ profileId: "deleted" });
+    expect(state.snapshot.deleteConfirmation).toBeNull();
+    expect(state.snapshot.profiles.map((profile) => profile.profileId)).toEqual([
+      "deleted",
+      "retained",
+    ]);
+    expect(state.snapshot.editingProfileId).toBe("deleted");
+    expect(state.snapshot.profileTests.deleted).toEqual({ revision: 2, state: "passed" });
+  });
+
+  it("invalidates a frozen target instead of silently adopting a newer revision", () => {
+    const state = createState();
+    state.openDeleteConfirmation({
+      profileId: "deleted",
+      expectedRevision: 2,
+      displayName: "Delete me",
+    });
+
+    state.applyProfiles([
+      { profileId: "deleted", revision: 3 },
+      { profileId: "retained", revision: 1 },
+    ]);
+
+    expect(state.snapshot.deleteConfirmation).toBeNull();
+    expect(state.beginProfileDelete("stale-request")).toBeNull();
+  });
+
+  it("closes a failed submission while retaining every business state", () => {
+    const state = createState();
+    state.setProfileContext({ editingProfileId: "deleted" });
+    state.setProfileTest("deleted", { revision: 2, state: "passed" });
+    state.openDeleteConfirmation({
+      profileId: "deleted",
+      expectedRevision: 2,
+      displayName: "Delete me",
+    });
+    state.beginProfileDelete("delete-request");
+
+    expect(state.finishProfileDeleteFailure("delete-request")).toBe(true);
+    expect(state.snapshot.deleteConfirmation).toBeNull();
+    expect(state.snapshot.profiles.map((profile) => profile.profileId)).toContain("deleted");
+    expect(state.snapshot.editingProfileId).toBe("deleted");
+    expect(state.snapshot.profileTests.deleted).toEqual({ revision: 2, state: "passed" });
+  });
+});
+
 describe("Sidebar authoritative profile deletion", () => {
   it("filters immediately, records a tombstone and clears every matching transient state", () => {
     const state = createState();
@@ -727,21 +816,21 @@ describe("Sidebar model catalog state", () => {
     const state = createState();
     state.beginOperation(
       {
-        requestId: "select-request",
+        requestId: "activation-request",
         regionId: "profile-row:retained",
-        actionId: "select",
+        actionId: "activation",
         profileId: "retained",
       },
-      "Selecting…",
+      "Enabling…",
     );
-    state.finishOperation("select-request", "success", "Profile selected for translation.");
+    state.finishOperation("activation-request", "success", "Profile enabled for translation.");
 
     state.setModelRefreshState("busy", "Refreshing models…");
     state.setModelRefreshState("success", "2 models available.");
 
     expect(state.snapshot.activeFeedback).toMatchObject({
-      requestId: "select-request",
-      message: "Profile selected for translation.",
+      requestId: "activation-request",
+      message: "Profile enabled for translation.",
     });
     expect(state.snapshot.modelControl).toMatchObject({
       refreshState: "success",
@@ -873,7 +962,7 @@ describe("Sidebar two-stage Profile Update", () => {
       expect(state.snapshot.pendingProfileSave?.selectionInvalidated).toBe(true);
 
       expect(state.completeProfileSave("save-request", "Profile saved.")).toBe(
-        "Profile updated. Select it again for translation.",
+        "Profile updated. Enable it when you are ready.",
       );
       expect(state.snapshot.pendingProfileSave).toBeNull();
     },
@@ -983,5 +1072,135 @@ describe("Sidebar translation position state", () => {
       committedPosition: 25,
       feedback: "error",
     });
+  });
+});
+
+describe("Sidebar confirmed Profile activation", () => {
+  const profiles = [
+    {
+      profileId: "profile-a",
+      revision: 1,
+      displayName: "A",
+      kind: "openai",
+      endpoint: "https://a.example/v1",
+      endpointFingerprint: "fingerprint-a",
+      proxyMode: "direct",
+      model: "model-a",
+      credentialConfigured: false,
+    },
+    {
+      profileId: "profile-b",
+      revision: 1,
+      displayName: "B",
+      kind: "openai",
+      endpoint: "https://b.example/v1",
+      endpointFingerprint: "fingerprint-b",
+      proxyMode: "direct",
+      model: "model-b",
+      credentialConfigured: false,
+    },
+  ];
+  const authority = (stateVersion: number, profileId: string | null = "profile-a") => ({
+    authorityId: "authority-1",
+    stateVersion,
+    ready: true,
+    activationGeneration: stateVersion,
+    activation: profileId
+      ? {
+          profileId,
+          profileRevision: 1,
+          kind: "openai",
+          endpointFingerprint: `fingerprint-${profileId.at(-1)}`,
+          credentialConfigured: false,
+        }
+      : null,
+    profiles,
+  });
+
+  it("derives checked state from confirmed authority and disables input while busy", () => {
+    const state = createState();
+    expect(state.applyProfileAuthority(authority(1))).toBe(true);
+    expect(state.profileActivationView("profile-a")).toMatchObject({
+      checked: true,
+      disabled: false,
+      accessibleName: "Enable A",
+    });
+    expect(state.beginProfileActivation("activation-1", "profile-b", true)).toBe(true);
+    expect(state.profileActivationView("profile-b")).toMatchObject({
+      checked: false,
+      disabled: true,
+      busy: true,
+    });
+    expect(state.profileActivationView("profile-a").checked).toBe(true);
+  });
+
+  it("does not let a receipt bypass authority version gating", () => {
+    const state = createState();
+    state.applyProfileAuthority(authority(3));
+    state.beginProfileActivation("activation-1", "profile-b", true);
+    expect(
+      state.finishProfileActivation({
+        requestId: "activation-1",
+        outcome: "changed",
+        authority: authority(2, "profile-b"),
+      }),
+    ).toMatchObject({ accepted: true, authorityAccepted: false });
+    expect(state.profileActivationView("profile-a").checked).toBe(true);
+    expect(state.profileActivationView("profile-b").checked).toBe(false);
+  });
+
+  it("keeps failures associated with the initiating switch and leaves unchanged silent", () => {
+    const state = createState();
+    state.applyProfileAuthority(authority(1));
+    state.beginProfileActivation("activation-failed", "profile-b", true);
+    state.finishProfileActivation({
+      requestId: "activation-failed",
+      outcome: "failed",
+      authority: authority(1),
+      error: { code: "PROFILE_STATE_CONFLICT", userAction: "NONE" },
+    });
+    expect(state.profileActivationView("profile-b").error).toMatch(/could not/i);
+    state.beginProfileActivation("activation-unchanged", "profile-a", false);
+    expect(
+      state.finishProfileActivation({
+        requestId: "activation-unchanged",
+        outcome: "unchanged",
+        authority: authority(1),
+      }).announce,
+    ).toBe(false);
+  });
+
+  it("reports restoration readiness without allowing activation requests", () => {
+    const state = createState();
+    state.applyProfileAuthority({ ...authority(1, null), ready: false });
+    expect(state.profileActivationView("profile-a")).toMatchObject({
+      checked: false,
+      disabled: true,
+      readinessMessage: expect.stringMatching(/restor|confirm|storage/i),
+    });
+    expect(state.beginProfileActivation("activation-1", "profile-a", true)).toBe(false);
+  });
+});
+
+describe("Sidebar Profile editing identity", () => {
+  it("keeps one editing identity, advances context only on switches and stays independent of activation", () => {
+    const state = createState();
+    expect(state.activateProfileEditor("retained")).toEqual({
+      changed: true,
+      discardedProfileId: null,
+    });
+    const firstContextVersion = state.snapshot.profileEditorContextVersion;
+    expect(state.activateProfileEditor("retained")).toEqual({
+      changed: false,
+      discardedProfileId: null,
+    });
+    expect(state.snapshot.profileEditorContextVersion).toBe(firstContextVersion);
+    expect(state.activateProfileEditor("deleted")).toEqual({
+      changed: true,
+      discardedProfileId: "retained",
+    });
+    expect(state.snapshot.editingProfileId).toBe("deleted");
+    expect(state.snapshot.profileEditorContextVersion).toBe(firstContextVersion + 1);
+    expect(state.snapshot.profileAuthority).toBeNull();
   });
 });

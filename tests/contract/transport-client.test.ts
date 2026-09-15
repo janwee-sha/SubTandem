@@ -9,6 +9,7 @@ import {
   IinaLocalHttpBridge,
 } from "../../src/adapters/iina/provider-transport.js";
 import {
+  TRANSPORT_RPC_ERROR_CODES,
   TransportClient,
   TransportRpcError,
   type LocalHttpBridge,
@@ -29,17 +30,42 @@ class FakeBridge implements LocalHttpBridge {
         action?: string;
         profileId?: string;
         fields?: Record<string, string>;
+        commitId?: string;
+        expectedStoreRevision?: number;
+        expectedProfileRevision?: number;
       };
       if (request.action === "write" && request.profileId && request.fields) {
         this.credentials.set(request.profileId, { ...request.fields });
-        return { state: "saved" } as T;
+        return {
+          state: "committed",
+          initialized: true,
+          storeRevision: 2,
+          lastCommit: {
+            commitId: request.commitId,
+            operation: "credential-write",
+            baseRevision: request.expectedStoreRevision,
+            requestDigest: "safe",
+          },
+          profileState: {
+            profiles: [
+              {
+                profileId: request.profileId,
+                revision: request.expectedProfileRevision,
+                displayName: "A",
+                kind: "openai",
+                endpoint: "https://example.test/v1",
+                endpointFingerprint: "fingerprint",
+                proxyMode: "direct",
+                model: "model-a",
+              },
+            ],
+            activation: null,
+          },
+          credentialConfigured: { [request.profileId]: true },
+        } as T;
       }
       if (request.action === "read" && request.profileId) {
         return { fields: this.credentials.get(request.profileId) ?? null } as T;
-      }
-      if (request.action === "delete" && request.profileId) {
-        this.credentials.delete(request.profileId);
-        return { state: "deleted" } as T;
       }
     }
     if (path === "/v1/cancel") return { state: "cancelled" } as T;
@@ -55,6 +81,11 @@ class FakeBridge implements LocalHttpBridge {
 }
 
 describe("transport helper client", () => {
+  it("declares non-sensitive Profile state conflict and validation errors", () => {
+    expect(TRANSPORT_RPC_ERROR_CODES).toEqual(
+      expect.arrayContaining(["profile-state-conflict", "invalid-profile-state"]),
+    );
+  });
   it("accepts only one exact framed ready object", () => {
     expect(
       parseReadyFrame('{"type":"ready","port":49152,"token":"abcDEF123_-","protocolVersion":1}\n'),
@@ -169,11 +200,16 @@ describe("transport helper client", () => {
     await expect(client.cancel("job-1")).resolves.toBe("cancelled");
     const profileId = "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae";
     await expect(
-      client.credentialWrite(profileId, { apiKey: "private-key" }),
-    ).resolves.toBeUndefined();
+      client.credentialWrite(
+        profileId,
+        { apiKey: "private-key" },
+        "00000000-0000-4000-8000-000000000001",
+        1,
+        1,
+      ),
+    ).resolves.toMatchObject({ state: "committed", storeRevision: 2 });
     await expect(client.credentialRead(profileId)).resolves.toEqual({ apiKey: "private-key" });
-    await expect(client.credentialDelete(profileId)).resolves.toBeUndefined();
-    await expect(client.credentialRead(profileId)).resolves.toBeNull();
+    expect(client).not.toHaveProperty("credentialDelete");
     expect(bridge.calls.every((call) => call.token === "session-token")).toBe(true);
     expect(bridge.calls.every((call) => call.url.startsWith("http://127.0.0.1:49152/"))).toBe(true);
   });
