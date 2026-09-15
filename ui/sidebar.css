@@ -22,6 +22,10 @@
   --success: #1f8f52;
   --warning: #b66a00;
   --danger: #c72d32;
+  --destructive-fill: #c72d32;
+  --profile-selection: #0058d0;
+  --profile-selection-switch: #75bbff;
+  --profile-selection-control: #00449d;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -39,6 +43,10 @@
     --success: #45c978;
     --warning: #f2a33a;
     --danger: #ff6961;
+    --destructive-fill: #c93432;
+    --profile-selection: #064b9f;
+    --profile-selection-switch: #75bbff;
+    --profile-selection-control: #073571;
   }
 }
 
@@ -260,7 +268,26 @@ button.secondary {
 }
 
 .profile.is-editing {
-  box-shadow: inset 2px 0 var(--accent);
+  --label-primary: white;
+  --label-secondary: white;
+  --label-tertiary: white;
+  --success: white;
+  --danger: white;
+  --secondary-control-surface: var(--profile-selection-control);
+  color: var(--label-primary);
+  background: var(--profile-selection);
+}
+
+.profile.is-editing .profile-activation input:checked {
+  background: var(--profile-selection-switch);
+}
+
+.profile.is-editing .operation-status {
+  color: var(--label-primary);
+}
+
+.profile.is-editing :focus-visible {
+  outline-color: var(--label-primary);
 }
 
 .profile-heading {
@@ -318,7 +345,7 @@ button.secondary {
   white-space: nowrap;
 }
 
-.profile span,
+.profile-details > span,
 .empty {
   color: var(--label-secondary);
   font-size: 11px;
@@ -350,24 +377,30 @@ button.secondary {
 }
 
 .profile-actions button {
+  display: grid;
+  place-items: center;
   width: auto;
-  min-width: 48px;
+  min-width: 62px;
+  height: 26px;
   min-height: 26px;
   padding-inline: 8px;
   font-size: 11px;
+  line-height: 14px;
+  white-space: nowrap;
 }
 
-.profile-actions .test-button {
-  display: grid;
-  min-width: 62px;
+.profile-actions button:active:not(:disabled) {
+  transform: none;
 }
 
-.test-button-label,
-.test-button-placeholder {
+.profile-action-label,
+.profile-action-placeholder {
   grid-area: 1 / 1;
+  font: inherit;
+  color: inherit;
 }
 
-.test-button-placeholder {
+.profile-action-placeholder {
   visibility: hidden;
 }
 
@@ -570,7 +603,8 @@ button.secondary {
 }
 
 .profile-actions .danger {
-  color: var(--danger);
+  color: white;
+  background: var(--destructive-fill);
 }
 
 :focus-visible {
@@ -1016,7 +1050,11 @@ dd {
   }
 
   .profile.is-editing {
-    box-shadow: inset 3px 0 var(--accent);
+    box-shadow: inset 0 0 0 1px var(--label-primary);
+  }
+
+  .profile.is-editing button.secondary {
+    outline-color: var(--label-primary);
   }
 
   .profile-delete-dialog {
@@ -1054,13 +1092,24 @@ dd {
   }
 
   .profile.is-editing {
-    box-shadow: inset 3px 0 Highlight;
+    --label-primary: HighlightText;
+    --label-secondary: HighlightText;
+    --label-tertiary: HighlightText;
+    --success: HighlightText;
+    --danger: HighlightText;
+    background: Highlight;
+  }
+
+  .profile.is-editing button.secondary {
+    color: ButtonText;
+    background: ButtonFace;
   }
 
   .profile-delete-dialog {
     border: 2px solid CanvasText;
   }
 
+  .profile-actions .danger,
   .profile-delete-actions .danger {
     color: HighlightText;
     background: Highlight;

@@ -46,9 +46,75 @@ describe("IINA sidebar bundle contract", () => {
     expect(html.indexOf('id="confirm-profile-delete"')).toBeLessThan(
       html.indexOf('id="cancel-profile-delete"'),
     );
-    expect(sidebarSource).toContain("test-button-placeholder");
+    expect(sidebarSource).toContain("profile-action-placeholder");
     expect(sidebarSource).toContain("Testing…");
-    expect(sidebarCss).toContain(".test-button-placeholder");
+    expect(sidebarSource).toContain("Deleting…");
+    expect(sidebarCss).toContain(".profile-action-placeholder");
+  });
+
+  it("centers both Profile actions in fixed-height slots with a destructive filled Delete", () => {
+    const actionRule = sidebarCss.match(/\.profile-actions button\s*{[^}]+}/)?.[0] ?? "";
+    expect(actionRule).toContain("display: grid");
+    expect(actionRule).toContain("place-items: center");
+    expect(actionRule).toMatch(/\n\s*height: 26px;/);
+    expect(actionRule).toContain("line-height: 14px");
+    expect(actionRule).toContain("white-space: nowrap");
+    expect(sidebarCss).not.toMatch(/\.profile span\s*[,{]/);
+    expect(sidebarCss).toMatch(
+      /\.profile-action-label,\s*\.profile-action-placeholder\s*{[^}]*grid-area: 1 \/ 1/,
+    );
+    expect(sidebarCss).toMatch(/\.profile-action-placeholder\s*{[^}]*visibility: hidden/);
+    expect(sidebarCss).toMatch(
+      /\.profile-actions \.danger\s*{[^}]*color: white;[^}]*background: var\(--destructive-fill\)/,
+    );
+  });
+
+  it("fills only the editing Profile with readable selection colors and a distinct enabled switch", () => {
+    const editing = sidebarCss.match(/\.profile\.is-editing\s*{[^}]+}/)?.[0] ?? "";
+    for (const token of [
+      "label-primary",
+      "label-secondary",
+      "label-tertiary",
+      "success",
+      "danger",
+    ]) {
+      expect(editing).toContain(`--${token}: white`);
+    }
+    expect(editing).toContain("background: var(--profile-selection)");
+    expect(sidebarCss).toMatch(
+      /\.profile\.is-editing \.profile-activation input:checked\s*{[^}]*background: var\(--profile-selection-switch\)/,
+    );
+    expect(sidebarCss).toMatch(
+      /\.profile\.is-editing \.operation-status\s*{[^}]*color: var\(--label-primary\)/,
+    );
+    expect(sidebarCss).toMatch(
+      /\.profile\.is-editing :focus-visible\s*{[^}]*outline-color: var\(--label-primary\)/,
+    );
+    expect(sidebarCss).toMatch(
+      /@media \(forced-colors: active\)[\s\S]*?\.profile\.is-editing\s*{[^}]*--label-primary: HighlightText;[^}]*background: Highlight/,
+    );
+    expect(sidebarCss).toMatch(/@media \(prefers-reduced-transparency: reduce\)/);
+    expect(sidebarCss).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
+
+    const luminance = (hex: string) => {
+      const channels = hex
+        .match(/\w\w/g)!
+        .map((value) => parseInt(value, 16) / 255)
+        .map((value) => (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4));
+      return channels[0]! * 0.2126 + channels[1]! * 0.7152 + channels[2]! * 0.0722;
+    };
+    const palettes = [
+      ...sidebarCss.matchAll(
+        /--profile-selection: #(\w{6});\s*--profile-selection-switch: #(\w{6});/g,
+      ),
+    ];
+    expect(palettes).toHaveLength(2);
+    for (const [, background, toggle] of palettes) {
+      expect(1.05 / (luminance(background!) + 0.05)).toBeGreaterThanOrEqual(4.5);
+      expect((luminance(toggle!) + 0.05) / (luminance(background!) + 0.05)).toBeGreaterThanOrEqual(
+        3,
+      );
+    }
   });
 
   it("uses host-like native sidebar sections with two quiet grouped surfaces", () => {

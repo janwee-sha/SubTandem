@@ -600,7 +600,7 @@ function setActionBusy(
   if (busy) control.setAttribute("aria-busy", "true");
   else control.removeAttribute("aria-busy");
   if (control instanceof HTMLButtonElement) {
-    const label = control.querySelector<HTMLElement>(".test-button-label");
+    const label = control.querySelector<HTMLElement>(".profile-action-label");
     if (label) label.textContent = busy ? busyLabel : idleLabelForAction(actionId);
     else control.textContent = busy ? busyLabel : idleLabelForAction(actionId);
   }
@@ -1023,6 +1023,7 @@ profileName.addEventListener("input", () => {
 
 function loadEditor(profile: ProfileView, preservePendingSave = false): void {
   const activation = sidebarState.activateProfileEditor(profile.profileId);
+  renderProfileEditing();
   if (
     !activation.changed &&
     editingProfile?.profileId === profile.profileId &&
@@ -1085,6 +1086,7 @@ function resetEditor(): void {
   draftCredentialEpoch += 1;
   providerKey.value = "";
   sidebarState.setProfileContext({ editingProfileId: null, credentialDisplayProfileId: null });
+  renderProfileEditing();
   sidebarState.resetProfileName(selectedServiceTypeLabel());
   profileName.value = sidebarState.snapshot.profileName.value;
   providerProxyMode.value = "system";
@@ -1784,6 +1786,16 @@ window.iina?.onMessage("operation:error", (raw: unknown) => {
   if (typeof result.requestId === "string") sidebarState.cancelProfileSave(result.requestId);
 });
 
+function renderProfileEditing(): void {
+  for (const entry of Array.from(
+    profilesElement.querySelectorAll<HTMLElement>(".profile-details"),
+  )) {
+    const editing = entry.dataset.profileId === sidebarState.snapshot.editingProfileId;
+    entry.closest<HTMLElement>(".profile")?.classList.toggle("is-editing", editing);
+    entry.setAttribute("aria-pressed", String(editing));
+  }
+}
+
 function renderProfileActivationControls(): void {
   for (const input of Array.from(
     profilesElement.querySelectorAll<HTMLInputElement>('input[data-action="activation"]'),
@@ -1818,7 +1830,7 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
   for (const profile of viewProfiles) {
     profiles.set(profile.profileId, profile);
     const article = document.createElement("article");
-    article.className = `profile${sidebarState.snapshot.editingProfileId === profile.profileId ? " is-editing" : ""}`;
+    article.className = "profile";
     article.innerHTML = `<div class="profile-heading"><div class="profile-details"><strong></strong><span class="profile-summary"></span><code></code></div><label class="switch profile-activation"><input type="checkbox"></label></div><div class="profile-actions"></div>`;
     article.querySelector("strong")!.textContent = profile.displayName;
     const editEntry = article.querySelector<HTMLElement>(".profile-details")!;
@@ -1853,14 +1865,11 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
     ] as const) {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = `secondary${action === "test" ? " test-button" : " danger"}`;
+      button.className = `secondary${action === "delete" ? " danger" : ""}`;
       button.dataset.action = action;
       button.dataset.profileId = profile.profileId;
-      if (action === "test") {
-        button.innerHTML = `<span class="test-button-label">${label}</span><span class="test-button-placeholder" aria-hidden="true">Testing…</span>`;
-      } else {
-        button.textContent = label;
-      }
+      const busyLabel = action === "test" ? "Testing…" : "Deleting…";
+      button.innerHTML = `<span class="profile-action-label">${label}</span><span class="profile-action-placeholder" aria-hidden="true">${busyLabel}</span>`;
       actions.append(button);
     }
     const rowStatus = document.createElement("p");
@@ -1884,6 +1893,7 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
       );
   }
   renderActiveFeedback();
+  renderProfileEditing();
   renderProfileActivationControls();
   renderDeleteDialog();
 }
