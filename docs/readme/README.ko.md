@@ -34,7 +34,7 @@ SubTandem는 원본 자막을 그대로 유지하면서 선택한 위치에 번�
 - **번역 서비스 선택:** OpenAI Chat Completions 또는 Claude Messages와 호환되는 endpoint, DeepSeek, 로컬/원격 Ollama 서버를 사용할 수 있습니다.
 - **재생 우선 동작:** 번역 작업 때문에 영상이 일시 정지되거나 원본 자막이 숨겨지지 않습니다.
 - **제한된 요청:** 재생 위치 주변의 자막만 번역하고 플레이어 창마다 동시 작업을 제한하며, 성공한 결과는 현재 영상 세션에만 캐시합니다.
-- **여러 Profile:** 번역 서비스 Profile을 저장하고 테스트한 뒤, 자막 텍스트를 받을 정확한 endpoint를 명시적으로 선택할 수 있습니다.
+- **여러 Profile:** Profile을 저장하고 테스트하며, 비컨트롤 영역을 클릭해 편집할 수 있습니다. 스위치로 모든 창과 재시작 후에도 유지되는 정확한 endpoint 하나를 전역 활성화합니다.
 - **프록시 제어:** Profile별로 macOS 프록시 설정을 사용하거나 직접 연결을 선택할 수 있습니다.
 
 ## ✅ 요구 사항
@@ -101,11 +101,11 @@ IINA 개발 버전에서는 사용 가능한 플러그인 목록에서 SubTandem
 1. 로컬 영상을 열고 지원되는 내장 텍스트 자막 또는 외부 SRT/ASS를 IINA 주 자막으로 선택합니다.
 2. **Subtitle**에서 정확한 대상 언어를 선택합니다. 선택한 번역 Provider가 번역 요청 안에서 cue별 원본 언어를 이해하므로 원본 언어를 직접 확인할 필요가 없습니다.
 3. **Translation service**에서 OpenAI, Claude, DeepSeek 또는 Ollama Profile을 만듭니다. 인증이 필요하면 API key를 입력한 뒤 모델 목록을 수동으로 새로 고칩니다. 반환된 모델을 선택하거나 정확한 사용자 지정 Model ID를 입력합니다.
-4. Profile을 저장하고 테스트한 다음 **Select**를 클릭합니다. Profile 선택은 화면에 표시된 endpoint로 재생 위치 주변의 자막 텍스트를 전송하도록 SubTandem에 명시적으로 허용하는 동작입니다.
+4. Profile을 저장하고 테스트한 다음 해당 스위치를 켭니다. 정확한 revision이 모든 창과 재시작 후에도 전역으로 활성화됩니다. Save와 Test만으로는 활성화되지 않으며 **Translate**는 별도 스위치입니다.
 5. **Translate**를 켭니다. 원본 자막은 IINA에서 계속 표시되고 번역된 cue는 SubTandem 오버레이에 나타납니다. **Subtitle**의 **Position**으로 오버레이를 위쪽(`0`)에서 아래쪽(`100`)까지 옮길 수 있습니다.
 6. **Font**, **Border**, **Background** 그룹에서 8개 텍스트 스타일 값을 선택합니다. 색상 프리셋은 즉시 저장되며, **Show Colors…**는 macOS 색상 패널을 엽니다. 변경하지 않고 닫으면 이전 값을 유지합니다.
 
-Endpoint, 모델, API key 또는 네트워크 경로가 바뀌면 Profile을 다시 저장하고 번역 전에 다시 선택해야 합니다.
+Profile의 비컨트롤 영역을 클릭하면 편집할 수 있습니다. Endpoint, 모델, API key 또는 네트워크 경로가 바뀌면 저장하고 테스트한 뒤 번역 전에 새 revision을 활성화하세요.
 
 ## ⚙️ 번역 서비스
 
@@ -122,7 +122,7 @@ Endpoint, 모델, API key 또는 네트워크 경로가 바뀌면 Profile을 다
 - 기본 API root는 `https://api.anthropic.com`입니다. 이 root 또는 Claude 호환 root를 입력하고 완전한 `/v1/messages`나 `/v1/models` URL은 입력하지 마세요. 원격 endpoint는 HTTPS가 필요합니다.
 - SubTandem는 `/v1/messages`의 비스트리밍 네이티브 Messages와 `/v1/models` 모델 목록을 사용합니다. 호환 서비스는 이 route와 Claude 인증/version header를 지원해야 합니다.
 - API key는 필수입니다. 새 Profile은 수동 새로 고침 전에 key를 입력해야 하며 자동 새로 고침은 저장되지 않은 key를 보내지 않습니다. 반환된 모델 또는 정확한 사용자 지정 Model ID를 선택하세요.
-- **Save → Test → Select** 순서로 진행하세요. Save와 Test는 자막 텍스트를 승인하지 않으며 Select 전에는 자막 없는 모델 목록만 endpoint에 도달할 수 있습니다.
+- **Save → Test → Profile 스위치 켜기** 순서로 진행하세요. Save와 Test는 자막 텍스트를 승인하지 않으며 활성화 전에는 자막 없는 모델 목록만 endpoint에 도달할 수 있습니다.
 - Claude는 Messages 요청 요금을 부과하고 인증, 모델 접근, spend limit, 할당량, rate limit 또는 거부를 적용할 수 있습니다. 저장된 key는 쓰기 전용입니다.
 
 ### DeepSeek
@@ -130,7 +130,7 @@ Endpoint, 모델, API key 또는 네트워크 경로가 바뀌면 Profile을 다
 - 고정 기본 API root는 `https://api.deepseek.com`입니다. 번역에는 `/chat/completions`, 모델 목록에는 `/models`를 덧붙입니다.
 - 모델 목록을 새로 고치거나 정확한 사용자 지정 Model ID를 입력합니다. SubTandem는 DeepSeek 모델을 미리 선택하거나 추천 또는 추측하지 않습니다.
 - 공식 서비스에는 사용 가능한 API key가 필요합니다. 저장 후 입력란은 쓰기 전용이며 key를 다시 표시하지 않습니다.
-- **Save**와 **Test**는 Profile을 선택하거나 자막 텍스트 전송을 승인하지 않습니다. 명시적으로 **Select**해야 하며, 그전에는 자막 없는 모델 목록 요청만 기본 root에 도달할 수 있습니다.
+- **Save**와 **Test**는 Profile을 활성화하거나 자막 텍스트 전송을 승인하지 않습니다. Profile 스위치를 명시적으로 켜야 하며, 그전에는 자막 없는 모델 목록 요청만 기본 root에 도달할 수 있습니다.
 - DeepSeek는 요청 요금을 부과하고 잔액, 할당량, rate limit을 적용할 수 있습니다.
 
 ### Ollama
@@ -146,9 +146,9 @@ Endpoint, 모델, API key 또는 네트워크 경로가 바뀌면 Profile을 다
 
 - SubTandem는 명시적으로 선택한 Profile에만 재생 위치 주변의 자막 텍스트, 정확한 대상 언어, 불투명한 cue ID와 소량의 인접 문맥을 보냅니다. Provider는 같은 번역 요청 안에서 원본 언어를 이해합니다. 영상이나 오디오 내용은 보내지 않습니다.
 - `video-overlay` 권한은 현재 번역을 로컬 비대화형 Overlay에 표시하는 데만 사용됩니다. Overlay는 입력이나 영상 위 드래그를 받지 않고 네트워크 또는 WebView 저장소를 사용하지 않으며 재생 세션과 함께 지워집니다.
-- OpenAI, Claude, DeepSeek 및 Ollama API key는 플러그인 전용 `credentials.json` 파일에 로컬 평문으로 저장됩니다. 디렉터리는 `0700`, 파일은 `0600` 권한을 사용합니다. Key는 IINA preferences, 로그, 진단, Sidebar 상태 또는 플러그인 패키지에 기록되지 않으며 저장 후 다시 표시되지 않습니다.
+- 플러그인 전용 `credentials.json`은 Profile, 전역 활성화 Profile 참조, OpenAI, Claude, DeepSeek 및 Ollama API key를 원자적으로 교체되는 하나의 로컬 문서에 저장합니다. Key는 로컬 평문이며 디렉터리는 `0700`, 파일은 `0600` 권한을 사용합니다. Key는 IINA preferences, 로그, 진단, Sidebar 상태 또는 패키지에 기록되지 않고 저장 후 다시 표시되지 않습니다.
 - 파일 권한은 다른 macOS 계정과 일반적인 우발적 접근으로부터 key를 보호하지만, 현재 macOS 사용자 권한으로 파일을 읽을 수 있는 프로세스로부터는 보호하지 못합니다.
-- 번들 transport helper는 임시 `127.0.0.1` 포트에서만 수신합니다. 저장했거나 편집 중인 endpoint에는 기본 Claude root `https://api.anthropic.com`와 DeepSeek root `https://api.deepseek.com`가 포함되며 Select 전에 자막 없는 모델 목록 요청을 받을 수 있습니다. 선택한 Profile revision만 번역용 자막 텍스트를 받습니다.
+- 번들 transport helper는 임시 `127.0.0.1` 포트에서만 수신합니다. 저장했거나 편집 중인 endpoint에는 기본 Claude root `https://api.anthropic.com`와 DeepSeek root `https://api.deepseek.com`가 포함되며 활성화 전에 자막 없는 모델 목록 요청을 받을 수 있습니다. 전역 활성화된 Profile revision만 번역용 자막 텍스트를 받습니다.
 - 번역 결과는 현재 영상 세션에만 캐시되며 영상 변경, 재생 종료 또는 창 닫기 시 삭제됩니다.
 - 짧은 트랙, 원본 언어를 알 수 없는 텍스트, 정확한 대상 언어와 이미 같은 텍스트도 선택한 Provider로 전송되어 비용이 발생할 수 있습니다. Provider 자체 정책이 적용되며 묶음 처리와 세션 캐시는 호출 횟수를 줄이지만 최대 비용을 보장하지 않습니다.
 
@@ -161,8 +161,8 @@ SubTandem는 오디오 전사, 이미지 기반 자막 OCR/추출, 원격 미디
 - **Select a supported text subtitle:** 로컬 내장 SubRip/ASS/SSA/`mov_text` 또는 외부 SRT/ASS를 주 자막으로 선택하세요. 이미지 기반 및 원격 내장 자막은 지원하지 않으며, 상태 안내에 따라 다시 선택하거나 준비 실패 후 Retry하세요.
 - **Translation service unavailable:** Profile을 테스트하고 endpoint, 정확한 Model ID, API key, 네트워크 경로 또는 Ollama 프로세스를 확인하세요. Claude는 API root, Messages 호환성, 인증/version, 모델 접근, spend limit, 할당량, rate limit과 거부를 확인하고, DeepSeek는 잔액, 할당량, rate limit과 고정 API route를 확인하세요. 영상과 원본 자막은 계속 재생됩니다.
 - **Credential could not be saved:** 불완전한 개발 사본 대신 Release 패키지를 설치하고 플러그인 데이터 디렉터리가 쓰기 가능한지 확인한 뒤 IINA를 완전히 종료하고 다시 시작하세요.
-- **번역문이 표시되지 않음:** Profile을 테스트하고 선택했는지, **Translate**가 켜져 있는지, 재생 위치가 번역된 cue의 시간 범위 안에 있는지 확인하세요.
-- **프록시가 서비스를 차단함:** 먼저 기본 macOS 프록시 경로를 사용하세요. 프록시가 서비스를 거부하면 해당 Profile을 **Connect directly**로 바꾸고 저장한 뒤 다시 Select/Test하세요.
+- **번역문이 표시되지 않음:** 대상 Profile 스위치와 **Translate**가 모두 켜져 있고 재생 위치가 번역된 cue의 시간 범위 안에 있는지 확인하세요.
+- **프록시가 서비스를 차단함:** 먼저 기본 macOS 프록시 경로를 사용하세요. 프록시가 서비스를 거부하면 해당 Profile을 **Connect directly**로 바꾸고 저장, 테스트한 뒤 새 revision을 활성화하세요.
 
 ## ☕ SubTandem 후원하기
 

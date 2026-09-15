@@ -19,7 +19,88 @@ describe("IINA sidebar bundle contract", () => {
     expect(html.indexOf("./sidebar-state.ts")).toBeLessThan(html.indexOf("./sidebar.ts"));
   });
 
-  it("uses host-like native sidebar sections with two quiet grouped surfaces", () => {
+  it("renders each Profile activation as a confirmed accessible switch", () => {
+    expect(sidebarSource).toContain('role = "switch"');
+    expect(sidebarSource).toContain("`Enable ${profile.displayName}`");
+    expect(sidebarSource).toMatch(/postMessage\(\s*"profile-activation:set"/);
+    expect(sidebarSource).not.toContain('postMessage("profile:select"');
+    expect(sidebarSource).not.toMatch(/\["select",[^\]]+\]/i);
+  });
+
+  it("uses the non-control Profile content as the pointer and keyboard edit entry", () => {
+    expect(sidebarSource).toContain("new ProfileCardInteractionCoordinator");
+    expect(sidebarSource).toContain("tabIndex = 0");
+    expect(sidebarSource).toContain("`Edit ${profile.displayName}`");
+    expect(sidebarSource).toContain("activateProfileEditor");
+    expect(sidebarSource).not.toMatch(/\["edit",\s*"Edit"\]/);
+    expect(sidebarCss).toContain(".profile.is-editing");
+  });
+
+  it("provides a local accessible delete confirmation layer and stable Test label slot", () => {
+    expect(html).toMatch(
+      /id="profile-delete-dialog"[\s\S]*?role="alertdialog"[\s\S]*?aria-modal="true"/,
+    );
+    expect(html).toContain('aria-labelledby="profile-delete-title"');
+    expect(html).toMatch(/aria-describedby="profile-delete-description(?: [^"]+)?"/);
+    expect(html).toMatch(/class="profile-delete-icon"[^>]*aria-hidden="true"/);
+    expect(html.indexOf('id="confirm-profile-delete"')).toBeLessThan(
+      html.indexOf('id="cancel-profile-delete"'),
+    );
+    expect(sidebarSource).toContain("profile-action-placeholder");
+    expect(sidebarSource).toContain("Testing…");
+    expect(sidebarSource).toContain("Deleting…");
+    expect(sidebarCss).toContain(".profile-action-placeholder");
+  });
+
+  it("centers both Profile actions in fixed-height slots with a destructive filled Delete", () => {
+    const actionRule = sidebarCss.match(/\.profile-actions button\s*{[^}]+}/)?.[0] ?? "";
+    expect(actionRule).toContain("display: grid");
+    expect(actionRule).toContain("place-items: center");
+    expect(actionRule).toMatch(/\n\s*height: 26px;/);
+    expect(actionRule).toContain("line-height: 14px");
+    expect(actionRule).toContain("white-space: nowrap");
+    expect(sidebarCss).not.toMatch(/\.profile span\s*[,{]/);
+    expect(sidebarCss).toMatch(
+      /\.profile-action-label,\s*\.profile-action-placeholder\s*{[^}]*grid-area: 1 \/ 1/,
+    );
+    expect(sidebarCss).toMatch(/\.profile-action-placeholder\s*{[^}]*visibility: hidden/);
+    expect(sidebarCss).toMatch(
+      /\.profile-actions \.danger\s*{[^}]*color: white;[^}]*background: var\(--destructive-fill\)/,
+    );
+  });
+
+  it("uses neutral editing surfaces while sharing the sidebar controls and focus style", () => {
+    const editing = sidebarCss.match(/\.profile\.is-editing\s*{[^}]+}/)?.[0] ?? "";
+    expect(sidebarCss).toContain("--profile-selection-strength: 10%");
+    expect(sidebarCss).toMatch(
+      /@media \(prefers-color-scheme: dark\)[\s\S]*?--profile-selection-strength: 14%/,
+    );
+    expect(sidebarCss).toMatch(
+      /--profile-selection-surface: color-mix\(\s*in srgb,\s*CanvasText var\(--profile-selection-strength\),\s*transparent\s*\)/,
+    );
+    expect(editing).toContain("border-radius: 6px");
+    expect(editing).toContain("border-top-color: transparent");
+    expect(sidebarCss).toMatch(
+      /\.profile\.is-editing \+ \.profile\s*{[^}]*border-top-color: transparent/,
+    );
+    expect(editing).toContain("background: var(--profile-selection-surface)");
+    expect(editing).toMatch(/--label-secondary: color-mix\([^;]+CanvasText/);
+    expect(editing).toMatch(/--label-tertiary: color-mix\([^;]+CanvasText/);
+    expect(editing).not.toMatch(/--(?:label-primary|success|danger):/);
+    expect(sidebarCss).not.toContain("--profile-selection-switch");
+    expect(sidebarCss).not.toContain("--profile-selection-control");
+    expect(sidebarCss).not.toMatch(/\.profile-activation input/);
+    expect(sidebarCss).not.toMatch(/\.profile\.is-editing[^{}]*:focus/);
+    expect(sidebarCss).not.toMatch(/\.profile\.is-editing button\[data-action="test"\]/);
+    expect(sidebarCss).not.toMatch(/\.profile\.is-editing \.operation-status\s*{/);
+    expect(sidebarCss).toMatch(
+      /@media \(forced-colors: active\)[\s\S]*?\.profile\.is-editing\s*{[^}]*--label-primary: HighlightText;[^}]*background: Highlight/,
+    );
+    expect(sidebarCss).toMatch(/@media \(prefers-reduced-transparency: reduce\)/);
+    expect(sidebarCss).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
+  });
+
+  it("keeps Profiles on the host surface and groups only the session status", () => {
     expect(html).not.toContain("IINA live translation");
     expect(html).toContain('<label class="setting-row">');
     expect(html).not.toContain('class="sidebar-header"');
@@ -28,9 +109,14 @@ describe("IINA sidebar bundle contract", () => {
     );
     expect(html.match(/class="sidebar-section/g)).toHaveLength(3);
     expect(html).not.toContain('class="card');
-    expect(html).toContain('id="profiles" class="profiles group-surface"');
+    expect(html).toContain('id="profiles" class="profiles"');
     expect(html).toContain('class="session-group group-surface"');
-    expect(html.match(/group-surface/g)).toHaveLength(2);
+    expect(html.match(/group-surface/g)).toHaveLength(1);
+    const profilesRule = sidebarCss.match(/\.profiles\s*{[^}]+}/)?.[0] ?? "";
+    expect(profilesRule).toContain("min-width: 0");
+    expect(profilesRule).not.toMatch(/background|border|box-shadow|overflow/);
+    const profileRule = sidebarCss.match(/\.profile\s*{[^}]+}/)?.[0] ?? "";
+    expect(profileRule).toContain("background: transparent");
     expect(sidebarCss).toMatch(/html,\s*body\s*{[\s\S]*?background: transparent/);
     expect(sidebarCss).toMatch(
       /\.sidebar-section\s*{[\s\S]*?width: 100%[\s\S]*?padding:[^;]*20px[\s\S]*?border-bottom: 1px solid var\(--separator\)/,
@@ -61,8 +147,8 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarCss).toMatch(
       /\.switch input:checked::after\s*{[\s\S]*?transform: translateX\(14px\)/,
     );
-    expect(sidebarCss).toContain("--accent: #007aff");
-    expect(sidebarCss).toContain("--accent: #0a84ff");
+    expect(sidebarCss).toContain("--accent: #3e92fc");
+    expect(sidebarCss).toContain("--accent: #3e7ce6");
     expect(sidebarCss).not.toContain("#6d5dfc");
     expect(sidebarCss).toContain("@media (prefers-color-scheme: dark)");
     expect(sidebarCss).toContain("@media (prefers-contrast: more)");
@@ -146,6 +232,8 @@ describe("IINA sidebar bundle contract", () => {
     const saveEnd = sidebarSource.indexOf('newProfileButton.addEventListener("click"', saveStart);
     const saveHandler = sidebarSource.slice(saveStart, saveEnd);
     expect(saveHandler.indexOf("if (!model)")).toBeLessThan(saveHandler.indexOf("beginOperation("));
+    expect(saveHandler).toContain("sidebarState.modelForSave()");
+    expect(sidebarSource).toContain("bindSubTandemModelControls");
   });
 
   it("uses the visible Service type as the savable default without a generic fallback", () => {
@@ -200,9 +288,9 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarSource).not.toContain("profileEditorStatus.textContent = `Editing");
   });
 
-  it("keeps selection consent separate from credential and connection verification", () => {
-    expect(sidebarSource).toContain("Profile selected for translation.");
-    expect(sidebarSource).not.toContain("Profile selected. Translation is authorized.");
+  it("keeps activation separate from credential and connection verification", () => {
+    expect(sidebarSource).toMatch(/postMessage\(\s*"profile-activation:set"/);
+    expect(sidebarSource).not.toContain("Profile selected for translation.");
     expect(sidebarSource).toContain("window.subtandemCredentialStatusMessage");
     expect(html).toContain("private local file (mode 0600)");
     expect(sidebarSource).toContain('type ProfileTestState = "not tested" | "passed" | "failed"');

@@ -12,6 +12,21 @@ afterEach(() => {
 });
 
 describe("package build preflight", () => {
+  it("keeps the package native allowlist limited to the three non-UI helpers", () => {
+    const pack = readFileSync(new URL("../../scripts/pack.sh", import.meta.url), "utf8");
+    const verify = readFileSync(
+      new URL("../../scripts/verify-package.sh", import.meta.url),
+      "utf8",
+    );
+
+    expect(pack).toContain("subtandem-transport");
+    expect(pack).toContain("subtandem-subtitle-extractor");
+    expect(pack).toContain("subtandem-style-picker");
+    expect(verify).toContain("EXPECTED_NATIVE");
+    expect(pack).not.toMatch(/dist\/native\/(?:dialog|alert|confirmation)/i);
+    expect(verify).not.toMatch(/dist\/native\/(?:dialog|alert|confirmation)/i);
+  });
+
   it.each(helpers)(
     "preserves staging and the last artifact when %s is missing",
     (missingHelper) => {

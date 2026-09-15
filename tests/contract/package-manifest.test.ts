@@ -11,15 +11,11 @@ describe("IINA package manifest", () => {
     expect(manifest.entry).toBe("dist/main.js");
     expect(manifest.globalEntry).toBe("dist/global.js");
     expect(manifest).not.toHaveProperty("global");
-    expect(manifest.permissions).toEqual([
-      "network-request",
-      "file-system",
-      "show-alert",
-      "video-overlay",
-    ]);
-    expect(manifest.version).toBe("0.1.4");
+    expect(manifest.permissions).toEqual(["network-request", "file-system", "video-overlay"]);
+    expect(manifest.permissionDescriptions).not.toHaveProperty("show-alert");
+    expect(manifest.version).toBe("0.1.5");
     expect(manifest.ghRepo).toBe("janwee-sha/SubTandem");
-    expect(manifest.ghVersion).toBe(1004);
+    expect(manifest.ghVersion).toBe(1005);
   });
 
   it("describes self-rendered translations without temporary display files", () => {
@@ -34,12 +30,7 @@ describe("IINA package manifest", () => {
     expect(manifest.description).toContain("renders translated subtitles itself");
     expect(manifest.description).not.toContain("second subtitle track");
     expect(manifest.minIINAVersion).toBe("1.4.0");
-    expect(manifest.permissions).toEqual([
-      "network-request",
-      "file-system",
-      "show-alert",
-      "video-overlay",
-    ]);
+    expect(manifest.permissions).toEqual(["network-request", "file-system", "video-overlay"]);
     expect(manifest.allowedDomains).toEqual(["127.0.0.1"]);
     expect(manifest.permissionDescriptions["file-system"]).not.toMatch(
       /translated subtitle data|translated subtitle file/i,
@@ -52,24 +43,19 @@ describe("IINA package manifest", () => {
       allowedDomains: string[];
       permissionDescriptions: Record<string, string>;
     };
-    expect(manifest.permissions).toEqual([
-      "network-request",
-      "file-system",
-      "show-alert",
-      "video-overlay",
-    ]);
+    expect(manifest.permissions).toEqual(["network-request", "file-system", "video-overlay"]);
     expect(manifest.allowedDomains).toEqual(["127.0.0.1"]);
     expect(manifest.permissionDescriptions["network-request"]).toMatch(
       /edited endpoints.*subtitle-free model-list requests/i,
     );
     expect(manifest.permissionDescriptions["network-request"]).toMatch(
-      /explicitly selected profile revision receives nearby subtitle text/i,
+      /globally enabled profile revision receives nearby subtitle text/i,
     );
     expect(manifest.permissionDescriptions["network-request"]).toMatch(
-      /DeepSeek.*api\.deepseek\.com.*before Select/i,
+      /DeepSeek.*api\.deepseek\.com.*before the Profile is enabled/i,
     );
     expect(manifest.permissionDescriptions["network-request"]).toMatch(
-      /Claude.*api\.anthropic\.com.*before Select/i,
+      /Claude.*api\.anthropic\.com.*before the Profile is enabled/i,
     );
   });
 

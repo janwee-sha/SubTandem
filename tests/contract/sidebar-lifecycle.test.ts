@@ -23,9 +23,9 @@ describe("IINA sidebar lifecycle contract", () => {
     "utf8",
   );
 
-  it("carries selected DeepSeek and Claude kinds into Main translation ownership", () => {
-    expect(mainSource).toContain("kind: selection.kind");
-    expect(mainSource).toContain("kind: currentSelection.kind");
+  it("carries activated DeepSeek and Claude kinds into Main translation ownership", () => {
+    expect(mainSource).toContain("kind: activation.kind");
+    expect(mainSource).toContain("controller.setProviderSelection(currentSelection)");
     expect(controllerSource).toContain(
       'providerKind?: "openai" | "claude" | "deepseek" | "ollama"',
     );
@@ -180,21 +180,24 @@ describe("IINA sidebar lifecycle contract", () => {
     );
   });
 
-  it("requests profile deletion from Main and uses IINA's native confirmation UI", () => {
+  it("confirms profile deletion in the Sidebar before Main strictly forwards it", () => {
     expect(sidebarSource).toContain('"profile:delete-request"');
     expect(sidebarSource).not.toContain("window.confirm");
     expect(mainSource).toContain('runtime.sidebar.onMessage("profile:delete-request"');
-    expect(mainSource).toContain("runtime.utils.ask");
+    expect(mainSource).toContain("parseProfileDeleteRequest");
+    expect(mainSource).not.toContain("runtime.utils.ask");
+    expect(sidebarHtml).toContain('role="alertdialog"');
+    expect(sidebarSource).toContain('addEventListener("keydown"');
+    expect(sidebarSource).toContain("cancelDeleteConfirmation");
   });
 
   it("converges profile deletion only from the authoritative cross-runtime success", () => {
     const handlerStart = mainSource.indexOf('runtime.global.onMessage("profile:deleted"');
     const handlerSource = mainSource.slice(handlerStart, handlerStart + 1_500);
-    expect(mainSource).toContain("removeDeletedProfile");
+    expect(mainSource).toContain("bindProfileAuthority");
     expect(mainSource).toContain("beginProfileListRequest");
-    expect(handlerSource.indexOf("removeDeletedProfile")).toBeLessThan(
-      handlerSource.indexOf("requestProfiles"),
-    );
+    expect(handlerSource).toContain('queueSidebarMessage("profile:deleted"');
+    expect(globalSource).toContain("publishProfileAuthority()");
     expect(sidebarSource).toContain("deleteSucceeded");
     expect(sidebarSource).toContain('onMessage("profile:deleted"');
   });
@@ -278,25 +281,22 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(renderSource).not.toContain("deletedResults");
   });
 
-  it("keeps Update selection invalidation through optional credential completion", () => {
+  it("keeps Update activation invalidation through optional credential completion", () => {
     expect(sidebarSource).toContain("beginProfileSave");
     expect(sidebarSource).toContain("profileRevisionCreated");
     expect(sidebarSource).toContain("completeProfileSave");
     expect(sidebarSource).toContain("reconcileEditingProfile");
-    expect(sidebarSource).toContain("Profile updated. Select it again for translation.");
+    expect(sidebarSource).toContain("Profile updated. Enable it when you are ready.");
     expect(sidebarSource).toContain("Profile saved, but the credential was not saved.");
     expect(sidebarSource).not.toContain("to authorize translation");
   });
 
-  it("lets credential completion replace cancelled model work and publishes the created profile", () => {
+  it("lets credential completion replace cancelled model work and consumes authority state", () => {
     expect(sidebarSource).toContain('trigger !== "credential"');
-    expect(mainSource).toContain("upsertCreatedProfile");
+    expect(mainSource).toContain("applyProfileAuthority");
     const createdStart = mainSource.indexOf('runtime.global.onMessage("profile:revision-created"');
     const createdSource = mainSource.slice(createdStart, createdStart + 1_600);
-    expect(createdSource).toContain("updateSidebarState({ profiles:");
-    expect(createdSource.indexOf("upsertCreatedProfile")).toBeLessThan(
-      createdSource.indexOf('queueSidebarMessage("profile:revision-created"'),
-    );
+    expect(createdSource).toContain('queueSidebarMessage("profile:revision-created"');
   });
 
   it("prioritizes every safe embedded preparation state and exposes Retry only when allowed", () => {
@@ -481,10 +481,7 @@ describe("System color picker lifecycle contract", () => {
     "utf8",
   );
   const serverSource = readFileSync(
-    new URL(
-      "../../native/style-picker/Sources/SubTandemStylePicker/Server.swift",
-      import.meta.url,
-    ),
+    new URL("../../native/style-picker/Sources/SubTandemStylePicker/Server.swift", import.meta.url),
     "utf8",
   );
 

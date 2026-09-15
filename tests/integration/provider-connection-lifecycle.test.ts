@@ -8,6 +8,11 @@ import type { TranslationBatchRequest, TranslationBatchResult } from "../../src/
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 import { ClaudeProvider } from "../../src/providers/claude.js";
 import type { ProviderTransportRequest } from "../../src/providers/transport.js";
+import {
+  activateTestProfile,
+  authorizedProviderRequest,
+  createTestProfileAuthority,
+} from "../helpers/profile-activation-harness.js";
 
 class DeferredConfiguredProvider implements ConfiguredProvider {
   readonly attemptIds: string[] = [];
@@ -60,7 +65,7 @@ class DeferredConfiguredProvider implements ConfiguredProvider {
 }
 
 describe("provider connection lifecycle integration", () => {
-  it("runs Claude Save, fresh Test, Select, translation, Update and Delete across owners", async () => {
+  it("runs Claude Save, fresh Test, activation, translation, Update and Delete", async () => {
     const requests: ProviderTransportRequest[] = [];
     const profiles = new ProviderProfiles(() => "claude-profile");
     const created = profiles.save({
@@ -107,16 +112,15 @@ describe("provider connection lifecycle integration", () => {
     });
     await provider.testConnection(task.testId);
     tests.complete(task.testId);
-    expect(profiles.selection("window-a")).toBeNull();
-
-    const broker = new ProviderBroker(profiles, () => provider);
-    broker.select("window-a", created.profileId, created.revision, created.endpointFingerprint);
-    const request = {
+    const authority = createTestProfileAuthority(profiles);
+    await activateTestProfile(authority, created, "window-a");
+    const broker = new ProviderBroker(profiles, authority, () => provider);
+    const request = authorizedProviderRequest(authority, {
       ...makeProviderRequest(),
       profileId: created.profileId,
       profileRevision: created.revision,
       endpointFingerprint: created.endpointFingerprint,
-    };
+    });
     await expect(broker.attempt("window-a", request)).resolves.toMatchObject({
       translations: [
         { id: "c1", text: "translated" },
@@ -133,7 +137,7 @@ describe("provider connection lifecycle integration", () => {
       model: "next-model",
     });
     expect(updated.revision).toBe(2);
-    expect(profiles.selection("window-a")).toBeNull();
+    expect(profiles.get(created.profileId, created.revision)).toBeNull();
     profiles.delete(created.profileId);
     expect(profiles.get(created.profileId)).toBeNull();
     expect(requests.map((item) => item.url)).toEqual([
@@ -142,7 +146,7 @@ describe("provider connection lifecycle integration", () => {
     ]);
   });
 
-  it("invalidates only the edited or deleted DeepSeek Profile selection", () => {
+  it("keeps only latest revisions and leaves unrelated Profiles unchanged", () => {
     let sequence = 0;
     const profiles = new ProviderProfiles(() => `deepseek-${++sequence}`);
     const deepseek = profiles.save({
@@ -157,19 +161,7 @@ describe("provider connection lifecycle integration", () => {
       endpoint: "https://api.example.test/v1",
       model: "model",
     });
-    profiles.select(
-      "window-a",
-      deepseek.profileId,
-      deepseek.revision,
-      deepseek.endpointFingerprint,
-    );
-    profiles.select(
-      "window-b",
-      retained.profileId,
-      retained.revision,
-      retained.endpointFingerprint,
-    );
-    profiles.save({
+    const updated = profiles.save({
       profileId: deepseek.profileId,
       expectedRevision: deepseek.revision,
       editingWindowId: "window-a",
@@ -178,14 +170,14 @@ describe("provider connection lifecycle integration", () => {
       endpoint: deepseek.endpoint,
       model: deepseek.model,
     });
-    expect(profiles.selection("window-a")).toBeNull();
-    expect(profiles.selection("window-b")).toMatchObject({ profileId: retained.profileId });
+    expect(profiles.get(deepseek.profileId, deepseek.revision)).toBeNull();
+    expect(profiles.get(updated.profileId, updated.revision)).toEqual(updated);
     profiles.delete(deepseek.profileId);
     expect(profiles.get(deepseek.profileId)).toBeNull();
     expect(profiles.get(retained.profileId)).toEqual(retained);
   });
 
-  it("does not let model refresh ownership alter the selected translation profile", () => {
+  it("does not let model refresh ownership alter the saved translation profile", () => {
     const profiles = new ProviderProfiles(() => "profile-model-sync");
     const profile = profiles.save({
       displayName: "Selected",
@@ -193,7 +185,6 @@ describe("provider connection lifecycle integration", () => {
       endpoint: "https://example.test/v1",
       model: "selected-model",
     });
-    profiles.select("window-a", profile.profileId, profile.revision, profile.endpointFingerprint);
     const sync = new ModelCatalogSync();
     sync.begin("window-a", {
       requestId: "models-1",
@@ -206,10 +197,7 @@ describe("provider connection lifecycle integration", () => {
       contextKey: "opaque",
       models: ["different-model"],
     });
-    expect(profiles.selection("window-a")).toMatchObject({
-      profileId: profile.profileId,
-      revision: profile.revision,
-    });
+    expect(profiles.get(profile.profileId, profile.revision)).toEqual(profile);
     expect(profiles.get(profile.profileId)?.model).toBe("selected-model");
   });
 
@@ -247,7 +235,6 @@ describe("provider connection lifecycle integration", () => {
     let testSequence = 0;
     const profiles = new ProviderProfiles(() => `profile-${++profileSequence}`);
     const provider = new DeferredConfiguredProvider();
-    const broker = new ProviderBroker(profiles, () => provider);
     const tests = new ProviderConnectionTests(() => `test-${++testSequence}`);
     const sharedProfile = profiles.save({
       displayName: "Shared",
@@ -261,20 +248,16 @@ describe("provider connection lifecycle integration", () => {
       endpoint: "https://retained.example/v1",
       model: "model",
     });
-    for (const playerId of ["player-a", "player-b"])
-      broker.select(
-        playerId,
-        sharedProfile.profileId,
-        sharedProfile.revision,
-        sharedProfile.endpointFingerprint,
-      );
-    const request = {
+    const authority = createTestProfileAuthority(profiles);
+    await activateTestProfile(authority, sharedProfile);
+    const broker = new ProviderBroker(profiles, authority, () => provider);
+    const request = authorizedProviderRequest(authority, {
       ...makeProviderRequest(),
       requestId: "same-request" as ReturnType<typeof makeProviderRequest>["requestId"],
       profileId: sharedProfile.profileId,
       profileRevision: sharedProfile.revision,
       endpointFingerprint: sharedProfile.endpointFingerprint,
-    };
+    });
     const attemptA = broker.attempt("player-a", request);
     const attemptB = broker.attempt("player-b", request);
     void attemptA.catch(() => undefined);

@@ -8,6 +8,8 @@ export function makeProviderRequest(): TranslationBatchRequest {
     sessionId: "session" as TranslationBatchRequest["sessionId"],
     sessionEpoch: 1,
     windowEpoch: 1,
+    authorityId: "authority",
+    activationGeneration: 1,
     profileId: "profile" as TranslationBatchRequest["profileId"],
     profileRevision: 1,
     endpointFingerprint: "endpoint" as TranslationBatchRequest["endpointFingerprint"],

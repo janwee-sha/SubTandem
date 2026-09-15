@@ -16,7 +16,8 @@ describe("authoritative global RPC routing", () => {
       "credential:set",
       "provider:models",
       "provider:test",
-      "profile:select",
+      "profile-activation:get",
+      "profile-activation:set",
       "provider:attempt",
       "profile:delete",
     ])
@@ -24,15 +25,17 @@ describe("authoritative global RPC routing", () => {
     expect(source).not.toContain('onMessage("claude:');
   });
 
-  it("requires saved Claude credentials before Test, Select and translation construction", () => {
+  it("requires saved Claude credentials before activation, Test and translation construction", () => {
     const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
     const builderStart = source.indexOf("async function buildProvider");
     const builderEnd = source.indexOf("const providerCache", builderStart);
-    const selectionStart = source.indexOf('onMessage("profile:select"');
-    const selectionEnd = source.indexOf('onMessage("provider:test"', selectionStart);
     expect(source.slice(builderStart, builderEnd)).toMatch(/claude[\s\S]*credentials\.getSecret/);
     expect(source.slice(builderStart, builderEnd)).toContain("CREDENTIAL_REQUIRED");
-    expect(source.slice(selectionStart, selectionEnd)).toContain("credentials.getSecret");
+    expect(source).toContain('onMessage("profile-activation:set"');
+    expect(source).toContain("restoreProfileActivationAuthority");
+    expect(
+      readFileSync(new URL("../../src/providers/profile-activation.ts", import.meta.url), "utf8"),
+    ).toMatch(/profile\.kind === "claude"[\s\S]*credentialConfigured/);
   });
 
   it("binds saved, preview and startup Claude pagination to a per-page active owner", () => {
@@ -63,25 +66,21 @@ describe("authoritative global RPC routing", () => {
     expect(source).toContain("broker.cancelProfile(secret.profileId)");
   });
 
-  it("clears the old kind credential and owner before publishing a converted revision", () => {
+  it("commits a converted revision before clearing obsolete runtime owners", () => {
     const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
     const start = source.indexOf('onMessage("profile:create-revision"');
     const end = source.indexOf('onMessage("profile:delete"', start);
     const handler = source.slice(start, end);
     const kindChange = handler.indexOf("currentProfile.kind !== kind");
-    const cancel = handler.indexOf("broker.cancelProfile(profileId)", kindChange);
-    const credentialDelete = handler.indexOf(
-      "await credentials.deleteSecret(profileId)",
-      kindChange,
-    );
-    const epoch = handler.indexOf("advanceCredentialEpoch(profileId)", kindChange);
-    const save = handler.indexOf("profiles.save", kindChange);
+    const save = handler.indexOf("profileAuthority.saveProfile", kindChange);
+    const cancel = handler.indexOf("broker.cancelProfile(profile.profileId)", save);
+    const epoch = handler.indexOf("advanceCredentialEpoch(profile.profileId)", cancel);
 
     expect(kindChange).toBeGreaterThan(-1);
-    expect(cancel).toBeGreaterThan(kindChange);
-    expect(credentialDelete).toBeGreaterThan(cancel);
-    expect(epoch).toBeGreaterThan(credentialDelete);
-    expect(save).toBeGreaterThan(epoch);
+    expect(save).toBeGreaterThan(kindChange);
+    expect(cancel).toBeGreaterThan(save);
+    expect(epoch).toBeGreaterThan(cancel);
+    expect(handler).not.toContain("deleteSecret");
   });
 
   it("advances credential ownership when a Profile is deleted", () => {

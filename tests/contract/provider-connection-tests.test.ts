@@ -66,7 +66,7 @@ describe("provider connection test registry", () => {
 
     await expect(provider.testConnection(task.testId)).resolves.toEqual({ model: "exact-model" });
     expect(registry.complete(task.testId)).toEqual(task);
-    expect(profiles.selection("window-a")).toBeNull();
+    expect(profiles.get(profile.profileId, profile.revision)).toEqual(profile);
     expect(requests).toHaveLength(1);
     expect(requests[0]!.url).toBe("https://api.anthropic.com/v1/messages");
   });

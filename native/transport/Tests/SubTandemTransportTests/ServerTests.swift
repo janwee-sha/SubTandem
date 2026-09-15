@@ -30,6 +30,53 @@ func runServerTests() async throws {
     try check(oversized.statusCode == 413, "oversized RPC body must be rejected")
 
     let profileID = "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae"
+    let profile: [String: Any] = [
+        "profileId": profileID,
+        "revision": 1,
+        "displayName": "A",
+        "kind": "openai",
+        "endpoint": "https://example.test/v1",
+        "endpointFingerprint": "fingerprint-a",
+        "proxyMode": "direct",
+        "model": "model-a",
+    ]
+    let uninitialized = await handler.handle(
+        path: "/v1/profile-state",
+        authorization: "Bearer correct-token",
+        body: try JSONSerialization.data(withJSONObject: ["action": "read"])
+    )
+    let uninitializedJSON = try JSONSerialization.jsonObject(with: uninitialized.body) as? [String: Any]
+    try check(uninitialized.statusCode == 200, "uninitialized Profile state read must succeed")
+    try check(uninitializedJSON?["initialized"] as? Bool == false, "new store must be uninitialized")
+    try check(uninitializedJSON?["storeRevision"] as? Int == 0, "new store revision must be zero")
+    try check(uninitializedJSON?["profileState"] is NSNull, "uninitialized state must be null")
+
+    let initializeCommitID = "00000000-0000-4000-8000-000000000001"
+    let initialized = await handler.handle(
+        path: "/v1/profile-state",
+        authorization: "Bearer correct-token",
+        body: try JSONSerialization.data(withJSONObject: [
+            "action": "initialize",
+            "commitId": initializeCommitID,
+            "expectedStoreRevision": 0,
+            "profiles": [profile],
+        ])
+    )
+    let initializedJSON = try JSONSerialization.jsonObject(with: initialized.body) as? [String: Any]
+    try check(initialized.statusCode == 200, "Profile state initialization must succeed")
+    try check(initializedJSON?["storeRevision"] as? Int == 1, "initialization must advance store revision")
+    let initializedProfileState = initializedJSON?["profileState"] as? [String: Any]
+    try check(initializedProfileState?["activation"] is NSNull, "initialization must encode disabled activation as null")
+
+    let initializedRead = await handler.handle(
+        path: "/v1/profile-state",
+        authorization: "Bearer correct-token",
+        body: try JSONSerialization.data(withJSONObject: ["action": "read"])
+    )
+    let initializedReadJSON = try JSONSerialization.jsonObject(with: initializedRead.body) as? [String: Any]
+    let initializedReadProfileState = initializedReadJSON?["profileState"] as? [String: Any]
+    try check(initializedReadProfileState?["activation"] is NSNull, "read must encode disabled activation as null")
+
     let readCredentialBody = try JSONSerialization.data(withJSONObject: [
         "action": "read", "profileId": profileID,
     ])
@@ -43,14 +90,25 @@ func runServerTests() async throws {
     try check(missingCredentialJSON?["fields"] is NSNull, "missing credential must serialize as JSON null")
 
     let saveCredentialBody = try JSONSerialization.data(withJSONObject: [
-        "action": "write", "profileId": profileID, "fields": ["apiKey": "private-key"],
+        "action": "write",
+        "profileId": profileID,
+        "fields": ["apiKey": "private-key"],
+        "commitId": "00000000-0000-4000-8000-000000000002",
+        "expectedStoreRevision": 1,
+        "expectedProfileRevision": 1,
     ])
     let savedCredential = await handler.handle(
         path: "/v1/credentials",
         authorization: "Bearer correct-token",
         body: saveCredentialBody
     )
-    try check(savedCredential.statusCode == 200, "fixed credential file write must succeed")
+    let savedCredentialJSON = try JSONSerialization.jsonObject(with: savedCredential.body) as? [String: Any]
+    try check(savedCredential.statusCode == 200, "versioned credential write must succeed")
+    try check(savedCredentialJSON?["storeRevision"] as? Int == 2, "credential write must advance shared revision")
+    try check(savedCredentialJSON?["credentials"] == nil, "credential response must not expose secrets")
+    try check(savedCredentialJSON?["credentialConfigured"] as? [String: Bool] == [profileID: true], "credential response must expose only configured state")
+    let credentialProfileState = savedCredentialJSON?["profileState"] as? [String: Any]
+    try check(credentialProfileState?["activation"] is NSNull, "credential write must encode disabled activation as null")
     let storedCredential = try await credentialStore.read(profileID: profileID)
     try check(storedCredential == ["apiKey": "private-key"], "credential must round-trip")
     let attributes = try FileManager.default.attributesOfItem(
@@ -58,17 +116,70 @@ func runServerTests() async throws {
     )
     let permissions = (attributes[.posixPermissions] as? NSNumber)?.intValue
     try check(permissions == 0o600, "credential file must be mode 0600")
-    let deleteCredentialBody = try JSONSerialization.data(withJSONObject: [
-        "action": "delete", "profileId": profileID,
-    ])
-    let deletedCredential = await handler.handle(
+    let versionedData = try Data(contentsOf: credentialDirectory.appendingPathComponent("credentials.json"))
+    let versionedJSON = try JSONSerialization.jsonObject(with: versionedData) as? [String: Any]
+    try check(versionedJSON?["storeRevision"] as? Int == 2, "credential writes must advance the shared store revision")
+    try check(versionedJSON?["lastCommit"] is [String: Any], "credential writes must persist an idempotency receipt")
+    let fixedLock = credentialDirectory.appendingPathComponent(".credentials.lock")
+    try check(FileManager.default.fileExists(atPath: fixedLock.path), "all mutations must use one fixed sidecar lock")
+    let repeatedCredential = await handler.handle(
         path: "/v1/credentials",
         authorization: "Bearer correct-token",
-        body: deleteCredentialBody
+        body: saveCredentialBody
     )
-    try check(deletedCredential.statusCode == 200, "credential delete must succeed")
+    let repeatedCredentialJSON = try JSONSerialization.jsonObject(with: repeatedCredential.body) as? [String: Any]
+    try check(repeatedCredentialJSON?["storeRevision"] as? Int == 2, "same credential commit must be idempotent")
+    let changedCredentialBody = try JSONSerialization.data(withJSONObject: [
+        "action": "write",
+        "profileId": profileID,
+        "fields": ["apiKey": "different-key"],
+        "commitId": "00000000-0000-4000-8000-000000000002",
+        "expectedStoreRevision": 1,
+        "expectedProfileRevision": 1,
+    ])
+    let changedCredential = await handler.handle(
+        path: "/v1/credentials",
+        authorization: "Bearer correct-token",
+        body: changedCredentialBody
+    )
+    try check(changedCredential.statusCode == 409, "same commit ID with different secret must conflict")
+
+    let deleteProfileBody = try JSONSerialization.data(withJSONObject: [
+        "action": "commit",
+        "commitId": "00000000-0000-4000-8000-000000000003",
+        "expectedStoreRevision": 2,
+        "profileState": ["profiles": [], "activation": NSNull()],
+    ])
+    let deletedProfile = await handler.handle(
+        path: "/v1/profile-state",
+        authorization: "Bearer correct-token",
+        body: deleteProfileBody
+    )
+    try check(deletedProfile.statusCode == 200, "Profile transaction delete must succeed")
+    let deletedProfileJSON = try JSONSerialization.jsonObject(with: deletedProfile.body) as? [String: Any]
+    let deletedProfileState = deletedProfileJSON?["profileState"] as? [String: Any]
+    try check(deletedProfileState?["activation"] is NSNull, "commit must encode disabled activation as null")
     let credentialAfterDelete = try await credentialStore.read(profileID: profileID)
-    try check(credentialAfterDelete == nil, "deleted credential must be absent")
+    try check(credentialAfterDelete == nil, "Profile transaction must delete its credential")
+
+    let openedProfile = await handler.handle(
+        path: "/v1/profile-state",
+        authorization: "Bearer correct-token",
+        body: try JSONSerialization.data(withJSONObject: [
+            "action": "open",
+            "commitId": "00000000-0000-4000-8000-000000000004",
+        ])
+    )
+    let openedProfileJSON = try JSONSerialization.jsonObject(with: openedProfile.body) as? [String: Any]
+    let openedProfileState = openedProfileJSON?["profileState"] as? [String: Any]
+    try check(openedProfile.statusCode == 200, "Profile state open must succeed")
+    try check(openedProfileState?["activation"] is NSNull, "open must encode disabled activation as null")
+    let oldDeleteCredential = await handler.handle(
+        path: "/v1/credentials",
+        authorization: "Bearer correct-token",
+        body: try JSONSerialization.data(withJSONObject: ["action": "delete", "profileId": profileID])
+    )
+    try check(oldDeleteCredential.statusCode == 400, "independent credential delete must be removed")
     let invalidCredential = await handler.handle(
         path: "/v1/credentials",
         authorization: "Bearer correct-token",

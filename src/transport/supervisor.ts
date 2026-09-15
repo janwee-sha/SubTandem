@@ -1,18 +1,17 @@
 import { SubTandemError } from "../domain/errors.js";
-import type { TransportRequest, TransportResponse, TransportRpcClient } from "./client.js";
+import type {
+  ProfileStateCommitResult,
+  ProfileStateStoreSnapshot,
+  TransportRequest,
+  TransportResponse,
+  TransportRpcClient,
+} from "./client.js";
+import type { PersistentProviderProfile, ProfileState } from "../domain/types.js";
 
 function isExpiredSession(error: unknown): boolean {
   return error instanceof SubTandemError && error.code === "HELPER_UNAVAILABLE";
 }
 
-/**
- * Owns the replaceable native-helper session for the Global entry.
- *
- * Every upstream request is preceded by a side-effect-free loopback health
- * call. An expired idle helper can therefore be replaced before any provider
- * body is dispatched. A provider request that fails after dispatch is never
- * replayed here; the player-owned retry policy remains authoritative.
- */
 export class TransportSupervisor implements TransportRpcClient {
   private client: TransportRpcClient | null = null;
   private starting: Promise<TransportRpcClient> | null = null;
@@ -40,12 +39,9 @@ export class TransportSupervisor implements TransportRpcClient {
     return this.starting;
   }
 
-  private invalidate(client: TransportRpcClient): void {
+  private retireExpiredClient(client: TransportRpcClient): void {
     if (this.client !== client) return;
     this.client = null;
-    // A loopback failure may leave the native process alive even though its
-    // session is no longer usable. Retire it best-effort before replacement so
-    // repeated failures cannot accumulate orphan listeners under IINA.
     void client.shutdown().catch(() => undefined);
   }
 
@@ -58,7 +54,7 @@ export class TransportSupervisor implements TransportRpcClient {
         return client;
       } catch (error) {
         if (!isExpiredSession(error)) throw error;
-        this.invalidate(client);
+        this.retireExpiredClient(client);
       }
 
       client = await this.currentOrStart();
@@ -66,7 +62,7 @@ export class TransportSupervisor implements TransportRpcClient {
         await client.health();
         return client;
       } catch (error) {
-        this.invalidate(client);
+        this.retireExpiredClient(client);
         throw error;
       }
     })();
@@ -84,7 +80,7 @@ export class TransportSupervisor implements TransportRpcClient {
       return await client.health();
     } catch (error) {
       if (!isExpiredSession(error)) throw error;
-      this.invalidate(client);
+      this.retireExpiredClient(client);
     }
     client = await this.liveClient();
     await client.health();
@@ -96,38 +92,64 @@ export class TransportSupervisor implements TransportRpcClient {
       return await client.credentialRead(profileId);
     } catch (error) {
       if (!isExpiredSession(error)) throw error;
-      this.invalidate(client);
+      this.retireExpiredClient(client);
     }
     client = await this.liveClient();
     return client.credentialRead(profileId);
   }
 
-  async credentialWrite(profileId: string, fields: Record<string, string>): Promise<void> {
-    let client = await this.liveClient();
-    try {
-      await client.credentialWrite(profileId, fields);
-      return;
-    } catch (error) {
-      if (!isExpiredSession(error)) throw error;
-      this.invalidate(client);
-    }
-    // Replacing all fields for one profile is idempotent, so a lost helper
-    // response may safely repeat the exact write on a replacement session.
-    client = await this.liveClient();
-    await client.credentialWrite(profileId, fields);
+  async credentialWrite(
+    profileId: string,
+    fields: Record<string, string>,
+    commitId: string,
+    expectedStoreRevision: number,
+    expectedProfileRevision: number,
+  ): Promise<ProfileStateCommitResult> {
+    return this.localMutation(commitId, (client) =>
+      client.credentialWrite(
+        profileId,
+        fields,
+        commitId,
+        expectedStoreRevision,
+        expectedProfileRevision,
+      ),
+    );
   }
 
-  async credentialDelete(profileId: string): Promise<void> {
+  async profileStateRead(): Promise<ProfileStateStoreSnapshot> {
     let client = await this.liveClient();
     try {
-      await client.credentialDelete(profileId);
-      return;
+      return await client.profileStateRead();
     } catch (error) {
       if (!isExpiredSession(error)) throw error;
-      this.invalidate(client);
+      this.retireExpiredClient(client);
     }
     client = await this.liveClient();
-    await client.credentialDelete(profileId);
+    return client.profileStateRead();
+  }
+
+  profileStateOpen(commitId: string): Promise<ProfileStateCommitResult> {
+    return this.localMutation(commitId, (client) => client.profileStateOpen(commitId));
+  }
+
+  profileStateInitialize(
+    commitId: string,
+    expectedStoreRevision: number,
+    profiles: PersistentProviderProfile[],
+  ): Promise<ProfileStateCommitResult> {
+    return this.localMutation(commitId, (client) =>
+      client.profileStateInitialize(commitId, expectedStoreRevision, profiles),
+    );
+  }
+
+  profileStateCommit(
+    commitId: string,
+    expectedStoreRevision: number,
+    profileState: ProfileState,
+  ): Promise<ProfileStateCommitResult> {
+    return this.localMutation(commitId, (client) =>
+      client.profileStateCommit(commitId, expectedStoreRevision, profileState),
+    );
   }
 
   async request(request: TransportRequest): Promise<TransportResponse> {
@@ -135,7 +157,7 @@ export class TransportSupervisor implements TransportRpcClient {
     try {
       return await client.request(request);
     } catch (error) {
-      if (isExpiredSession(error)) this.invalidate(client);
+      if (isExpiredSession(error)) this.retireExpiredClient(client);
       throw error;
     }
   }
@@ -154,7 +176,7 @@ export class TransportSupervisor implements TransportRpcClient {
       return await client.cancel(jobId);
     } catch (error) {
       if (!isExpiredSession(error)) throw error;
-      this.invalidate(client);
+      this.retireExpiredClient(client);
       return "unknown";
     }
   }
@@ -168,6 +190,34 @@ export class TransportSupervisor implements TransportRpcClient {
       await client.shutdown();
     } catch (error) {
       if (!isExpiredSession(error)) throw error;
+    }
+  }
+
+  private async localMutation(
+    commitId: string,
+    attempt: (client: TransportRpcClient) => Promise<ProfileStateCommitResult>,
+  ): Promise<ProfileStateCommitResult> {
+    let client = await this.liveClient();
+    try {
+      return await attempt(client);
+    } catch (error) {
+      if (!isExpiredSession(error)) throw error;
+      this.retireExpiredClient(client);
+    }
+    client = await this.liveClient();
+    try {
+      return await attempt(client);
+    } catch {
+      try {
+        const snapshot = await client.profileStateRead();
+        return {
+          state: snapshot.lastCommit?.commitId === commitId ? "committed" : "reconciling",
+          ...snapshot,
+        };
+      } catch (error) {
+        if (isExpiredSession(error)) this.retireExpiredClient(client);
+        throw error;
+      }
     }
   }
 }

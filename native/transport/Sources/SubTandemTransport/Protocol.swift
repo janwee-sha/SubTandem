@@ -48,6 +48,8 @@ enum SecureRandom {
 
 enum TransportProtocolError: Error, Equatable {
     case invalidRequest
+    case invalidProfileState
+    case profileStateConflict
     case entropyUnavailable
     case credentialStoreUnavailable
     case forbiddenDestination
@@ -163,10 +165,8 @@ actor ProtocolHandler {
 
         switch path {
         case "/v1/health":
-            // IINA 1.4.4 serializes `data: {}` as a zero-byte POST body. Both
-            // encodings are side-effect-free and carry no caller-controlled
-            // fields, so accept either while rejecting every other payload.
-            guard body.isEmpty || body == Data("{}".utf8) else {
+            let isEmptyObjectBody = body.isEmpty || body == Data("{}".utf8)
+            guard isEmptyObjectBody else {
                 return .json(statusCode: 400, ["error": "invalid-request"])
             }
             return .json(statusCode: 200, ["state": "ok"])
@@ -182,20 +182,85 @@ actor ProtocolHandler {
                     let fields = try await credentialStore.read(profileID: profileID)
                     let responseFields: Any = fields.map { $0 as Any } ?? NSNull()
                     return .json(statusCode: 200, ["fields": responseFields])
-                case "write" where json.count == 3:
-                    guard let fields = json["fields"] as? [String: String] else {
+                case "write" where json.count == 6:
+                    guard let fields = json["fields"] as? [String: String],
+                          let commitID = json["commitId"] as? String,
+                          let expectedStoreRevision = json["expectedStoreRevision"] as? Int,
+                          let expectedProfileRevision = json["expectedProfileRevision"] as? Int
+                    else {
                         return .json(statusCode: 400, ["error": "invalid-credential-request"])
                     }
-                    try await credentialStore.write(profileID: profileID, fields: fields)
-                    return .json(statusCode: 200, ["state": "saved"])
-                case "delete" where json.count == 2:
-                    try await credentialStore.delete(profileID: profileID)
-                    return .json(statusCode: 200, ["state": "deleted"])
+                    let snapshot = try await credentialStore.write(
+                        profileID: profileID,
+                        fields: fields,
+                        commitID: commitID,
+                        expectedStoreRevision: expectedStoreRevision,
+                        expectedProfileRevision: expectedProfileRevision
+                    )
+                    return Self.storeResponse(snapshot, state: "committed")
                 default:
                     return .json(statusCode: 400, ["error": "invalid-credential-request"])
                 }
             } catch TransportProtocolError.invalidRequest {
                 return .json(statusCode: 400, ["error": "invalid-credential-request"])
+            } catch TransportProtocolError.invalidProfileState {
+                return .json(statusCode: 400, ["error": "invalid-profile-state"])
+            } catch TransportProtocolError.profileStateConflict {
+                return .json(statusCode: 409, ["error": "profile-state-conflict"])
+            } catch {
+                return .json(statusCode: 503, ["error": "credential-store-unavailable"])
+            }
+
+        case "/v1/profile-state":
+            guard let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
+                  let action = json["action"] as? String
+            else { return .json(statusCode: 400, ["error": "invalid-profile-state"]) }
+            do {
+                switch action {
+                case "read" where json.count == 1:
+                    return Self.storeResponse(try await credentialStore.readProfileState())
+                case "open" where json.count == 2:
+                    guard let commitID = json["commitId"] as? String else {
+                        return .json(statusCode: 400, ["error": "invalid-profile-state"])
+                    }
+                    return Self.storeResponse(
+                        try await credentialStore.openProfileState(commitID: commitID),
+                        state: "committed"
+                    )
+                case "initialize" where json.count == 4:
+                    guard let commitID = json["commitId"] as? String,
+                          let expected = json["expectedStoreRevision"] as? Int,
+                          let profiles = try Self.decodeProfiles(json["profiles"])
+                    else { return .json(statusCode: 400, ["error": "invalid-profile-state"]) }
+                    return Self.storeResponse(
+                        try await credentialStore.initializeProfileState(
+                            commitID: commitID,
+                            expectedStoreRevision: expected,
+                            profiles: profiles
+                        ),
+                        state: "committed"
+                    )
+                case "commit" where json.count == 4:
+                    guard let commitID = json["commitId"] as? String,
+                          let expected = json["expectedStoreRevision"] as? Int,
+                          let profileState = try Self.decodeProfileState(json["profileState"])
+                    else { return .json(statusCode: 400, ["error": "invalid-profile-state"]) }
+                    return Self.storeResponse(
+                        try await credentialStore.commitProfileState(
+                            commitID: commitID,
+                            expectedStoreRevision: expected,
+                            profileState: profileState
+                        ),
+                        state: "committed"
+                    )
+                default:
+                    return .json(statusCode: 400, ["error": "invalid-profile-state"])
+                }
+            } catch TransportProtocolError.profileStateConflict {
+                return .json(statusCode: 409, ["error": "profile-state-conflict"])
+            } catch TransportProtocolError.invalidRequest,
+                    TransportProtocolError.invalidProfileState {
+                return .json(statusCode: 400, ["error": "invalid-profile-state"])
             } catch {
                 return .json(statusCode: 503, ["error": "credential-store-unavailable"])
             }
@@ -271,5 +336,60 @@ actor ProtocolHandler {
             requestBody = Data()
         }
         return TransportRequest(jobID: jobID, method: method, url: url, headers: headers, proxyMode: proxyMode, body: requestBody, timeoutMilliseconds: timeout, maxResponseBytes: maxResponse)
+    }
+
+    private nonisolated static func storeResponse(
+        _ snapshot: ProfileStoreSnapshot,
+        state: String? = nil
+    ) -> ProtocolResponse {
+        guard let data = try? JSONEncoder().encode(snapshot),
+              var object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return .json(statusCode: 503, ["error": "credential-store-unavailable"]) }
+        if snapshot.lastCommit == nil { object["lastCommit"] = NSNull() }
+        if snapshot.profileState == nil {
+            object["profileState"] = NSNull()
+        } else if snapshot.profileState?.activation == nil,
+                  var profileState = object["profileState"] as? [String: Any]
+        {
+            profileState["activation"] = NSNull()
+            object["profileState"] = profileState
+        }
+        if let state { object["state"] = state }
+        return .json(statusCode: 200, object)
+    }
+
+    private nonisolated static func decodeProfiles(_ value: Any?) throws -> [StoredProviderProfile]? {
+        guard let values = value as? [[String: Any]] else { return nil }
+        let required = Set([
+            "profileId", "revision", "displayName", "kind", "endpoint",
+            "endpointFingerprint", "proxyMode", "model",
+        ])
+        let allowed = required.union(["capability"])
+        guard values.allSatisfy({ Set($0.keys).isSubset(of: allowed) && required.isSubset(of: Set($0.keys)) }),
+              let data = try? JSONSerialization.data(withJSONObject: values),
+              let profiles = try? JSONDecoder().decode([StoredProviderProfile].self, from: data)
+        else { return nil }
+        return profiles
+    }
+
+    private nonisolated static func decodeProfileState(_ value: Any?) throws -> StoredProfileState? {
+        guard let object = value as? [String: Any], Set(object.keys) == Set(["profiles", "activation"]),
+              let profiles = try decodeProfiles(object["profiles"])
+        else { return nil }
+        let activation: StoredActivationReference?
+        if object["activation"] is NSNull {
+            activation = nil
+        } else {
+            guard let raw = object["activation"] as? [String: Any],
+                  Set(raw.keys) == Set([
+                    "profileId", "profileRevision", "kind", "endpointFingerprint",
+                    "credentialConfigured",
+                  ]),
+                  let data = try? JSONSerialization.data(withJSONObject: raw),
+                  let decoded = try? JSONDecoder().decode(StoredActivationReference.self, from: data)
+            else { return nil }
+            activation = decoded
+        }
+        return StoredProfileState(profiles: profiles, activation: activation)
     }
 }

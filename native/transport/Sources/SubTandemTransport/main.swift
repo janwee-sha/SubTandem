@@ -3,10 +3,6 @@ import Foundation
 
 enum SubTandemTransportMain {
     static func run() async throws {
-        // A GUI plugin should follow macOS proxy settings, not proxy variables
-        // accidentally inherited from the shell or launcher that started IINA.
-        // Re-exec before CFNetwork initializes; unsetting variables after launch
-        // is too late because macOS 26 caches them at process startup.
         try relaunchWithoutInheritedProxyIfNeeded()
         let arguments = CommandLine.arguments
         let parentPID: Int32

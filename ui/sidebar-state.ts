@@ -7,6 +7,30 @@ interface SidebarStateProfile {
   [key: string]: unknown;
 }
 
+interface SidebarActivationReference {
+  profileId: string;
+  profileRevision: number;
+  kind: string;
+  endpointFingerprint: string;
+  credentialConfigured: boolean;
+}
+
+interface SidebarProfileAuthority {
+  authorityId: string;
+  stateVersion: number;
+  ready: boolean;
+  activationGeneration: number;
+  activation: SidebarActivationReference | null;
+  profiles: SidebarStateProfile[];
+}
+
+interface SidebarProfileActivationResult {
+  requestId: string;
+  outcome: "changed" | "unchanged" | "failed" | "pending";
+  authority: SidebarProfileAuthority;
+  error?: { code: string; userAction: string };
+}
+
 interface SidebarOperationRequest {
   requestId: string;
   regionId: string;
@@ -44,6 +68,14 @@ interface PendingProfileSaveState {
   selectionInvalidated: boolean;
 }
 
+interface SidebarDeleteConfirmationState {
+  profileId: string;
+  expectedRevision: number;
+  displayName: string;
+  phase: "confirming" | "deleting";
+  requestId: string | null;
+}
+
 interface ModelControlState {
   value: string;
   mode: "known" | "custom";
@@ -51,6 +83,7 @@ interface ModelControlState {
   contextKey: string;
   refreshState: "idle" | "busy" | "success" | "error";
   refreshMessage: string;
+  validationError: string | null;
 }
 
 interface SidebarOverlayPositionState {
@@ -179,7 +212,14 @@ interface SidebarStateSnapshot {
   profiles: SidebarStateProfile[];
   deletedProfileIds: string[];
   editingProfileId: string | null;
+  profileEditorContextVersion: number;
   selectedProfileId: string | null;
+  profileAuthority: SidebarProfileAuthority | null;
+  profileActivationRequests: Record<
+    string,
+    { requestId: string; profileId: string; enabled: boolean }
+  >;
+  profileActivationErrors: Record<string, string>;
   credentialDisplayProfileId: string | null;
   profileTests: Record<string, unknown>;
   requests: Record<string, SidebarOperationRequest>;
@@ -187,6 +227,7 @@ interface SidebarStateSnapshot {
   activeFeedback: SidebarFeedback | null;
   profileName: ProfileNameState;
   pendingProfileSave: PendingProfileSaveState | null;
+  deleteConfirmation: SidebarDeleteConfirmationState | null;
   modelControl: ModelControlState;
   overlayPosition: SidebarOverlayPositionState;
   subtitleStyle: SidebarSubtitleStyleState;
@@ -202,6 +243,37 @@ interface SidebarStateCoordinator {
     credentialDisplayProfileId?: string | null;
   }): void;
   setProfileTest(profileId: string, value: unknown): void;
+  activateProfileEditor(profileId: string): {
+    changed: boolean;
+    discardedProfileId: string | null;
+  };
+  openDeleteConfirmation(target: {
+    profileId: string;
+    expectedRevision: number;
+    displayName: string;
+  }): boolean;
+  cancelDeleteConfirmation(): SidebarDeleteConfirmationState | null;
+  beginProfileDelete(requestId: string): {
+    profileId: string;
+    expectedRevision: number;
+    displayName: string;
+  } | null;
+  finishProfileDeleteFailure(requestId: string): boolean;
+  applyProfileAuthority(authority: SidebarProfileAuthority): boolean;
+  profileActivationView(profileId: string): {
+    checked: boolean;
+    disabled: boolean;
+    busy: boolean;
+    accessibleName: string;
+    error: string | null;
+    readinessMessage: string | null;
+  };
+  beginProfileActivation(requestId: string, profileId: string, enabled: boolean): boolean;
+  finishProfileActivation(result: SidebarProfileActivationResult): {
+    accepted: boolean;
+    authorityAccepted: boolean;
+    announce: boolean;
+  };
   beginOperation(request: SidebarOperationRequest, message?: string): void;
   finishOperation(
     requestId: string,
@@ -230,6 +302,9 @@ interface SidebarStateCoordinator {
   setModelContext(contextKey: string, value: string): void;
   applyModelCatalog(contextKey: string, models: string[]): boolean;
   setModelRefreshState(state: ModelControlState["refreshState"], message?: string): void;
+  setModelRequiredError(message: string): void;
+  clearModelRequiredError(): boolean;
+  modelForSave(): string | null;
   selectKnownModel(value: string): void;
   selectCustomModel(): void;
   inputCustomModelValue(value: string): void;
@@ -263,6 +338,22 @@ interface SidebarStateCoordinator {
 
 interface Window {
   createSubTandemSidebarState(profiles?: SidebarStateProfile[]): SidebarStateCoordinator;
+  bindSubTandemModelControls(options: SidebarModelControlBindings): void;
+}
+
+interface SidebarModelControlElement {
+  value: string;
+  addEventListener(type: string, listener: () => void): void;
+  focus(): void;
+}
+
+interface SidebarModelControlBindings {
+  state: SidebarStateCoordinator;
+  modelSelect: SidebarModelControlElement;
+  customModelInput: SidebarModelControlElement;
+  cancelPendingSave(): void;
+  renderModelControl(): void;
+  renderModelFeedback(): void;
 }
 
 function createSubTandemSidebarState(
@@ -303,7 +394,11 @@ function createSubTandemSidebarState(
     profiles: [...initialProfiles],
     deletedProfileIds: [],
     editingProfileId: null,
+    profileEditorContextVersion: 0,
     selectedProfileId: null,
+    profileAuthority: null,
+    profileActivationRequests: {},
+    profileActivationErrors: {},
     credentialDisplayProfileId: null,
     profileTests: {},
     requests: {},
@@ -315,6 +410,7 @@ function createSubTandemSidebarState(
       serviceTypeLabel: "OpenAI",
     },
     pendingProfileSave: null,
+    deleteConfirmation: null,
     modelControl: {
       value: "",
       mode: "custom",
@@ -322,6 +418,7 @@ function createSubTandemSidebarState(
       contextKey: "",
       refreshState: "idle",
       refreshMessage: "",
+      validationError: null,
     },
     overlayPosition: {
       displayPosition: 0,
@@ -371,6 +468,16 @@ function createSubTandemSidebarState(
   const applyProfiles = (profiles: SidebarStateProfile[]): SidebarStateProfile[] => {
     const deleted = new Set(snapshot.deletedProfileIds);
     snapshot.profiles = profiles.filter((profile) => !deleted.has(profile.profileId));
+    const confirmation = snapshot.deleteConfirmation;
+    if (
+      confirmation &&
+      !snapshot.profiles.some(
+        (profile) =>
+          profile.profileId === confirmation.profileId &&
+          profile.revision === confirmation.expectedRevision,
+      )
+    )
+      snapshot.deleteConfirmation = null;
     return snapshot.profiles;
   };
 
@@ -395,6 +502,140 @@ function createSubTandemSidebarState(
 
   const setProfileTest = (profileId: string, value: unknown): void => {
     snapshot.profileTests[profileId] = value;
+  };
+
+  const openDeleteConfirmation = (target: {
+    profileId: string;
+    expectedRevision: number;
+    displayName: string;
+  }): boolean => {
+    if (snapshot.deleteConfirmation) return false;
+    const profile = snapshot.profiles.find(
+      (candidate) =>
+        candidate.profileId === target.profileId && candidate.revision === target.expectedRevision,
+    );
+    if (!profile || !target.displayName.trim()) return false;
+    snapshot.deleteConfirmation = {
+      ...target,
+      displayName: target.displayName.trim(),
+      phase: "confirming",
+      requestId: null,
+    };
+    return true;
+  };
+
+  const cancelDeleteConfirmation = (): SidebarDeleteConfirmationState | null => {
+    const confirmation = snapshot.deleteConfirmation;
+    if (!confirmation || confirmation.phase !== "confirming") return null;
+    snapshot.deleteConfirmation = null;
+    return confirmation;
+  };
+
+  const beginProfileDelete = (
+    requestId: string,
+  ): { profileId: string; expectedRevision: number; displayName: string } | null => {
+    const confirmation = snapshot.deleteConfirmation;
+    if (!confirmation || confirmation.phase !== "confirming" || !requestId) return null;
+    const profile = snapshot.profiles.find(
+      (candidate) =>
+        candidate.profileId === confirmation.profileId &&
+        candidate.revision === confirmation.expectedRevision,
+    );
+    if (!profile) {
+      snapshot.deleteConfirmation = null;
+      return null;
+    }
+    confirmation.phase = "deleting";
+    confirmation.requestId = requestId;
+    return {
+      profileId: confirmation.profileId,
+      expectedRevision: confirmation.expectedRevision,
+      displayName: confirmation.displayName,
+    };
+  };
+
+  const finishProfileDeleteFailure = (requestId: string): boolean => {
+    const confirmation = snapshot.deleteConfirmation;
+    if (!confirmation || confirmation.phase !== "deleting" || confirmation.requestId !== requestId)
+      return false;
+    snapshot.deleteConfirmation = null;
+    return true;
+  };
+
+  const cloneProfileAuthority = (authority: SidebarProfileAuthority): SidebarProfileAuthority => ({
+    ...authority,
+    activation: authority.activation ? { ...authority.activation } : null,
+    profiles: authority.profiles.map((profile) => ({ ...profile })),
+  });
+
+  const applyProfileAuthority = (authority: SidebarProfileAuthority): boolean => {
+    const current = snapshot.profileAuthority;
+    if (current) {
+      if (
+        authority.authorityId !== current.authorityId ||
+        authority.stateVersion < current.stateVersion
+      )
+        return false;
+      if (authority.stateVersion === current.stateVersion)
+        return JSON.stringify(authority) === JSON.stringify(current);
+    }
+    snapshot.profileAuthority = cloneProfileAuthority(authority);
+    applyProfiles(authority.profiles);
+    return true;
+  };
+
+  const profileActivationView = (profileId: string) => {
+    const authority = snapshot.profileAuthority;
+    const profile = authority?.profiles.find((candidate) => candidate.profileId === profileId);
+    const pending = Object.values(snapshot.profileActivationRequests).find(
+      (request) => request.profileId === profileId,
+    );
+    return {
+      checked: Boolean(
+        authority?.activation?.profileId === profileId &&
+        authority.activation.profileRevision === profile?.revision,
+      ),
+      disabled: !authority?.ready || Object.keys(snapshot.profileActivationRequests).length > 0,
+      busy: Boolean(pending),
+      accessibleName: `Enable ${String(profile?.displayName ?? "Profile")}`,
+      error: snapshot.profileActivationErrors[profileId] ?? null,
+      readinessMessage: authority?.ready
+        ? null
+        : "Profile activation is restoring or waiting for storage confirmation.",
+    };
+  };
+
+  const beginProfileActivation = (
+    requestId: string,
+    profileId: string,
+    enabled: boolean,
+  ): boolean => {
+    const authority = snapshot.profileAuthority;
+    if (
+      !requestId ||
+      !authority?.ready ||
+      Object.keys(snapshot.profileActivationRequests).length > 0 ||
+      !authority.profiles.some((profile) => profile.profileId === profileId)
+    )
+      return false;
+    snapshot.profileActivationRequests[requestId] = { requestId, profileId, enabled };
+    delete snapshot.profileActivationErrors[profileId];
+    return true;
+  };
+
+  const finishProfileActivation = (result: SidebarProfileActivationResult) => {
+    const request = snapshot.profileActivationRequests[result.requestId];
+    if (!request) return { accepted: false, authorityAccepted: false, announce: false };
+    delete snapshot.profileActivationRequests[result.requestId];
+    const authorityAccepted = applyProfileAuthority(result.authority);
+    if (result.outcome === "failed")
+      snapshot.profileActivationErrors[request.profileId] =
+        "Profile activation could not be changed. Try again.";
+    return {
+      accepted: true,
+      authorityAccepted,
+      announce: result.outcome === "changed" || result.outcome === "failed",
+    };
   };
 
   const beginOperation = (request: SidebarOperationRequest, message = ""): void => {
@@ -428,13 +669,9 @@ function createSubTandemSidebarState(
     message: string;
   }): { announced: boolean } => {
     const request = snapshot.requests[input.requestId];
-    const position = snapshot.profiles.findIndex(
-      (profile) => profile.profileId === input.profileId,
-    );
     const localDelete =
       request?.actionId === "delete" &&
       request.profileId === input.profileId &&
-      position >= 0 &&
       snapshot.latestRequestByRegion[request.regionId]?.requestId === input.requestId;
     const isNewDeletion = !snapshot.deletedProfileIds.includes(input.profileId);
     if (isNewDeletion) snapshot.deletedProfileIds.push(input.profileId);
@@ -445,6 +682,8 @@ function createSubTandemSidebarState(
     if (snapshot.selectedProfileId === input.profileId) snapshot.selectedProfileId = null;
     if (snapshot.credentialDisplayProfileId === input.profileId)
       snapshot.credentialDisplayProfileId = null;
+    if (snapshot.deleteConfirmation?.profileId === input.profileId)
+      snapshot.deleteConfirmation = null;
     delete snapshot.profileTests[input.profileId];
     for (const [requestId, pending] of Object.entries(snapshot.requests)) {
       if (pending.profileId === input.profileId) delete snapshot.requests[requestId];
@@ -523,7 +762,7 @@ function createSubTandemSidebarState(
     if (!pending || pending.requestId !== requestId) return null;
     snapshot.pendingProfileSave = null;
     return succeeded && pending.selectionInvalidated
-      ? "Profile updated. Select it again for translation."
+      ? "Profile updated. Enable it when you are ready."
       : fallbackMessage;
   };
 
@@ -542,12 +781,37 @@ function createSubTandemSidebarState(
   const modelCatalogs = new Map<string, string[]>();
   const customModelContexts = new Set<string>();
 
+  const activateProfileEditor = (profileId: string) => {
+    if (
+      snapshot.editingProfileId === profileId ||
+      !snapshot.profiles.some((profile) => profile.profileId === profileId)
+    )
+      return { changed: false, discardedProfileId: null };
+    const discardedProfileId = snapshot.editingProfileId;
+    snapshot.editingProfileId = profileId;
+    snapshot.profileEditorContextVersion += 1;
+    snapshot.pendingProfileSave = null;
+    snapshot.modelControl = {
+      value: "",
+      mode: "custom",
+      knownModelIds: [],
+      contextKey: "",
+      refreshState: "idle",
+      refreshMessage: "",
+      validationError: null,
+    };
+    modelCatalogs.clear();
+    customModelContexts.clear();
+    return { changed: true, discardedProfileId };
+  };
+
   const setModelContext = (contextKey: string, value: string): void => {
     if (snapshot.modelControl.contextKey !== contextKey) {
       snapshot.modelControl.contextKey = contextKey;
       snapshot.modelControl.knownModelIds = [...(modelCatalogs.get(contextKey) ?? [])];
       snapshot.modelControl.refreshState = "idle";
       snapshot.modelControl.refreshMessage = "";
+      snapshot.modelControl.validationError = null;
     }
     snapshot.modelControl.value = value;
     if (customModelContexts.has(contextKey)) snapshot.modelControl.mode = "custom";
@@ -590,6 +854,18 @@ function createSubTandemSidebarState(
     snapshot.modelControl.refreshState = state;
     snapshot.modelControl.refreshMessage = message;
   };
+
+  const setModelRequiredError = (message: string): void => {
+    snapshot.modelControl.validationError = message;
+  };
+
+  const clearModelRequiredError = (): boolean => {
+    if (!snapshot.modelControl.validationError || !snapshot.modelControl.value.trim()) return false;
+    snapshot.modelControl.validationError = null;
+    return true;
+  };
+
+  const modelForSave = (): string | null => snapshot.modelControl.value.trim() || null;
 
   const validOverlayPosition = (value: unknown): value is number =>
     Number.isInteger(value) && (value as number) >= 0 && (value as number) <= 100;
@@ -934,6 +1210,15 @@ function createSubTandemSidebarState(
     reconcileEditingProfile,
     setProfileContext,
     setProfileTest,
+    activateProfileEditor,
+    openDeleteConfirmation,
+    cancelDeleteConfirmation,
+    beginProfileDelete,
+    finishProfileDeleteFailure,
+    applyProfileAuthority,
+    profileActivationView,
+    beginProfileActivation,
+    finishProfileActivation,
     beginOperation,
     finishOperation,
     deleteSucceeded,
@@ -948,6 +1233,9 @@ function createSubTandemSidebarState(
     setModelContext,
     applyModelCatalog,
     setModelRefreshState,
+    setModelRequiredError,
+    clearModelRequiredError,
+    modelForSave,
     selectKnownModel,
     selectCustomModel,
     inputCustomModelValue,
@@ -968,5 +1256,23 @@ function createSubTandemSidebarState(
   };
 }
 
+function bindSubTandemModelControls(options: SidebarModelControlBindings): void {
+  options.modelSelect.addEventListener("change", () => {
+    options.cancelPendingSave();
+    const customSelected = options.modelSelect.value === "__custom__";
+    if (customSelected) options.state.selectCustomModel();
+    else options.state.selectKnownModel(options.modelSelect.value);
+    options.renderModelControl();
+    if (options.state.clearModelRequiredError()) options.renderModelFeedback();
+    if (customSelected) options.customModelInput.focus();
+  });
+  options.customModelInput.addEventListener("input", () => {
+    options.cancelPendingSave();
+    options.state.inputCustomModelValue(options.customModelInput.value);
+    if (options.state.clearModelRequiredError()) options.renderModelFeedback();
+  });
+}
+
 (globalThis as typeof globalThis & Window).createSubTandemSidebarState =
   createSubTandemSidebarState;
+(globalThis as typeof globalThis & Window).bindSubTandemModelControls = bindSubTandemModelControls;

@@ -36,6 +36,8 @@ export function buildProviderRequest(input: {
   fingerprint: PlaybackFingerprint;
   requestId: string;
   batchId: string;
+  authorityId: string;
+  activationGeneration: number;
   profileId: string;
   profileRevision: number;
   endpointFingerprint: string;
@@ -49,6 +51,8 @@ export function buildProviderRequest(input: {
     sessionId: input.fingerprint.sessionId,
     sessionEpoch: input.fingerprint.sessionEpoch,
     windowEpoch: input.fingerprint.windowEpoch,
+    authorityId: input.authorityId,
+    activationGeneration: input.activationGeneration,
     profileId: input.profileId,
     profileRevision: input.profileRevision,
     endpointFingerprint: input.endpointFingerprint,

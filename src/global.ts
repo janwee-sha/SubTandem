@@ -1,7 +1,6 @@
 import { identityHash, sha256Hex } from "./domain/identity.js";
 import { normalizeProviderError } from "./domain/errors.js";
 import {
-  parseProfileSelection,
   parseOverlayPositionGet,
   parseOverlayPositionPreview,
   parseOverlayPositionSave,
@@ -11,12 +10,19 @@ import {
   parseProviderModelsPreviewRequest,
   parseProviderModelsRequest,
   parseProviderAttempt,
+  parseProfileActivationGet,
+  parseProfileActivationSet,
+  parseProfileDeleteRequest,
   parseSecretSet,
   parseTargetLanguageSave,
   parseTranslationBatchProgress,
   sanitizedProfileView,
 } from "./domain/messages.js";
-import { HelperCredentialStore, CredentialStoreError } from "./credentials/store.js";
+import {
+  HelperCredentialStore,
+  HelperProfileStateStore,
+  CredentialStoreError,
+} from "./credentials/store.js";
 import { createDeferredPlayerPost } from "./adapters/iina/deferred-post.js";
 import { IinaLocalHttpBridge, IinaProcessLauncher } from "./adapters/iina/provider-transport.js";
 import { discoverHelperExecutable, TransportProcess } from "./adapters/iina/transport-process.js";
@@ -28,10 +34,12 @@ import { OpenAICompatibleProvider } from "./providers/openai.js";
 import { DeepSeekProvider } from "./providers/deepseek.js";
 import { ClaudeProvider } from "./providers/claude.js";
 import { ProviderProfiles } from "./providers/profiles.js";
+import { restoreProfileActivationAuthority } from "./providers/profile-activation.js";
+import type { ProfileActivationAuthority } from "./providers/profile-activation.js";
 import { normalizeProviderEndpoint } from "./providers/profiles.js";
 import { discoverProviderModels } from "./providers/model-discovery.js";
 import type { ConfiguredProvider } from "./providers/provider.js";
-import type { ProviderProfileSnapshot, TranslationBatchRequest } from "./providers/types.js";
+import type { ProviderProfileSnapshot } from "./providers/types.js";
 import { HelperProviderTransport as ProviderTransportAdapter } from "./adapters/iina/provider-transport.js";
 import { TransportClient } from "./transport/client.js";
 import { TransportSupervisor } from "./transport/supervisor.js";
@@ -82,12 +90,13 @@ function advanceCredentialEpoch(profileId: string): number {
   return next;
 }
 
-function restoreProfileMetadata(): void {
+function legacyProfileMetadata(): ProviderProfileSnapshot[] {
+  const legacy = new ProviderProfiles(localUuid);
   const raw = iina.preferences.get("providerProfilesJson");
-  if (typeof raw !== "string") return;
+  if (typeof raw !== "string") return [];
   try {
     const saved: unknown = JSON.parse(raw);
-    if (!Array.isArray(saved)) return;
+    if (!Array.isArray(saved)) return [];
     for (const item of saved) {
       if (!item || typeof item !== "object" || Array.isArray(item)) continue;
       const value = item as Record<string, unknown>;
@@ -104,7 +113,7 @@ function restoreProfileMetadata(): void {
       )
         continue;
       try {
-        profiles.save({
+        legacy.save({
           profileId: value.profileId,
           expectedRevision: 0,
           displayName: value.displayName,
@@ -124,25 +133,10 @@ function restoreProfileMetadata(): void {
       }
     }
   } catch {
-    return;
+    return [];
   }
+  return legacy.listLatest();
 }
-
-function persistProfileMetadata(): void {
-  const saved = profiles.listLatest().map((profile) => ({
-    profileId: profile.profileId,
-    displayName: profile.displayName,
-    kind: profile.kind,
-    endpoint: profile.endpoint,
-    model: profile.model ?? "",
-    proxyMode: profile.proxyMode ?? "system",
-    ...(profile.capability ? { capability: profile.capability } : {}),
-  }));
-  iina.preferences.set("providerProfilesJson", JSON.stringify(saved));
-  iina.preferences.sync();
-}
-
-restoreProfileMetadata();
 
 const transport = new TransportSupervisor(async () => {
   const session = await TransportProcess.bootstrap(
@@ -159,6 +153,7 @@ const transport = new TransportSupervisor(async () => {
 });
 
 const credentials = new HelperCredentialStore(transport);
+const profileStateStore = new HelperProfileStateStore(transport);
 const modelTransport = new ProviderTransportAdapter(transport, localUuid);
 interface ActiveModelRequest {
   requestId: string;
@@ -350,7 +345,20 @@ function providerFor(profile: ProviderProfileSnapshot): Promise<ConfiguredProvid
   return providerCache.get(profile);
 }
 
-const broker = new ProviderBroker(profiles, providerFor);
+let profileAuthority!: ProfileActivationAuthority;
+let broker!: ProviderBroker;
+const profilePlayers = new Set<string>();
+
+const profileReady = (async () => {
+  profileAuthority = await restoreProfileActivationAuthority({
+    authorityId: localUuid(),
+    profiles,
+    store: profileStateStore,
+    createCommitId: localUuid,
+    loadLegacyProfiles: legacyProfileMetadata,
+  });
+  broker = new ProviderBroker(profiles, profileAuthority, providerFor);
+})();
 
 function credentialFailure(error: unknown): {
   state: "unavailable";
@@ -644,23 +652,26 @@ function startStylePickerPolling(client: StylePickerClient): void {
 }
 
 async function profileViews(): Promise<unknown[]> {
-  return Promise.all(
-    profiles.listLatest().map(async (profile) => {
-      let credential: Record<string, string> | null = null;
-      try {
-        credential = await credentials.getSecret(profile.profileId);
-      } catch {
-        credential = null;
-      }
-      const contextKey = profileModelContextKey(profile);
-      const models = modelCatalogs.get(contextKey);
-      return sanitizedProfileView({
-        ...profile,
-        ...(credential ? { credential } : {}),
-        ...(models ? { modelCatalog: { contextKey, models } } : {}),
-      });
-    }),
-  );
+  await profileReady;
+  return profileAuthority.snapshot.profiles.map((authorityProfile) => {
+    const profile = profiles.get(authorityProfile.profileId, authorityProfile.revision);
+    if (!profile) return authorityProfile;
+    const contextKey = profileModelContextKey(profile);
+    const models = modelCatalogs.get(contextKey);
+    return {
+      ...authorityProfile,
+      ...(models ? { modelCatalog: { contextKey, models } } : {}),
+    };
+  });
+}
+
+function publishProfileAuthority(playerId: string | null = null): void {
+  const snapshot = profileAuthority.snapshot;
+  if (playerId !== null) {
+    postToPlayer(playerId, "profile-activation:state", snapshot);
+    return;
+  }
+  for (const target of profilePlayers) postToPlayer(target, "profile-activation:state", snapshot);
 }
 
 iina.global.onMessage("defaults:save", (raw: unknown, playerId?: string) => {
@@ -880,14 +891,52 @@ iina.global.onMessage("subtitle-style:picker-cancel", async (raw: unknown, playe
 
 iina.global.onMessage("profiles:list", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
+  await profileReady;
+  const authority = profileAuthority.snapshot;
   postToPlayer(playerId, "profiles:result", {
     requestId: requestId(raw),
+    authorityId: authority.authorityId,
+    stateVersion: authority.stateVersion,
     profiles: await profileViews(),
   });
 });
 
+iina.global.onMessage("profile-activation:get", async (raw: unknown, playerId?: string) => {
+  if (!playerId) return;
+  try {
+    const message = parseProfileActivationGet(raw);
+    profilePlayers.add(playerId);
+    await profileReady;
+    postToPlayer(playerId, "profile-activation:state", {
+      requestId: message.requestId,
+      authority: profileAuthority.snapshot,
+    });
+  } catch {
+    return;
+  }
+});
+
+iina.global.onMessage("profile-activation:set", async (raw: unknown, playerId?: string) => {
+  if (!playerId) return;
+  try {
+    const message = parseProfileActivationSet(raw);
+    await profileReady;
+    const result = await profileAuthority.set({
+      senderId: playerId,
+      requestId: message.requestId,
+      ...message.payload,
+    });
+    postToPlayer(playerId, "profile-activation:result", result);
+    if (result.outcome === "changed") publishProfileAuthority();
+    else if (result.outcome === "unchanged") publishProfileAuthority(playerId);
+  } catch {
+    return;
+  }
+});
+
 iina.global.onMessage("provider:models", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
+  await profileReady;
   let externalRequestId = requestId(raw);
   let contextKey = "invalid";
   let owner: ActiveModelRequest | null = null;
@@ -990,6 +1039,7 @@ iina.global.onMessage("provider:models", async (raw: unknown, playerId?: string)
 
 iina.global.onMessage("provider:models-preview", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
+  await profileReady;
   let externalRequestId = requestId(raw);
   let contextKey = "invalid";
   let owner: ActiveModelRequest | null = null;
@@ -1063,6 +1113,7 @@ iina.global.onMessage("provider:models-preview", async (raw: unknown, playerId?:
 
 iina.global.onMessage("profile:create-revision", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
+  await profileReady;
   try {
     const values = payload(raw);
     const kind = supportedProviderKind(values.kind);
@@ -1073,51 +1124,35 @@ iina.global.onMessage("profile:create-revision", async (raw: unknown, playerId?:
     const endpoint = normalizeProviderEndpoint(kind, String(values.endpoint ?? ""));
     const model = typeof values.model === "string" ? values.model.trim() : "";
     if (!model) throw new Error("MODEL_REQUIRED");
-    if (currentProfile && currentProfile.revision !== expectedRevision)
-      throw new Error("STALE_PROFILE_REVISION");
     const kindChanged = Boolean(currentProfile && currentProfile.kind !== kind);
-    if (kindChanged && profileId) {
-      await Promise.all([
-        broker.cancelProfile(profileId),
-        providerConnectionTests.cancelProfile(profileId),
-        cancelProfileModelRequests(profileId),
-      ]);
-      await credentials.deleteSecret(profileId);
-      advanceCredentialEpoch(profileId);
-      clearProfileProviderCache(profileId);
-      clearProfileModelCatalogs(profileId);
-    }
-    const previousSelection = profiles.selection(playerId);
-    const profile = profiles.save({
+    const wasActive = profileAuthority.snapshot.activation?.profileId === profileId;
+    const mutation = await profileAuthority.saveProfile({
       ...(profileId ? { profileId } : {}),
       ...(expectedRevision === undefined ? {} : { expectedRevision }),
-      editingWindowId: playerId,
       displayName: String(values.displayName ?? "Provider"),
       kind,
       endpoint,
       proxyMode: values.proxyMode === "direct" ? "direct" : "system",
       model,
     });
-    if (!kindChanged)
-      await Promise.all([
-        broker.cancelProfile(profile.profileId),
-        providerConnectionTests.cancelProfile(profile.profileId),
-        cancelProfileModelRequests(profile.profileId),
-      ]);
+    if (mutation.outcome !== "changed" || !mutation.profile) throw new Error("PROFILE_SAVE_FAILED");
+    const profile = mutation.profile;
+    await Promise.all([
+      broker.cancelProfile(profile.profileId),
+      providerConnectionTests.cancelProfile(profile.profileId),
+      cancelProfileModelRequests(profile.profileId),
+    ]);
+    if (kindChanged) advanceCredentialEpoch(profile.profileId);
     clearProfileProviderCache(profile.profileId);
     clearProfileModelCatalogs(profile.profileId);
-    persistProfileMetadata();
-    const retainedCredential = kindChanged
-      ? null
-      : await credentials.getSecret(profile.profileId).catch(() => null);
+    publishProfileAuthority();
+    const view = mutation.authority.profiles.find(
+      (candidate) => candidate.profileId === profile.profileId,
+    );
     postToPlayer(playerId, "profile:revision-created", {
       requestId: requestId(raw),
-      profile: sanitizedProfileView({
-        ...profile,
-        ...(retainedCredential ? { credential: retainedCredential } : {}),
-      }),
-      selectionInvalidated:
-        previousSelection?.profileId === profile.profileId && profile.revision > 1,
+      profile: view ?? sanitizedProfileView(profile),
+      selectionInvalidated: wasActive,
     });
   } catch {
     postToPlayer(playerId, "operation:error", {
@@ -1130,28 +1165,27 @@ iina.global.onMessage("profile:create-revision", async (raw: unknown, playerId?:
 
 iina.global.onMessage("profile:delete", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
+  await profileReady;
   try {
-    const values = payload(raw);
-    const profileId = String(values.profileId ?? "");
-    const expectedRevision = Number(values.expectedRevision);
-    const profile = profiles.get(profileId);
-    if (!profile || profile.revision !== expectedRevision)
-      throw new Error("STALE_PROFILE_REVISION");
-    await broker.cancelProfile(profileId);
-    await providerConnectionTests.cancelProfile(profileId);
-    await cancelProfileModelRequests(profileId);
-    await credentials.deleteSecret(profileId);
+    const message = parseProfileDeleteRequest(raw);
+    const { profileId, expectedRevision } = message.payload;
+    const wasActive = profileAuthority.snapshot.activation?.profileId === profileId;
+    const mutation = await profileAuthority.deleteProfile(profileId, expectedRevision);
+    if (mutation.outcome !== "changed") throw new Error("PROFILE_DELETE_FAILED");
+    await Promise.all([
+      broker.cancelProfile(profileId),
+      providerConnectionTests.cancelProfile(profileId),
+      cancelProfileModelRequests(profileId),
+    ]);
     advanceCredentialEpoch(profileId);
-    const affectedPlayerIds = profiles.delete(profileId);
     clearProfileProviderCache(profileId);
     clearProfileModelCatalogs(profileId);
-    persistProfileMetadata();
-    for (const target of new Set([playerId, ...affectedPlayerIds]))
-      postToPlayer(target, "profile:deleted", {
-        requestId: requestId(raw),
-        profileId,
-        selectionInvalidated: affectedPlayerIds.includes(target),
-      });
+    publishProfileAuthority();
+    postToPlayer(playerId, "profile:deleted", {
+      requestId: message.requestId,
+      profileId,
+      selectionInvalidated: wasActive,
+    });
   } catch {
     postToPlayer(playerId, "operation:error", {
       requestId: requestId(raw),
@@ -1163,12 +1197,23 @@ iina.global.onMessage("profile:delete", async (raw: unknown, playerId?: string) 
 
 iina.global.onMessage("credential:set", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
+  await profileReady;
   try {
     const secret = parseSecretSet(payload(raw));
     const profile = profiles.get(secret.profileId);
     if (!profile || profile.revision !== secret.expectedRevision)
       throw new Error("STALE_PROFILE_REVISION");
-    await credentials.setSecret(secret.profileId, secret.fields);
+    const mutation = await profileAuthority.writeCredential(
+      secret.profileId,
+      secret.expectedRevision,
+      (commitId, expectedStoreRevision, expectedProfileRevision) =>
+        credentials.setSecret(secret.profileId, secret.fields, {
+          commitId,
+          expectedStoreRevision,
+          expectedProfileRevision,
+        }),
+    );
+    if (mutation.outcome !== "changed") throw new Error("CREDENTIAL_SAVE_FAILED");
     await Promise.all([
       broker.cancelProfile(secret.profileId),
       providerConnectionTests.cancelProfile(secret.profileId),
@@ -1177,6 +1222,7 @@ iina.global.onMessage("credential:set", async (raw: unknown, playerId?: string) 
     advanceCredentialEpoch(secret.profileId);
     clearProfileProviderCache(secret.profileId);
     clearProfileModelCatalogs(secret.profileId);
+    publishProfileAuthority();
     postToPlayer(playerId, "credential:result", {
       requestId: requestId(raw),
       state: "ready",
@@ -1191,39 +1237,9 @@ iina.global.onMessage("credential:set", async (raw: unknown, playerId?: string) 
   }
 });
 
-iina.global.onMessage("profile:select", async (raw: unknown, playerId?: string) => {
-  if (!playerId) return;
-  try {
-    const selection = parseProfileSelection(payload(raw));
-    const profile = profiles.get(selection.profileId, selection.revision);
-    if (!profile || profile.endpointFingerprint !== selection.endpointFingerprint)
-      throw new Error("SELECTION_MISMATCH");
-    if (profile.kind === "claude") {
-      const secret = await credentials.getSecret(profile.profileId);
-      if (!secret?.apiKey?.trim()) throw new Error("CREDENTIAL_REQUIRED");
-    }
-    const authorized = broker.select(
-      playerId,
-      selection.profileId,
-      selection.revision,
-      selection.endpointFingerprint,
-    );
-    broker.lease(playerId, selection.profileId, selection.revision);
-    postToPlayer(playerId, "profile:selected", {
-      requestId: requestId(raw),
-      selection: authorized,
-    });
-  } catch {
-    postToPlayer(playerId, "operation:error", {
-      requestId: requestId(raw),
-      code: "PROFILE_SELECTION_FAILED",
-      userAction: "SELECT_PROFILE",
-    });
-  }
-});
-
 iina.global.onMessage("provider:test", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
+  await profileReady;
   const externalRequestId = requestId(raw);
   let testId: string | null = null;
   try {
@@ -1270,14 +1286,11 @@ iina.global.onMessage("provider:test", async (raw: unknown, playerId?: string) =
 
 iina.global.onMessage("provider:attempt", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
+  await profileReady;
   const id = requestId(raw);
   try {
     const parsed = parseProviderAttempt(raw);
-    const request = {
-      ...parsed.payload,
-      playerId: playerId as TranslationBatchRequest["playerId"],
-    };
-    const result = await broker.attempt(playerId, request, (progress) => {
+    const result = await broker.attempt(playerId, parsed.payload, (progress) => {
       try {
         postToPlayer(playerId, "provider:attempt-progress", {
           requestId: id,
@@ -1299,21 +1312,10 @@ iina.global.onMessage("provider:attempt", async (raw: unknown, playerId?: string
 
 iina.global.onMessage("provider:cancel", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
+  await profileReady;
   const values = payload(raw);
   await broker.cancel(playerId, String(values.requestId ?? requestId(raw)));
   postToPlayer(playerId, "provider:cancelled", { requestId: requestId(raw) });
-});
-
-iina.global.onMessage("profile:release", async (raw: unknown, playerId?: string) => {
-  if (!playerId) return;
-  const values = payload(raw);
-  await providerConnectionTests.cancelPlayer(playerId);
-  const modelRequest = activeModelRequests.get(playerId);
-  if (modelRequest) {
-    activeModelRequests.delete(playerId);
-    await modelTransport.cancel?.(modelRequest.jobId);
-  }
-  broker.release(playerId, String(values.profileId), Number(values.revision));
 });
 
 async function prefetchProfileModels(profile: ProviderProfileSnapshot): Promise<void> {
@@ -1362,7 +1364,8 @@ async function prefetchProfileModels(profile: ProviderProfileSnapshot): Promise<
   }
 }
 
-setTimeout(() => {
+setTimeout(async () => {
+  await profileReady;
   for (const profile of profiles.listLatest())
     void prefetchProfileModels(profile).catch(() => undefined);
 }, 0);

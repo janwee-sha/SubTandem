@@ -1,8 +1,9 @@
 import { identityHash } from "../domain/identity.js";
-import type { EndpointFingerprint, ProfileId } from "../domain/types.js";
+import type { EndpointFingerprint, PersistentProviderProfile, ProfileId } from "../domain/types.js";
 import type { ProviderProfileSnapshot } from "./types.js";
 
 type Kind = "openai" | "claude" | "deepseek" | "ollama";
+
 export interface SaveProfileInput {
   profileId?: string;
   expectedRevision?: number;
@@ -13,14 +14,6 @@ export interface SaveProfileInput {
   proxyMode?: "system" | "direct";
   model?: string;
   capability?: "strict-json-schema" | "json-object" | "prompt-json";
-}
-
-export interface WindowSelection {
-  profileId: string;
-  revision: number;
-  endpointFingerprint: string;
-  kind: Kind;
-  authorizedAt: number;
 }
 
 function invalidEndpoint(): never {
@@ -75,127 +68,108 @@ export function normalizeProviderEndpoint(kind: Kind, value: string): string {
   return `${scheme}://${authority.toLowerCase()}${path}`;
 }
 
+function fingerprint(
+  kind: Kind,
+  endpoint: string,
+  proxyMode: "system" | "direct",
+): EndpointFingerprint {
+  return identityHash({ kind, endpoint, proxyMode }) as unknown as EndpointFingerprint;
+}
+
+function cloneProfile(profile: PersistentProviderProfile): ProviderProfileSnapshot {
+  return {
+    ...profile,
+    proxyMode: profile.proxyMode ?? "system",
+  };
+}
+
+function validateStoredProfile(profile: PersistentProviderProfile): ProviderProfileSnapshot {
+  if (
+    !profile.profileId ||
+    !Number.isSafeInteger(profile.revision) ||
+    profile.revision < 1 ||
+    !profile.displayName.trim() ||
+    !profile.model?.trim()
+  )
+    throw new Error("INVALID_PROFILE");
+  const endpoint = normalizeProviderEndpoint(profile.kind, profile.endpoint);
+  if (endpoint !== profile.endpoint) throw new Error("PROFILE_ENDPOINT_MISMATCH");
+  const proxyMode = profile.proxyMode ?? "system";
+  if (profile.endpointFingerprint !== fingerprint(profile.kind, endpoint, proxyMode))
+    throw new Error("PROFILE_FINGERPRINT_MISMATCH");
+  return cloneProfile(profile);
+}
+
 export class ProviderProfiles {
-  private readonly revisions = new Map<string, Map<number, ProviderProfileSnapshot>>();
-  private readonly latest = new Map<string, number>();
-  private readonly selections = new Map<string, WindowSelection>();
-  private readonly leases = new Set<string>();
-  private collisionSequence = 0;
+  private latest = new Map<string, ProviderProfileSnapshot>();
 
   constructor(private readonly id: () => string) {}
 
-  save(input: SaveProfileInput): ProviderProfileSnapshot {
-    const generated = input.profileId ?? this.id();
-    const profileId =
-      input.profileId || !this.revisions.has(generated)
-        ? generated
-        : `${generated}-${++this.collisionSequence}`;
-    const latestRevision = this.latest.get(profileId) ?? 0;
-    if (input.profileId && input.expectedRevision !== latestRevision)
+  createSaveCandidate(input: SaveProfileInput): ProviderProfileSnapshot {
+    const profileId = input.profileId ?? this.id();
+    const current = this.latest.get(profileId);
+    if (!input.profileId && current) throw new Error("PROFILE_ID_COLLISION");
+    const expectedRevision = current?.revision ?? 0;
+    if (input.profileId && input.expectedRevision !== expectedRevision)
       throw new Error("STALE_PROFILE_REVISION");
+    const revision = expectedRevision + 1;
+    if (!Number.isSafeInteger(revision)) throw new Error("PROFILE_REVISION_EXHAUSTED");
     const endpoint = normalizeProviderEndpoint(input.kind, input.endpoint);
-    if (!input.model?.trim()) throw new Error("MODEL_REQUIRED");
-    const revision = latestRevision + 1;
-    const endpointFingerprint = identityHash({
-      kind: input.kind,
-      endpoint,
-      proxyMode: input.proxyMode ?? "system",
-    }) as unknown as EndpointFingerprint;
-    const snapshot: ProviderProfileSnapshot = {
+    const model = input.model?.trim();
+    if (!model) throw new Error("MODEL_REQUIRED");
+    const proxyMode = input.proxyMode ?? "system";
+    return {
       profileId: profileId as ProfileId,
       revision,
       displayName: input.displayName.trim() || `${input.kind} ${revision}`,
       kind: input.kind,
       endpoint,
-      endpointFingerprint,
-      proxyMode: input.proxyMode ?? "system",
-      ...(input.model?.trim() ? { model: input.model.trim() } : {}),
+      endpointFingerprint: fingerprint(input.kind, endpoint, proxyMode),
+      proxyMode,
+      model,
       ...(input.capability ? { capability: input.capability } : {}),
     };
-    const profileRevisions = this.revisions.get(profileId) ?? new Map();
-    profileRevisions.set(revision, snapshot);
-    this.revisions.set(profileId, profileRevisions);
-    this.latest.set(profileId, revision);
-    if (
-      input.editingWindowId &&
-      input.profileId &&
-      this.selections.get(input.editingWindowId)?.profileId === input.profileId
-    )
-      this.selections.delete(input.editingWindowId);
-    return snapshot;
+  }
+
+  commitCandidate(candidate: PersistentProviderProfile): ProviderProfileSnapshot {
+    const validated = validateStoredProfile(candidate);
+    const current = this.latest.get(validated.profileId);
+    if (validated.revision !== (current?.revision ?? 0) + 1)
+      throw new Error("STALE_PROFILE_REVISION");
+    this.latest.set(validated.profileId, validated);
+    return cloneProfile(validated);
+  }
+
+  save(input: SaveProfileInput): ProviderProfileSnapshot {
+    return this.commitCandidate(this.createSaveCandidate(input));
+  }
+
+  hydrate(profiles: readonly PersistentProviderProfile[]): void {
+    const replacement = new Map<string, ProviderProfileSnapshot>();
+    for (const profile of profiles) {
+      const validated = validateStoredProfile(profile);
+      if (replacement.has(validated.profileId)) throw new Error("DUPLICATE_PROFILE");
+      replacement.set(validated.profileId, validated);
+    }
+    this.latest = replacement;
   }
 
   get(profileId: string, revision?: number): ProviderProfileSnapshot | null {
-    const resolvedRevision = revision ?? this.latest.get(profileId);
-    return resolvedRevision === undefined
-      ? null
-      : (this.revisions.get(profileId)?.get(resolvedRevision) ?? null);
+    const profile = this.latest.get(profileId);
+    if (!profile || (revision !== undefined && revision !== profile.revision)) return null;
+    return cloneProfile(profile);
   }
 
   listLatest(): ProviderProfileSnapshot[] {
-    return [...this.latest].flatMap(([profileId, revision]) => {
-      const profile = this.get(profileId, revision);
-      return profile ? [profile] : [];
-    });
+    return [...this.latest.values()].map(cloneProfile);
   }
 
-  select(
-    windowId: string,
-    profileId: string,
-    revision: number,
-    endpointFingerprint: string,
-  ): WindowSelection {
-    const profile = this.get(profileId, revision);
-    if (!profile || profile.endpointFingerprint !== endpointFingerprint)
-      throw new Error("SELECTION_MISMATCH");
-    const selection = {
-      profileId,
-      revision,
-      endpointFingerprint,
-      kind: profile.kind,
-      authorizedAt: Date.now(),
-    };
-    this.selections.set(windowId, selection);
-    return selection;
-  }
-
-  selection(windowId: string): WindowSelection | null {
-    return this.selections.get(windowId) ?? null;
-  }
-
-  lease(windowId: string, profileId: string, revision: number): void {
-    if (!this.get(profileId, revision)) throw new Error("PROFILE_NOT_FOUND");
-    this.leases.add(`${windowId}\u0000${profileId}\u0000${revision}`);
-  }
-
-  release(windowId: string, profileId: string, revision: number): void {
-    this.leases.delete(`${windowId}\u0000${profileId}\u0000${revision}`);
-  }
-
-  delete(profileId: string): string[] {
-    if (!this.revisions.has(profileId)) throw new Error("PROFILE_NOT_FOUND");
-    const affected = new Set<string>();
-    for (const [windowId, selection] of this.selections) {
-      if (selection.profileId !== profileId) continue;
-      affected.add(windowId);
-      this.selections.delete(windowId);
-    }
-    for (const lease of [...this.leases]) {
-      const [windowId, leasedProfileId] = lease.split("\u0000");
-      if (leasedProfileId !== profileId) continue;
-      if (windowId) affected.add(windowId);
-      this.leases.delete(lease);
-    }
+  delete(profileId: string, expectedRevision?: number): ProviderProfileSnapshot {
+    const profile = this.latest.get(profileId);
+    if (!profile) throw new Error("PROFILE_NOT_FOUND");
+    if (expectedRevision !== undefined && expectedRevision !== profile.revision)
+      throw new Error("STALE_PROFILE_REVISION");
     this.latest.delete(profileId);
-    this.revisions.delete(profileId);
-    return [...affected].sort();
-  }
-
-  clearAuthorizations(): string[] {
-    const windowIds = new Set(this.selections.keys());
-    for (const lease of this.leases) windowIds.add(lease.split("\u0000", 1)[0]!);
-    this.selections.clear();
-    this.leases.clear();
-    return [...windowIds].sort();
+    return cloneProfile(profile);
   }
 }

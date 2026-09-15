@@ -4,10 +4,13 @@ export interface RpcEnvelope<T = unknown> {
   payload: T;
 }
 
+import type { TranslationBatchProgress, TranslationBatchRequest } from "../providers/types.js";
 import type {
-  TranslationBatchProgress,
-  TranslationBatchRequest,
-} from "../providers/types.js";
+  ActivationReference,
+  AuthorityProfile,
+  AuthoritySnapshot,
+  ProfileActivationResult,
+} from "./types.js";
 import { isTargetLanguageId } from "./target-languages.js";
 import { isOverlayPosition, isOverlayRegion, type OverlayRegion } from "./overlay-position.js";
 import {
@@ -370,9 +373,7 @@ export function parseSubtitleStylePickerResult(value: unknown): SubtitleStylePic
     !exactKeys(record, ["requestId", "outcome", "authority"]) ||
     typeof record.requestId !== "string" ||
     !/^[A-Za-z0-9_.:-]{1,128}$/.test(record.requestId) ||
-    !["confirmed", "cancelled", "unchanged", "focused", "failed"].includes(
-      String(record.outcome),
-    )
+    !["confirmed", "cancelled", "unchanged", "focused", "failed"].includes(String(record.outcome))
   )
     throw new Error("INVALID_MESSAGE");
   parseSubtitleStyleState(record.authority);
@@ -496,7 +497,7 @@ export const SIDEBAR_MESSAGE_NAMES = [
   "defaults:save",
   "profile:save",
   "secret:set",
-  "profile:select",
+  "profile-activation:set",
   "profile:delete-request",
   "provider:test",
   "provider:models",
@@ -540,14 +541,14 @@ export const GLOBAL_MESSAGE_NAMES = [
   "profiles:list",
   "profile:create-revision",
   "profile:delete",
-  "profile:select",
+  "profile-activation:get",
+  "profile-activation:set",
   "credential:set",
   "provider:test",
   "provider:models",
   "provider:models-preview",
   "provider:attempt",
   "provider:cancel",
-  "profile:release",
 ] as const;
 
 export const PROVIDER_ATTEMPT_EVENT_NAMES = [
@@ -571,6 +572,8 @@ export function parseProviderAttempt(value: unknown): RpcEnvelope<TranslationBat
       "sessionId",
       "sessionEpoch",
       "windowEpoch",
+      "authorityId",
+      "activationGeneration",
       "profileId",
       "profileRevision",
       "endpointFingerprint",
@@ -584,6 +587,8 @@ export function parseProviderAttempt(value: unknown): RpcEnvelope<TranslationBat
     !opaqueIdentity(payload.sessionId) ||
     !nonNegativeInteger(payload.sessionEpoch) ||
     !nonNegativeInteger(payload.windowEpoch) ||
+    !opaqueIdentity(payload.authorityId) ||
+    !nonNegativeInteger(payload.activationGeneration) ||
     !opaqueIdentity(payload.profileId) ||
     !Number.isInteger(payload.profileRevision) ||
     (payload.profileRevision as number) < 1 ||
@@ -921,6 +926,212 @@ export function parseSecretSet(value: unknown): {
     expectedRevision: input.expectedRevision as number,
     fields: fields as Record<string, string>,
   };
+}
+
+function parseActivationReference(value: unknown): ActivationReference | null {
+  if (value === null) return null;
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new Error("INVALID_MESSAGE");
+  const record = value as Record<string, unknown>;
+  if (
+    !exactKeys(record, [
+      "profileId",
+      "profileRevision",
+      "kind",
+      "endpointFingerprint",
+      "credentialConfigured",
+    ]) ||
+    !opaqueIdentity(record.profileId) ||
+    !Number.isSafeInteger(record.profileRevision) ||
+    (record.profileRevision as number) < 1 ||
+    !["openai", "claude", "deepseek", "ollama"].includes(String(record.kind)) ||
+    !opaqueIdentity(record.endpointFingerprint) ||
+    typeof record.credentialConfigured !== "boolean"
+  )
+    throw new Error("INVALID_MESSAGE");
+  return record as unknown as ActivationReference;
+}
+
+function parseAuthorityProfile(value: unknown): AuthorityProfile {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new Error("INVALID_MESSAGE");
+  const record = value as Record<string, unknown>;
+  const allowed = new Set([
+    "profileId",
+    "revision",
+    "displayName",
+    "kind",
+    "endpoint",
+    "endpointFingerprint",
+    "proxyMode",
+    "model",
+    "credentialConfigured",
+    "modelCatalog",
+  ]);
+  if (
+    Object.keys(record).some((key) => !allowed.has(key)) ||
+    !opaqueIdentity(record.profileId) ||
+    !Number.isSafeInteger(record.revision) ||
+    (record.revision as number) < 1 ||
+    typeof record.displayName !== "string" ||
+    !record.displayName.trim() ||
+    !["openai", "claude", "deepseek", "ollama"].includes(String(record.kind)) ||
+    typeof record.endpoint !== "string" ||
+    !record.endpoint ||
+    !opaqueIdentity(record.endpointFingerprint) ||
+    (record.proxyMode !== "system" && record.proxyMode !== "direct") ||
+    (record.model !== undefined && (typeof record.model !== "string" || !record.model.trim())) ||
+    typeof record.credentialConfigured !== "boolean"
+  )
+    throw new Error("INVALID_MESSAGE");
+  if (record.modelCatalog !== undefined) {
+    if (
+      !record.modelCatalog ||
+      typeof record.modelCatalog !== "object" ||
+      Array.isArray(record.modelCatalog)
+    )
+      throw new Error("INVALID_MESSAGE");
+    const catalog = record.modelCatalog as Record<string, unknown>;
+    if (
+      !exactKeys(catalog, ["contextKey", "models"]) ||
+      !opaqueIdentity(catalog.contextKey) ||
+      !Array.isArray(catalog.models) ||
+      catalog.models.some((model) => typeof model !== "string" || !model.trim())
+    )
+      throw new Error("INVALID_MESSAGE");
+  }
+  return record as unknown as AuthorityProfile;
+}
+
+export function parseProfileActivationGet(value: unknown): RpcEnvelope<Record<string, never>> {
+  const envelope = parseEnvelope(value);
+  if (!exactKeys(envelope.payload as Record<string, unknown>, []))
+    throw new Error("INVALID_MESSAGE");
+  return envelope as RpcEnvelope<Record<string, never>>;
+}
+
+export function parseProfileActivationSet(value: unknown): RpcEnvelope<{
+  authorityId: string;
+  profileId: string;
+  profileRevision: number;
+  endpointFingerprint: string;
+  enabled: boolean;
+}> {
+  const envelope = parseEnvelope(value);
+  const payload = envelope.payload as Record<string, unknown>;
+  if (
+    !exactKeys(payload, [
+      "authorityId",
+      "profileId",
+      "profileRevision",
+      "endpointFingerprint",
+      "enabled",
+    ]) ||
+    !opaqueIdentity(payload.authorityId) ||
+    !opaqueIdentity(payload.profileId) ||
+    !Number.isSafeInteger(payload.profileRevision) ||
+    (payload.profileRevision as number) < 1 ||
+    !opaqueIdentity(payload.endpointFingerprint) ||
+    typeof payload.enabled !== "boolean"
+  )
+    throw new Error("INVALID_MESSAGE");
+  return envelope as RpcEnvelope<{
+    authorityId: string;
+    profileId: string;
+    profileRevision: number;
+    endpointFingerprint: string;
+    enabled: boolean;
+  }>;
+}
+
+export function parseProfileActivationState(value: unknown): AuthoritySnapshot {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new Error("INVALID_MESSAGE");
+  const record = value as Record<string, unknown>;
+  if (
+    !exactKeys(record, [
+      "authorityId",
+      "stateVersion",
+      "ready",
+      "activationGeneration",
+      "activation",
+      "profiles",
+    ]) ||
+    !opaqueIdentity(record.authorityId) ||
+    !nonNegativeInteger(record.stateVersion) ||
+    typeof record.ready !== "boolean" ||
+    !nonNegativeInteger(record.activationGeneration) ||
+    !Array.isArray(record.profiles)
+  )
+    throw new Error("INVALID_MESSAGE");
+  const profiles = record.profiles.map(parseAuthorityProfile);
+  const identities = new Set(profiles.map((profile) => profile.profileId));
+  if (identities.size !== profiles.length) throw new Error("INVALID_MESSAGE");
+  const activation = parseActivationReference(record.activation);
+  if (activation) {
+    const profile = profiles.find((candidate) => candidate.profileId === activation.profileId);
+    if (
+      !profile ||
+      profile.revision !== activation.profileRevision ||
+      profile.kind !== activation.kind ||
+      profile.endpointFingerprint !== activation.endpointFingerprint ||
+      profile.credentialConfigured !== activation.credentialConfigured
+    )
+      throw new Error("INVALID_MESSAGE");
+  }
+  return { ...record, profiles, activation } as unknown as AuthoritySnapshot;
+}
+
+export function parseProfileActivationResult(value: unknown): ProfileActivationResult {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new Error("INVALID_MESSAGE");
+  const record = value as Record<string, unknown>;
+  const allowed = new Set(["requestId", "outcome", "authority", "error"]);
+  if (
+    Object.keys(record).some((key) => !allowed.has(key)) ||
+    !opaqueIdentity(record.requestId) ||
+    !["changed", "unchanged", "failed", "pending"].includes(String(record.outcome))
+  )
+    throw new Error("INVALID_MESSAGE");
+  const authority = parseProfileActivationState(record.authority);
+  if (record.outcome === "failed") {
+    if (!record.error || typeof record.error !== "object" || Array.isArray(record.error))
+      throw new Error("INVALID_MESSAGE");
+    const error = record.error as Record<string, unknown>;
+    if (
+      !exactKeys(error, ["code", "userAction"]) ||
+      !opaqueIdentity(error.code) ||
+      !opaqueIdentity(error.userAction)
+    )
+      throw new Error("INVALID_MESSAGE");
+  } else if (record.error !== undefined) {
+    throw new Error("INVALID_MESSAGE");
+  }
+  return { ...record, authority } as unknown as ProfileActivationResult;
+}
+
+export function parseProfileDeleteRequest(value: unknown): RpcEnvelope<{
+  profileId: string;
+  expectedRevision: number;
+  displayName: string;
+}> {
+  const envelope = parseEnvelope(value);
+  const payload = envelope.payload as Record<string, unknown>;
+  if (
+    !exactKeys(payload, ["profileId", "expectedRevision", "displayName"]) ||
+    !opaqueIdentity(payload.profileId) ||
+    !Number.isSafeInteger(payload.expectedRevision) ||
+    (payload.expectedRevision as number) < 1 ||
+    typeof payload.displayName !== "string" ||
+    !payload.displayName.trim() ||
+    payload.displayName.length > 256
+  )
+    throw new Error("INVALID_MESSAGE");
+  return envelope as RpcEnvelope<{
+    profileId: string;
+    expectedRevision: number;
+    displayName: string;
+  }>;
 }
 
 export function parseProfileSelection(value: unknown): {

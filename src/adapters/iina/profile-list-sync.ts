@@ -5,13 +5,59 @@ export interface ProfileListItem {
 export interface ProfileListSyncState<T extends ProfileListItem> {
   sequence: number;
   latestRequestId: string | null;
+  authorityId: string | null;
+  stateVersion: number | null;
   profiles: T[];
 }
 
 export function createProfileListSyncState<T extends ProfileListItem>(
   profiles: T[] = [],
 ): ProfileListSyncState<T> {
-  return { sequence: 0, latestRequestId: null, profiles: [...profiles] };
+  return {
+    sequence: 0,
+    latestRequestId: null,
+    authorityId: null,
+    stateVersion: null,
+    profiles: [...profiles],
+  };
+}
+
+export function bindProfileAuthority<T extends ProfileListItem>(
+  state: ProfileListSyncState<T>,
+  authorityId: string,
+  stateVersion: number,
+  profiles: T[],
+): ProfileListSyncState<T> {
+  if (
+    state.authorityId === authorityId &&
+    state.stateVersion !== null &&
+    stateVersion < state.stateVersion
+  )
+    return state;
+  return {
+    ...state,
+    authorityId,
+    stateVersion,
+    profiles: [...profiles],
+  };
+}
+
+export function acceptVersionedProfileListResult<T extends ProfileListItem>(
+  state: ProfileListSyncState<T>,
+  result: {
+    requestId: string;
+    authorityId: string;
+    stateVersion: number;
+    profiles: T[];
+  },
+): ProfileListSyncState<T> {
+  if (
+    result.requestId !== state.latestRequestId ||
+    result.authorityId !== state.authorityId ||
+    result.stateVersion !== state.stateVersion
+  )
+    return state;
+  return { ...state, profiles: [...result.profiles] };
 }
 
 export function beginProfileListRequest<T extends ProfileListItem>(
