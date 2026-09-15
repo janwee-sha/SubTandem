@@ -13,9 +13,9 @@ describe("IINA package manifest", () => {
     expect(manifest).not.toHaveProperty("global");
     expect(manifest.permissions).toEqual(["network-request", "file-system", "video-overlay"]);
     expect(manifest.permissionDescriptions).not.toHaveProperty("show-alert");
-    expect(manifest.version).toBe("0.1.4");
+    expect(manifest.version).toBe("0.1.5");
     expect(manifest.ghRepo).toBe("janwee-sha/SubTandem");
-    expect(manifest.ghVersion).toBe(1004);
+    expect(manifest.ghVersion).toBe(1005);
   });
 
   it("describes self-rendered translations without temporary display files", () => {
