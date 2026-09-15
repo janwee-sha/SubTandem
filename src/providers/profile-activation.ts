@@ -69,7 +69,38 @@ function sameActivation(
   left: ActivationReference | null,
   right: ActivationReference | null,
 ): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
+  if (!left || !right) return left === right;
+  return (
+    left.profileId === right.profileId &&
+    left.profileRevision === right.profileRevision &&
+    left.kind === right.kind &&
+    left.endpointFingerprint === right.endpointFingerprint &&
+    left.credentialConfigured === right.credentialConfigured
+  );
+}
+
+function sameProfile(
+  left: ProfileState["profiles"][number],
+  right: ProfileState["profiles"][number],
+): boolean {
+  return (
+    left.profileId === right.profileId &&
+    left.revision === right.revision &&
+    left.displayName === right.displayName &&
+    left.kind === right.kind &&
+    left.endpoint === right.endpoint &&
+    left.endpointFingerprint === right.endpointFingerprint &&
+    left.proxyMode === right.proxyMode &&
+    left.model === right.model &&
+    left.capability === right.capability
+  );
+}
+
+function sameProfiles(left: ProfileState["profiles"], right: ProfileState["profiles"]): boolean {
+  return (
+    left.length === right.length &&
+    left.every((profile, index) => sameProfile(profile, right[index]!))
+  );
 }
 
 function persistentProfiles(profiles: ProviderProfiles): ProfileState["profiles"] {
@@ -343,8 +374,7 @@ export class ProfileActivationAuthority {
         }
         if (
           result.storeRevision !== this.storeRevision + 1 ||
-          JSON.stringify(result.profileState.profiles) !==
-            JSON.stringify(persistentProfiles(this.profiles))
+          !sameProfiles(result.profileState.profiles, persistentProfiles(this.profiles))
         ) {
           this.enterReconciliation(confirmedActivation);
           return { outcome: "pending", authority: this.snapshot };
@@ -516,7 +546,7 @@ export class ProfileActivationAuthority {
       result.storeRevision === this.storeRevision + 1 &&
       result.profileState &&
       sameActivation(result.profileState.activation, profileState.activation) &&
-      JSON.stringify(result.profileState.profiles) === JSON.stringify(profileState.profiles),
+      sameProfiles(result.profileState.profiles, profileState.profiles),
     );
   }
 }

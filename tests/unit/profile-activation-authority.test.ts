@@ -63,6 +63,16 @@ function committed(input: {
   return { state: "committed", ...snapshot };
 }
 
+function sortedKeysClone<T>(value: T): T {
+  if (Array.isArray(value)) return value.map((entry) => sortedKeysClone(entry)) as T;
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, entry]) => [key, sortedKeysClone(entry)]),
+  ) as T;
+}
+
 function request(
   profile: ReturnType<ProviderProfiles["save"]>,
   enabled: boolean,
@@ -81,6 +91,15 @@ function request(
 }
 
 describe("ProfileActivationAuthority", () => {
+  it("accepts a committed activation snapshot with native-sorted Profile keys", async () => {
+    const { authority, a } = setup(async (input) => sortedKeysClone(committed(input)));
+
+    await expect(authority.set(request(a, true))).resolves.toMatchObject({
+      outcome: "changed",
+      authority: { ready: true, activation: { profileId: a.profileId } },
+    });
+  });
+
   it("commits one global activation and treats exact repeats as unchanged", async () => {
     let commits = 0;
     const { authority, a } = setup(async (input) => {

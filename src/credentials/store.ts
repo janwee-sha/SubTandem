@@ -34,11 +34,6 @@ function validatedFields(fields: Record<string, string>): Record<string, string>
   return { apiKey: fields.apiKey };
 }
 
-/**
- * Credentials are persisted by the authenticated native helper in one fixed
- * plugin-private file. The helper owns atomic writes and POSIX mode 0600;
- * this facade keeps validation and safe error classification in Global.
- */
 export class HelperCredentialStore {
   constructor(private readonly transport: TransportRpcClient) {}
 

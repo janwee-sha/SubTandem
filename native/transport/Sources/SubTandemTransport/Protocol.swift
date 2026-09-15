@@ -165,10 +165,8 @@ actor ProtocolHandler {
 
         switch path {
         case "/v1/health":
-            // IINA 1.4.4 serializes `data: {}` as a zero-byte POST body. Both
-            // encodings are side-effect-free and carry no caller-controlled
-            // fields, so accept either while rejecting every other payload.
-            guard body.isEmpty || body == Data("{}".utf8) else {
+            let isEmptyObjectBody = body.isEmpty || body == Data("{}".utf8)
+            guard isEmptyObjectBody else {
                 return .json(statusCode: 400, ["error": "invalid-request"])
             }
             return .json(statusCode: 200, ["state": "ok"])
@@ -348,7 +346,14 @@ actor ProtocolHandler {
               var object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
         else { return .json(statusCode: 503, ["error": "credential-store-unavailable"]) }
         if snapshot.lastCommit == nil { object["lastCommit"] = NSNull() }
-        if snapshot.profileState == nil { object["profileState"] = NSNull() }
+        if snapshot.profileState == nil {
+            object["profileState"] = NSNull()
+        } else if snapshot.profileState?.activation == nil,
+                  var profileState = object["profileState"] as? [String: Any]
+        {
+            profileState["activation"] = NSNull()
+            object["profileState"] = profileState
+        }
         if let state { object["state"] = state }
         return .json(statusCode: 200, object)
     }

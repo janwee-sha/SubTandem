@@ -698,6 +698,110 @@ describe("Sidebar native color picker state", () => {
 });
 
 describe("Sidebar model catalog state", () => {
+  class FakeModelControl {
+    value = "";
+    focusCount = 0;
+    private readonly listeners = new Map<string, Array<() => void>>();
+
+    addEventListener(type: string, listener: () => void): void {
+      const listeners = this.listeners.get(type) ?? [];
+      listeners.push(listener);
+      this.listeners.set(type, listeners);
+    }
+
+    focus(): void {
+      this.focusCount += 1;
+    }
+
+    dispatch(type: string): void {
+      for (const listener of this.listeners.get(type) ?? []) listener();
+    }
+  }
+
+  it("saves an exact discovered model and clears only its stale required-value error", () => {
+    const state = createState();
+    state.setModelContext("context-a", "");
+    state.applyModelCatalog("context-a", ["model-a", "model-b"]);
+    state.setModelRequiredError("Choose a model.");
+    const modelSelect = new FakeModelControl();
+    const customModelInput = new FakeModelControl();
+    let feedbackRenders = 0;
+
+    globalThis.bindSubTandemModelControls({
+      state,
+      modelSelect,
+      customModelInput,
+      cancelPendingSave: () => undefined,
+      renderModelControl: () => undefined,
+      renderModelFeedback: () => {
+        feedbackRenders += 1;
+      },
+    });
+    modelSelect.value = "model-b";
+    modelSelect.dispatch("change");
+
+    expect(state.modelForSave()).toBe("model-b");
+    expect(state.snapshot.modelControl).toMatchObject({
+      value: "model-b",
+      mode: "known",
+      refreshState: "success",
+      refreshMessage: "",
+      validationError: null,
+    });
+    expect(feedbackRenders).toBe(1);
+
+    state.setModelRefreshState("error", "The catalog request failed.");
+    modelSelect.value = "model-a";
+    modelSelect.dispatch("change");
+    expect(state.modelForSave()).toBe("model-a");
+    expect(state.snapshot.modelControl).toMatchObject({
+      refreshState: "error",
+      refreshMessage: "The catalog request failed.",
+      validationError: null,
+    });
+    expect(feedbackRenders).toBe(1);
+  });
+
+  it("saves a trimmed custom model and clears the empty-value error as soon as input is non-empty", () => {
+    const state = createState();
+    state.setModelContext("context-a", "");
+    state.setModelRequiredError("Choose a model.");
+    const modelSelect = new FakeModelControl();
+    const customModelInput = new FakeModelControl();
+    let feedbackRenders = 0;
+
+    globalThis.bindSubTandemModelControls({
+      state,
+      modelSelect,
+      customModelInput,
+      cancelPendingSave: () => undefined,
+      renderModelControl: () => undefined,
+      renderModelFeedback: () => {
+        feedbackRenders += 1;
+      },
+    });
+    modelSelect.value = "__custom__";
+    modelSelect.dispatch("change");
+    expect(customModelInput.focusCount).toBe(1);
+    expect(state.snapshot.modelControl).toMatchObject({
+      refreshState: "idle",
+      validationError: "Choose a model.",
+    });
+
+    customModelInput.value = "  namespace/custom:v2  ";
+    customModelInput.dispatch("input");
+
+    expect(state.modelForSave()).toBe("namespace/custom:v2");
+    expect(state.snapshot.modelControl).toMatchObject({
+      value: "  namespace/custom:v2  ",
+      mode: "custom",
+      refreshState: "idle",
+      refreshMessage: "",
+      validationError: null,
+    });
+    expect(feedbackRenders).toBe(1);
+  });
+
   it("restores the last successful Claude catalog per context and keeps it after failure", () => {
     const state = createState();
     state.setModelContext("claude-a", "custom-a");

@@ -64,10 +64,6 @@ function rpcError(error: TransportRpcError): SubTandemError {
     case "invalid-profile-state":
       return new SubTandemError("INVALID_PROFILE_STATE", "protocol", "RESTART_IINA");
     case "helper-rpc-failed":
-      // IINA rejects its HTTP Promise without a response body when the
-      // loopback helper has exited after its idle timeout. Treat that as an
-      // expired session so TransportSupervisor can replace it. A malformed
-      // response from a live helper is classified separately by the client.
       return new SubTandemError("HELPER_UNAVAILABLE", "network", "RESTART_IINA", true);
     case "unauthorized":
       return new SubTandemError("HELPER_UNAVAILABLE", "network", "RESTART_IINA", true);

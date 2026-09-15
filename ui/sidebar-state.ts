@@ -83,6 +83,7 @@ interface ModelControlState {
   contextKey: string;
   refreshState: "idle" | "busy" | "success" | "error";
   refreshMessage: string;
+  validationError: string | null;
 }
 
 interface SidebarOverlayPositionState {
@@ -301,6 +302,9 @@ interface SidebarStateCoordinator {
   setModelContext(contextKey: string, value: string): void;
   applyModelCatalog(contextKey: string, models: string[]): boolean;
   setModelRefreshState(state: ModelControlState["refreshState"], message?: string): void;
+  setModelRequiredError(message: string): void;
+  clearModelRequiredError(): boolean;
+  modelForSave(): string | null;
   selectKnownModel(value: string): void;
   selectCustomModel(): void;
   inputCustomModelValue(value: string): void;
@@ -334,6 +338,22 @@ interface SidebarStateCoordinator {
 
 interface Window {
   createSubTandemSidebarState(profiles?: SidebarStateProfile[]): SidebarStateCoordinator;
+  bindSubTandemModelControls(options: SidebarModelControlBindings): void;
+}
+
+interface SidebarModelControlElement {
+  value: string;
+  addEventListener(type: string, listener: () => void): void;
+  focus(): void;
+}
+
+interface SidebarModelControlBindings {
+  state: SidebarStateCoordinator;
+  modelSelect: SidebarModelControlElement;
+  customModelInput: SidebarModelControlElement;
+  cancelPendingSave(): void;
+  renderModelControl(): void;
+  renderModelFeedback(): void;
 }
 
 function createSubTandemSidebarState(
@@ -398,6 +418,7 @@ function createSubTandemSidebarState(
       contextKey: "",
       refreshState: "idle",
       refreshMessage: "",
+      validationError: null,
     },
     overlayPosition: {
       displayPosition: 0,
@@ -777,6 +798,7 @@ function createSubTandemSidebarState(
       contextKey: "",
       refreshState: "idle",
       refreshMessage: "",
+      validationError: null,
     };
     modelCatalogs.clear();
     customModelContexts.clear();
@@ -789,6 +811,7 @@ function createSubTandemSidebarState(
       snapshot.modelControl.knownModelIds = [...(modelCatalogs.get(contextKey) ?? [])];
       snapshot.modelControl.refreshState = "idle";
       snapshot.modelControl.refreshMessage = "";
+      snapshot.modelControl.validationError = null;
     }
     snapshot.modelControl.value = value;
     if (customModelContexts.has(contextKey)) snapshot.modelControl.mode = "custom";
@@ -831,6 +854,18 @@ function createSubTandemSidebarState(
     snapshot.modelControl.refreshState = state;
     snapshot.modelControl.refreshMessage = message;
   };
+
+  const setModelRequiredError = (message: string): void => {
+    snapshot.modelControl.validationError = message;
+  };
+
+  const clearModelRequiredError = (): boolean => {
+    if (!snapshot.modelControl.validationError || !snapshot.modelControl.value.trim()) return false;
+    snapshot.modelControl.validationError = null;
+    return true;
+  };
+
+  const modelForSave = (): string | null => snapshot.modelControl.value.trim() || null;
 
   const validOverlayPosition = (value: unknown): value is number =>
     Number.isInteger(value) && (value as number) >= 0 && (value as number) <= 100;
@@ -1198,6 +1233,9 @@ function createSubTandemSidebarState(
     setModelContext,
     applyModelCatalog,
     setModelRefreshState,
+    setModelRequiredError,
+    clearModelRequiredError,
+    modelForSave,
     selectKnownModel,
     selectCustomModel,
     inputCustomModelValue,
@@ -1218,5 +1256,23 @@ function createSubTandemSidebarState(
   };
 }
 
+function bindSubTandemModelControls(options: SidebarModelControlBindings): void {
+  options.modelSelect.addEventListener("change", () => {
+    options.cancelPendingSave();
+    const customSelected = options.modelSelect.value === "__custom__";
+    if (customSelected) options.state.selectCustomModel();
+    else options.state.selectKnownModel(options.modelSelect.value);
+    options.renderModelControl();
+    if (options.state.clearModelRequiredError()) options.renderModelFeedback();
+    if (customSelected) options.customModelInput.focus();
+  });
+  options.customModelInput.addEventListener("input", () => {
+    options.cancelPendingSave();
+    options.state.inputCustomModelValue(options.customModelInput.value);
+    if (options.state.clearModelRequiredError()) options.renderModelFeedback();
+  });
+}
+
 (globalThis as typeof globalThis & Window).createSubTandemSidebarState =
   createSubTandemSidebarState;
+(globalThis as typeof globalThis & Window).bindSubTandemModelControls = bindSubTandemModelControls;

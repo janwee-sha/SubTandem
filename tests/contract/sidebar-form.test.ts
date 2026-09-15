@@ -178,6 +178,8 @@ describe("IINA sidebar bundle contract", () => {
     const saveEnd = sidebarSource.indexOf('newProfileButton.addEventListener("click"', saveStart);
     const saveHandler = sidebarSource.slice(saveStart, saveEnd);
     expect(saveHandler.indexOf("if (!model)")).toBeLessThan(saveHandler.indexOf("beginOperation("));
+    expect(saveHandler).toContain("sidebarState.modelForSave()");
+    expect(sidebarSource).toContain("bindSubTandemModelControls");
   });
 
   it("uses the visible Service type as the savable default without a generic fallback", () => {

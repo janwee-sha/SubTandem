@@ -654,9 +654,10 @@ function renderActiveFeedback(): void {
 
 function renderModelFeedback(): void {
   const state = sidebarState.snapshot.modelControl;
-  if (state.refreshState === "idle") delete modelCatalogStatus.dataset.state;
-  else modelCatalogStatus.dataset.state = state.refreshState;
-  modelCatalogStatus.textContent = state.refreshMessage;
+  const visibleState = state.validationError ? "error" : state.refreshState;
+  if (visibleState === "idle") delete modelCatalogStatus.dataset.state;
+  else modelCatalogStatus.dataset.state = visibleState;
+  modelCatalogStatus.textContent = state.validationError ?? state.refreshMessage;
   refreshModelsButton.setAttribute("aria-busy", String(state.refreshState === "busy"));
 }
 
@@ -1000,16 +1001,13 @@ providerProxyMode.addEventListener("change", () => {
   requestModels("profile");
 });
 refreshModelsButton.addEventListener("click", () => requestModels("manual"));
-providerModelSelect.addEventListener("change", () => {
-  cancelPendingProfileSaveForContextChange();
-  if (providerModelSelect.value === "__custom__") sidebarState.selectCustomModel();
-  else sidebarState.selectKnownModel(providerModelSelect.value);
-  renderModelControl();
-  if (providerModelSelect.value === "__custom__") providerModel.focus();
-});
-providerModel.addEventListener("input", () => {
-  cancelPendingProfileSaveForContextChange();
-  sidebarState.inputCustomModelValue(providerModel.value);
+window.bindSubTandemModelControls({
+  state: sidebarState,
+  modelSelect: providerModelSelect,
+  customModelInput: providerModel,
+  cancelPendingSave: cancelPendingProfileSaveForContextChange,
+  renderModelControl,
+  renderModelFeedback,
 });
 providerKey.addEventListener("input", () => {
   cancelPendingProfileSaveForContextChange();
@@ -1260,9 +1258,12 @@ retrySubtitleButton.addEventListener("click", () => {
 
 saveProfileButton.addEventListener("click", () => {
   cancelPendingProfileSaveForContextChange();
-  const model = sidebarState.snapshot.modelControl.value.trim();
+  const model = sidebarState.modelForSave();
   if (!model) {
-    setModelRefreshFeedback("error", "Refresh models and choose one, or enter a custom model ID.");
+    sidebarState.setModelRequiredError(
+      "Refresh models and choose one, or enter a custom model ID.",
+    );
+    renderModelFeedback();
     providerModel.focus();
     return;
   }
