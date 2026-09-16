@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ProviderConnectionTests } from "../../src/providers/connection-tests.js";
 import type { ConfiguredProvider } from "../../src/providers/provider.js";
-import { ClaudeProvider } from "../../src/providers/claude.js";
-import type { ProviderTransportRequest } from "../../src/providers/transport.js";
-import { ProviderProfiles } from "../../src/providers/profiles.js";
 
 function configuredProvider(cancelled: string[]): ConfiguredProvider {
   return {
@@ -17,168 +14,118 @@ function configuredProvider(cancelled: string[]): ConfiguredProvider {
   };
 }
 
-describe("provider connection test registry", () => {
-  it("runs a fresh cancellable Claude Messages Test without selecting its Profile", async () => {
-    const requests: ProviderTransportRequest[] = [];
-    const profiles = new ProviderProfiles(() => "claude-profile");
-    const profile = profiles.save({
-      displayName: "Claude",
-      kind: "claude",
-      endpoint: "https://api.anthropic.com",
-      model: "exact-model",
-    });
-    const provider = new ClaudeProvider(
-      { endpoint: profile.endpoint, model: profile.model!, apiKey: "fictional-key" },
-      {
-        request: async (request) => {
-          requests.push(request);
-          const targets = JSON.parse(
-            (request.body as { messages: Array<{ content: string }> }).messages[0]!.content,
-          ).targets as Array<{ id: string }>;
-          return {
-            statusCode: 200,
-            headers: {},
-            bodyText: JSON.stringify({
-              type: "message",
-              role: "assistant",
-              stop_reason: "end_turn",
-              content: [
-                {
-                  type: "text",
-                  text: JSON.stringify({
-                    translations: targets.map((target) => ({ id: target.id, text: "ok" })),
-                  }),
-                },
-              ],
-            }),
-          };
-        },
-      },
-    );
-    const registry = new ProviderConnectionTests(() => "claude-test");
-    const task = registry.start({
-      playerId: "window-a",
-      requestId: "external-test",
-      profileId: profile.profileId,
-      profileRevision: profile.revision,
-      provider,
-    });
-
-    await expect(provider.testConnection(task.testId)).resolves.toEqual({ model: "exact-model" });
-    expect(registry.complete(task.testId)).toEqual(task);
-    expect(profiles.get(profile.profileId, profile.revision)).toEqual(profile);
-    expect(requests).toHaveLength(1);
-    expect(requests[0]!.url).toBe("https://api.anthropic.com/v1/messages");
-  });
-
-  it("gives colliding external IDs and a shared provider unique internal identities", () => {
-    const provider = configuredProvider([]);
-    let sequence = 0;
-    const registry = new ProviderConnectionTests(() => `test-${++sequence}`);
-    const first = registry.start({
-      playerId: "player-a",
-      requestId: "same-request",
-      profileId: "profile",
-      profileRevision: 1,
-      provider,
-    });
-    const second = registry.start({
-      playerId: "player-b",
-      requestId: "same-request",
-      profileId: "profile",
-      profileRevision: 1,
-      provider,
-    });
-
-    expect(first.testId).toBe("test-1");
-    expect(second.testId).toBe("test-2");
-    expect(registry.activeCount()).toBe(2);
-    expect(registry.complete(first.testId)).toEqual(first);
-    expect(registry.activeCount()).toBe(1);
-    expect(registry.get(second.testId)).toEqual(second);
-  });
-
-  it("cancels only matching profile tasks and ignores late completion", async () => {
-    const cancelled: string[] = [];
-    const provider = configuredProvider(cancelled);
-    let sequence = 0;
-    const registry = new ProviderConnectionTests(() => `test-${++sequence}`);
-    const first = registry.start({
-      playerId: "player-a",
-      requestId: "one",
+function input(senderId: string, requestId: string) {
+  return {
+    senderId,
+    requestId,
+    drawerId: `drawer-${senderId}`,
+    draftRevision: 1,
+    sourceProfile: {
       profileId: "profile-a",
-      profileRevision: 1,
-      provider,
-    });
-    const second = registry.start({
-      playerId: "player-b",
-      requestId: "two",
-      profileId: "profile-b",
       profileRevision: 2,
-      provider,
+      endpointFingerprint: "fingerprint-a",
+    },
+    credentialEpoch: 3,
+  };
+}
+
+describe("provider connection Test coordinator", () => {
+  it("registers preparing ownership before a provider exists and starts only while current", () => {
+    const registry = new ProviderConnectionTests(() => "test-1");
+    const started = registry.begin(input("window-a", "request-a"));
+
+    expect(started?.owner).toMatchObject({ phase: "preparing", provider: null });
+    expect(registry.isActive(started!.owner)).toBe(true);
+    expect(registry.attachProvider(started!.owner, configuredProvider([]))).toMatchObject({
+      phase: "running",
     });
-
-    await registry.cancelProfile("profile-a");
-
-    expect(cancelled).toEqual([first.testId]);
-    expect(registry.complete(first.testId)).toBeNull();
-    expect(registry.get(second.testId)).toEqual(second);
-    expect(second).not.toHaveProperty("selection");
   });
 
-  it("makes individual and global cancellation idempotent", async () => {
+  it("keeps one owner per sender and cancels a replaced running provider", async () => {
     const cancelled: string[] = [];
-    const provider = configuredProvider(cancelled);
     let sequence = 0;
     const registry = new ProviderConnectionTests(() => `test-${++sequence}`);
-    const first = registry.start({
-      playerId: "player-a",
-      requestId: "one",
-      profileId: "profile-a",
-      profileRevision: 1,
-      provider,
-    });
-    const second = registry.start({
-      playerId: "player-b",
-      requestId: "two",
-      profileId: "profile-b",
-      profileRevision: 1,
-      provider,
-    });
+    const first = registry.begin(input("window-a", "request-a"))!;
+    registry.attachProvider(first.owner, configuredProvider(cancelled));
+    const second = registry.begin(input("window-a", "request-b"))!;
 
-    await expect(registry.cancel(first.testId)).resolves.toBe(true);
-    await expect(registry.cancel(first.testId)).resolves.toBe(false);
-    await registry.cancelAll();
-    await registry.cancelAll();
-
-    expect(cancelled).toEqual([first.testId, second.testId]);
-    expect(registry.activeCount()).toBe(0);
+    expect(second.replaced).toEqual(first.owner);
+    expect(registry.isActive(first.owner)).toBe(false);
+    expect(registry.isActive(second.owner)).toBe(true);
+    await registry.cancelTask(second.replaced!);
+    expect(cancelled).toEqual([first.owner.testId]);
   });
 
-  it("cancels only tests owned by a released player", async () => {
-    const cancelled: string[] = [];
-    const provider = configuredProvider(cancelled);
+  it("deduplicates request IDs per sender while allowing the same ID in another sender", () => {
     let sequence = 0;
     const registry = new ProviderConnectionTests(() => `test-${++sequence}`);
-    const first = registry.start({
-      playerId: "player-a",
-      requestId: "same",
-      profileId: "profile",
-      profileRevision: 1,
-      provider,
-    });
-    const second = registry.start({
-      playerId: "player-b",
-      requestId: "same",
-      profileId: "profile",
-      profileRevision: 1,
-      provider,
-    });
+    const first = registry.begin(input("window-a", "same"));
+    expect(first).not.toBeNull();
+    expect(registry.begin(input("window-a", "same"))).toBeNull();
+    expect(registry.begin(input("window-b", "same"))?.owner.testId).toBe("test-2");
+  });
 
-    await registry.cancelPlayer("player-a");
+  it("cancels an exact request during preparation without starting network later", async () => {
+    const registry = new ProviderConnectionTests(() => "test-1");
+    const owner = registry.begin(input("window-a", "request-a"))!.owner;
 
+    await expect(registry.cancel("window-a", "request-a")).resolves.toBe(true);
+    expect(registry.attachProvider(owner, configuredProvider([]))).toBeNull();
+    await expect(registry.cancel("window-a", "request-a")).resolves.toBe(false);
+  });
+
+  it("isolates sender cancellation and clears deduplication on window release", async () => {
+    const cancelled: string[] = [];
+    let sequence = 0;
+    const registry = new ProviderConnectionTests(() => `test-${++sequence}`);
+    const first = registry.begin(input("window-a", "same"))!.owner;
+    const second = registry.begin(input("window-b", "same"))!.owner;
+    registry.attachProvider(first, configuredProvider(cancelled));
+    registry.attachProvider(second, configuredProvider(cancelled));
+
+    await registry.releaseSender("window-a");
     expect(cancelled).toEqual([first.testId]);
-    expect(registry.get(first.testId)).toBeNull();
-    expect(registry.get(second.testId)).toEqual(second);
+    expect(registry.isActive(second)).toBe(true);
+    expect(registry.begin(input("window-a", "same"))).not.toBeNull();
+  });
+
+  it("retains only safe terminal identity and invalidates active or displayed Profile results", async () => {
+    const cancelled: string[] = [];
+    let sequence = 0;
+    const registry = new ProviderConnectionTests(() => `test-${++sequence}`);
+    const completed = registry.begin(input("window-a", "completed"))!.owner;
+    registry.attachProvider(completed, configuredProvider(cancelled));
+    expect(registry.complete(completed)).toEqual(completed);
+    const active = registry.begin(input("window-b", "active"))!.owner;
+    registry.attachProvider(active, configuredProvider(cancelled));
+
+    const invalidated = await registry.invalidateProfile("profile-a");
+
+    expect(invalidated.map((owner) => owner.requestId).sort()).toEqual(["active", "completed"]);
+    expect(cancelled).toEqual([active.testId]);
+    expect(invalidated.every((owner) => !("apiKey" in owner))).toBe(true);
+  });
+
+  it("reports invalidated ownership before waiting for provider cancellation", async () => {
+    let resolveCancellation: (() => void) | undefined;
+    const cancellation = new Promise<void>((resolve) => {
+      resolveCancellation = resolve;
+    });
+    const registry = new ProviderConnectionTests(() => "test-1");
+    const owner = registry.begin(input("window-a", "active"))!.owner;
+    registry.attachProvider(owner, {
+      ...configuredProvider([]),
+      cancel: () => cancellation,
+    });
+    const reported: string[][] = [];
+
+    const invalidation = registry.invalidateProfile("profile-a", (identities) => {
+      reported.push(identities.map((identity) => identity.requestId));
+    });
+
+    expect(reported).toEqual([["active"]]);
+    expect(registry.isActive(owner)).toBe(false);
+    resolveCancellation?.();
+    await expect(invalidation).resolves.toHaveLength(1);
   });
 });

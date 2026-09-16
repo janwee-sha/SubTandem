@@ -1308,3 +1308,205 @@ describe("Sidebar Profile editing identity", () => {
     expect(state.snapshot.profileAuthority).toBeNull();
   });
 });
+
+describe("Sidebar Profile drawer identity", () => {
+  it("creates single-use drawer identities and discards asynchronous ownership on close", () => {
+    const state = createState();
+
+    const first = state.openProfileDrawer("retained");
+    expect(first.changed).toBe(true);
+    expect(state.snapshot.drawer).toMatchObject({
+      mode: "editing",
+      profileId: "retained",
+      draftRevision: 1,
+      credentialEpoch: 1,
+      validity: "current",
+    });
+    const firstDrawerId = state.snapshot.drawer.drawerId;
+
+    state.beginDrawerTest("test-1");
+    state.changeDrawerTestField();
+    expect(state.snapshot.drawer.draftRevision).toBe(2);
+    expect(state.snapshot.drawer.test).toBeNull();
+    state.changeDrawerCredential();
+    expect(state.snapshot.drawer.credentialEpoch).toBe(2);
+
+    expect(state.closeProfileDrawer()).toMatchObject({ focus: "profile", profileId: "retained" });
+    expect(state.snapshot.drawer).toMatchObject({ mode: "closed", drawerId: null });
+    state.openProfileDrawer("retained");
+    expect(state.snapshot.drawer.drawerId).not.toBe(firstDrawerId);
+  });
+
+  it("reuses one New drawer but switches away by clearing its ownership", () => {
+    const state = createState();
+
+    expect(state.openNewProfileDrawer()).toMatchObject({ changed: true, reused: false });
+    const drawerId = state.snapshot.drawer.drawerId;
+    state.beginDrawerTest("new-test");
+    expect(state.openNewProfileDrawer()).toMatchObject({ changed: false, reused: true });
+    expect(state.snapshot.drawer.drawerId).toBe(drawerId);
+
+    expect(state.openProfileDrawer("deleted")).toMatchObject({
+      changed: true,
+      discardedMode: "new",
+    });
+    expect(state.snapshot.drawer).toMatchObject({
+      mode: "editing",
+      profileId: "deleted",
+      test: null,
+    });
+  });
+
+  it("returns the exact active Test owner when locally cancelling", () => {
+    const state = createState();
+    state.openProfileDrawer("retained");
+    state.beginDrawerTest("test-cancel");
+
+    expect(state.cancelDrawerTest()).toBe("test-cancel");
+    expect(state.snapshot.drawer.test).toBeNull();
+    expect(state.cancelDrawerTest()).toBeNull();
+  });
+
+  it("accepts Test results only for the matching request, drawer and draft revision", () => {
+    const state = createState();
+    state.openProfileDrawer("retained");
+    const started = state.beginDrawerTest("test-owned")!;
+
+    expect(
+      state.finishDrawerTest(
+        "test-owned",
+        true,
+        "Wrong drawer",
+        "drawer-stale",
+        started.draftRevision,
+      ),
+    ).toBeNull();
+    expect(
+      state.finishDrawerTest(
+        "test-owned",
+        true,
+        "Wrong revision",
+        started.drawerId,
+        started.draftRevision + 1,
+      ),
+    ).toBeNull();
+    expect(
+      state.finishDrawerTest(
+        "test-owned",
+        true,
+        "Connection test passed.",
+        started.drawerId,
+        started.draftRevision,
+      ),
+    ).toMatchObject({ phase: "passed", message: "Connection test passed." });
+  });
+
+  it("does not cancel Test on delete prompt, but locks the drawer after confirmation", () => {
+    const state = createState();
+    state.openProfileDrawer("retained");
+    state.beginDrawerTest("test-delete");
+
+    expect(
+      state.openDeleteConfirmation({
+        profileId: "retained",
+        expectedRevision: 1,
+        displayName: "Retained",
+      }),
+    ).toBe(true);
+    expect(state.snapshot.drawer).toMatchObject({
+      test: { requestId: "test-delete" },
+      deletePhase: "confirming",
+    });
+    expect(state.beginProfileDelete("delete-request")).toMatchObject({ profileId: "retained" });
+    expect(state.snapshot.drawer.deletePhase).toBe("deleting");
+  });
+
+  it("preserves a current draft across ordinary refresh and conflicts on a remote revision", () => {
+    const state = createState();
+    state.openProfileDrawer("retained");
+    const drawerId = state.snapshot.drawer.drawerId;
+
+    state.applyProfiles([
+      { profileId: "deleted", revision: 2 },
+      { profileId: "retained", revision: 1, displayName: "Remote summary" },
+    ]);
+    expect(state.snapshot.drawer).toMatchObject({ drawerId, validity: "current" });
+
+    state.applyProfiles([
+      { profileId: "deleted", revision: 2 },
+      { profileId: "retained", revision: 2, displayName: "Remote revision" },
+    ]);
+    expect(state.snapshot.drawer).toMatchObject({
+      drawerId,
+      mode: "editing",
+      validity: "conflict",
+      test: null,
+    });
+  });
+
+  it("closes a drawer whose saved Profile was remotely deleted", () => {
+    const state = createState();
+    state.openProfileDrawer("deleted");
+    state.beginDrawerTest("test-remote-delete");
+
+    state.applyProfiles([{ profileId: "retained", revision: 1 }]);
+
+    expect(state.snapshot.drawer).toMatchObject({ mode: "closed", drawerId: null });
+    expect(state.snapshot.editingProfileId).toBeNull();
+  });
+});
+
+describe("Sidebar Profile drawer save lifecycle", () => {
+  it("keeps a new drawer open through profile creation and closes only at terminal success", () => {
+    const state = createState();
+    state.openNewProfileDrawer();
+    const drawerId = state.snapshot.drawer.drawerId;
+
+    state.beginProfileSave("save-new", true);
+    expect(state.snapshot.drawer).toMatchObject({ drawerId, savePhase: "profile", mode: "new" });
+    expect(
+      state.profileRevisionCreated("save-new", {
+        profileId: "created",
+        revision: 1,
+        endpointFingerprint: "created-fingerprint",
+        selectionInvalidated: false,
+      }),
+    ).toEqual({ accepted: true, waitingForCredential: true });
+    expect(state.snapshot.drawer).toMatchObject({
+      drawerId,
+      mode: "editing",
+      profileId: "created",
+      savePhase: "credential",
+      sourceProfile: {
+        profileId: "created",
+        profileRevision: 1,
+        endpointFingerprint: "created-fingerprint",
+      },
+    });
+
+    expect(state.completeProfileSave("save-new", "Saved.", true)).toBe("Saved.");
+    expect(state.snapshot.drawer).toMatchObject({ mode: "closed", drawerId: null });
+  });
+
+  it("retains a retryable editing drawer after credential failure without recreating", () => {
+    const state = createState();
+    state.openNewProfileDrawer();
+    state.beginProfileSave("save-partial", true);
+    state.profileRevisionCreated("save-partial", {
+      profileId: "created",
+      revision: 1,
+      endpointFingerprint: "created-fingerprint",
+      selectionInvalidated: false,
+    });
+
+    expect(state.completeProfileSave("save-partial", "Credential failed.", false)).toBe(
+      "Credential failed.",
+    );
+    expect(state.snapshot.drawer).toMatchObject({
+      mode: "editing",
+      profileId: "created",
+      savePhase: null,
+      validity: "current",
+    });
+  });
+});

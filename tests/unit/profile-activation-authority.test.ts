@@ -91,6 +91,40 @@ function request(
 }
 
 describe("ProfileActivationAuthority", () => {
+  it("places a new Profile first, keeps updates in place and never enables on save", async () => {
+    const { authority, a, b } = setup();
+
+    const created = await authority.saveProfile({
+      displayName: "Created",
+      kind: "ollama",
+      endpoint: "http://127.0.0.1:11434",
+      model: "model-created",
+      proxyMode: "direct",
+    });
+    expect(created).toMatchObject({ outcome: "changed" });
+    expect(authority.snapshot.profiles.map((value) => value.displayName)).toEqual([
+      "Created",
+      "A",
+      "B",
+    ]);
+    expect(authority.snapshot.activation).toBeNull();
+
+    await authority.saveProfile({
+      profileId: a.profileId,
+      expectedRevision: a.revision,
+      displayName: "A updated",
+      kind: a.kind,
+      endpoint: a.endpoint,
+      model: a.model,
+      proxyMode: "direct",
+    });
+    expect(authority.snapshot.profiles.map((value) => value.displayName)).toEqual([
+      "Created",
+      "A updated",
+      b.displayName,
+    ]);
+  });
+
   it("accepts a committed activation snapshot with native-sorted Profile keys", async () => {
     const { authority, a } = setup(async (input) => sortedKeysClone(committed(input)));
 

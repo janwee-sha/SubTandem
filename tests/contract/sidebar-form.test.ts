@@ -9,6 +9,30 @@ describe("IINA sidebar bundle contract", () => {
     readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
   ) as { targets?: { sidebar?: { publicUrl?: string } } };
 
+  it("places a single hidden editor drawer inside the grouped Profile list", () => {
+    const heading = html.indexOf('id="provider-heading"');
+    const create = html.indexOf('id="new-profile"');
+    const profiles = html.indexOf('id="profiles"');
+    const drawer = html.indexOf('id="profile-drawer"');
+    expect(heading).toBeGreaterThan(-1);
+    expect(create).toBeGreaterThan(heading);
+    expect(create).toBeLessThan(profiles);
+    expect(drawer).toBeGreaterThan(profiles);
+    expect(html).toMatch(/id="profiles" class="profiles group-surface"/);
+    expect(html).toMatch(/id="profile-drawer"[^>]*hidden/);
+    expect(html.match(/id="profile-drawer"/g)).toHaveLength(1);
+  });
+
+  it("uses Disclosure semantics and never renders saved Test state in summaries", () => {
+    expect(sidebarSource).toContain('className = "profile-disclosure"');
+    expect(sidebarSource).toContain('setAttribute("aria-expanded"');
+    expect(sidebarSource).toContain('setAttribute("aria-controls"');
+    expect(sidebarSource).toContain("`Edit ${profile.displayName}`");
+    expect(sidebarSource).not.toContain('className = "profile-test-state"');
+    expect(sidebarSource).not.toContain('passed: "Test passed"');
+    expect(sidebarSource).not.toContain('failed: "Test failed"');
+  });
+
   it("uses relative classic-script assets that IINA can load", () => {
     expect(packageJson.targets?.sidebar?.publicUrl).toBe("./");
     expect(html).toContain('<script src="./provider-status.ts"></script>');
@@ -31,7 +55,8 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarSource).toContain("new ProfileCardInteractionCoordinator");
     expect(sidebarSource).toContain("tabIndex = 0");
     expect(sidebarSource).toContain("`Edit ${profile.displayName}`");
-    expect(sidebarSource).toContain("activateProfileEditor");
+    expect(sidebarSource).toContain("openProfileDrawer");
+    expect(sidebarSource).toContain("mountProfileDrawer");
     expect(sidebarSource).not.toMatch(/\["edit",\s*"Edit"\]/);
     expect(sidebarCss).toContain(".profile.is-editing");
   });
@@ -46,14 +71,14 @@ describe("IINA sidebar bundle contract", () => {
     expect(html.indexOf('id="confirm-profile-delete"')).toBeLessThan(
       html.indexOf('id="cancel-profile-delete"'),
     );
-    expect(sidebarSource).toContain("profile-action-placeholder");
+    expect(html).toContain("profile-action-placeholder");
     expect(sidebarSource).toContain("Testing…");
     expect(sidebarSource).toContain("Deleting…");
     expect(sidebarCss).toContain(".profile-action-placeholder");
   });
 
   it("centers both Profile actions in fixed-height slots with a destructive filled Delete", () => {
-    const actionRule = sidebarCss.match(/\.profile-actions button\s*{[^}]+}/)?.[0] ?? "";
+    const actionRule = sidebarCss.match(/\.profile-drawer-actions button\s*{[^}]+}/)?.[0] ?? "";
     expect(actionRule).toContain("display: grid");
     expect(actionRule).toContain("place-items: center");
     expect(actionRule).toMatch(/\n\s*height: 26px;/);
@@ -65,7 +90,7 @@ describe("IINA sidebar bundle contract", () => {
     );
     expect(sidebarCss).toMatch(/\.profile-action-placeholder\s*{[^}]*visibility: hidden/);
     expect(sidebarCss).toMatch(
-      /\.profile-actions \.danger\s*{[^}]*color: white;[^}]*background: var\(--destructive-fill\)/,
+      /\.profile-drawer-actions \.danger\s*{[^}]*color: white;[^}]*background: var\(--destructive-fill\)/,
     );
   });
 
@@ -78,12 +103,11 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarCss).toMatch(
       /--profile-selection-surface: color-mix\(\s*in srgb,\s*CanvasText var\(--profile-selection-strength\),\s*transparent\s*\)/,
     );
-    expect(editing).toContain("border-radius: 6px");
     expect(editing).toContain("border-top-color: transparent");
     expect(sidebarCss).toMatch(
       /\.profile\.is-editing \+ \.profile\s*{[^}]*border-top-color: transparent/,
     );
-    expect(editing).toContain("background: var(--profile-selection-surface)");
+    expect(editing).toContain("background: color-mix(in srgb, var(--profile-selection-surface)");
     expect(editing).toMatch(/--label-secondary: color-mix\([^;]+CanvasText/);
     expect(editing).toMatch(/--label-tertiary: color-mix\([^;]+CanvasText/);
     expect(editing).not.toMatch(/--(?:label-primary|success|danger):/);
@@ -100,7 +124,7 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarCss).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
   });
 
-  it("keeps Profiles on the host surface and groups only the session status", () => {
+  it("groups Profiles and session status on native sidebar surfaces", () => {
     expect(html).not.toContain("IINA live translation");
     expect(html).toContain('<label class="setting-row">');
     expect(html).not.toContain('class="sidebar-header"');
@@ -109,12 +133,12 @@ describe("IINA sidebar bundle contract", () => {
     );
     expect(html.match(/class="sidebar-section/g)).toHaveLength(3);
     expect(html).not.toContain('class="card');
-    expect(html).toContain('id="profiles" class="profiles"');
+    expect(html).toContain('id="profiles" class="profiles group-surface"');
     expect(html).toContain('class="session-group group-surface"');
-    expect(html.match(/group-surface/g)).toHaveLength(1);
+    expect(html.match(/group-surface/g)).toHaveLength(2);
     const profilesRule = sidebarCss.match(/\.profiles\s*{[^}]+}/)?.[0] ?? "";
     expect(profilesRule).toContain("min-width: 0");
-    expect(profilesRule).not.toMatch(/background|border|box-shadow|overflow/);
+    expect(profilesRule).not.toMatch(/background|border|box-shadow/);
     const profileRule = sidebarCss.match(/\.profile\s*{[^}]+}/)?.[0] ?? "";
     expect(profileRule).toContain("background: transparent");
     expect(sidebarCss).toMatch(/html,\s*body\s*{[\s\S]*?background: transparent/);
@@ -174,7 +198,7 @@ describe("IINA sidebar bundle contract", () => {
 
   it("uses Claude defaults, Messages URL guidance, Custom ID and a required API key", () => {
     expect(sidebarSource).toContain(
-      'claude: { endpoint: "https://api.anthropic.com", model: "", proxyMode: "system" }',
+      'claude: { endpoint: "https://api.anthropic.com", model: "", proxyMode: "direct" }',
     );
     expect(sidebarSource).toContain('claude: "Claude"');
     expect(sidebarSource).not.toMatch(/claude[^\n]+model:\s*"[^"]+"/i);
@@ -189,7 +213,7 @@ describe("IINA sidebar bundle contract", () => {
 
   it("uses independent DeepSeek defaults without preselecting a model", () => {
     expect(sidebarSource).toContain(
-      'deepseek: { endpoint: "https://api.deepseek.com", model: "", proxyMode: "system" }',
+      'deepseek: { endpoint: "https://api.deepseek.com", model: "", proxyMode: "direct" }',
     );
     expect(sidebarSource).toContain('deepseek: "DeepSeek"');
     expect(sidebarSource).not.toMatch(/deepseek[^\n]+model:\s*"[^"]+"/i);
@@ -251,14 +275,44 @@ describe("IINA sidebar bundle contract", () => {
     expect(html).toContain('id="new-profile"');
     expect(html).toContain('id="request-url"');
     expect(html).toContain('id="provider-proxy-mode"');
-    expect(html).toContain('<option value="direct">');
+    expect(html).toContain('<option value="direct" selected>');
+  });
+
+  it("uses direct for every new service draft and explains both route choices", () => {
+    for (const kind of ["openai", "claude", "deepseek", "ollama"])
+      expect(sidebarSource).toMatch(
+        new RegExp(`${kind}: \\{ endpoint: [^\\n]+proxyMode: "direct" \\}`),
+      );
+    expect(html).toMatch(
+      /<option value="direct" selected>Connect directly<\/option>[\s\S]*?<option value="system">Use macOS proxy settings<\/option>/,
+    );
+    expect(html).toMatch(
+      /Connect directly without the macOS proxy, or use the current macOS proxy\s+settings\./,
+    );
+    expect(html).not.toMatch(/fallback|falls back/i);
+  });
+
+  it("keeps drawer actions in Test-left and Cancel/Delete/Save-right order", () => {
+    const actions =
+      html.match(/<div class="profile-drawer-actions">[\s\S]*?<\/div>\s*<\/div>/)?.[0] ?? "";
+    const test = actions.indexOf('id="test-profile"');
+    const endGroup = actions.indexOf('class="profile-drawer-actions-end"');
+    const cancel = actions.indexOf('id="cancel-profile"');
+    const remove = actions.indexOf('id="delete-profile"');
+    const save = actions.indexOf('id="save-profile"');
+    expect(test).toBeGreaterThan(-1);
+    expect(endGroup).toBeGreaterThan(test);
+    expect(cancel).toBeGreaterThan(endGroup);
+    expect(remove).toBeGreaterThan(cancel);
+    expect(save).toBeGreaterThan(remove);
+    expect(sidebarCss).toMatch(/\.profile-drawer-actions\s*{[^}]*justify-content: space-between/);
   });
 
   it("keeps local exception regions and one visually hidden operation announcer", () => {
     for (const [control, status] of [
       ['id="enabled"', 'id="translation-status"'],
       ['id="target-language"', 'id="language-status"'],
-      ['class="form-actions"', 'id="profile-editor-status"'],
+      ['class="profile-drawer-actions"', 'id="profile-editor-status"'],
       ['id="retry-subtitle"', 'id="subtitle-retry-status"'],
     ]) {
       expect(html.indexOf(control)).toBeGreaterThan(-1);
@@ -278,7 +332,7 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarCss).toMatch(
       /\.assistive-only\s*{[\s\S]*?position: absolute[\s\S]*?clip-path: inset\(50%\)/,
     );
-    expect(sidebarSource).toContain('className = "operation-status profile-operation-status"');
+    expect(sidebarSource).toContain('class="operation-status profile-operation-status"');
     expect(sidebarSource).toContain('feedback.visibility === "assistive"');
     expect(sidebarSource).not.toContain(".deleted-profile-result");
     expect(html).toMatch(
@@ -288,17 +342,16 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarSource).not.toContain("profileEditorStatus.textContent = `Editing");
   });
 
-  it("keeps activation separate from credential and connection verification", () => {
+  it("keeps activation separate from drawer-only credential and connection verification", () => {
     expect(sidebarSource).toMatch(/postMessage\(\s*"profile-activation:set"/);
     expect(sidebarSource).not.toContain("Profile selected for translation.");
     expect(sidebarSource).toContain("window.subtandemCredentialStatusMessage");
     expect(html).toContain("private local file (mode 0600)");
-    expect(sidebarSource).toContain('type ProfileTestState = "not tested" | "passed" | "failed"');
     expect(sidebarSource).toContain('" · no key saved"');
-    expect(sidebarSource).toContain('className = "profile-test-state"');
-    expect(sidebarSource).toContain('passed: "Test passed"');
-    expect(sidebarSource).toContain('failed: "Test failed"');
-    expect(sidebarSource).not.toContain("` · ${profileTestStates");
+    expect(html).toContain('id="profile-test-status"');
+    expect(sidebarSource).toContain('postMessage(\n    "provider:test"');
+    expect(sidebarSource).not.toContain('className = "profile-test-state"');
+    expect(sidebarSource).not.toContain("profileTestStates");
   });
 
   it("exposes one catalog-driven Target Language control without source language input", () => {

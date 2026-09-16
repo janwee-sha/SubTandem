@@ -7,6 +7,9 @@ import { ModelCatalogSync } from "../../src/adapters/iina/model-catalog-sync.js"
 import type { TranslationBatchRequest, TranslationBatchResult } from "../../src/providers/types.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 import { ClaudeProvider } from "../../src/providers/claude.js";
+import { DeepSeekProvider } from "../../src/providers/deepseek.js";
+import { OllamaProvider } from "../../src/providers/ollama.js";
+import { OpenAICompatibleProvider } from "../../src/providers/openai.js";
 import type { ProviderTransportRequest } from "../../src/providers/transport.js";
 import {
   activateTestProfile,
@@ -65,6 +68,108 @@ class DeferredConfiguredProvider implements ConfiguredProvider {
 }
 
 describe("provider connection lifecycle integration", () => {
+  it("runs fixed draft probes for all providers without Profile or subtitle side effects", async () => {
+    const requests: ProviderTransportRequest[] = [];
+    const transport = {
+      request: async (request: ProviderTransportRequest) => {
+        requests.push(request);
+        if (request.url.endsWith("/api/version"))
+          return { statusCode: 200, headers: {}, bodyText: '{"version":"test"}' };
+        if (request.url.endsWith("/api/tags"))
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: '{"models":[{"model":"draft-ollama"}]}',
+          };
+        const body = request.body as { messages: Array<{ content: string }> };
+        const content = body.messages.at(-1)!.content;
+        const delimited = /INPUT_JSON_BEGIN\n([\s\S]*?)\nINPUT_JSON_END/.exec(content);
+        const targets = (
+          JSON.parse(delimited?.[1] ?? content) as { targets: Array<{ id: string }> }
+        ).targets;
+        const translated = JSON.stringify({
+          translations: targets.map(({ id }) => ({ id, text: `T:${id}` })),
+        });
+        if (request.url.includes("anthropic.com"))
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              type: "message",
+              role: "assistant",
+              stop_reason: "end_turn",
+              content: [{ type: "text", text: translated }],
+            }),
+          };
+        if (request.url.endsWith("/api/chat"))
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({ message: { content: translated } }),
+          };
+        return {
+          statusCode: 200,
+          headers: {},
+          bodyText: JSON.stringify({
+            choices: [{ finish_reason: "stop", message: { content: translated } }],
+          }),
+        };
+      },
+    };
+    const providers: ConfiguredProvider[] = [
+      new OpenAICompatibleProvider(
+        {
+          endpoint: "https://openai.example/v1",
+          model: "draft-openai",
+          apiKey: "entered-openai-key",
+          proxyMode: "direct",
+          sessionId: "draft-session",
+        },
+        transport,
+      ),
+      new ClaudeProvider(
+        {
+          endpoint: "https://api.anthropic.com",
+          model: "draft-claude",
+          apiKey: "entered-claude-key",
+          proxyMode: "direct",
+        },
+        transport,
+      ),
+      new DeepSeekProvider(
+        {
+          endpoint: "https://api.deepseek.com",
+          model: "draft-deepseek",
+          apiKey: "entered-deepseek-key",
+          proxyMode: "direct",
+        },
+        transport,
+      ),
+      new OllamaProvider(
+        {
+          endpoint: "http://127.0.0.1:11434",
+          model: "draft-ollama",
+          proxyMode: "direct",
+        },
+        transport,
+      ),
+    ];
+    const profiles = new ProviderProfiles(() => "unused-profile");
+
+    for (const [index, provider] of providers.entries())
+      await expect(provider.testConnection(`draft-test-${index}`)).resolves.toBeDefined();
+
+    expect(profiles.listLatest()).toEqual([]);
+    expect(requests).toHaveLength(6);
+    expect(requests.every((request) => request.proxyMode === "direct")).toBe(true);
+    expect(JSON.stringify(requests)).not.toContain("currently-playing-private-subtitle");
+    expect(
+      requests
+        .filter((request) => request.body)
+        .map((request) => (request.body as { model?: string }).model),
+    ).toEqual(["draft-openai", "draft-claude", "draft-deepseek", "draft-ollama"]);
+  });
+
   it("runs Claude Save, fresh Test, activation, translation, Update and Delete", async () => {
     const requests: ProviderTransportRequest[] = [];
     const profiles = new ProviderProfiles(() => "claude-profile");
@@ -103,15 +208,23 @@ describe("provider connection lifecycle integration", () => {
       },
     );
     const tests = new ProviderConnectionTests(() => "claude-fresh-test");
-    const task = tests.start({
-      playerId: "window-a",
+    const started = tests.begin({
+      senderId: "window-a",
       requestId: "test-request",
-      profileId: created.profileId,
-      profileRevision: created.revision,
-      provider,
+      drawerId: "drawer-claude",
+      draftRevision: 1,
+      sourceProfile: {
+        profileId: created.profileId,
+        profileRevision: created.revision,
+        endpointFingerprint: created.endpointFingerprint,
+      },
+      credentialEpoch: 1,
     });
+    expect(started).not.toBeNull();
+    const task = started!.owner;
+    expect(tests.attachProvider(task, provider)).toBe(task);
     await provider.testConnection(task.testId);
-    tests.complete(task.testId);
+    tests.complete(task);
     const authority = createTestProfileAuthority(profiles);
     await activateTestProfile(authority, created, "window-a");
     const broker = new ProviderBroker(profiles, authority, () => provider);
@@ -261,20 +374,36 @@ describe("provider connection lifecycle integration", () => {
     const attemptA = broker.attempt("player-a", request);
     const attemptB = broker.attempt("player-b", request);
     void attemptA.catch(() => undefined);
-    const testA = tests.start({
-      playerId: "player-a",
+    const startedA = tests.begin({
+      senderId: "player-a",
       requestId: "same-request",
-      profileId: sharedProfile.profileId,
-      profileRevision: sharedProfile.revision,
-      provider,
+      drawerId: "drawer-a",
+      draftRevision: 1,
+      sourceProfile: {
+        profileId: sharedProfile.profileId,
+        profileRevision: sharedProfile.revision,
+        endpointFingerprint: sharedProfile.endpointFingerprint,
+      },
+      credentialEpoch: 1,
     });
-    const testB = tests.start({
-      playerId: "player-b",
+    const startedB = tests.begin({
+      senderId: "player-b",
       requestId: "same-request",
-      profileId: retainedProfile.profileId,
-      profileRevision: retainedProfile.revision,
-      provider,
+      drawerId: "drawer-b",
+      draftRevision: 1,
+      sourceProfile: {
+        profileId: retainedProfile.profileId,
+        profileRevision: retainedProfile.revision,
+        endpointFingerprint: retainedProfile.endpointFingerprint,
+      },
+      credentialEpoch: 1,
     });
+    expect(startedA).not.toBeNull();
+    expect(startedB).not.toBeNull();
+    const testA = startedA!.owner;
+    const testB = startedB!.owner;
+    tests.attachProvider(testA, provider);
+    tests.attachProvider(testB, provider);
     const testPendingA = provider.testConnection(testA.testId);
     const testPendingB = provider.testConnection(testB.testId);
     void testPendingA.catch(() => undefined);
@@ -284,11 +413,11 @@ describe("provider connection lifecycle integration", () => {
     expect(new Set([...provider.attemptIds, ...provider.testIds]).size).toBe(4);
 
     await broker.cancel("player-a", request.requestId);
-    await tests.cancelProfile(sharedProfile.profileId);
+    await tests.invalidateProfile(sharedProfile.profileId);
 
     await expect(attemptA).rejects.toMatchObject({ category: "cancelled" });
     await expect(testPendingA).rejects.toMatchObject({ category: "cancelled" });
-    expect(tests.complete(testA.testId)).toBeNull();
+    expect(tests.complete(testA)).toBeNull();
     const remainingAttemptId = provider.attemptIds.find(
       (id) => !provider.cancelledIds.includes(id),
     );
@@ -300,7 +429,7 @@ describe("provider connection lifecycle integration", () => {
       translations: [{ text: "player-b-result" }],
     });
     await expect(testPendingB).resolves.toEqual({ ok: true });
-    expect(tests.complete(testB.testId)).toEqual(testB);
+    expect(tests.complete(testB)).toEqual(testB);
     expect(tests.activeCount()).toBe(0);
   });
 });

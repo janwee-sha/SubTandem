@@ -91,14 +91,14 @@ describe("Main profile list synchronization", () => {
 
     state = upsertCreatedProfile(state, { profileId: "created", revision: 1 });
     expect(state.profiles).toEqual([
-      { profileId: "retained", revision: 1 },
       { profileId: "created", revision: 1 },
+      { profileId: "retained", revision: 1 },
     ]);
 
     state = acceptProfileListResult(state, stale.requestId, [
       { profileId: "retained", revision: 1 },
     ]);
-    expect(state.profiles.map((profile) => profile.profileId)).toEqual(["retained", "created"]);
+    expect(state.profiles.map((profile) => profile.profileId)).toEqual(["created", "retained"]);
   });
 
   it("replaces an existing profile revision without changing its list position", () => {

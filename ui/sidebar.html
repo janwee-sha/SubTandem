@@ -294,109 +294,135 @@
       </section>
 
       <section class="sidebar-section" aria-labelledby="provider-heading">
-        <div class="section-heading">
+        <div class="section-heading profile-section-heading">
           <div>
             <h2 id="provider-heading">Translation service</h2>
             <p>Subtitle text is sent only to the Profile you explicitly enable.</p>
           </div>
+          <button id="new-profile" class="secondary" type="button">New profile</button>
         </div>
-        <label class="field">
-          <span>Service type</span>
-          <select id="provider-kind">
-            <option value="openai">OpenAI</option>
-            <option value="claude">Claude</option>
-            <option value="deepseek">DeepSeek</option>
-            <option value="ollama">Ollama</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>Profile name</span>
-          <input id="profile-name" type="text" value="OpenAI" autocomplete="off" />
-        </label>
-        <label class="field">
-          <span>Endpoint</span>
-          <input
-            id="provider-endpoint"
-            type="url"
-            value="https://api.openai.com/v1"
-            aria-describedby="endpoint-hint"
-            autocomplete="off"
-            required
-          />
-          <small id="endpoint-hint"
-            >Enter a complete HTTP(S) API root, usually ending in /v1.</small
-          >
-          <small id="request-url">Requests will use /chat/completions below this root.</small>
-        </label>
-        <div id="model-row" class="field">
-          <label for="provider-model-select">Model ID</label>
-          <div class="model-control">
-            <select id="provider-model-select" aria-describedby="model-hint">
-              <option value="__custom__">Custom model ID…</option>
-            </select>
-            <button
-              id="refresh-models"
-              class="secondary"
-              type="button"
-              aria-label="Refresh model list"
-              aria-busy="false"
-            >
-              <svg class="refresh-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M20 11a8 8 0 1 0-2.34 5.66M20 4v7h-7" />
-              </svg>
-            </button>
+        <div id="profiles" class="profiles group-surface">
+          <p class="empty">No saved profiles yet.</p>
+        </div>
+        <div id="profile-drawer" class="profile-drawer" hidden>
+          <div class="profile-drawer-form">
+            <label class="field">
+              <span>Service type</span>
+              <select id="provider-kind">
+                <option value="openai">OpenAI</option>
+                <option value="claude">Claude</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="ollama">Ollama</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Profile name</span>
+              <input id="profile-name" type="text" value="OpenAI" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Endpoint</span>
+              <input
+                id="provider-endpoint"
+                type="url"
+                value="https://api.openai.com/v1"
+                aria-describedby="endpoint-hint"
+                autocomplete="off"
+                required
+              />
+              <small id="endpoint-hint"
+                >Enter a complete HTTP(S) API root, usually ending in /v1.</small
+              >
+              <small id="request-url">Requests will use /chat/completions below this root.</small>
+            </label>
+            <div id="model-row" class="field">
+              <label for="provider-model-select">Model ID</label>
+              <div class="model-control">
+                <select id="provider-model-select" aria-describedby="model-hint">
+                  <option value="__custom__">Custom model ID…</option>
+                </select>
+                <button
+                  id="refresh-models"
+                  class="secondary"
+                  type="button"
+                  aria-label="Refresh model list"
+                  aria-busy="false"
+                >
+                  <svg
+                    class="refresh-icon"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path d="M20 11a8 8 0 1 0-2.34 5.66M20 4v7h-7" />
+                  </svg>
+                </button>
+              </div>
+              <input
+                id="provider-model"
+                type="text"
+                placeholder="e.g. gpt-4.1-mini"
+                aria-describedby="model-hint"
+                autocomplete="off"
+                required
+              />
+              <small id="model-hint"
+                >Choose a discovered model or enter its exact identifier.</small
+              >
+              <p
+                id="model-catalog-status"
+                class="operation-status domain-status"
+                role="status"
+                aria-live="polite"
+              ></p>
+            </div>
+            <label class="field">
+              <span>Network route</span>
+              <select id="provider-proxy-mode" aria-describedby="proxy-mode-hint">
+                <option value="direct" selected>Connect directly</option>
+                <option value="system">Use macOS proxy settings</option>
+              </select>
+              <small id="proxy-mode-hint"
+                >Connect directly without the macOS proxy, or use the current macOS proxy
+                settings.</small
+              >
+            </label>
+            <label id="credential-row" class="field">
+              <span>API key</span>
+              <input
+                id="provider-key"
+                type="password"
+                autocomplete="new-password"
+                placeholder="Not shown after saving"
+                aria-describedby="credential-hint"
+                maxlength="8192"
+              />
+              <small id="credential-hint"
+                >Write-only; optional when unauthenticated. Enter a key and refresh models before
+                saving a protected service.</small
+              >
+            </label>
           </div>
-          <input
-            id="provider-model"
-            type="text"
-            placeholder="e.g. gpt-4.1-mini"
-            aria-describedby="model-hint"
-            autocomplete="off"
-            required
-          />
-          <small id="model-hint">Choose a discovered model or enter its exact identifier.</small>
+          <p id="profile-test-status" class="operation-status" role="status" aria-live="polite"></p>
+          <div class="profile-drawer-actions">
+            <button id="test-profile" class="secondary" type="button">
+              <span class="profile-action-label">Test</span>
+              <span class="profile-action-placeholder" aria-hidden="true">Testing…</span>
+            </button>
+            <div class="profile-drawer-actions-end">
+              <button id="cancel-profile" class="secondary" type="button">Cancel</button>
+              <button id="delete-profile" class="secondary danger" type="button">Delete</button>
+              <button id="save-profile" type="button">Save</button>
+            </div>
+          </div>
           <p
-            id="model-catalog-status"
-            class="operation-status domain-status"
+            id="profile-editor-status"
+            class="operation-status"
             role="status"
             aria-live="polite"
           ></p>
-        </div>
-        <label class="field">
-          <span>Network route</span>
-          <select id="provider-proxy-mode" aria-describedby="proxy-mode-hint">
-            <option value="system">Use macOS proxy settings</option>
-            <option value="direct">Connect directly</option>
-          </select>
-          <small id="proxy-mode-hint"
-            >Use direct only when the configured macOS proxy rejects this service.</small
-          >
-        </label>
-        <label id="credential-row" class="field">
-          <span>API key</span>
-          <input
-            id="provider-key"
-            type="password"
-            autocomplete="new-password"
-            placeholder="Not shown after saving"
-            aria-describedby="credential-hint"
-            maxlength="8192"
-          />
-          <small id="credential-hint"
-            >Write-only; optional when unauthenticated. Enter a key and refresh models before saving
-            a protected service.</small
-          >
-        </label>
-        <div class="form-actions">
-          <button id="save-profile" type="button">Save profile</button>
-          <button id="new-profile" class="secondary" type="button" hidden>New profile</button>
-        </div>
-        <p id="profile-editor-status" class="operation-status" role="status" aria-live="polite"></p>
-        <p id="credential-state" class="credential-state">
-          Saved API keys use SubTandem's private local file (mode 0600).
-        </p>
-        <div id="profiles" class="profiles">
-          <p class="empty">No saved profiles yet.</p>
+          <p id="credential-state" class="credential-state">
+            Saved API keys use SubTandem's private local file (mode 0600).
+          </p>
         </div>
       </section>
 
