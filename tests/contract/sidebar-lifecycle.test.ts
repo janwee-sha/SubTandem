@@ -23,6 +23,21 @@ describe("IINA sidebar lifecycle contract", () => {
     "utf8",
   );
 
+  it("updates stable Profile rows and mounts one editor only in the active row", () => {
+    const renderStart = sidebarSource.indexOf("function renderProfiles");
+    const renderEnd = sidebarSource.indexOf(
+      'window.iina?.onMessage("subtitle-style:state"',
+      renderStart,
+    );
+    const renderSource = sidebarSource.slice(renderStart, renderEnd);
+    expect(sidebarSource).toContain("profileRows");
+    expect(renderSource).not.toContain("profilesElement.replaceChildren()");
+    expect(renderSource).toContain("mountProfileDrawer");
+    expect(sidebarSource).toContain("aria-expanded");
+    expect(sidebarSource).toContain("closeProfileDrawer");
+    expect(sidebarSource).toContain('providerKey.value = ""');
+  });
+
   it("carries activated DeepSeek and Claude kinds into Main translation ownership", () => {
     expect(mainSource).toContain("kind: activation.kind");
     expect(mainSource).toContain("controller.setProviderSelection(currentSelection)");
@@ -43,7 +58,8 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(sidebarSource).toContain(
       "pendingProfileSave.contextSignature !== editorContextSignature()",
     );
-    expect(sidebarSource).toContain("profileTestStates.delete(result.profile.profileId)");
+    expect(sidebarSource).toContain("finishSuccessfulProfileSave(result.profile)");
+    expect(sidebarStateSource).toContain("snapshot.drawer = closedDrawer()");
   });
 
   it("keeps the saved-key hint specific to the active provider kind", () => {
@@ -56,9 +72,10 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(credentialHandler).toContain("optional when unauthenticated");
   });
 
-  it("does not let a late Claude save, Test or deletion replace a newer editor owner", () => {
-    expect(sidebarSource).toContain("pendingProfileTests");
-    expect(sidebarSource).toContain("testedProfile.revision !== tested.revision");
+  it("does not let a late Claude save, Test or deletion replace a newer drawer owner", () => {
+    expect(sidebarSource).toContain("currentTest.requestId !== result.requestId");
+    expect(sidebarSource).toContain("currentTest.drawerId !== result.drawerId");
+    expect(sidebarSource).toContain("currentTest.draftRevision !== result.draftRevision");
     expect(sidebarSource).toContain("result.requestId !== pendingProfileSave.requestId");
     expect(sidebarSource).toContain("deleteSucceeded");
     expect(sidebarStateSource).toContain("latestRequestByRegion");
@@ -93,6 +110,35 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(sidebarSource).toContain("draftCredentialEpoch += 1");
     expect(sidebarSource).toContain('trigger === "manual"');
     expect(sidebarSource).toContain('"provider:models-preview"');
+  });
+
+  it("cancels draft Test ownership on field changes, Save, confirmed Delete and window close", () => {
+    const testStart = sidebarSource.indexOf('testProfileButton.addEventListener("click"');
+    const testEnd = sidebarSource.indexOf('saveProfileButton.addEventListener("click"', testStart);
+    const testHandler = sidebarSource.slice(testStart, testEnd);
+    expect(testHandler.indexOf("validModelEndpoint()")).toBeLessThan(
+      testHandler.indexOf('postMessage(\n    "provider:test"'),
+    );
+    expect(sidebarSource).toContain("invalidateDrawerTestField(true)");
+    expect(sidebarSource).toContain('providerModelSelect.addEventListener("change"');
+    expect(sidebarSource).toContain('providerModel.addEventListener("input"');
+    expect(sidebarSource).toContain("cancelActiveDrawerTest()");
+    expect(sidebarSource).toContain('window.addEventListener("pagehide"');
+    expect(mainSource).toMatch(
+      /iina\.window-will-close[\s\S]*?postMessage\("provider:test-cancel"/,
+    );
+  });
+
+  it("reuses saved credentials only for the same normalized service identity", () => {
+    const start = sidebarSource.indexOf("function canUseSavedDraftCredential");
+    const end = sidebarSource.indexOf("function modelRefreshPayload", start);
+    const matcher = sidebarSource.slice(start, end);
+    expect(matcher).toContain("editingProfile.kind === kind");
+    expect(matcher).toContain("normalizedEndpointForCredential");
+    expect(matcher).toContain("editingProfile.proxyMode === providerProxyMode.value");
+    expect(sidebarSource).toContain('credential.source === "none"');
+    expect(sidebarSource).toContain("currentTest.drawerId !== result.drawerId");
+    expect(sidebarSource).toContain("currentTest.draftRevision !== result.draftRevision");
   });
 
   it("binds DeepSeek save and credential feedback to the current editor context", () => {
@@ -200,6 +246,7 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(globalSource).toContain("publishProfileAuthority()");
     expect(sidebarSource).toContain("deleteSucceeded");
     expect(sidebarSource).toContain('onMessage("profile:deleted"');
+    expect(sidebarSource).toContain('setActionBusy("delete", result.profileId, false)');
   });
 
   it("keeps request-correlated operation feedback separate from session polling", () => {
@@ -275,9 +322,9 @@ describe("IINA sidebar lifecycle contract", () => {
     const renderEnd = sidebarSource.indexOf('window.iina?.onMessage("state:update"', renderStart);
     const renderSource = sidebarSource.slice(renderStart, renderEnd);
 
-    expect(renderSource).toContain("latestRequestByRegion");
     expect(renderSource).toContain("renderActiveFeedback");
-    expect(renderSource).toContain('className = "profile-test-state"');
+    expect(renderSource).toContain("mountProfileDrawer");
+    expect(renderSource).not.toContain('className = "profile-test-state"');
     expect(renderSource).not.toContain("deletedResults");
   });
 

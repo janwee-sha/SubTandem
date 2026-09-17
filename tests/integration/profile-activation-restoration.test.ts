@@ -120,6 +120,42 @@ function profiles(): ProviderProfiles {
 }
 
 describe("Profile activation restoration", () => {
+  it("preserves the persisted Profile order across restoration and window projections", async () => {
+    const second = {
+      ...profile,
+      profileId: "7a90a4e6-cc4f-4f59-99b7-8ff522f887af",
+      displayName: "B",
+      endpoint: "https://b.example/v1",
+      endpointFingerprint: identityHash({
+        kind: "openai",
+        endpoint: "https://b.example/v1",
+        proxyMode: "direct",
+      }),
+    };
+    const store = new RestorationStore({
+      revision: 3,
+      initialized: true,
+      state: { profiles: [second, profile], activation: null },
+      configured: { [second.profileId]: false, [profile.profileId]: false },
+    });
+    const authority = await restoreProfileActivationAuthority({
+      authorityId: "authority-order",
+      profiles: profiles(),
+      store,
+      createCommitId: () => "00000000-0000-4000-8000-000000000009",
+    });
+
+    expect(authority.snapshot.profiles.map((value) => value.profileId)).toEqual([
+      second.profileId,
+      profile.profileId,
+    ]);
+    const first = new ProfileActivationSync("get-first");
+    const secondWindow = new ProfileActivationSync("get-second");
+    expect(first.accept(authority.snapshot, "get-first")).toBe(true);
+    expect(secondWindow.accept(authority.snapshot, "get-second")).toBe(true);
+    expect(first.snapshot.profiles).toEqual(secondWindow.snapshot.profiles);
+  });
+
   it("imports latest Profiles once as disabled without changing their revisions", async () => {
     const registry = profiles();
     const store = new RestorationStore();

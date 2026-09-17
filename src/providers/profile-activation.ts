@@ -324,7 +324,7 @@ export class ProfileActivationAuthority {
       const candidate = this.profiles.createSaveCandidate(input);
       const nextProfiles = persistentProfiles(this.profiles);
       const index = nextProfiles.findIndex((profile) => profile.profileId === candidate.profileId);
-      if (index === -1) nextProfiles.push(candidate);
+      if (index === -1) nextProfiles.unshift(candidate);
       else nextProfiles[index] = candidate;
       const nextActivation =
         this.activation?.profileId === candidate.profileId ? null : this.activation;

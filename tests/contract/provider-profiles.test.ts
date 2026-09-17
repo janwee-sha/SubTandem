@@ -29,6 +29,39 @@ describe("latest provider Profiles", () => {
     expect(profiles.listLatest()).toEqual([latest]);
   });
 
+  it("keeps legacy missing routes as system while preserving explicit route values", () => {
+    let sequence = 0;
+    const source = new ProviderProfiles(() => `profile-${++sequence}`);
+    const legacy = source.save({
+      displayName: "Legacy",
+      kind: "openai",
+      endpoint: "https://legacy.example/v1",
+      model: "legacy-model",
+    });
+    const { proxyMode: _omitted, ...legacyWithoutRoute } = legacy;
+    expect(_omitted).toBe("system");
+    const restored = new ProviderProfiles(() => "unused");
+    restored.hydrate([legacyWithoutRoute]);
+    expect(restored.listLatest()[0]!.proxyMode).toBe("system");
+
+    const direct = source.save({
+      displayName: "Direct",
+      kind: "deepseek",
+      endpoint: "https://api.deepseek.com",
+      model: "direct-model",
+      proxyMode: "direct",
+    });
+    const system = source.save({
+      displayName: "System",
+      kind: "ollama",
+      endpoint: "http://127.0.0.1:11434",
+      model: "system-model",
+      proxyMode: "system",
+    });
+    expect(direct.proxyMode).toBe("direct");
+    expect(system.proxyMode).toBe("system");
+  });
+
   it("hydrates exact latest revisions without incrementing or retaining history", () => {
     const source = new ProviderProfiles(() => "profile-a");
     const latest = source.save({

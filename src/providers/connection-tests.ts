@@ -1,66 +1,146 @@
 import type { ConfiguredProvider } from "./provider.js";
 
-export interface ProviderConnectionTestTask {
-  testId: string;
-  playerId: string;
-  requestId: string;
+export interface ProviderConnectionTestSourceProfile {
   profileId: string;
   profileRevision: number;
-  provider: ConfiguredProvider;
+  endpointFingerprint: string;
 }
 
-export type ProviderConnectionTestInput = Omit<ProviderConnectionTestTask, "testId">;
+export interface ProviderConnectionTestIdentity {
+  testId: string;
+  senderId: string;
+  requestId: string;
+  drawerId: string;
+  draftRevision: number;
+  sourceProfile?: ProviderConnectionTestSourceProfile;
+  credentialEpoch: number;
+}
+
+export interface ProviderConnectionTestTask extends ProviderConnectionTestIdentity {
+  phase: "preparing" | "running";
+  provider: ConfiguredProvider | null;
+}
+
+export type ProviderConnectionTestInput = Omit<ProviderConnectionTestIdentity, "testId">;
 
 export class ProviderConnectionTests {
-  private readonly active = new Map<string, ProviderConnectionTestTask>();
+  private readonly activeBySender = new Map<string, ProviderConnectionTestTask>();
+  private readonly seenBySender = new Map<string, Set<string>>();
+  private readonly lastBySender = new Map<string, ProviderConnectionTestIdentity>();
 
   constructor(private readonly createId: () => string) {}
 
-  start(input: ProviderConnectionTestInput): ProviderConnectionTestTask {
-    const testId = this.createId();
-    if (this.active.has(testId)) throw new Error("DUPLICATE_TEST_ID");
-    const task = { testId, ...input };
-    this.active.set(testId, task);
-    return task;
+  begin(
+    input: ProviderConnectionTestInput,
+  ): { owner: ProviderConnectionTestTask; replaced: ProviderConnectionTestTask | null } | null {
+    const seen = this.seenBySender.get(input.senderId) ?? new Set<string>();
+    this.seenBySender.set(input.senderId, seen);
+    if (seen.has(input.requestId)) return null;
+    seen.add(input.requestId);
+    const replaced = this.activeBySender.get(input.senderId) ?? null;
+    if (replaced) this.activeBySender.delete(input.senderId);
+    this.lastBySender.delete(input.senderId);
+    const owner: ProviderConnectionTestTask = {
+      testId: this.createId(),
+      ...input,
+      ...(input.sourceProfile ? { sourceProfile: { ...input.sourceProfile } } : {}),
+      phase: "preparing",
+      provider: null,
+    };
+    this.activeBySender.set(input.senderId, owner);
+    return { owner, replaced };
   }
 
-  get(testId: string): ProviderConnectionTestTask | null {
-    return this.active.get(testId) ?? null;
+  isActive(owner: ProviderConnectionTestTask): boolean {
+    return this.activeBySender.get(owner.senderId) === owner;
   }
 
-  complete(testId: string): ProviderConnectionTestTask | null {
-    const task = this.active.get(testId);
-    if (!task) return null;
-    this.active.delete(testId);
-    return task;
+  attachProvider(
+    owner: ProviderConnectionTestTask,
+    provider: ConfiguredProvider,
+  ): ProviderConnectionTestTask | null {
+    if (!this.isActive(owner) || owner.phase !== "preparing") return null;
+    owner.provider = provider;
+    owner.phase = "running";
+    return owner;
   }
 
-  async cancel(testId: string): Promise<boolean> {
-    const task = this.complete(testId);
-    if (!task) return false;
-    await task.provider.cancel?.(testId);
+  complete(owner: ProviderConnectionTestTask): ProviderConnectionTestTask | null {
+    if (!this.isActive(owner)) return null;
+    this.activeBySender.delete(owner.senderId);
+    this.lastBySender.set(owner.senderId, this.identity(owner));
+    return owner;
+  }
+
+  async cancelTask(owner: ProviderConnectionTestTask): Promise<void> {
+    await owner.provider?.cancel?.(owner.testId);
+    owner.provider = null;
+  }
+
+  async cancel(senderId: string, requestId: string): Promise<boolean> {
+    const active = this.activeBySender.get(senderId);
+    if (active?.requestId === requestId) {
+      this.activeBySender.delete(senderId);
+      await this.cancelTask(active);
+      return true;
+    }
+    const last = this.lastBySender.get(senderId);
+    if (last?.requestId !== requestId) return false;
+    this.lastBySender.delete(senderId);
     return true;
   }
 
-  async cancelProfile(profileId: string): Promise<void> {
-    const tasks = [...this.active.values()].filter((task) => task.profileId === profileId);
-    for (const task of tasks) this.active.delete(task.testId);
-    await Promise.allSettled(tasks.map((task) => task.provider.cancel?.(task.testId)));
+  async releaseSender(senderId: string): Promise<void> {
+    const active = this.activeBySender.get(senderId);
+    this.activeBySender.delete(senderId);
+    this.lastBySender.delete(senderId);
+    this.seenBySender.delete(senderId);
+    if (active) await this.cancelTask(active);
   }
 
-  async cancelPlayer(playerId: string): Promise<void> {
-    const tasks = [...this.active.values()].filter((task) => task.playerId === playerId);
-    for (const task of tasks) this.active.delete(task.testId);
-    await Promise.allSettled(tasks.map((task) => task.provider.cancel?.(task.testId)));
+  async invalidateProfile(
+    profileId: string,
+    onInvalidated?: (identities: ProviderConnectionTestIdentity[]) => void,
+  ): Promise<ProviderConnectionTestIdentity[]> {
+    const invalidated: ProviderConnectionTestIdentity[] = [];
+    const cancellations: Promise<void>[] = [];
+    for (const [senderId, active] of this.activeBySender) {
+      if (active.sourceProfile?.profileId !== profileId) continue;
+      this.activeBySender.delete(senderId);
+      invalidated.push(this.identity(active));
+      cancellations.push(this.cancelTask(active));
+    }
+    for (const [senderId, last] of this.lastBySender) {
+      if (last.sourceProfile?.profileId !== profileId) continue;
+      this.lastBySender.delete(senderId);
+      invalidated.push(this.identity(last));
+    }
+    onInvalidated?.(invalidated.map((identity) => this.identity(identity)));
+    await Promise.allSettled(cancellations);
+    return invalidated;
   }
 
   async cancelAll(): Promise<void> {
-    const tasks = [...this.active.values()];
-    this.active.clear();
-    await Promise.allSettled(tasks.map((task) => task.provider.cancel?.(task.testId)));
+    const owners = [...this.activeBySender.values()];
+    this.activeBySender.clear();
+    this.lastBySender.clear();
+    this.seenBySender.clear();
+    await Promise.allSettled(owners.map((owner) => this.cancelTask(owner)));
   }
 
   activeCount(): number {
-    return this.active.size;
+    return this.activeBySender.size;
+  }
+
+  private identity(owner: ProviderConnectionTestIdentity): ProviderConnectionTestIdentity {
+    return {
+      testId: owner.testId,
+      senderId: owner.senderId,
+      requestId: owner.requestId,
+      drawerId: owner.drawerId,
+      draftRevision: owner.draftRevision,
+      ...(owner.sourceProfile ? { sourceProfile: { ...owner.sourceProfile } } : {}),
+      credentialEpoch: owner.credentialEpoch,
+    };
   }
 }

@@ -5,6 +5,7 @@ export interface RpcEnvelope<T = unknown> {
 }
 
 import type { TranslationBatchProgress, TranslationBatchRequest } from "../providers/types.js";
+import type { ProviderErrorCategory } from "../providers/types.js";
 import type {
   ActivationReference,
   AuthorityProfile,
@@ -12,6 +13,7 @@ import type {
   ProfileActivationResult,
 } from "./types.js";
 import { isTargetLanguageId } from "./target-languages.js";
+import { USER_ACTIONS, type UserActionCode } from "./status.js";
 import { isOverlayPosition, isOverlayRegion, type OverlayRegion } from "./overlay-position.js";
 import {
   createFontResolution,
@@ -500,6 +502,7 @@ export const SIDEBAR_MESSAGE_NAMES = [
   "profile-activation:set",
   "profile:delete-request",
   "provider:test",
+  "provider:test-cancel",
   "provider:models",
   "provider:models-preview",
   "translation:set-enabled",
@@ -545,6 +548,7 @@ export const GLOBAL_MESSAGE_NAMES = [
   "profile-activation:set",
   "credential:set",
   "provider:test",
+  "provider:test-cancel",
   "provider:models",
   "provider:models-preview",
   "provider:attempt",
@@ -700,6 +704,199 @@ export function parseEnvelope(value: unknown): RpcEnvelope {
     throw new Error("INVALID_MESSAGE");
   }
   return record as unknown as RpcEnvelope;
+}
+
+export interface ProviderDraftSourceProfile {
+  profileId: string;
+  profileRevision: number;
+  endpointFingerprint: string;
+}
+
+export type ProviderDraftCredential =
+  { source: "entered"; apiKey: string } | { source: "saved" } | { source: "none" };
+
+export interface ProviderTestRequestPayload {
+  drawerId: string;
+  draftRevision: number;
+  kind: "openai" | "claude" | "deepseek" | "ollama";
+  endpoint: string;
+  proxyMode: "system" | "direct";
+  model: string;
+  sourceProfile?: ProviderDraftSourceProfile;
+  credential: ProviderDraftCredential;
+}
+
+export type ProviderTestRequest = RpcEnvelope<ProviderTestRequestPayload>;
+
+export type ProviderTestCancelRequest = RpcEnvelope<
+  { testRequestId: string } | Record<string, never>
+>;
+
+export type ProviderTestResult =
+  | {
+      requestId: string;
+      drawerId: string;
+      draftRevision: number;
+      ok: true;
+    }
+  | {
+      requestId: string;
+      drawerId: string;
+      draftRevision: number;
+      ok: false;
+      category: ProviderErrorCategory;
+      retryable: boolean;
+      statusCode?: number;
+      code?: string;
+      retryAfterMs?: number;
+      userAction: UserActionCode;
+    };
+
+const providerTestCategories = new Set<ProviderErrorCategory>([
+  "network",
+  "timeout",
+  "http",
+  "authentication",
+  "configuration",
+  "model",
+  "quota",
+  "refusal",
+  "protocol",
+  "cancelled",
+]);
+const providerTestCodes = new Set([
+  "CREDENTIAL_REQUIRED",
+  "MODEL_REQUIRED",
+  "PROFILE_NOT_FOUND",
+  "CREDENTIAL_CONTEXT_CHANGED",
+  "REQUEST_CANCELLED",
+  "PROVIDER_TEST_FAILED",
+  "TEST_INVALIDATED",
+  "INVALID_MESSAGE",
+]);
+const providerTestIdentity = (value: unknown): value is string =>
+  typeof value === "string" && /^[A-Za-z0-9_.-]{1,128}$/.test(value);
+
+export function parseProviderTestRequest(value: unknown): ProviderTestRequest {
+  const envelope = parseEnvelope(value);
+  const payload = envelope.payload as Record<string, unknown>;
+  if (
+    !exactKeys(payload, [
+      "drawerId",
+      "draftRevision",
+      "kind",
+      "endpoint",
+      "proxyMode",
+      "model",
+      ...(payload.sourceProfile === undefined ? [] : ["sourceProfile"]),
+      "credential",
+    ]) ||
+    !providerTestIdentity(payload.drawerId) ||
+    !Number.isSafeInteger(payload.draftRevision) ||
+    (payload.draftRevision as number) < 1 ||
+    !["openai", "claude", "deepseek", "ollama"].includes(String(payload.kind)) ||
+    typeof payload.endpoint !== "string" ||
+    !payload.endpoint.trim() ||
+    (payload.proxyMode !== "system" && payload.proxyMode !== "direct") ||
+    typeof payload.model !== "string" ||
+    !payload.model.trim()
+  )
+    throw new Error("INVALID_MESSAGE");
+  if (payload.sourceProfile !== undefined) {
+    if (
+      !payload.sourceProfile ||
+      typeof payload.sourceProfile !== "object" ||
+      Array.isArray(payload.sourceProfile)
+    )
+      throw new Error("INVALID_MESSAGE");
+    const source = payload.sourceProfile as Record<string, unknown>;
+    if (
+      !exactKeys(source, ["profileId", "profileRevision", "endpointFingerprint"]) ||
+      !providerTestIdentity(source.profileId) ||
+      !Number.isSafeInteger(source.profileRevision) ||
+      (source.profileRevision as number) < 1 ||
+      typeof source.endpointFingerprint !== "string" ||
+      !source.endpointFingerprint ||
+      source.endpointFingerprint.length > 256
+    )
+      throw new Error("INVALID_MESSAGE");
+  }
+  if (
+    !payload.credential ||
+    typeof payload.credential !== "object" ||
+    Array.isArray(payload.credential)
+  )
+    throw new Error("INVALID_MESSAGE");
+  const credential = payload.credential as Record<string, unknown>;
+  if (
+    credential.source === "entered"
+      ? !exactKeys(credential, ["source", "apiKey"]) ||
+        typeof credential.apiKey !== "string" ||
+        !credential.apiKey.trim() ||
+        credential.apiKey.length > 8_192
+      : (credential.source !== "saved" && credential.source !== "none") ||
+        !exactKeys(credential, ["source"])
+  )
+    throw new Error("INVALID_MESSAGE");
+  return envelope as ProviderTestRequest;
+}
+
+export function parseProviderTestCancelRequest(value: unknown): ProviderTestCancelRequest {
+  const envelope = parseEnvelope(value);
+  const payload = envelope.payload as Record<string, unknown>;
+  if (
+    !exactKeys(payload, payload.testRequestId === undefined ? [] : ["testRequestId"]) ||
+    (payload.testRequestId !== undefined && !providerTestIdentity(payload.testRequestId))
+  )
+    throw new Error("INVALID_MESSAGE");
+  return envelope as ProviderTestCancelRequest;
+}
+
+export function parseProviderTestResult(value: unknown): ProviderTestResult {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new Error("INVALID_MESSAGE");
+  const result = value as Record<string, unknown>;
+  if (
+    !providerTestIdentity(result.requestId) ||
+    !providerTestIdentity(result.drawerId) ||
+    !Number.isSafeInteger(result.draftRevision) ||
+    (result.draftRevision as number) < 1 ||
+    typeof result.ok !== "boolean"
+  )
+    throw new Error("INVALID_MESSAGE");
+  if (result.ok) {
+    if (!exactKeys(result, ["requestId", "drawerId", "draftRevision", "ok"]))
+      throw new Error("INVALID_MESSAGE");
+    return result as ProviderTestResult;
+  }
+  const allowed = new Set([
+    "requestId",
+    "drawerId",
+    "draftRevision",
+    "ok",
+    "category",
+    "retryable",
+    "statusCode",
+    "code",
+    "retryAfterMs",
+    "userAction",
+  ]);
+  if (
+    Object.keys(result).some((key) => !allowed.has(key)) ||
+    !providerTestCategories.has(result.category as ProviderErrorCategory) ||
+    typeof result.retryable !== "boolean" ||
+    !USER_ACTIONS.includes(result.userAction as UserActionCode) ||
+    (result.statusCode !== undefined &&
+      (!Number.isInteger(result.statusCode) ||
+        (result.statusCode as number) < 100 ||
+        (result.statusCode as number) > 599)) ||
+    (result.retryAfterMs !== undefined &&
+      (!Number.isSafeInteger(result.retryAfterMs) || (result.retryAfterMs as number) < 0)) ||
+    (result.code !== undefined &&
+      (typeof result.code !== "string" || !providerTestCodes.has(result.code)))
+  )
+    throw new Error("INVALID_MESSAGE");
+  return result as ProviderTestResult;
 }
 
 export interface ProviderModelsRequestPayload {

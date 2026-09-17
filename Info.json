@@ -1,9 +1,9 @@
 {
   "name": "SubTandem",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "identifier": "io.subtandem.iina",
   "ghRepo": "janwee-sha/SubTandem",
-  "ghVersion": 1005,
+  "ghVersion": 1006,
   "description": "Translates the selected local embedded text subtitle or external SRT/ASS subtitle and renders translated subtitles itself in IINA.",
   "author": {
     "name": "SubTandem Contributors"
@@ -17,7 +17,7 @@
   "permissions": ["network-request", "file-system", "video-overlay"],
   "allowedDomains": ["127.0.0.1"],
   "permissionDescriptions": {
-    "network-request": "Connect to the authenticated loopback transport and style picker helpers. Configured or edited endpoints may receive subtitle-free model-list requests; the default DeepSeek root at api.deepseek.com and default Claude root at api.anthropic.com may each receive such a request before the Profile is enabled. Only the globally enabled Profile revision receives nearby subtitle text and the exact target language. The service infers source language inside the translation request; short, unknown-source, and already-target-language text is still sent and may be billed. A Claude-compatible service that explicitly rejects structured output may receive one additional schema-free retry and may bill it.",
+    "network-request": "Connect to the authenticated loopback transport and style picker helpers. Configured or edited endpoints may receive subtitle-free model-list requests. Clicking Test sends the current draft endpoint a fixed subtitle-free connection probe that may be billed; it neither saves an entered key nor enables the Profile. The default DeepSeek root at api.deepseek.com and default Claude root at api.anthropic.com may receive these requests before the Profile is enabled. Only the globally enabled Profile revision receives nearby subtitle text and the exact target language. The service infers source language inside the translation request; short, unknown-source, and already-target-language text is still sent and may be billed. A Claude-compatible service that explicitly rejects structured output may receive one additional schema-free retry and may bill it.",
     "file-system": "Read only the selected text subtitle from the current local media or external subtitle, execute the bundled transport, subtitle extractor, and style picker helpers, atomically store Profile configuration, the global enabled reference, and optional provider keys in one plugin-private local file, and remove temporary extracted source subtitle data when the session ends. Remote and graphic embedded subtitles are not read.",
     "video-overlay": "Display the current translated subtitle in a local non-interactive translation overlay."
   },

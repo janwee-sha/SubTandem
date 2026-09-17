@@ -34,8 +34,8 @@ SubTandem는 원본 자막을 그대로 유지하면서 선택한 위치에 번�
 - **번역 서비스 선택:** OpenAI Chat Completions 또는 Claude Messages와 호환되는 endpoint, DeepSeek, 로컬/원격 Ollama 서버를 사용할 수 있습니다.
 - **재생 우선 동작:** 번역 작업 때문에 영상이 일시 정지되거나 원본 자막이 숨겨지지 않습니다.
 - **제한된 요청:** 재생 위치 주변의 자막만 번역하고 플레이어 창마다 동시 작업을 제한하며, 성공한 결과는 현재 영상 세션에만 캐시합니다.
-- **여러 Profile:** Profile을 저장하고 테스트하며, 비컨트롤 영역을 클릭해 편집할 수 있습니다. 스위치로 모든 창과 재시작 후에도 유지되는 정확한 endpoint 하나를 전역 활성화합니다.
-- **프록시 제어:** Profile별로 macOS 프록시 설정을 사용하거나 직접 연결을 선택할 수 있습니다.
+- **여러 Profile:** 그룹 목록에서 Profile을 펼쳐 바로 편집하거나 제목 옆의 **New profile**을 사용할 수 있습니다. Test는 현재 drawer 초안을 검사하며, 독립 스위치만 저장된 정확한 revision을 모든 창에서 활성화합니다.
+- **프록시 제어:** 새 Profile은 기본적으로 직접 연결하며 필요하면 현재 macOS 프록시 설정을 사용하도록 바꿀 수 있습니다.
 
 ## ✅ 요구 사항
 
@@ -100,12 +100,12 @@ IINA 개발 버전에서는 사용 가능한 플러그인 목록에서 SubTandem
 
 1. 로컬 영상을 열고 지원되는 내장 텍스트 자막 또는 외부 SRT/ASS를 IINA 주 자막으로 선택합니다.
 2. **Subtitle**에서 정확한 대상 언어를 선택합니다. 선택한 번역 Provider가 번역 요청 안에서 cue별 원본 언어를 이해하므로 원본 언어를 직접 확인할 필요가 없습니다.
-3. **Translation service**에서 OpenAI, Claude, DeepSeek 또는 Ollama Profile을 만듭니다. 인증이 필요하면 API key를 입력한 뒤 모델 목록을 수동으로 새로 고칩니다. 반환된 모델을 선택하거나 정확한 사용자 지정 Model ID를 입력합니다.
-4. Profile을 저장하고 테스트한 다음 해당 스위치를 켭니다. 정확한 revision이 모든 창과 재시작 후에도 전역으로 활성화됩니다. Save와 Test만으로는 활성화되지 않으며 **Translate**는 별도 스위치입니다.
+3. **Translation service**에서 **New profile**을 선택해 OpenAI, Claude, DeepSeek 또는 Ollama Profile을 만듭니다. 새 초안은 **Connect directly**가 기본값입니다. 인증이 필요하면 API key를 입력한 뒤 모델 목록을 수동으로 새로 고칩니다.
+4. 왼쪽 아래의 **Test**로 현재 초안을 저장하지 않고 검사한 뒤 오른쪽 아래의 **Save**로 저장하고 독립 스위치를 켭니다. Test의 고정 probe는 과금될 수 있지만 재생 중 자막을 보내거나 입력한 key를 저장하거나 Profile을 활성화하지 않습니다.
 5. **Translate**를 켭니다. 원본 자막은 IINA에서 계속 표시되고 번역된 cue는 SubTandem 오버레이에 나타납니다. **Subtitle**의 **Position**으로 오버레이를 위쪽(`0`)에서 아래쪽(`100`)까지 옮길 수 있습니다.
 6. **Font**, **Border**, **Background** 그룹에서 8개 텍스트 스타일 값을 선택합니다. 색상 프리셋은 즉시 저장되며, **Show Colors…**는 macOS 색상 패널을 엽니다. 변경하지 않고 닫으면 이전 값을 유지합니다.
 
-Profile의 비컨트롤 영역을 클릭하면 편집할 수 있습니다. Endpoint, 모델, API key 또는 네트워크 경로가 바뀌면 저장하고 테스트한 뒤 번역 전에 새 revision을 활성화하세요.
+Profile 요약을 펼치면 바로 편집할 수 있습니다. 작업 행은 왼쪽에 **Test**, 오른쪽에 **Cancel**, **Delete**, **Save** 순서로 표시되며 새 초안에는 Delete가 없습니다. 현재 값을 테스트하고 저장한 뒤 새 revision을 활성화하세요.
 
 ## ⚙️ 번역 서비스
 
@@ -140,7 +140,7 @@ Profile의 비컨트롤 영역을 클릭하면 편집할 수 있습니다. Endpo
 - Ollama 서버가 인증 없는 요청을 허용하면 Bearer API key는 선택 사항이며 저장 후에는 쓰기 전용입니다.
 - 연결 테스트에서 서버, 설치된 tag, structured-output chat 지원 여부를 확인합니다.
 
-어느 서비스를 사용하든 먼저 **Use macOS proxy settings**를 권장합니다. 구성된 시스템 프록시 때문에 서비스에 접근할 수 없을 때만 **Connect directly**를 선택하세요.
+새 Profile은 **Connect directly**가 기본값입니다. 서비스가 현재 시스템 프록시 구성을 따라야 할 때 **Use macOS proxy settings**를 선택하세요.
 
 ## 🔒 개인정보, 자격 증명 및 비용
 
@@ -148,7 +148,7 @@ Profile의 비컨트롤 영역을 클릭하면 편집할 수 있습니다. Endpo
 - `video-overlay` 권한은 현재 번역을 로컬 비대화형 Overlay에 표시하는 데만 사용됩니다. Overlay는 입력이나 영상 위 드래그를 받지 않고 네트워크 또는 WebView 저장소를 사용하지 않으며 재생 세션과 함께 지워집니다.
 - 플러그인 전용 `credentials.json`은 Profile, 전역 활성화 Profile 참조, OpenAI, Claude, DeepSeek 및 Ollama API key를 원자적으로 교체되는 하나의 로컬 문서에 저장합니다. Key는 로컬 평문이며 디렉터리는 `0700`, 파일은 `0600` 권한을 사용합니다. Key는 IINA preferences, 로그, 진단, Sidebar 상태 또는 패키지에 기록되지 않고 저장 후 다시 표시되지 않습니다.
 - 파일 권한은 다른 macOS 계정과 일반적인 우발적 접근으로부터 key를 보호하지만, 현재 macOS 사용자 권한으로 파일을 읽을 수 있는 프로세스로부터는 보호하지 못합니다.
-- 번들 transport helper는 임시 `127.0.0.1` 포트에서만 수신합니다. 저장했거나 편집 중인 endpoint에는 기본 Claude root `https://api.anthropic.com`와 DeepSeek root `https://api.deepseek.com`가 포함되며 활성화 전에 자막 없는 모델 목록 요청을 받을 수 있습니다. 전역 활성화된 Profile revision만 번역용 자막 텍스트를 받습니다.
+- 번들 transport helper는 임시 `127.0.0.1` 포트에서만 수신합니다. 저장했거나 편집 중인 endpoint는 자막 없는 모델 목록 요청을 받을 수 있습니다. **Test**는 현재 초안으로 과금될 수 있는 고정 자막 없는 probe를 보내며, 새로 입력한 key는 별도로 저장하지 않는 한 그 테스트에만 사용됩니다. 전역 활성화된 Profile revision만 번역용 자막 텍스트를 받습니다.
 - 번역 결과는 현재 영상 세션에만 캐시되며 영상 변경, 재생 종료 또는 창 닫기 시 삭제됩니다.
 - 짧은 트랙, 원본 언어를 알 수 없는 텍스트, 정확한 대상 언어와 이미 같은 텍스트도 선택한 Provider로 전송되어 비용이 발생할 수 있습니다. Provider 자체 정책이 적용되며 묶음 처리와 세션 캐시는 호출 횟수를 줄이지만 최대 비용을 보장하지 않습니다.
 

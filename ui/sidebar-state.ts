@@ -86,6 +86,33 @@ interface ModelControlState {
   validationError: string | null;
 }
 
+interface SidebarDrawerSourceProfile {
+  profileId: string;
+  profileRevision: number;
+  endpointFingerprint: string;
+}
+
+interface SidebarDrawerTestState {
+  requestId: string;
+  drawerId: string;
+  draftRevision: number;
+  phase: "testing" | "passed" | "failed";
+  message: string;
+}
+
+interface SidebarProfileDrawerState {
+  mode: "closed" | "new" | "editing";
+  drawerId: string | null;
+  profileId: string | null;
+  sourceProfile: SidebarDrawerSourceProfile | null;
+  draftRevision: number;
+  credentialEpoch: number;
+  validity: "current" | "conflict";
+  test: SidebarDrawerTestState | null;
+  savePhase: "profile" | "credential" | null;
+  deletePhase: "confirming" | "deleting" | null;
+}
+
 interface SidebarOverlayPositionState {
   displayPosition: number;
   committedPosition: number;
@@ -229,6 +256,7 @@ interface SidebarStateSnapshot {
   pendingProfileSave: PendingProfileSaveState | null;
   deleteConfirmation: SidebarDeleteConfirmationState | null;
   modelControl: ModelControlState;
+  drawer: SidebarProfileDrawerState;
   overlayPosition: SidebarOverlayPositionState;
   subtitleStyle: SidebarSubtitleStyleState;
 }
@@ -247,6 +275,30 @@ interface SidebarStateCoordinator {
     changed: boolean;
     discardedProfileId: string | null;
   };
+  openProfileDrawer(profileId: string): {
+    changed: boolean;
+    closed: boolean;
+    discardedMode: SidebarProfileDrawerState["mode"] | null;
+    discardedProfileId: string | null;
+  };
+  openNewProfileDrawer(): {
+    changed: boolean;
+    reused: boolean;
+    discardedMode: SidebarProfileDrawerState["mode"] | null;
+    discardedProfileId: string | null;
+  };
+  closeProfileDrawer(): { focus: "profile" | "new"; profileId?: string } | null;
+  changeDrawerTestField(): boolean;
+  changeDrawerCredential(): boolean;
+  cancelDrawerTest(): string | null;
+  beginDrawerTest(requestId: string): SidebarDrawerTestState | null;
+  finishDrawerTest(
+    requestId: string,
+    succeeded: boolean,
+    message: string,
+    drawerId?: string,
+    draftRevision?: number,
+  ): SidebarDrawerTestState | null;
   openDeleteConfirmation(target: {
     profileId: string;
     expectedRevision: number;
@@ -291,7 +343,12 @@ interface SidebarStateCoordinator {
   beginProfileSave(requestId: string, credentialPending: boolean): void;
   profileRevisionCreated(
     requestId: string,
-    result: { profileId: string; revision: number; selectionInvalidated: boolean },
+    result: {
+      profileId: string;
+      revision: number;
+      endpointFingerprint?: string;
+      selectionInvalidated: boolean;
+    },
   ): { accepted: boolean; waitingForCredential: boolean };
   completeProfileSave(
     requestId: string,
@@ -420,6 +477,18 @@ function createSubTandemSidebarState(
       refreshMessage: "",
       validationError: null,
     },
+    drawer: {
+      mode: "closed",
+      drawerId: null,
+      profileId: null,
+      sourceProfile: null,
+      draftRevision: 0,
+      credentialEpoch: 0,
+      validity: "current",
+      test: null,
+      savePhase: null,
+      deletePhase: null,
+    },
     overlayPosition: {
       displayPosition: 0,
       committedPosition: 0,
@@ -468,6 +537,35 @@ function createSubTandemSidebarState(
   const applyProfiles = (profiles: SidebarStateProfile[]): SidebarStateProfile[] => {
     const deleted = new Set(snapshot.deletedProfileIds);
     snapshot.profiles = profiles.filter((profile) => !deleted.has(profile.profileId));
+    if (snapshot.drawer.mode === "editing" && snapshot.drawer.profileId) {
+      const current = snapshot.profiles.find(
+        (profile) => profile.profileId === snapshot.drawer.profileId,
+      );
+      if (!current) {
+        snapshot.drawer = {
+          mode: "closed",
+          drawerId: null,
+          profileId: null,
+          sourceProfile: null,
+          draftRevision: 0,
+          credentialEpoch: 0,
+          validity: "current",
+          test: null,
+          savePhase: null,
+          deletePhase: null,
+        };
+        snapshot.editingProfileId = null;
+        snapshot.profileEditorContextVersion += 1;
+      } else if (
+        snapshot.drawer.sourceProfile &&
+        current.revision !== snapshot.drawer.sourceProfile.profileRevision &&
+        !snapshot.pendingProfileSave
+      ) {
+        snapshot.drawer.validity = "conflict";
+        snapshot.drawer.test = null;
+        snapshot.drawer.credentialEpoch += 1;
+      }
+    }
     const confirmation = snapshot.deleteConfirmation;
     if (
       confirmation &&
@@ -476,14 +574,20 @@ function createSubTandemSidebarState(
           profile.profileId === confirmation.profileId &&
           profile.revision === confirmation.expectedRevision,
       )
-    )
+    ) {
       snapshot.deleteConfirmation = null;
+      if (snapshot.drawer.profileId === confirmation.profileId) snapshot.drawer.deletePhase = null;
+    }
     return snapshot.profiles;
   };
 
   const reconcileEditingProfile = (profile: SidebarStateProfile): SidebarStateProfile => {
     const latest = snapshot.profiles.find((candidate) => candidate.profileId === profile.profileId);
-    if (!latest || (snapshot.pendingProfileSave && latest.revision !== profile.revision))
+    if (
+      !latest ||
+      snapshot.drawer.validity === "conflict" ||
+      (snapshot.pendingProfileSave && latest.revision !== profile.revision)
+    )
       return profile;
     return latest;
   };
@@ -521,6 +625,8 @@ function createSubTandemSidebarState(
       phase: "confirming",
       requestId: null,
     };
+    if (snapshot.drawer.mode === "editing" && snapshot.drawer.profileId === target.profileId)
+      snapshot.drawer.deletePhase = "confirming";
     return true;
   };
 
@@ -528,6 +634,7 @@ function createSubTandemSidebarState(
     const confirmation = snapshot.deleteConfirmation;
     if (!confirmation || confirmation.phase !== "confirming") return null;
     snapshot.deleteConfirmation = null;
+    if (snapshot.drawer.profileId === confirmation.profileId) snapshot.drawer.deletePhase = null;
     return confirmation;
   };
 
@@ -547,6 +654,8 @@ function createSubTandemSidebarState(
     }
     confirmation.phase = "deleting";
     confirmation.requestId = requestId;
+    if (snapshot.drawer.profileId === confirmation.profileId)
+      snapshot.drawer.deletePhase = "deleting";
     return {
       profileId: confirmation.profileId,
       expectedRevision: confirmation.expectedRevision,
@@ -559,6 +668,7 @@ function createSubTandemSidebarState(
     if (!confirmation || confirmation.phase !== "deleting" || confirmation.requestId !== requestId)
       return false;
     snapshot.deleteConfirmation = null;
+    if (snapshot.drawer.profileId === confirmation.profileId) snapshot.drawer.deletePhase = null;
     return true;
   };
 
@@ -679,6 +789,21 @@ function createSubTandemSidebarState(
       (profile) => profile.profileId !== input.profileId,
     );
     if (snapshot.editingProfileId === input.profileId) snapshot.editingProfileId = null;
+    if (snapshot.drawer.mode === "editing" && snapshot.drawer.profileId === input.profileId) {
+      snapshot.drawer = {
+        mode: "closed",
+        drawerId: null,
+        profileId: null,
+        sourceProfile: null,
+        draftRevision: 0,
+        credentialEpoch: 0,
+        validity: "current",
+        test: null,
+        savePhase: null,
+        deletePhase: null,
+      };
+      snapshot.profileEditorContextVersion += 1;
+    }
     if (snapshot.selectedProfileId === input.profileId) snapshot.selectedProfileId = null;
     if (snapshot.credentialDisplayProfileId === input.profileId)
       snapshot.credentialDisplayProfileId = null;
@@ -735,11 +860,18 @@ function createSubTandemSidebarState(
       credentialPending,
       selectionInvalidated: false,
     };
+    snapshot.drawer.test = null;
+    snapshot.drawer.savePhase = "profile";
   };
 
   const profileRevisionCreated = (
     requestId: string,
-    result: { profileId: string; revision: number; selectionInvalidated: boolean },
+    result: {
+      profileId: string;
+      revision: number;
+      endpointFingerprint?: string;
+      selectionInvalidated: boolean;
+    },
   ): { accepted: boolean; waitingForCredential: boolean } => {
     const pending = snapshot.pendingProfileSave;
     if (!pending || pending.requestId !== requestId)
@@ -750,6 +882,18 @@ function createSubTandemSidebarState(
       revision: result.revision,
       selectionInvalidated: pending.selectionInvalidated || result.selectionInvalidated,
     };
+    if (snapshot.drawer.mode !== "closed") {
+      snapshot.drawer.mode = "editing";
+      snapshot.drawer.profileId = result.profileId;
+      snapshot.drawer.sourceProfile = {
+        profileId: result.profileId,
+        profileRevision: result.revision,
+        endpointFingerprint:
+          result.endpointFingerprint ?? snapshot.drawer.sourceProfile?.endpointFingerprint ?? "",
+      };
+      snapshot.drawer.savePhase = pending.credentialPending ? "credential" : "profile";
+      snapshot.editingProfileId = result.profileId;
+    }
     return { accepted: true, waitingForCredential: pending.credentialPending };
   };
 
@@ -761,13 +905,23 @@ function createSubTandemSidebarState(
     const pending = snapshot.pendingProfileSave;
     if (!pending || pending.requestId !== requestId) return null;
     snapshot.pendingProfileSave = null;
+    if (succeeded) {
+      snapshot.drawer = closedDrawer();
+      snapshot.editingProfileId = null;
+      snapshot.profileEditorContextVersion += 1;
+    } else {
+      snapshot.drawer.savePhase = null;
+    }
     return succeeded && pending.selectionInvalidated
       ? "Profile updated. Enable it when you are ready."
       : fallbackMessage;
   };
 
   const cancelProfileSave = (requestId: string): void => {
-    if (snapshot.pendingProfileSave?.requestId === requestId) snapshot.pendingProfileSave = null;
+    if (snapshot.pendingProfileSave?.requestId === requestId) {
+      snapshot.pendingProfileSave = null;
+      snapshot.drawer.savePhase = null;
+    }
   };
 
   const classifyModelValue = (): void => {
@@ -780,6 +934,189 @@ function createSubTandemSidebarState(
 
   const modelCatalogs = new Map<string, string[]>();
   const customModelContexts = new Set<string>();
+  let drawerSequence = 0;
+
+  const closedDrawer = (): SidebarProfileDrawerState => ({
+    mode: "closed",
+    drawerId: null,
+    profileId: null,
+    sourceProfile: null,
+    draftRevision: 0,
+    credentialEpoch: 0,
+    validity: "current",
+    test: null,
+    savePhase: null,
+    deletePhase: null,
+  });
+
+  const resetDrawerDependencies = (): void => {
+    snapshot.pendingProfileSave = null;
+    snapshot.modelControl = {
+      value: "",
+      mode: "custom",
+      knownModelIds: [],
+      contextKey: "",
+      refreshState: "idle",
+      refreshMessage: "",
+      validationError: null,
+    };
+    modelCatalogs.clear();
+    customModelContexts.clear();
+  };
+
+  const closeProfileDrawer = (): { focus: "profile" | "new"; profileId?: string } | null => {
+    const current = snapshot.drawer;
+    if (current.mode === "closed") return null;
+    const focus =
+      current.mode === "editing" && current.profileId
+        ? { focus: "profile" as const, profileId: current.profileId }
+        : { focus: "new" as const };
+    snapshot.drawer = closedDrawer();
+    snapshot.editingProfileId = null;
+    snapshot.profileEditorContextVersion += 1;
+    resetDrawerDependencies();
+    return focus;
+  };
+
+  const openProfileDrawer = (profileId: string) => {
+    const profile = snapshot.profiles.find((candidate) => candidate.profileId === profileId);
+    if (!profile)
+      return {
+        changed: false,
+        closed: false,
+        discardedMode: null,
+        discardedProfileId: null,
+      };
+    if (snapshot.drawer.mode === "editing" && snapshot.drawer.profileId === profileId) {
+      closeProfileDrawer();
+      return {
+        changed: true,
+        closed: true,
+        discardedMode: "editing" as const,
+        discardedProfileId: profileId,
+      };
+    }
+    const discardedMode = snapshot.drawer.mode === "closed" ? null : snapshot.drawer.mode;
+    const discardedProfileId = snapshot.drawer.profileId;
+    drawerSequence += 1;
+    snapshot.drawer = {
+      mode: "editing",
+      drawerId: `drawer-${drawerSequence}`,
+      profileId,
+      sourceProfile: {
+        profileId,
+        profileRevision: profile.revision,
+        endpointFingerprint:
+          typeof profile.endpointFingerprint === "string" ? profile.endpointFingerprint : "",
+      },
+      draftRevision: 1,
+      credentialEpoch: 1,
+      validity: "current",
+      test: null,
+      savePhase: null,
+      deletePhase: null,
+    };
+    snapshot.editingProfileId = profileId;
+    snapshot.profileEditorContextVersion += 1;
+    resetDrawerDependencies();
+    return { changed: true, closed: false, discardedMode, discardedProfileId };
+  };
+
+  const openNewProfileDrawer = () => {
+    if (snapshot.drawer.mode === "new")
+      return {
+        changed: false,
+        reused: true,
+        discardedMode: null,
+        discardedProfileId: null,
+      };
+    const discardedMode = snapshot.drawer.mode === "closed" ? null : snapshot.drawer.mode;
+    const discardedProfileId = snapshot.drawer.profileId;
+    drawerSequence += 1;
+    snapshot.drawer = {
+      mode: "new",
+      drawerId: `drawer-${drawerSequence}`,
+      profileId: null,
+      sourceProfile: null,
+      draftRevision: 1,
+      credentialEpoch: 1,
+      validity: "current",
+      test: null,
+      savePhase: null,
+      deletePhase: null,
+    };
+    snapshot.editingProfileId = null;
+    snapshot.profileEditorContextVersion += 1;
+    resetDrawerDependencies();
+    return { changed: true, reused: false, discardedMode, discardedProfileId };
+  };
+
+  const changeDrawerTestField = (): boolean => {
+    if (snapshot.drawer.mode === "closed" || snapshot.drawer.validity !== "current") return false;
+    snapshot.drawer.draftRevision += 1;
+    snapshot.drawer.test = null;
+    return true;
+  };
+
+  const changeDrawerCredential = (): boolean => {
+    if (!changeDrawerTestField()) return false;
+    snapshot.drawer.credentialEpoch += 1;
+    return true;
+  };
+
+  const cancelDrawerTest = (): string | null => {
+    const requestId = snapshot.drawer.test?.requestId ?? null;
+    snapshot.drawer.test = null;
+    return requestId;
+  };
+
+  const beginDrawerTest = (requestId: string): SidebarDrawerTestState | null => {
+    const drawer = snapshot.drawer;
+    if (
+      !requestId ||
+      drawer.mode === "closed" ||
+      !drawer.drawerId ||
+      drawer.validity !== "current" ||
+      drawer.savePhase ||
+      drawer.deletePhase === "deleting"
+    )
+      return null;
+    drawer.test = {
+      requestId,
+      drawerId: drawer.drawerId,
+      draftRevision: drawer.draftRevision,
+      phase: "testing",
+      message: "",
+    };
+    return { ...drawer.test };
+  };
+
+  const finishDrawerTest = (
+    requestId: string,
+    succeeded: boolean,
+    message: string,
+    drawerId?: string,
+    draftRevision?: number,
+  ): SidebarDrawerTestState | null => {
+    const drawer = snapshot.drawer;
+    const current = drawer.test;
+    if (
+      !current ||
+      current.requestId !== requestId ||
+      (drawerId !== undefined && current.drawerId !== drawerId) ||
+      (draftRevision !== undefined && current.draftRevision !== draftRevision) ||
+      current.drawerId !== drawer.drawerId ||
+      current.draftRevision !== drawer.draftRevision ||
+      drawer.validity !== "current"
+    )
+      return null;
+    drawer.test = {
+      ...current,
+      phase: succeeded ? "passed" : "failed",
+      message,
+    };
+    return { ...drawer.test };
+  };
 
   const activateProfileEditor = (profileId: string) => {
     if (
@@ -1211,6 +1548,14 @@ function createSubTandemSidebarState(
     setProfileContext,
     setProfileTest,
     activateProfileEditor,
+    openProfileDrawer,
+    openNewProfileDrawer,
+    closeProfileDrawer,
+    changeDrawerTestField,
+    changeDrawerCredential,
+    cancelDrawerTest,
+    beginDrawerTest,
+    finishDrawerTest,
     openDeleteConfirmation,
     cancelDeleteConfirmation,
     beginProfileDelete,

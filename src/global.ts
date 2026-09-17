@@ -9,6 +9,8 @@ import {
   parseSubtitleStylePickerOpen,
   parseProviderModelsPreviewRequest,
   parseProviderModelsRequest,
+  parseProviderTestCancelRequest,
+  parseProviderTestRequest,
   parseProviderAttempt,
   parseProfileActivationGet,
   parseProfileActivationSet,
@@ -39,6 +41,8 @@ import type { ProfileActivationAuthority } from "./providers/profile-activation.
 import { normalizeProviderEndpoint } from "./providers/profiles.js";
 import { discoverProviderModels } from "./providers/model-discovery.js";
 import type { ConfiguredProvider } from "./providers/provider.js";
+import type { ProviderTransport } from "./providers/transport.js";
+import type { ProviderConnectionTestTask } from "./providers/connection-tests.js";
 import type { ProviderProfileSnapshot } from "./providers/types.js";
 import { HelperProviderTransport as ProviderTransportAdapter } from "./adapters/iina/provider-transport.js";
 import { TransportClient } from "./transport/client.js";
@@ -334,6 +338,146 @@ async function buildProvider(profile: ProviderProfileSnapshot): Promise<Configur
     }
   }
   throw new Error("UNSUPPORTED_PROVIDER_KIND");
+}
+
+function assertActiveDraftTestOwner(owner: ProviderConnectionTestTask): void {
+  if (!providerConnectionTests.isActive(owner))
+    throw {
+      category: "cancelled",
+      retryable: false,
+      providerCode: "REQUEST_CANCELLED",
+      userAction: "RETRY",
+    };
+}
+
+function assertDraftTestOwner(owner: ProviderConnectionTestTask): void {
+  assertActiveDraftTestOwner(owner);
+  const source = owner.sourceProfile;
+  if (!source) return;
+  const current = profiles.get(source.profileId);
+  if (
+    !current ||
+    current.revision !== source.profileRevision ||
+    current.endpointFingerprint !== source.endpointFingerprint ||
+    (modelCredentialEpochs.get(source.profileId) ?? 0) !== owner.credentialEpoch
+  )
+    throw {
+      category: "configuration",
+      retryable: false,
+      providerCode: "CREDENTIAL_CONTEXT_CHANGED",
+      userAction: "RETRY",
+    };
+}
+
+function draftTestTransport(owner: ProviderConnectionTestTask): ProviderTransport {
+  const base = new ProviderTransportAdapter(transport, localUuid);
+  return {
+    request: async (request) => {
+      assertDraftTestOwner(owner);
+      const response = await base.request(request);
+      assertDraftTestOwner(owner);
+      return response;
+    },
+    cancel: (jobId) => base.cancel(jobId),
+  };
+}
+
+function buildDraftProvider(
+  input: {
+    kind: "openai" | "claude" | "deepseek" | "ollama";
+    endpoint: string;
+    model: string;
+    proxyMode: "system" | "direct";
+    apiKey?: string;
+  },
+  providerTransport: ProviderTransport,
+): ConfiguredProvider {
+  switch (input.kind) {
+    case "openai":
+      return new OpenAICompatibleProvider(
+        {
+          endpoint: input.endpoint,
+          model: input.model,
+          ...(input.apiKey ? { apiKey: input.apiKey } : {}),
+          proxyMode: input.proxyMode,
+          sessionId: localUuid(),
+        },
+        providerTransport,
+      );
+    case "claude":
+      if (!input.apiKey)
+        throw {
+          category: "authentication",
+          retryable: false,
+          providerCode: "CREDENTIAL_REQUIRED",
+          userAction: "CHECK_CREDENTIALS",
+        };
+      return new ClaudeProvider(
+        {
+          endpoint: input.endpoint,
+          model: input.model,
+          apiKey: input.apiKey,
+          proxyMode: input.proxyMode,
+        },
+        providerTransport,
+      );
+    case "deepseek":
+      return new DeepSeekProvider(
+        {
+          endpoint: input.endpoint,
+          model: input.model,
+          ...(input.apiKey ? { apiKey: input.apiKey } : {}),
+          proxyMode: input.proxyMode,
+        },
+        providerTransport,
+      );
+    case "ollama":
+      return new OllamaProvider(
+        {
+          endpoint: input.endpoint,
+          model: input.model,
+          ...(input.apiKey ? { apiKey: input.apiKey } : {}),
+          proxyMode: input.proxyMode,
+        },
+        providerTransport,
+      );
+  }
+}
+
+function providerTestCode(category: string, providerCode?: string): string {
+  if (
+    providerCode &&
+    [
+      "CREDENTIAL_REQUIRED",
+      "MODEL_REQUIRED",
+      "PROFILE_NOT_FOUND",
+      "CREDENTIAL_CONTEXT_CHANGED",
+      "REQUEST_CANCELLED",
+      "TEST_INVALIDATED",
+    ].includes(providerCode)
+  )
+    return providerCode;
+  if (category === "authentication") return "CREDENTIAL_REQUIRED";
+  if (category === "model") return "MODEL_REQUIRED";
+  if (category === "cancelled") return "REQUEST_CANCELLED";
+  return "PROVIDER_TEST_FAILED";
+}
+
+async function invalidateProfileConnectionTests(profileId: string): Promise<void> {
+  await providerConnectionTests.invalidateProfile(profileId, (invalidated) => {
+    for (const identity of invalidated) {
+      postToPlayer(identity.senderId, "provider:test-result", {
+        requestId: identity.requestId,
+        drawerId: identity.drawerId,
+        draftRevision: identity.draftRevision,
+        ok: false,
+        category: "cancelled",
+        retryable: false,
+        code: "TEST_INVALIDATED",
+        userAction: "RETRY",
+      });
+    }
+  });
 }
 
 const providerCache = new CredentialScopedProviderCache(
@@ -1137,12 +1281,12 @@ iina.global.onMessage("profile:create-revision", async (raw: unknown, playerId?:
     });
     if (mutation.outcome !== "changed" || !mutation.profile) throw new Error("PROFILE_SAVE_FAILED");
     const profile = mutation.profile;
+    if (kindChanged) advanceCredentialEpoch(profile.profileId);
     await Promise.all([
       broker.cancelProfile(profile.profileId),
-      providerConnectionTests.cancelProfile(profile.profileId),
+      invalidateProfileConnectionTests(profile.profileId),
       cancelProfileModelRequests(profile.profileId),
     ]);
-    if (kindChanged) advanceCredentialEpoch(profile.profileId);
     clearProfileProviderCache(profile.profileId);
     clearProfileModelCatalogs(profile.profileId);
     publishProfileAuthority();
@@ -1172,12 +1316,12 @@ iina.global.onMessage("profile:delete", async (raw: unknown, playerId?: string) 
     const wasActive = profileAuthority.snapshot.activation?.profileId === profileId;
     const mutation = await profileAuthority.deleteProfile(profileId, expectedRevision);
     if (mutation.outcome !== "changed") throw new Error("PROFILE_DELETE_FAILED");
+    advanceCredentialEpoch(profileId);
     await Promise.all([
       broker.cancelProfile(profileId),
-      providerConnectionTests.cancelProfile(profileId),
+      invalidateProfileConnectionTests(profileId),
       cancelProfileModelRequests(profileId),
     ]);
-    advanceCredentialEpoch(profileId);
     clearProfileProviderCache(profileId);
     clearProfileModelCatalogs(profileId);
     publishProfileAuthority();
@@ -1214,12 +1358,12 @@ iina.global.onMessage("credential:set", async (raw: unknown, playerId?: string) 
         }),
     );
     if (mutation.outcome !== "changed") throw new Error("CREDENTIAL_SAVE_FAILED");
+    advanceCredentialEpoch(secret.profileId);
     await Promise.all([
       broker.cancelProfile(secret.profileId),
-      providerConnectionTests.cancelProfile(secret.profileId),
+      invalidateProfileConnectionTests(secret.profileId),
       cancelProfileModelRequests(secret.profileId),
     ]);
-    advanceCredentialEpoch(secret.profileId);
     clearProfileProviderCache(secret.profileId);
     clearProfileModelCatalogs(secret.profileId);
     publishProfileAuthority();
@@ -1237,50 +1381,121 @@ iina.global.onMessage("credential:set", async (raw: unknown, playerId?: string) 
   }
 });
 
-iina.global.onMessage("provider:test", async (raw: unknown, playerId?: string) => {
-  if (!playerId) return;
-  await profileReady;
-  const externalRequestId = requestId(raw);
-  let testId: string | null = null;
+iina.global.onMessage("provider:test", async (raw: unknown, senderId?: string) => {
+  if (!senderId) return;
+  let owner: ProviderConnectionTestTask | null = null;
   try {
-    const values = payload(raw);
-    const profile = profiles.get(String(values.profileId));
-    if (!profile || profile.revision !== Number(values.revision))
-      throw new Error("PROFILE_NOT_FOUND");
-    const provider = await providerFor(profile);
-    if (profiles.get(profile.profileId)?.revision !== profile.revision)
-      throw new Error("PROFILE_NOT_FOUND");
-    const task = providerConnectionTests.start({
-      playerId,
-      requestId: externalRequestId,
-      profileId: profile.profileId,
-      profileRevision: profile.revision,
-      provider,
+    const message = parseProviderTestRequest(raw);
+    const source = message.payload.sourceProfile;
+    const started = providerConnectionTests.begin({
+      senderId,
+      requestId: message.requestId,
+      drawerId: message.payload.drawerId,
+      draftRevision: message.payload.draftRevision,
+      ...(source ? { sourceProfile: source } : {}),
+      credentialEpoch: source ? (modelCredentialEpochs.get(source.profileId) ?? 0) : 0,
     });
-    testId = task.testId;
-    const result = await provider.testConnection(task.testId);
-    const completed = providerConnectionTests.complete(task.testId);
+    if (!started) return;
+    owner = started.owner;
+    if (started.replaced) await providerConnectionTests.cancelTask(started.replaced);
+    assertActiveDraftTestOwner(owner);
+    await profileReady;
+    assertDraftTestOwner(owner);
+
+    const endpoint = normalizeProviderEndpoint(message.payload.kind, message.payload.endpoint);
+    let apiKey: string | undefined;
+    if (source) {
+      const current = profiles.get(source.profileId);
+      if (
+        !current ||
+        current.revision !== source.profileRevision ||
+        current.endpointFingerprint !== source.endpointFingerprint
+      )
+        throw {
+          category: "configuration",
+          retryable: false,
+          providerCode: "CREDENTIAL_CONTEXT_CHANGED",
+          userAction: "RETRY",
+        };
+    }
+    if (message.payload.credential.source === "entered") {
+      apiKey = message.payload.credential.apiKey;
+    } else if (message.payload.credential.source === "saved") {
+      if (!source)
+        throw {
+          category: "configuration",
+          retryable: false,
+          providerCode: "PROFILE_NOT_FOUND",
+          userAction: "RETRY",
+        };
+      const current = profiles.get(source.profileId);
+      if (
+        !current ||
+        current.kind !== message.payload.kind ||
+        current.endpoint !== endpoint ||
+        (current.proxyMode ?? "system") !== message.payload.proxyMode
+      )
+        throw {
+          category: "configuration",
+          retryable: false,
+          providerCode: "CREDENTIAL_CONTEXT_CHANGED",
+          userAction: "RETRY",
+        };
+      apiKey = (await credentials.getSecret(source.profileId))?.apiKey;
+      assertDraftTestOwner(owner);
+    }
+
+    const provider = buildDraftProvider(
+      {
+        kind: message.payload.kind,
+        endpoint,
+        model: message.payload.model.trim(),
+        proxyMode: message.payload.proxyMode,
+        ...(apiKey ? { apiKey } : {}),
+      },
+      draftTestTransport(owner),
+    );
+    if (!providerConnectionTests.attachProvider(owner, provider)) return;
+    assertDraftTestOwner(owner);
+    await provider.testConnection(owner.testId);
+    assertDraftTestOwner(owner);
+    const completed = providerConnectionTests.complete(owner);
     if (!completed) return;
-    testId = null;
-    postToPlayer(completed.playerId, "provider:test-result", {
+    postToPlayer(completed.senderId, "provider:test-result", {
       requestId: completed.requestId,
+      drawerId: completed.drawerId,
+      draftRevision: completed.draftRevision,
       ok: true,
-      result,
     });
   } catch (error) {
-    const completed = testId ? providerConnectionTests.complete(testId) : null;
-    if (testId && !completed) return;
+    if (!owner) return;
+    const completed = providerConnectionTests.complete(owner);
+    if (!completed) return;
     const safe = normalizeProviderError(error);
-    postToPlayer(completed?.playerId ?? playerId, "provider:test-result", {
-      requestId: completed?.requestId ?? externalRequestId,
+    postToPlayer(completed.senderId, "provider:test-result", {
+      requestId: completed.requestId,
+      drawerId: completed.drawerId,
+      draftRevision: completed.draftRevision,
       ok: false,
       category: safe.category,
       retryable: safe.retryable,
       ...(safe.statusCode === undefined ? {} : { statusCode: safe.statusCode }),
-      ...(safe.providerCode ? { code: safe.providerCode } : {}),
+      code: providerTestCode(safe.category, safe.providerCode),
       ...(safe.retryAfterMs === undefined ? {} : { retryAfterMs: safe.retryAfterMs }),
       userAction: safe.userAction,
     });
+  }
+});
+
+iina.global.onMessage("provider:test-cancel", async (raw: unknown, senderId?: string) => {
+  if (!senderId) return;
+  try {
+    const message = parseProviderTestCancelRequest(raw);
+    if ("testRequestId" in message.payload)
+      await providerConnectionTests.cancel(senderId, message.payload.testRequestId);
+    else await providerConnectionTests.releaseSender(senderId);
+  } catch {
+    return;
   }
 });
 

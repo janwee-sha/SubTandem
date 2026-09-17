@@ -62,24 +62,25 @@ describe("authoritative global RPC routing", () => {
     expect(source).toContain("clearProfileModelCatalogs(secret.profileId)");
     expect(source).toContain("cancelProfileModelRequests(secret.profileId)");
     expect(source).toContain("modelCredentialEpochs.set(");
-    expect(source).toContain("providerConnectionTests.cancelProfile(secret.profileId)");
+    expect(source).toContain("invalidateProfileConnectionTests(secret.profileId)");
     expect(source).toContain("broker.cancelProfile(secret.profileId)");
   });
 
-  it("commits a converted revision before clearing obsolete runtime owners", () => {
+  it("commits a converted revision, advances credential ownership, then clears runtime owners", () => {
     const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
     const start = source.indexOf('onMessage("profile:create-revision"');
     const end = source.indexOf('onMessage("profile:delete"', start);
     const handler = source.slice(start, end);
     const kindChange = handler.indexOf("currentProfile.kind !== kind");
     const save = handler.indexOf("profileAuthority.saveProfile", kindChange);
-    const cancel = handler.indexOf("broker.cancelProfile(profile.profileId)", save);
-    const epoch = handler.indexOf("advanceCredentialEpoch(profile.profileId)", cancel);
+    const epoch = handler.indexOf("advanceCredentialEpoch(profile.profileId)", save);
+    const cancel = handler.indexOf("broker.cancelProfile(profile.profileId)", epoch);
 
     expect(kindChange).toBeGreaterThan(-1);
     expect(save).toBeGreaterThan(kindChange);
-    expect(cancel).toBeGreaterThan(save);
-    expect(epoch).toBeGreaterThan(cancel);
+    expect(epoch).toBeGreaterThan(save);
+    expect(cancel).toBeGreaterThan(epoch);
+    expect(handler).toContain("invalidateProfileConnectionTests(profile.profileId)");
     expect(handler).not.toContain("deleteSecret");
   });
 

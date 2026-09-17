@@ -34,8 +34,8 @@ SubTandem conserve les sous-titres d'origine et affiche séparément leur traduc
 - **Service de traduction au choix :** utilisez un endpoint compatible avec OpenAI Chat Completions ou Claude Messages, DeepSeek ou un serveur Ollama local/distant.
 - **Priorité à la lecture :** la traduction ne met jamais la vidéo en pause et ne masque pas les sous-titres d'origine.
 - **Requêtes limitées :** SubTandem ne traduit que les cue proches, limite les tâches simultanées par fenêtre de lecture et ne met en cache les résultats réussis que pendant la session vidéo actuelle.
-- **Plusieurs Profile :** enregistrez et testez des Profile, cliquez sur leur contenu pour les modifier et utilisez leur interrupteur pour activer globalement un endpoint précis dans toutes les fenêtres et après redémarrage.
-- **Contrôle du proxy :** utilisez les réglages proxy de macOS ou choisissez une connexion directe pour chaque Profile.
+- **Plusieurs Profile :** développez un Profile dans la liste groupée pour le modifier sur place, ou utilisez **New profile** à côté du titre. Test vérifie le brouillon du tiroir courant ; seul l'interrupteur indépendant active une révision enregistrée exacte dans toutes les fenêtres.
+- **Contrôle du proxy :** les nouveaux Profile utilisent la connexion directe par défaut et peuvent être configurés pour suivre le proxy macOS actuel.
 
 ## ✅ Configuration requise
 
@@ -100,12 +100,12 @@ Quelle que soit la méthode choisie, approuvez les autorisations demandées si I
 
 1. Ouvrez une vidéo locale et sélectionnez dans IINA une piste texte intégrée prise en charge ou un SRT/ASS externe comme sous-titre principal.
 2. Dans **Subtitle**, sélectionnez la langue cible exacte. Le service de traduction sélectionné détermine la langue source de chaque cue dans la requête de traduction ; aucune confirmation de langue source n'est requise.
-3. Dans **Translation service**, créez un Profile OpenAI, Claude, DeepSeek ou Ollama. Si le service exige une authentification, saisissez son API key avant d'actualiser manuellement la liste des modèles. Choisissez ensuite un modèle retourné ou saisissez un Model ID personnalisé exact.
-4. Enregistrez et testez le Profile, puis activez son interrupteur. Il active globalement cette révision exacte dans toutes les fenêtres et après redémarrage ; Save et Test ne l'activent jamais. **Translate** reste indépendant.
+3. Dans **Translation service**, choisissez **New profile** pour créer un Profile OpenAI, Claude, DeepSeek ou Ollama. Les nouveaux brouillons utilisent **Connect directly** par défaut. Si nécessaire, saisissez l'API key avant d'actualiser manuellement les modèles.
+4. Utilisez **Test** en bas à gauche pour tester le brouillon courant sans l'enregistrer, puis **Save** à droite et activez son interrupteur indépendant. La sonde fixe de Test peut être facturée, mais n'envoie aucun sous-titre en cours de lecture, n'enregistre pas la nouvelle key et n'active pas le Profile.
 5. Activez **Translate**. Le sous-titre d'origine reste affiché par IINA et les cue traduits apparaissent dans la surcouche de SubTandem. Sous **Subtitle**, utilisez **Position** pour déplacer la surcouche du haut (`0`) vers le bas (`100`).
 6. Choisissez les huit valeurs dans les groupes **Font**, **Border** et **Background**. Un préréglage de couleur est enregistré directement ; **Show Colors…** ouvre le panneau de couleurs macOS et sa fermeture sans modification conserve la valeur précédente.
 
-Cliquez sur le contenu non interactif d'un Profile pour le modifier. Si son endpoint, son modèle, son API key ou sa route réseau change, enregistrez et testez la modification, puis activez la nouvelle révision.
+Développez le résumé d'un Profile pour le modifier sur place. La ligne d'actions place **Test** à gauche puis **Cancel**, **Delete**, **Save** à droite ; un nouveau brouillon n'affiche pas Delete. Testez les valeurs courantes, enregistrez-les, puis activez la nouvelle révision.
 
 ## ⚙️ Services de traduction
 
@@ -140,7 +140,7 @@ Cliquez sur le contenu non interactif d'un Profile pour le modifier. Si son endp
 - La Bearer API key est facultative si le serveur Ollama accepte les requêtes non authentifiées et reste en écriture seule après l'enregistrement.
 - Le test de connexion vérifie le serveur, les tag installés et la prise en charge du structured-output chat.
 
-Pour chaque service, commencez par **Use macOS proxy settings**. Ne choisissez **Connect directly** que si le proxy système configuré empêche l'accès au service.
+Les nouveaux Profile utilisent **Connect directly** par défaut. Choisissez **Use macOS proxy settings** lorsque le service doit suivre la configuration proxy système actuelle.
 
 ## 🔒 Confidentialité, identifiants et coûts
 
@@ -148,7 +148,7 @@ Pour chaque service, commencez par **Use macOS proxy settings**. Ne choisissez *
 - L'autorisation `video-overlay` affiche la traduction actuelle dans un Overlay local et non interactif. Cet Overlay n'accepte aucune saisie ni déplacement sur la vidéo, n'utilise ni réseau ni stockage WebView et est effacé avec la session de lecture.
 - Le fichier privé `credentials.json` du plugin conserve les Profile, la référence globalement activée et les API key OpenAI, Claude, DeepSeek et Ollama dans un document local remplacé atomiquement. Les key restent en clair ; le répertoire utilise le mode `0700` et le fichier le mode `0600`. Elles ne sont inscrites ni dans les preferences IINA, ni dans les journaux, diagnostics, l'état de la Sidebar ou le paquet, et ne sont plus affichées après l'enregistrement.
 - Les autorisations du fichier protègent la key contre les autres comptes macOS et les accès accidentels ordinaires. Elles ne la protègent pas d'un processus déjà capable de lire les fichiers au nom de votre utilisateur macOS actuel.
-- Le transport helper inclus n'écoute que sur un port temporaire `127.0.0.1`. Un endpoint configuré ou en cours d'édition, y compris les API root Claude `https://api.anthropic.com` et DeepSeek `https://api.deepseek.com` par défaut, peut recevoir une liste de modèles sans sous-titres avant activation ; seule la révision du Profile globalement activé reçoit le texte des sous-titres. Les redirect inter-origines et les identifiants inclus dans les URL sont refusés.
+- Le transport helper inclus n'écoute que sur un port temporaire `127.0.0.1`. Un endpoint configuré ou en cours d'édition peut recevoir des requêtes de modèles sans sous-titres. **Test** envoie au brouillon courant une sonde fixe sans sous-titres qui peut être facturée ; une nouvelle key n'est utilisée que pour ce test sauf enregistrement séparé. Seule la révision du Profile globalement activé reçoit le texte des sous-titres. Les redirect inter-origines et les identifiants inclus dans les URL sont refusés.
 - Les traductions ne sont mises en cache que pendant la session vidéo actuelle et sont effacées lors d'un changement de vidéo, à la fin de la lecture ou à la fermeture de la fenêtre.
 - Les pistes courtes, les textes de langue source inconnue et ceux déjà conformes à la langue cible exacte sont quand même envoyés au service sélectionné et peuvent être facturés. Le Provider applique ses propres politiques ; le traitement par lots et le cache de session réduisent les appels sans garantir un coût maximal.
 

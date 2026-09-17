@@ -33,6 +33,7 @@ export const USER_ACTIONS = [
   "SELECT_PROFILE",
   "RESTART_IINA",
   "CHECK_INSTALLATION",
+  "RETRY",
 ] as const;
 
 export type UserActionCode = (typeof USER_ACTIONS)[number];

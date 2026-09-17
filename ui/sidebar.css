@@ -23,18 +23,11 @@
   --warning: #b66a00;
   --danger: #c72d32;
   --destructive-fill: #c72d32;
-  --profile-selection-strength: 10%;
-  --profile-selection-surface: color-mix(
-    in srgb,
-    CanvasText var(--profile-selection-strength),
-    transparent
-  );
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --accent: #3e7ce6;
-    --profile-selection-strength: 14%;
     --group-surface: color-mix(in srgb, CanvasText 7%, transparent);
     --group-surface-opaque: color-mix(in srgb, CanvasText 7%, Canvas);
     --control-surface: color-mix(in srgb, CanvasText 8%, transparent);
@@ -107,6 +100,24 @@ h2 {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.profile-section-heading {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.profile-section-heading > div {
+  min-width: 0;
+}
+
+.profile-section-heading #new-profile {
+  width: auto;
+  min-width: max-content;
+  flex: none;
 }
 
 .group-surface {
@@ -253,11 +264,13 @@ button.secondary {
   display: grid;
   min-width: 0;
   gap: 0;
+  overflow: clip;
 }
 
 .profile {
   display: grid;
-  gap: 7px;
+  min-width: 0;
+  gap: 0;
   padding: 9px 10px;
   border: 0;
   border-radius: 0;
@@ -266,18 +279,6 @@ button.secondary {
 
 .profile + .profile {
   border-top: 1px solid var(--separator);
-}
-
-.profile.is-editing {
-  --label-secondary: color-mix(in srgb, CanvasText 70%, transparent);
-  --label-tertiary: color-mix(in srgb, CanvasText 64%, transparent);
-  border-top-color: transparent;
-  border-radius: 6px;
-  background: var(--profile-selection-surface);
-}
-
-.profile.is-editing + .profile {
-  border-top-color: transparent;
 }
 
 .profile-heading {
@@ -290,12 +291,14 @@ button.secondary {
 
 .profile-details {
   display: grid;
-  gap: 2px;
+  grid-template-columns: 13px minmax(0, 1fr);
+  align-items: start;
+  gap: 5px;
   min-width: 0;
 }
 
 .profile-details[role="button"] {
-  cursor: default;
+  cursor: pointer;
 }
 
 .profile-details[role="button"]:focus-visible {
@@ -307,6 +310,37 @@ button.secondary {
   padding-top: 1px;
 }
 
+.disclosure-indicator {
+  width: 13px;
+  height: 13px;
+  margin-top: 1px;
+  transform: rotate(0deg);
+  transform-origin: center;
+  transition: transform 250ms ease;
+}
+
+.disclosure-indicator::before {
+  display: block;
+  width: 0;
+  height: 0;
+  margin: 2px 0 0 3px;
+  border-top: 4.5px solid transparent;
+  border-bottom: 4.5px solid transparent;
+  border-left: 6px solid currentColor;
+  color: var(--label-secondary);
+  content: "";
+}
+
+.profile-disclosure[aria-expanded="true"] .disclosure-indicator {
+  transform: rotate(90deg);
+}
+
+.profile-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
 .profile strong {
   overflow: hidden;
   font-size: 13px;
@@ -315,14 +349,14 @@ button.secondary {
   white-space: nowrap;
 }
 
-.profile-details > span,
+.profile-summary,
 .empty {
   color: var(--label-secondary);
   font-size: 11px;
   line-height: 14px;
 }
 
-.profile-details > span {
+.profile-summary {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -339,14 +373,7 @@ button.secondary {
   white-space: nowrap;
 }
 
-.profile-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 5px;
-}
-
-.profile-actions button {
+.profile-drawer-actions button {
   display: grid;
   place-items: center;
   width: auto;
@@ -359,8 +386,65 @@ button.secondary {
   white-space: nowrap;
 }
 
-.profile-actions button:active:not(:disabled) {
+.profile-drawer-actions button:active:not(:disabled) {
   transform: none;
+}
+
+.profile-drawer {
+  display: grid;
+  min-width: 0;
+  gap: 9px;
+  max-height: 1600px;
+  padding: 10px 0 2px 18px;
+  overflow: hidden;
+  transition:
+    max-height 250ms ease,
+    opacity 180ms ease;
+}
+
+.profile-drawer-form {
+  display: grid;
+  min-width: 0;
+  gap: 9px;
+}
+
+.profile-drawer-actions {
+  display: grid;
+  min-width: 0;
+  row-gap: 12px;
+}
+
+.profile-drawer-test-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+}
+
+.profile-drawer-test-row .operation-status {
+  min-width: 0;
+  flex: 1 1 140px;
+  overflow-wrap: anywhere;
+}
+
+.profile-drawer-commit-row {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.profile-drawer-actions-end {
+  display: flex;
+  min-width: 0;
+  margin-left: auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
 }
 
 .profile-action-label,
@@ -430,17 +514,10 @@ button.secondary {
   background: var(--danger);
 }
 
-.form-actions {
-  display: grid;
-  grid-template-columns: repeat(2, auto);
-  justify-content: end;
-  gap: 6px;
-}
-
-.form-actions button,
+.profile-drawer-actions button,
 .source-preparation-controls button {
   width: auto;
-  min-width: 84px;
+  min-width: 62px;
 }
 
 .operation-status,
@@ -468,19 +545,6 @@ button.secondary {
 
 .domain-status[data-state="success"] {
   color: var(--label-secondary);
-}
-
-.profile-test-state {
-  width: fit-content;
-  color: var(--label-tertiary);
-}
-
-.profile-test-state[data-state="passed"] {
-  color: var(--success);
-}
-
-.profile-test-state[data-state="failed"] {
-  color: var(--danger);
 }
 
 .assistive-only {
@@ -572,7 +636,7 @@ button.secondary {
   gap: 3px;
 }
 
-.profile-actions .danger {
+.profile-drawer-actions .danger {
   color: white;
   background: var(--destructive-fill);
 }
@@ -960,21 +1024,6 @@ dd {
     padding-inline: 14px;
   }
 
-  .form-actions {
-    align-items: stretch;
-    grid-template-columns: 1fr;
-  }
-
-  .profile-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .profile-actions button,
-  .form-actions button {
-    width: 100%;
-  }
-
   .profile-delete-dialog {
     grid-template-columns: 24px minmax(0, 1fr);
     padding: 12px;
@@ -1019,12 +1068,6 @@ dd {
     outline-offset: -1px;
   }
 
-  .profile.is-editing {
-    --label-secondary: CanvasText;
-    --label-tertiary: CanvasText;
-    box-shadow: inset 0 0 0 1px var(--label-primary);
-  }
-
   .profile-delete-dialog {
     border-width: 2px;
   }
@@ -1032,11 +1075,6 @@ dd {
 
 @media (prefers-reduced-transparency: reduce) {
   :root {
-    --profile-selection-surface: color-mix(
-      in srgb,
-      CanvasText var(--profile-selection-strength),
-      Canvas
-    );
     --group-surface: var(--group-surface-opaque);
     --control-surface: Canvas;
     --secondary-control-surface: Canvas;
@@ -1056,6 +1094,11 @@ dd {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+
+  .profile-drawer,
+  .disclosure-indicator {
+    transition-duration: 0ms !important;
+  }
 }
 
 @media (forced-colors: active) {
@@ -1064,23 +1107,11 @@ dd {
     background: Canvas;
   }
 
-  .profile.is-editing {
-    --label-primary: HighlightText;
-    --label-secondary: HighlightText;
-    --label-tertiary: HighlightText;
-    background: Highlight;
-  }
-
-  .profile.is-editing button.secondary {
-    color: ButtonText;
-    background: ButtonFace;
-  }
-
   .profile-delete-dialog {
     border: 2px solid CanvasText;
   }
 
-  .profile-actions .danger,
+  .profile-drawer-actions .danger,
   .profile-delete-actions .danger {
     color: HighlightText;
     background: Highlight;

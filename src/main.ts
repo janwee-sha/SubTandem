@@ -18,6 +18,9 @@ import {
   parseProviderModelsRequest,
   parseProviderModelsPreviewRequest,
   parseProviderModelsResult,
+  parseProviderTestCancelRequest,
+  parseProviderTestRequest,
+  parseProviderTestResult,
   parseProfileActivationResult,
   parseProfileActivationSet,
   parseProfileActivationState,
@@ -593,13 +596,30 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   const forward: Array<[string, string]> = [
     ["profile:save", "profile:create-revision"],
     ["secret:set", "credential:set"],
-    ["provider:test", "provider:test"],
   ];
   for (const [sidebarName, globalName] of forward) {
     runtime.sidebar.onMessage(sidebarName, (raw: unknown) =>
       runtime.global.postMessage(globalName, raw),
     );
   }
+  runtime.sidebar.onMessage("provider:test", (raw: unknown) => {
+    try {
+      runtime.global.postMessage("provider:test", parseProviderTestRequest(raw));
+    } catch {
+      queueSidebarMessage("operation:error", {
+        requestId: (raw as { requestId?: unknown })?.requestId,
+        code: "INVALID_MESSAGE",
+        userAction: "NONE",
+      });
+    }
+  });
+  runtime.sidebar.onMessage("provider:test-cancel", (raw: unknown) => {
+    try {
+      runtime.global.postMessage("provider:test-cancel", parseProviderTestCancelRequest(raw));
+    } catch {
+      return;
+    }
+  });
   runtime.sidebar.onMessage("profile-activation:set", (raw: unknown) => {
     try {
       runtime.global.postMessage("profile-activation:set", parseProfileActivationSet(raw));
@@ -800,9 +820,13 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   runtime.global.onMessage("credential:state", (raw: unknown) =>
     queueSidebarMessage("credential:state", raw),
   );
-  runtime.global.onMessage("provider:test-result", (raw: unknown) =>
-    queueSidebarMessage("provider:test-result", raw),
-  );
+  runtime.global.onMessage("provider:test-result", (raw: unknown) => {
+    try {
+      queueSidebarMessage("provider:test-result", parseProviderTestResult(raw));
+    } catch {
+      return;
+    }
+  });
   runtime.global.onMessage("provider:models-result", (raw: unknown) => {
     try {
       const result = parseProviderModelsResult(raw);
@@ -931,6 +955,11 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     translationOverlay.close();
     runtime.global.postMessage("subtitle-style:picker-cancel", {
       requestId: `subtitle-style.close.${playerId}`,
+      revision: 1,
+      payload: {},
+    });
+    runtime.global.postMessage("provider:test-cancel", {
+      requestId: `provider-test.close.${playerId}`,
       revision: 1,
       payload: {},
     });

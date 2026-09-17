@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { diagnostic } from "../../src/domain/logging.js";
-import { parseProviderModelsResult, sanitizedProfileView } from "../../src/domain/messages.js";
+import {
+  parseProviderModelsResult,
+  parseProviderTestResult,
+  sanitizedProfileView,
+} from "../../src/domain/messages.js";
 import { readFileSync } from "node:fs";
 import { SubtitlePreparationCoordinator } from "../../src/app/subtitle-preparation.js";
 import { SubtitleExtractorError } from "../../src/adapters/iina/subtitle-extractor.js";
@@ -202,6 +206,50 @@ describe("credential and content leakage boundaries", () => {
         }),
       ).toThrow("INVALID_MESSAGE");
     }
+  });
+
+  it("keeps draft Test secrets and raw provider responses out of safe results", () => {
+    for (const field of ["apiKey", "authorization", "endpoint", "responseBody", "result"]) {
+      expect(() =>
+        parseProviderTestResult({
+          requestId: "draft-test-safe",
+          drawerId: "drawer-safe",
+          draftRevision: 2,
+          ok: false,
+          category: "authentication",
+          retryable: false,
+          code: "CREDENTIAL_REQUIRED",
+          userAction: "CHECK_CREDENTIALS",
+          [field]: "PRIVATE_DRAFT_SECRET",
+        }),
+      ).toThrow("INVALID_MESSAGE");
+    }
+  });
+
+  it("reads a saved Test credential only after service identity checks and never persists the draft", () => {
+    const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+    const start = globalSource.indexOf('onMessage("provider:test"');
+    const end = globalSource.indexOf('onMessage("provider:test-cancel"', start);
+    const handler = globalSource.slice(start, end);
+    const savedBranch = handler.indexOf('credential.source === "saved"');
+    const kindCheck = handler.indexOf("current.kind !== message.payload.kind", savedBranch);
+    const endpointCheck = handler.indexOf("current.endpoint !== endpoint", savedBranch);
+    const routeCheck = handler.indexOf("current.proxyMode", savedBranch);
+    const secretRead = handler.indexOf("credentials.getSecret(source.profileId)", savedBranch);
+    const ownerRecheck = handler.indexOf("assertDraftTestOwner(owner)", secretRead);
+
+    expect(start).toBeGreaterThan(-1);
+    expect(kindCheck).toBeGreaterThan(savedBranch);
+    expect(endpointCheck).toBeGreaterThan(kindCheck);
+    expect(routeCheck).toBeGreaterThan(endpointCheck);
+    expect(secretRead).toBeGreaterThan(routeCheck);
+    expect(ownerRecheck).toBeGreaterThan(secretRead);
+    expect(handler).toContain("buildDraftProvider");
+    expect(handler).not.toContain("providerCache.get");
+    expect(handler).not.toContain("profiles.save");
+    expect(handler).not.toContain("writeCredential");
+    expect(handler).not.toContain("broker.attempt");
+    expect(handler).not.toContain("result,");
   });
 
   it("keeps draft credentials out of reusable model contexts and result messages", () => {

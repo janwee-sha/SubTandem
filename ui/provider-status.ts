@@ -28,7 +28,9 @@ interface CredentialStatus {
 }
 
 function providerTestStatusMessage(result: ProviderTestStatus): string {
-  if (result.ok) return "Connection test passed.";
+  if (result.ok) return "Test passed";
+  if (result.code === "TEST_INVALIDATED")
+    return "This test is no longer current. Review the Profile and test again.";
   if (result.category === "protocol")
     return "Provider response was incompatible. Check that the selected model supports structured JSON output.";
   switch (result.userAction) {

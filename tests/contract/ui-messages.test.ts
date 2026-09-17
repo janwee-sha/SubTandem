@@ -19,6 +19,9 @@ import {
   parseProviderModelsPreviewRequest,
   parseProviderModelsResult,
   parseProviderAttempt,
+  parseProviderTestCancelRequest,
+  parseProviderTestRequest,
+  parseProviderTestResult,
   sanitizedProfileView,
 } from "../../src/domain/messages.js";
 import { normalizeProviderError } from "../../src/domain/errors.js";
@@ -253,7 +256,15 @@ describe("Sidebar/Main/Global security messages", () => {
   });
 
   it("turns safe provider classifications into actionable sidebar guidance", () => {
-    expect(providerTestStatusMessage({ ok: true })).toBe("Connection test passed.");
+    expect(providerTestStatusMessage({ ok: true })).toBe("Test passed");
+    expect(
+      providerTestStatusMessage({
+        ok: false,
+        category: "cancelled",
+        code: "TEST_INVALIDATED",
+        userAction: "RETRY",
+      }),
+    ).toBe("This test is no longer current. Review the Profile and test again.");
     expect(
       providerTestStatusMessage({
         ok: false,
@@ -347,7 +358,7 @@ describe("Sidebar/Main/Global security messages", () => {
 
   it("uses exact translation-activation guidance without authorization wording", () => {
     expect(sidebarSource).toContain("Profile updated. Enable it when you are ready.");
-    expect(providerTestStatusMessage({ ok: true })).not.toMatch(/select/i);
+    expect(providerTestStatusMessage({ ok: true })).toBe("Test passed");
     expect(`${sidebarSource}\n${providerTestStatusMessage({ ok: true })}`).not.toContain(
       "to authorize translation",
     );
@@ -550,27 +561,77 @@ describe("Sidebar/Main/Global security messages", () => {
     expect(USER_ACTIONS).not.toContain("CONFIRM_SOURCE_LANGUAGE");
   });
 
-  it("keeps the provider test request and result message fields unchanged", () => {
+  it("accepts only strict draft provider Test, cancellation and safe result fields", () => {
     const request = {
       requestId: "request-id",
       revision: 2,
-      payload: { profileId: profile.profileId, revision: 2 },
+      payload: {
+        drawerId: "drawer-id",
+        draftRevision: 3,
+        kind: "openai",
+        endpoint: "https://api.example.test/v1",
+        proxyMode: "direct",
+        model: "model-a",
+        sourceProfile: {
+          profileId: profile.profileId,
+          profileRevision: 2,
+          endpointFingerprint: "fingerprint",
+        },
+        credential: { source: "saved" },
+      },
     };
     const result = {
       requestId: "request-id",
+      drawerId: "drawer-id",
+      draftRevision: 3,
       ok: false,
       category: "quota",
       retryable: false,
       statusCode: 429,
-      code: "insufficient_quota",
+      code: "PROVIDER_TEST_FAILED",
       userAction: "CHECK_QUOTA",
     };
 
-    expect(Object.keys(request).sort()).toEqual(["payload", "requestId", "revision"]);
-    expect(Object.keys(request.payload).sort()).toEqual(["profileId", "revision"]);
-    expect(result).not.toHaveProperty("testId");
+    expect(parseProviderTestRequest(request)).toEqual(request);
+    expect(
+      parseProviderTestCancelRequest({
+        requestId: "cancel-id",
+        revision: 1,
+        payload: { testRequestId: "request-id" },
+      }),
+    ).toMatchObject({ payload: { testRequestId: "request-id" } });
+    expect(
+      parseProviderTestCancelRequest({
+        requestId: "close-id",
+        revision: 1,
+        payload: {},
+      }),
+    ).toMatchObject({ payload: {} });
+    expect(parseProviderTestResult(result)).toEqual(result);
     expect(GLOBAL_MESSAGE_NAMES).toContain("provider:test");
+    expect(GLOBAL_MESSAGE_NAMES).toContain("provider:test-cancel");
     expect(SIDEBAR_MESSAGE_NAMES).toContain("provider:test");
+    expect(SIDEBAR_MESSAGE_NAMES).toContain("provider:test-cancel");
+
+    for (const forbidden of ["subtitle", "playerId", "displayName", "authorization", "testId"])
+      expect(() =>
+        parseProviderTestRequest({
+          ...request,
+          payload: { ...request.payload, [forbidden]: "must-not-cross" },
+        }),
+      ).toThrow("INVALID_MESSAGE");
+    expect(() =>
+      parseProviderTestRequest({
+        ...request,
+        payload: { ...request.payload, credential: { source: "entered", apiKey: "" } },
+      }),
+    ).toThrow("INVALID_MESSAGE");
+    expect(() => parseProviderTestResult({ ...result, body: "private" })).toThrow(
+      "INVALID_MESSAGE",
+    );
+    expect(() => parseProviderTestResult({ ...result, code: "provider_private_code" })).toThrow(
+      "INVALID_MESSAGE",
+    );
   });
 
   it("accepts only the strict model refresh request fields", () => {

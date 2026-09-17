@@ -97,7 +97,7 @@ export function upsertCreatedProfile<T extends ProfileListItem>(
   const index = state.profiles.findIndex((item) => item.profileId === profile.profileId);
   const profiles = [...state.profiles];
   if (index >= 0) profiles[index] = profile;
-  else profiles.push(profile);
+  else profiles.unshift(profile);
   return { ...state, latestRequestId: null, profiles };
 }
 
