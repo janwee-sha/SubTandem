@@ -58,7 +58,7 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarSource).toContain("openProfileDrawer");
     expect(sidebarSource).toContain("mountProfileDrawer");
     expect(sidebarSource).not.toMatch(/\["edit",\s*"Edit"\]/);
-    expect(sidebarCss).toContain(".profile.is-editing");
+    expect(sidebarSource).toContain('article.classList.toggle("is-editing", expanded)');
   });
 
   it("provides a local accessible delete confirmation layer and stable Test label slot", () => {
@@ -73,6 +73,7 @@ describe("IINA sidebar bundle contract", () => {
     );
     expect(html).toContain("profile-action-placeholder");
     expect(sidebarSource).toContain("Testing…");
+    expect(sidebarSource).not.toContain("Testing the current draft");
     expect(sidebarSource).toContain("Deleting…");
     expect(sidebarCss).toContain(".profile-action-placeholder");
   });
@@ -94,32 +95,12 @@ describe("IINA sidebar bundle contract", () => {
     );
   });
 
-  it("uses neutral editing surfaces while sharing the sidebar controls and focus style", () => {
-    const editing = sidebarCss.match(/\.profile\.is-editing\s*{[^}]+}/)?.[0] ?? "";
-    expect(sidebarCss).toContain("--profile-selection-strength: 10%");
-    expect(sidebarCss).toMatch(
-      /@media \(prefers-color-scheme: dark\)[\s\S]*?--profile-selection-strength: 14%/,
-    );
-    expect(sidebarCss).toMatch(
-      /--profile-selection-surface: color-mix\(\s*in srgb,\s*CanvasText var\(--profile-selection-strength\),\s*transparent\s*\)/,
-    );
-    expect(editing).toContain("border-top-color: transparent");
-    expect(sidebarCss).toMatch(
-      /\.profile\.is-editing \+ \.profile\s*{[^}]*border-top-color: transparent/,
-    );
-    expect(editing).toContain("background: color-mix(in srgb, var(--profile-selection-surface)");
-    expect(editing).toMatch(/--label-secondary: color-mix\([^;]+CanvasText/);
-    expect(editing).toMatch(/--label-tertiary: color-mix\([^;]+CanvasText/);
-    expect(editing).not.toMatch(/--(?:label-primary|success|danger):/);
-    expect(sidebarCss).not.toContain("--profile-selection-switch");
-    expect(sidebarCss).not.toContain("--profile-selection-control");
-    expect(sidebarCss).not.toMatch(/\.profile-activation input/);
-    expect(sidebarCss).not.toMatch(/\.profile\.is-editing[^{}]*:focus/);
-    expect(sidebarCss).not.toMatch(/\.profile\.is-editing button\[data-action="test"\]/);
-    expect(sidebarCss).not.toMatch(/\.profile\.is-editing \.operation-status\s*{/);
-    expect(sidebarCss).toMatch(
-      /@media \(forced-colors: active\)[\s\S]*?\.profile\.is-editing\s*{[^}]*--label-primary: HighlightText;[^}]*background: Highlight/,
-    );
+  it("does not add an emphasized surface when a Profile drawer is expanded", () => {
+    expect(sidebarSource).toContain('article.classList.toggle("is-editing", expanded)');
+    expect(sidebarCss).not.toContain("--profile-selection-strength");
+    expect(sidebarCss).not.toContain("--profile-selection-surface");
+    expect(sidebarCss).not.toMatch(/\.profile\.is-editing\s*{/);
+    expect(sidebarCss).not.toMatch(/\.profile\.is-editing \+ \.profile\s*{/);
     expect(sidebarCss).toMatch(/@media \(prefers-reduced-transparency: reduce\)/);
     expect(sidebarCss).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
   });
@@ -305,7 +286,13 @@ describe("IINA sidebar bundle contract", () => {
     expect(cancel).toBeGreaterThan(endGroup);
     expect(remove).toBeGreaterThan(cancel);
     expect(save).toBeGreaterThan(remove);
-    expect(sidebarCss).toMatch(/\.profile-drawer-actions\s*{[^}]*justify-content: space-between/);
+    expect(sidebarCss).toMatch(
+      /\.profile-drawer-actions\s*{[^}]*display: grid;[^}]*grid-template-columns: minmax\(0, 1fr\)/,
+    );
+    expect(sidebarCss).toMatch(/#test-profile\s*{[^}]*justify-self: start/);
+    expect(sidebarCss).toMatch(
+      /\.profile-drawer-actions-end\s*{[^}]*grid-row: 2;[^}]*width: 100%;[^}]*justify-content: flex-end/,
+    );
   });
 
   it("keeps local exception regions and one visually hidden operation announcer", () => {

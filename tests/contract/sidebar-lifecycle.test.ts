@@ -246,6 +246,7 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(globalSource).toContain("publishProfileAuthority()");
     expect(sidebarSource).toContain("deleteSucceeded");
     expect(sidebarSource).toContain('onMessage("profile:deleted"');
+    expect(sidebarSource).toContain('setActionBusy("delete", result.profileId, false)');
   });
 
   it("keeps request-correlated operation feedback separate from session polling", () => {

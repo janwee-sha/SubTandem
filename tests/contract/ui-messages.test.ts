@@ -256,7 +256,15 @@ describe("Sidebar/Main/Global security messages", () => {
   });
 
   it("turns safe provider classifications into actionable sidebar guidance", () => {
-    expect(providerTestStatusMessage({ ok: true })).toBe("Connection test passed.");
+    expect(providerTestStatusMessage({ ok: true })).toBe("Test passed");
+    expect(
+      providerTestStatusMessage({
+        ok: false,
+        category: "cancelled",
+        code: "TEST_INVALIDATED",
+        userAction: "RETRY",
+      }),
+    ).toBe("This test is no longer current. Review the Profile and test again.");
     expect(
       providerTestStatusMessage({
         ok: false,
@@ -350,7 +358,7 @@ describe("Sidebar/Main/Global security messages", () => {
 
   it("uses exact translation-activation guidance without authorization wording", () => {
     expect(sidebarSource).toContain("Profile updated. Enable it when you are ready.");
-    expect(providerTestStatusMessage({ ok: true })).not.toMatch(/select/i);
+    expect(providerTestStatusMessage({ ok: true })).toBe("Test passed");
     expect(`${sidebarSource}\n${providerTestStatusMessage({ ok: true })}`).not.toContain(
       "to authorize translation",
     );

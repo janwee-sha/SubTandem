@@ -1474,7 +1474,7 @@ testProfileButton.addEventListener("click", () => {
   const started = sidebarState.beginDrawerTest(requestId);
   if (!started) return;
   profileTestStatus.dataset.state = "busy";
-  profileTestStatus.textContent = "Testing the current draft…";
+  profileTestStatus.textContent = "Testing…";
   setActionBusy("test", undefined, true, "Testing…");
   window.iina?.postMessage(
     "provider:test",
@@ -1740,12 +1740,17 @@ window.iina?.onMessage("profile-activation:result", (raw: unknown) => {
 window.iina?.onMessage("profile:deleted", (raw: unknown) => {
   const result = raw as { requestId?: string; profileId?: string };
   if (typeof result.requestId !== "string" || typeof result.profileId !== "string") return;
+  const pendingDelete =
+    pendingOperations.has(result.requestId) &&
+    sidebarState.snapshot.requests[result.requestId]?.actionId === "delete" &&
+    sidebarState.snapshot.requests[result.requestId]?.profileId === result.profileId;
   sidebarState.deleteSucceeded({
     requestId: result.requestId,
     profileId: result.profileId,
     message: "Profile and saved credential deleted.",
   });
   if (editingProfile?.profileId === result.profileId) resetEditor();
+  if (pendingDelete) setActionBusy("delete", result.profileId, false);
   pendingOperations.delete(result.requestId);
   renderedProfilesSignature = "";
   renderProfiles(sidebarState.snapshot.profiles as unknown as ProfileView[]);
