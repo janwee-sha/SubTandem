@@ -273,25 +273,37 @@ describe("IINA sidebar bundle contract", () => {
     expect(html).not.toMatch(/fallback|falls back/i);
   });
 
-  it("keeps drawer actions in Test-left and Cancel/Delete/Save-right order", () => {
+  it("keeps Test feedback together and splits Delete from the right-side save actions", () => {
     const actions =
       html.match(/<div class="profile-drawer-actions">[\s\S]*?<\/div>\s*<\/div>/)?.[0] ?? "";
+    const testRow = actions.indexOf('class="profile-drawer-test-row"');
     const test = actions.indexOf('id="test-profile"');
+    const testStatus = actions.indexOf('id="profile-test-status"');
+    const commitRow = actions.indexOf('class="profile-drawer-commit-row"');
+    const remove = actions.indexOf('id="delete-profile"');
     const endGroup = actions.indexOf('class="profile-drawer-actions-end"');
     const cancel = actions.indexOf('id="cancel-profile"');
-    const remove = actions.indexOf('id="delete-profile"');
     const save = actions.indexOf('id="save-profile"');
-    expect(test).toBeGreaterThan(-1);
-    expect(endGroup).toBeGreaterThan(test);
+    expect(testRow).toBeGreaterThan(-1);
+    expect(test).toBeGreaterThan(testRow);
+    expect(testStatus).toBeGreaterThan(test);
+    expect(commitRow).toBeGreaterThan(testStatus);
+    expect(remove).toBeGreaterThan(commitRow);
+    expect(endGroup).toBeGreaterThan(remove);
     expect(cancel).toBeGreaterThan(endGroup);
-    expect(remove).toBeGreaterThan(cancel);
-    expect(save).toBeGreaterThan(remove);
+    expect(save).toBeGreaterThan(cancel);
+    expect(sidebarCss).toMatch(/\.profile-drawer-actions\s*{[^}]*display: grid;[^}]*row-gap: 12px/);
     expect(sidebarCss).toMatch(
-      /\.profile-drawer-actions\s*{[^}]*display: grid;[^}]*grid-template-columns: minmax\(0, 1fr\)/,
+      /\.profile-drawer-test-row\s*{[^}]*display: flex;[^}]*align-items: center;[^}]*flex-wrap: wrap/,
     );
-    expect(sidebarCss).toMatch(/#test-profile\s*{[^}]*justify-self: start/);
     expect(sidebarCss).toMatch(
-      /\.profile-drawer-actions-end\s*{[^}]*grid-row: 2;[^}]*width: 100%;[^}]*justify-content: flex-end/,
+      /\.profile-drawer-test-row \.operation-status\s*{[^}]*min-width: 0;[^}]*overflow-wrap: anywhere/,
+    );
+    expect(sidebarCss).toMatch(
+      /\.profile-drawer-commit-row\s*{[^}]*display: flex;[^}]*justify-content: space-between;[^}]*flex-wrap: wrap/,
+    );
+    expect(sidebarCss).toMatch(
+      /\.profile-drawer-actions-end\s*{[^}]*margin-left: auto;[^}]*justify-content: flex-end/,
     );
   });
 

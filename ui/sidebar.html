@@ -402,16 +402,25 @@
               >
             </label>
           </div>
-          <p id="profile-test-status" class="operation-status" role="status" aria-live="polite"></p>
           <div class="profile-drawer-actions">
-            <button id="test-profile" class="secondary" type="button">
-              <span class="profile-action-label">Test</span>
-              <span class="profile-action-placeholder" aria-hidden="true">Testing…</span>
-            </button>
-            <div class="profile-drawer-actions-end">
-              <button id="cancel-profile" class="secondary" type="button">Cancel</button>
+            <div class="profile-drawer-test-row">
+              <button id="test-profile" class="secondary" type="button">
+                <span class="profile-action-label">Test</span>
+                <span class="profile-action-placeholder" aria-hidden="true">Testing…</span>
+              </button>
+              <p
+                id="profile-test-status"
+                class="operation-status"
+                role="status"
+                aria-live="polite"
+              ></p>
+            </div>
+            <div class="profile-drawer-commit-row">
               <button id="delete-profile" class="secondary danger" type="button">Delete</button>
-              <button id="save-profile" type="button">Save</button>
+              <div class="profile-drawer-actions-end">
+                <button id="cancel-profile" class="secondary" type="button">Cancel</button>
+                <button id="save-profile" type="button">Save</button>
+              </div>
             </div>
           </div>
           <p

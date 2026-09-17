@@ -410,21 +410,38 @@ button.secondary {
 
 .profile-drawer-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
-  align-items: center;
-  gap: 6px;
+  row-gap: 12px;
 }
 
-#test-profile {
-  justify-self: start;
+.profile-drawer-test-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+}
+
+.profile-drawer-test-row .operation-status {
+  min-width: 0;
+  flex: 1 1 140px;
+  overflow-wrap: anywhere;
+}
+
+.profile-drawer-commit-row {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  flex-wrap: wrap;
 }
 
 .profile-drawer-actions-end {
   display: flex;
-  grid-row: 2;
-  width: 100%;
   min-width: 0;
+  margin-left: auto;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 5px;
@@ -1005,14 +1022,6 @@ dd {
 @media (max-width: 320px) {
   .sidebar-section {
     padding-inline: 14px;
-  }
-
-  .profile-drawer-actions {
-    align-items: stretch;
-  }
-
-  .profile-drawer-actions-end {
-    width: 100%;
   }
 
   .profile-delete-dialog {
