@@ -36,12 +36,7 @@ export class DeepSeekProvider implements ConfiguredProvider {
     this.cancelledRequests.delete(testId);
     this.activeRequests.add(testId);
     try {
-      const response = await this.send(
-        testId,
-        [{ id: "probe", text: "hello" }],
-        "es",
-        10_000,
-      );
+      const response = await this.send(testId, [{ id: "probe", text: "hello" }], "es", 10_000);
       this.throwIfCancelled(testId);
       this.parseResponse(["probe"], response);
       return { model: this.config.model };
@@ -61,12 +56,7 @@ export class DeepSeekProvider implements ConfiguredProvider {
       return await runTranslationBatches(
         request,
         async (jobId, items) => {
-          const response = await this.send(
-            jobId,
-            items,
-            request.targetLanguage,
-            30_000,
-          );
+          const response = await this.send(jobId, items, request.targetLanguage, 30_000);
           this.throwIfCancelled(request.requestId);
           return this.parseResponse(
             items.map((item) => item.id),

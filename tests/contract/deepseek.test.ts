@@ -124,7 +124,7 @@ describe("DeepSeek provider", () => {
     expect(
       requests.map(
         (request) =>
-          ((request.body as { messages: Array<{ content: string }> }).messages[0]!.content),
+          (request.body as { messages: Array<{ content: string }> }).messages[0]!.content,
       ),
     ).toEqual([
       expect.stringContaining("Spanish [es]"),

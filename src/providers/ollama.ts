@@ -140,8 +140,7 @@ export class OllamaProvider implements ConfiguredProvider {
   async cancel(requestId: string): Promise<void> {
     if (this.activeRequests.has(requestId)) this.cancelledRequests.add(requestId);
     const jobs = [...this.activeJobs].filter(
-      (jobId) =>
-        jobId === requestId || jobId.startsWith(`${requestId}-`),
+      (jobId) => jobId === requestId || jobId.startsWith(`${requestId}-`),
     );
     await Promise.allSettled(jobs.map((jobId) => this.transport.cancel?.(jobId)));
   }
@@ -220,19 +219,10 @@ export class OllamaProvider implements ConfiguredProvider {
     timeoutMs: number,
   ): Promise<TranslationBatchResult> {
     const initialCapability = this.outputCapability;
-    let response = await this.chat(
-      jobId,
-      items,
-      targetLanguage,
-      timeoutMs,
-      initialCapability,
-    );
+    let response = await this.chat(jobId, items, targetLanguage, timeoutMs, initialCapability);
     this.throwIfCancelled(scopeId);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      if (
-        initialCapability !== "json-schema" ||
-        !this.isStructuredOutputIncompatibility(response)
-      )
+      if (initialCapability !== "json-schema" || !this.isStructuredOutputIncompatibility(response))
         throw providerHttpError(response.statusCode, response.headers);
       this.outputCapability = "prompt-json";
       response = await this.chat(

@@ -196,8 +196,9 @@ describe("provider language detection", () => {
       {
         request: async (request) => {
           calls += 1;
-          const content = (request.body as { messages: Array<{ content: string }> }).messages.at(-1)!
-            .content;
+          const content = (request.body as { messages: Array<{ content: string }> }).messages.at(
+            -1,
+          )!.content;
           const target = ollamaTarget(content);
           return {
             statusCode: 200,
@@ -261,8 +262,9 @@ describe("provider language detection", () => {
       {
         request: async (request) => {
           calls += 1;
-          const content = (request.body as { messages: Array<{ content: string }> }).messages.at(-1)!
-            .content;
+          const content = (request.body as { messages: Array<{ content: string }> }).messages.at(
+            -1,
+          )!.content;
           const target = ollamaTarget(content);
           return {
             statusCode: 200,
@@ -326,8 +328,9 @@ describe("provider language detection", () => {
         { endpoint: "http://127.0.0.1:11434", model: "synthetic-model" },
         {
           request: async (request) => {
-            const content = (request.body as { messages: Array<{ content: string }> }).messages.at(-1)!
-              .content;
+            const content = (request.body as { messages: Array<{ content: string }> }).messages.at(
+              -1,
+            )!.content;
             const target = ollamaTarget(content);
             requestedTexts.push(target.text);
             if (target.text === "Stalled.") {

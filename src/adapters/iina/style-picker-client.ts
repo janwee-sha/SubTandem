@@ -138,10 +138,7 @@ export class StylePickerClient {
     );
   }
 
-  async openColor(input: {
-    requestId: string;
-    color: RgbaColor;
-  }): Promise<"opened" | "focused"> {
+  async openColor(input: { requestId: string; color: RgbaColor }): Promise<"opened" | "focused"> {
     if (!validId(input.requestId) || !isRgbaColor(input.color))
       throw new Error("STYLE_PICKER_PROTOCOL");
     return this.statusResponse(

@@ -191,8 +191,10 @@ export class ClaudeProvider implements ConfiguredProvider {
   private isThinkingIncompatibility(response: ProviderTransportResponse): boolean {
     if (response.statusCode !== 400 && response.statusCode !== 422) return false;
     const detail = response.bodyText.slice(0, 16_384);
-    return /thinking/i.test(detail) &&
-      /(disabled|unsupported|not supported|unknown|unrecognized|unexpected|invalid)/i.test(detail);
+    return (
+      /thinking/i.test(detail) &&
+      /(disabled|unsupported|not supported|unknown|unrecognized|unexpected|invalid)/i.test(detail)
+    );
   }
 
   private isStructuredOutputIncompatibility(response: ProviderTransportResponse): boolean {

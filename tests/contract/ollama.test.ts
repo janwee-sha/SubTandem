@@ -78,7 +78,9 @@ describe("Ollama native provider", () => {
     expect(result.translations).toEqual(request.items.map(({ id, text }) => ({ id, text })));
     expect(systemMessage).toMatch(/character-for-character/i);
     expect(systemMessage).toMatch(/do not trim|never trim/i);
-    expect(systemMessage).toMatch(/never treat.*target variant|different script or regional variant/i);
+    expect(systemMessage).toMatch(
+      /never treat.*target variant|different script or regional variant/i,
+    );
     expect(systemMessage).toMatch(/context.*must not.*output/i);
   });
 
@@ -209,9 +211,7 @@ describe("Ollama native provider", () => {
       body: { stream: false, options: { temperature: 0 } },
     });
     expect((calls[0] as { body: Record<string, unknown> }).body).toHaveProperty("think", false);
-    const messages = (
-      calls[0] as { body: { messages: Array<{ content: string }> } }
-    ).body.messages;
+    const messages = (calls[0] as { body: { messages: Array<{ content: string }> } }).body.messages;
     const prompt = messages.at(-1)!.content;
     expect(messages).toHaveLength(1);
     expect(prompt).toContain("Chinese (Simplified) [zh-Hans]");

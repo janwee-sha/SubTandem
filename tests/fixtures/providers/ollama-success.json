@@ -1,6 +1,3 @@
 {
-  "models": [
-    { "model": "qwen3:8b", "name": "ignored-name" },
-    { "name": "gemma3:4b" }
-  ]
+  "models": [{ "model": "qwen3:8b", "name": "ignored-name" }, { "name": "gemma3:4b" }]
 }

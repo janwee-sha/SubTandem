@@ -77,8 +77,11 @@ interface LiveTranslationCounts {
 }
 
 function makeLiveAcceptanceRequest(count = 50): TranslationBatchRequest {
-  const sourcePool = ["short-five-cues", "short-eleven-cues-missing-label", "medium-natural-dialogue"]
-    .flatMap((caseId) => languageFixture.cases.find((entry) => entry.id === caseId)?.cues ?? []);
+  const sourcePool = [
+    "short-five-cues",
+    "short-eleven-cues-missing-label",
+    "medium-natural-dialogue",
+  ].flatMap((caseId) => languageFixture.cases.find((entry) => entry.id === caseId)?.cues ?? []);
   const cues = Array.from({ length: count }, (_, index) => {
     const sourceText = sourcePool[index % sourcePool.length]!;
     return {

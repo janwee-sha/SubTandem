@@ -135,9 +135,7 @@ export async function discoverProviderModels(
     jobId: request.jobId,
     method: "GET",
     url: `${endpoint}${request.kind === "ollama" ? "/api/tags" : "/models"}`,
-    headers: request.apiKey?.trim()
-      ? { Authorization: `Bearer ${request.apiKey.trim()}` }
-      : {},
+    headers: request.apiKey?.trim() ? { Authorization: `Bearer ${request.apiKey.trim()}` } : {},
     proxyMode: request.proxyMode ?? "system",
     timeoutMs: 10_000,
     maxResponseBytes: 1_048_576,

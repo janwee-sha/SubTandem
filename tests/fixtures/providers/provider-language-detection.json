@@ -5,13 +5,7 @@
       "id": "short-five-cues",
       "targetLanguage": "zh-Hans",
       "trackLanguage": "en",
-      "cues": [
-        "Wait.",
-        "Did you hear that?",
-        "Nothing but the wind.",
-        "Stay close.",
-        "Let's go."
-      ]
+      "cues": ["Wait.", "Did you hear that?", "Nothing but the wind.", "Stay close.", "Let's go."]
     },
     {
       "id": "short-eleven-cues-missing-label",

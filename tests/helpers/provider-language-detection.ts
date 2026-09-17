@@ -130,6 +130,8 @@ export function ollamaQualityIssues(
 
 export function expectExactText(actual: string, expected: string): void {
   if (actual !== expected) {
-    throw new Error(`Expected exact text ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}`);
+    throw new Error(
+      `Expected exact text ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}`,
+    );
   }
 }

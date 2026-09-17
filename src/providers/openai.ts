@@ -143,8 +143,7 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
   async cancel(requestId: string): Promise<void> {
     if (this.activeRequests.has(requestId)) this.cancelledRequests.add(requestId);
     const jobs = [...this.activeJobs].filter(
-      (jobId) =>
-        jobId === requestId || jobId.startsWith(`${requestId}-`),
+      (jobId) => jobId === requestId || jobId.startsWith(`${requestId}-`),
     );
     await Promise.allSettled(jobs.map((jobId) => this.transport.cancel?.(jobId)));
   }
@@ -222,9 +221,7 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
       const parsed = JSON.parse(bodyText) as Record<string, unknown>;
       const error = parsed.error as Record<string, unknown> | undefined;
       const code = error?.code ?? error?.type;
-      return typeof code === "string" && /^[A-Za-z0-9_.:-]{1,128}$/.test(code)
-        ? code
-        : undefined;
+      return typeof code === "string" && /^[A-Za-z0-9_.:-]{1,128}$/.test(code) ? code : undefined;
     } catch {
       return undefined;
     }
@@ -235,7 +232,10 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
     providerCode?: string,
   ): boolean {
     if (response.statusCode !== 400 && response.statusCode !== 422) return false;
-    if (providerCode && /(auth|api.?key|credential|model|deployment|quota|billing|spend)/i.test(providerCode))
+    if (
+      providerCode &&
+      /(auth|api.?key|credential|model|deployment|quota|billing|spend)/i.test(providerCode)
+    )
       return false;
     return /(unsupported|not supported|response[_ -]?format|json[_ -]?schema|structured output)/i.test(
       response.bodyText.slice(0, 16_384),
