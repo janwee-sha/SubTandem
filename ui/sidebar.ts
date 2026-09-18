@@ -2100,16 +2100,17 @@ function mountProfileDrawer(): void {
 
 function renderDrawerAvailability(): void {
   const drawer = sidebarState.snapshot.drawer;
+  const unavailable = sidebarState.snapshot.profileAuthority?.ready === false;
   const conflict = drawer.validity === "conflict";
   const saving = drawer.savePhase !== null;
   const deleting = drawer.deletePhase === "deleting";
   const testing = drawer.test?.phase === "testing";
-  testProfileButton.disabled = conflict || saving || deleting || testing;
-  saveProfileButton.disabled = conflict || saving || deleting;
-  deleteProfileButton.disabled = conflict || saving || deleting;
+  testProfileButton.disabled = unavailable || conflict || saving || deleting || testing;
+  saveProfileButton.disabled = unavailable || conflict || saving || deleting;
+  deleteProfileButton.disabled = unavailable || conflict || saving || deleting;
   cancelProfileButton.disabled = saving || deleting;
-  refreshModelsButton.disabled = conflict || saving || deleting;
-  newProfileButton.disabled = saving;
+  refreshModelsButton.disabled = unavailable || conflict || saving || deleting;
+  newProfileButton.disabled = unavailable || saving;
   if (conflict) {
     profileEditorStatus.dataset.conflict = "true";
     profileEditorStatus.dataset.state = "error";
@@ -2173,7 +2174,12 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
   if (!viewProfiles.length && drawer.mode !== "new") {
     const empty = existingEmpty ?? document.createElement("p");
     empty.className = "empty";
-    empty.textContent = "No saved profiles yet.";
+    const unavailable = sidebarState.snapshot.profileAuthority?.ready === false;
+    empty.textContent = unavailable
+      ? "Profiles unavailable (HELPER_UNAVAILABLE). Restart IINA."
+      : "No saved profiles yet.";
+    if (unavailable) empty.dataset.state = "error";
+    else delete empty.dataset.state;
     profilesElement.append(empty);
   } else {
     existingEmpty?.remove();

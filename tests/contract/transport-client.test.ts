@@ -1,13 +1,15 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import {
   discoverHelperExecutable,
   parseReadyFrame,
+  removeStaleHelperFiles,
   TransportProcess,
   type ReadyFileStore,
 } from "../../src/adapters/iina/transport-process.js";
 import {
   HelperProviderTransport,
-  IinaLocalHttpBridge,
+  IinaFileRpcBridge,
   IinaProcessLauncher,
 } from "../../src/adapters/iina/provider-transport.js";
 import { SubtitleExtractorProcess } from "../../src/adapters/iina/subtitle-extractor.js";
@@ -15,18 +17,17 @@ import {
   TRANSPORT_RPC_ERROR_CODES,
   TransportClient,
   TransportRpcError,
-  type LocalHttpBridge,
+  type LocalRpcBridge,
 } from "../../src/transport/client.js";
 
-class FakeBridge implements LocalHttpBridge {
-  readonly calls: Array<{ url: string; token: string; body: unknown }> = [];
+class FakeBridge implements LocalRpcBridge {
+  readonly calls: Array<{ port: number; path: string; token: string; body: unknown }> = [];
   unavailable = false;
   credentials = new Map<string, Record<string, string>>();
 
-  async post<T>(url: string, token: string, body: unknown): Promise<T> {
+  async post<T>(port: number, token: string, path: string, body: unknown): Promise<T> {
     if (this.unavailable) throw new Error("connection refused with private body");
-    this.calls.push({ url, token, body });
-    const path = new URL(url).pathname;
+    this.calls.push({ port, path, token, body });
     if (path === "/v1/health") return { state: "ok" } as T;
     if (path === "/v1/credentials") {
       const request = body as {
@@ -95,6 +96,10 @@ class MemoryReadyFiles implements ReadyFileStore {
     return this.files.get(path) ?? null;
   }
 
+  write(path: string, content: string): void {
+    this.files.set(path, content);
+  }
+
   delete(path: string): void {
     this.deleted.push(path);
     this.files.delete(path);
@@ -112,6 +117,26 @@ function readyFrame(createdAtMs = Date.now()): string {
 }
 
 describe("transport helper client", () => {
+  it("keeps transport and extractor RPC off IINA's HTTP Promise bridge", () => {
+    const providerSource = readFileSync(
+      new URL("../../src/adapters/iina/provider-transport.ts", import.meta.url),
+      "utf8",
+    );
+    const extractorSource = readFileSync(
+      new URL("../../src/adapters/iina/subtitle-extractor.ts", import.meta.url),
+      "utf8",
+    );
+    const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+    const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
+
+    expect(providerSource).not.toContain("IINA.API.HTTP");
+    expect(providerSource).not.toContain("this.http");
+    expect(extractorSource).not.toContain("IINA.API.HTTP");
+    expect(globalSource).toContain("new IinaFileRpcBridge");
+    expect(mainSource).toContain("new IinaFileRpcBridge");
+    expect(mainSource).not.toContain("runtime.http");
+  });
+
   it("declares non-sensitive Profile state conflict and validation errors", () => {
     expect(TRANSPORT_RPC_ERROR_CODES).toEqual(
       expect.arrayContaining(["profile-state-conflict", "invalid-profile-state"]),
@@ -238,6 +263,31 @@ describe("transport helper client", () => {
     ).rejects.toMatchObject({ code: "HELPER_START_FAILED", userAction: "RESTART_IINA" });
   });
 
+  it("keeps IINA pseudo paths separate from native helper paths", async () => {
+    const readyFiles = new MemoryReadyFiles();
+    let nativeReadyFile = "";
+    await expect(
+      TransportProcess.bootstrap(
+        {
+          launch: async (_executable, args) => {
+            nativeReadyFile = args[3]!;
+            const filename = nativeReadyFile.slice(nativeReadyFile.lastIndexOf("/") + 1);
+            readyFiles.files.set(`@data/.ready/${filename}`, readyFrame());
+            return new Promise<{ status: number }>(() => undefined);
+          },
+        },
+        readyFiles,
+        {
+          dataDirectory: "/private/plugin-data",
+          fileDirectory: "@data",
+        },
+      ),
+    ).resolves.toMatchObject({ port: 49152 });
+
+    expect(nativeReadyFile).toMatch(/^\/private\/plugin-data\/\.ready\/transport-/);
+    expect(readyFiles.deleted[0]).toMatch(/^@data\/\.ready\/transport-/);
+  });
+
   it("rejects and cleans an expired or malformed ready file", async () => {
     for (const content of [readyFrame(Date.now() - 60_000), "not-json\n"]) {
       const readyFiles = new MemoryReadyFiles();
@@ -274,6 +324,42 @@ describe("transport helper client", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("removes only bounded, stale helper handshake and RPC files", () => {
+    const now = Date.now();
+    const old = (now - 600_000).toString(36);
+    const recent = (now - 10_000).toString(36);
+    const files = new Map<string, string>([
+      [`/private/plugin/.ready/transport-${old}-1-old.json`, "old"],
+      [`/private/plugin/.ready/transport-${recent}-2-new.json`, "new"],
+      [`/private/plugin/.rpc/extractor-${old}-3-old.request.json`, "private"],
+      [`/private/plugin/.rpc/unrelated-${old}-4-old.response.json`, "keep"],
+    ]);
+    const deleted: string[] = [];
+    removeStaleHelperFiles(
+      {
+        exists: (path) => files.has(path),
+        read: (path) => files.get(path) ?? null,
+        delete: (path) => {
+          deleted.push(path);
+          files.delete(path);
+        },
+        list: (directory) =>
+          [...files.keys()]
+            .filter((path) => path.startsWith(`${directory}/`))
+            .map((path) => ({ filename: path.slice(directory.length + 1), isDir: false })),
+      },
+      "/private/plugin",
+      now,
+    );
+
+    expect(deleted).toEqual([
+      `/private/plugin/.ready/transport-${old}-1-old.json`,
+      `/private/plugin/.rpc/extractor-${old}-3-old.request.json`,
+    ]);
+    expect(files.has(`/private/plugin/.ready/transport-${recent}-2-new.json`)).toBe(true);
+    expect(files.has(`/private/plugin/.rpc/unrelated-${old}-4-old.response.json`)).toBe(true);
   });
 
   it("starts transport and extractor together with parent liveness arguments", async () => {
@@ -341,7 +427,8 @@ describe("transport helper client", () => {
     await expect(client.credentialRead(profileId)).resolves.toEqual({ apiKey: "private-key" });
     expect(client).not.toHaveProperty("credentialDelete");
     expect(bridge.calls.every((call) => call.token === "session-token")).toBe(true);
-    expect(bridge.calls.every((call) => call.url.startsWith("http://127.0.0.1:49152/"))).toBe(true);
+    expect(bridge.calls.every((call) => call.port === 49152)).toBe(true);
+    expect(bridge.calls.every((call) => call.path.startsWith("/v1/"))).toBe(true);
   });
 
   it("maps provider request labels to helper-required UUID job IDs", async () => {
@@ -368,10 +455,21 @@ describe("transport helper client", () => {
     await expect(client.cancel("job-1")).rejects.not.toThrow(/private body|secret-token/);
   });
 
-  it("maps IINA's bodyless loopback rejection to an expired helper session", async () => {
-    const bridge = new IinaLocalHttpBridge({
-      post: async () => Promise.reject(new Error("connection refused with private detail")),
-    } as unknown as IINA.API.HTTP);
+  it("maps a failed native RPC client to an unavailable helper without leaking request data", async () => {
+    const files = new MemoryReadyFiles();
+    const bridge = new IinaFileRpcBridge(
+      { launch: async () => ({ status: 1 }) },
+      files,
+      "/private/subtandem-transport",
+      {
+        helper: "transport",
+        fileDirectory: "@data/.rpc",
+        nativeDirectory: "/private/plugin-data/.rpc",
+        maxRequestBytes: 2_101_248,
+        maxResponseBytes: 4_210_688,
+        maxConcurrentRequests: 8,
+      },
+    );
     const client = new TransportClient({ port: 49152, token: "secret-token" }, bridge);
 
     await expect(client.health()).rejects.toMatchObject({
@@ -379,7 +477,8 @@ describe("transport helper client", () => {
       retryable: true,
       userAction: "RESTART_IINA",
     });
-    await expect(client.health()).rejects.not.toThrow(/private detail|secret-token/);
+    await expect(client.health()).rejects.not.toThrow(/secret-token/);
+    expect(files.files.size).toBe(0);
   });
 
   it("preserves safe upstream timeout and network classifications from the helper", async () => {
@@ -397,7 +496,7 @@ describe("transport helper client", () => {
         { code: "FORBIDDEN_DESTINATION", category: "configuration", userAction: "CHECK_ENDPOINT" },
       ],
     ] as const) {
-      const bridge: LocalHttpBridge = {
+      const bridge: LocalRpcBridge = {
         post: async () => {
           throw new TransportRpcError(rpcCode);
         },
@@ -416,36 +515,115 @@ describe("transport helper client", () => {
     }
   });
 
-  it("extracts only the helper's allowlisted RPC error code", async () => {
-    const bridge = new IinaLocalHttpBridge({
-      post: async () => ({
-        statusCode: 504,
-        data: { error: "upstream-timeout", detail: "private provider response" },
-        text: '{"error":"upstream-timeout","detail":"private provider response"}',
-      }),
-    } as unknown as IINA.API.HTTP);
-    await expect(
-      bridge.post("http://127.0.0.1:49152/v1/request", "token", {}),
-    ).rejects.toMatchObject({ code: "upstream-timeout" });
-    await expect(bridge.post("http://127.0.0.1:49152/v1/request", "token", {})).rejects.not.toThrow(
-      /private provider response|token/,
+  it("publishes a private request, waits for native completion, parses the response, and cleans both files", async () => {
+    const files = new MemoryReadyFiles();
+    const launches: Array<{ executable: string; args: string[] }> = [];
+    const bridge = new IinaFileRpcBridge(
+      {
+        launch: async (executable, args) => {
+          launches.push({ executable, args });
+          const requestEntry = [...files.files].find(([path]) => path.endsWith(".request.json"));
+          expect(requestEntry).toBeDefined();
+          expect(JSON.parse(requestEntry![1])).toMatchObject({
+            type: "request",
+            protocolVersion: 1,
+            port: 49152,
+            token: "secret-token",
+            path: "/v1/health",
+            body: {},
+          });
+          const responsePath = requestEntry![0].replace(".request.json", ".response.json");
+          files.write(
+            responsePath,
+            JSON.stringify({
+              type: "response",
+              protocolVersion: 1,
+              createdAtMs: Date.now(),
+              statusCode: 200,
+              body: { state: "ok" },
+            }),
+          );
+          return { status: 0 };
+        },
+      },
+      files,
+      "/private/subtandem-transport",
+      {
+        helper: "transport",
+        fileDirectory: "@data/.rpc",
+        nativeDirectory: "/private/plugin-data/.rpc",
+        maxRequestBytes: 2_097_152,
+        maxResponseBytes: 4_210_688,
+        maxConcurrentRequests: 8,
+      },
     );
+
+    await expect(bridge.post(49152, "secret-token", "/v1/health", {})).resolves.toEqual({
+      state: "ok",
+    });
+    expect(launches).toHaveLength(1);
+    expect(launches[0]?.args).toEqual([
+      "--rpc-client",
+      "--rpc-directory",
+      "/private/plugin-data/.rpc",
+      "--request-file",
+      expect.stringMatching(/^\/private\/plugin-data\/\.rpc\/transport-/),
+      "--response-file",
+      expect.stringMatching(/^\/private\/plugin-data\/\.rpc\/transport-/),
+    ]);
+    expect(JSON.stringify(launches)).not.toContain("secret-token");
+    expect(files.files.size).toBe(0);
   });
 
-  it("extracts safe helper codes from IINA's rejected non-2xx Promise", async () => {
-    const bridge = new IinaLocalHttpBridge({
-      post: async () =>
-        Promise.reject({
-          statusCode: 504,
-          data: { error: "upstream-timeout", detail: "private provider response" },
-          text: '{"error":"upstream-timeout","detail":"private provider response"}',
-        }),
-    } as unknown as IINA.API.HTTP);
-    await expect(
-      bridge.post("http://127.0.0.1:49152/v1/request", "token", {}),
-    ).rejects.toMatchObject({ code: "upstream-timeout" });
-    await expect(bridge.post("http://127.0.0.1:49152/v1/request", "token", {})).rejects.not.toThrow(
-      /private provider response|token/,
+  it("maps only an allowlisted error code from the native response file", async () => {
+    const files = new MemoryReadyFiles();
+    const bridge = new IinaFileRpcBridge(
+      {
+        launch: async () => {
+          const requestPath = [...files.files.keys()].find((path) =>
+            path.endsWith(".request.json"),
+          )!;
+          files.write(
+            requestPath.replace(".request.json", ".response.json"),
+            JSON.stringify({
+              type: "response",
+              protocolVersion: 1,
+              createdAtMs: Date.now(),
+              statusCode: 504,
+              body: { error: "upstream-timeout", detail: "private provider response" },
+            }),
+          );
+          return { status: 0 };
+        },
+      },
+      files,
+      "/private/subtandem-transport",
+      {
+        helper: "transport",
+        fileDirectory: "@data/.rpc",
+        nativeDirectory: "/private/plugin-data/.rpc",
+        maxRequestBytes: 2_101_248,
+        maxResponseBytes: 4_210_688,
+        maxConcurrentRequests: 8,
+      },
     );
+    const client = new TransportClient({ port: 49152, token: "secret-token" }, bridge);
+
+    await expect(
+      client.request({
+        jobId: "job-1",
+        method: "POST",
+        url: "https://example.test",
+        headers: {},
+        timeoutMs: 1_000,
+        maxResponseBytes: 1_024,
+      }),
+    ).rejects.toMatchObject({
+      code: "PROVIDER_TIMEOUT",
+      category: "timeout",
+      userAction: "CHECK_NETWORK",
+    });
+    await expect(client.health()).rejects.not.toThrow(/private provider response|secret-token/);
+    expect(files.files.size).toBe(0);
   });
 });

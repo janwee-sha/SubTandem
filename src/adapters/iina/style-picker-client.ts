@@ -1,4 +1,4 @@
-import type { HelperExecutableLocator, ProcessLauncher } from "./transport-process.js";
+import type { HelperExecutableLocator } from "./transport-process.js";
 import {
   isFontFamily,
   isRgbaColor,
@@ -17,6 +17,26 @@ export interface StylePickerReadyFrame extends StylePickerSession {
 
 export interface StylePickerHttpBridge {
   request<T>(method: "GET" | "POST", url: string, bearerToken: string, body?: unknown): Promise<T>;
+}
+
+export interface StylePickerProcessLauncher {
+  launch(
+    executable: string,
+    args: string[],
+    onStdout: (data: string) => void,
+  ): Promise<{ status: number }>;
+}
+
+export class IinaStylePickerProcessLauncher implements StylePickerProcessLauncher {
+  constructor(private readonly utils: IINA.API.Utils) {}
+
+  launch(
+    executable: string,
+    args: string[],
+    onStdout: (data: string) => void,
+  ): Promise<{ status: number }> {
+    return this.utils.exec(executable, args, null, onStdout, () => undefined);
+  }
 }
 
 export type StylePickerEvent =
@@ -66,7 +86,7 @@ export function parseStylePickerReadyFrame(output: string): StylePickerReadyFram
 
 export class StylePickerProcess {
   static async bootstrap(
-    launcher: ProcessLauncher,
+    launcher: StylePickerProcessLauncher,
     options: { parentPid?: number },
     executable: string,
   ): Promise<StylePickerSession> {

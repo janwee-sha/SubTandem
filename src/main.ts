@@ -12,7 +12,7 @@ import {
   readSelectedSubtitle,
 } from "./adapters/iina/subtitle-source.js";
 import {
-  IinaLocalHttpBridge,
+  IinaFileRpcBridge,
   IinaProcessLauncher,
   IinaReadyFileStore,
 } from "./adapters/iina/provider-transport.js";
@@ -81,7 +81,6 @@ interface MainRuntime {
   event: IINA.API.Event;
   file: IINA.API.File;
   global: IINA.API.Global;
-  http: IINA.API.HTTP;
   mpv: IINA.API.MPV;
   overlay: IINA.API.Overlay;
   preferences: IINA.API.Preferences;
@@ -291,6 +290,9 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     if (preparation) return Promise.resolve(preparation);
     if (preparationPromise) return preparationPromise;
     preparationPromise = (async () => {
+      const tempDirectory = runtime.utils.resolvePath("@tmp/subtandem-extraction");
+      const launcher = new IinaProcessLauncher(runtime.utils);
+      const files = new IinaReadyFileStore(runtime.file);
       const executable = discoverSubtitleExtractorExecutable({
         exists: (path) => runtime.file.exists(path),
         resolvePath: (path) => runtime.utils.resolvePath(path),
@@ -298,14 +300,24 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
         read: (path) => runtime.file.read(path) ?? null,
       });
       const session = await SubtitleExtractorProcess.bootstrap(
-        new IinaProcessLauncher(runtime.utils),
-        new IinaReadyFileStore(runtime.file),
-        { tempDirectory: runtime.utils.resolvePath("@tmp/subtandem-extraction") },
+        launcher,
+        files,
+        { tempDirectory, fileDirectory: "@tmp/subtandem-extraction" },
         executable,
       );
       preparation = new SubtitlePreparationCoordinator({
         playerId,
-        extractor: new SubtitleExtractorClient(session, new IinaLocalHttpBridge(runtime.http)),
+        extractor: new SubtitleExtractorClient(
+          session,
+          new IinaFileRpcBridge(launcher, files, executable, {
+            helper: "extractor",
+            fileDirectory: "@tmp/subtandem-extraction/.rpc",
+            nativeDirectory: `${tempDirectory}/.rpc`,
+            maxRequestBytes: 65_536,
+            maxResponseBytes: 65_536,
+            maxConcurrentRequests: 4,
+          }),
+        ),
         readResult: (resultId) =>
           sourcePort.readBinary(`@tmp/subtandem-extraction/${resultId}/output.srt`),
       });
@@ -381,7 +393,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
           state: "failed",
           origin: "embedded",
           ...(track.codec === "external" ? {} : { codec: track.codec }),
-          canRetry: true,
+          canRetry: false,
           canReselect: true,
         };
         updateSidebarState({ source: null, sourceIssue: null, sourcePreparation: preparationView });
@@ -403,7 +415,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
         ...(selection.track?.codec && selection.track.codec !== "external"
           ? { codec: selection.track.codec }
           : {}),
-        canRetry: selection.state === "emptyOrUnreadable",
+        canRetry: false,
         canReselect: true,
       };
       controller.setSource(null);

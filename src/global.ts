@@ -27,7 +27,7 @@ import {
 } from "./credentials/store.js";
 import { createDeferredPlayerPost } from "./adapters/iina/deferred-post.js";
 import {
-  IinaLocalHttpBridge,
+  IinaFileRpcBridge,
   IinaProcessLauncher,
   IinaReadyFileStore,
 } from "./adapters/iina/provider-transport.js";
@@ -62,6 +62,7 @@ import { SubtitleStyleAuthority } from "./adapters/iina/subtitle-style-sync.js";
 import {
   discoverStylePickerExecutable,
   IinaStylePickerHttpBridge,
+  IinaStylePickerProcessLauncher,
   StylePickerClient,
   StylePickerProcess,
   type StylePickerEvent,
@@ -147,18 +148,32 @@ function legacyProfileMetadata(): ProviderProfileSnapshot[] {
 }
 
 const transport = new TransportSupervisor(async () => {
+  const dataDirectory = iina.utils.resolvePath("@data/.");
+  const launcher = new IinaProcessLauncher(iina.utils);
+  const files = new IinaReadyFileStore(iina.file);
+  const executable = discoverHelperExecutable({
+    exists: (path) => iina.file.exists(path),
+    resolvePath: (path) => iina.utils.resolvePath(path),
+    list: (path) => iina.file.list(path, { includeSubDir: false }),
+    read: (path) => iina.file.read(path) ?? null,
+  });
   const session = await TransportProcess.bootstrap(
-    new IinaProcessLauncher(iina.utils),
-    new IinaReadyFileStore(iina.file),
-    { dataDirectory: iina.utils.resolvePath("@data/.") },
-    discoverHelperExecutable({
-      exists: (path) => iina.file.exists(path),
-      resolvePath: (path) => iina.utils.resolvePath(path),
-      list: (path) => iina.file.list(path, { includeSubDir: false }),
-      read: (path) => iina.file.read(path) ?? null,
+    launcher,
+    files,
+    { dataDirectory, fileDirectory: "@data" },
+    executable,
+  );
+  return new TransportClient(
+    session,
+    new IinaFileRpcBridge(launcher, files, executable, {
+      helper: "transport",
+      fileDirectory: "@data/.rpc",
+      nativeDirectory: `${dataDirectory}/.rpc`,
+      maxRequestBytes: 2_101_248,
+      maxResponseBytes: 4_210_688,
+      maxConcurrentRequests: 8,
     }),
   );
-  return new TransportClient(session, new IinaLocalHttpBridge(iina.http));
 });
 
 const credentials = new HelperCredentialStore(transport);
@@ -605,7 +620,7 @@ async function ensureStylePickerClient(): Promise<StylePickerClient> {
     const executable = discoverStylePickerExecutable(stylePickerLocator());
     const parentPid = currentParentPid();
     const session = await StylePickerProcess.bootstrap(
-      new IinaProcessLauncher(iina.utils),
+      new IinaStylePickerProcessLauncher(iina.utils),
       parentPid === undefined ? {} : { parentPid },
       executable,
     );

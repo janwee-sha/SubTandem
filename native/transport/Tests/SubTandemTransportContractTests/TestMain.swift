@@ -25,6 +25,7 @@ enum SubTandemTransportContractTestMain {
     static func main() async {
         do {
             try await runServerTests()
+            try await runFileRPCClientTests()
             try await runHTTPClientTests()
             print("SubTandem transport contract tests passed")
             exit(EXIT_SUCCESS)

@@ -120,6 +120,55 @@ function profiles(): ProviderProfiles {
 }
 
 describe("Profile activation restoration", () => {
+  it("restores four persisted Profiles and their activation on cold start", async () => {
+    const restoredProfiles = [0, 1, 2, 3].map((index) => ({
+      ...profile,
+      profileId: `7a90a4e6-cc4f-4f59-99b7-8ff522f887a${index}`,
+      displayName: `Profile ${index + 1}`,
+      endpoint: `https://profile-${index + 1}.example/v1`,
+      endpointFingerprint: identityHash({
+        kind: "openai",
+        endpoint: `https://profile-${index + 1}.example/v1`,
+        proxyMode: "direct",
+      }),
+    }));
+    const active = restoredProfiles[2]!;
+    const store = new RestorationStore({
+      revision: 215,
+      initialized: true,
+      state: {
+        profiles: restoredProfiles,
+        activation: {
+          profileId: active.profileId,
+          profileRevision: active.revision,
+          kind: active.kind,
+          endpointFingerprint: active.endpointFingerprint,
+          credentialConfigured: true,
+        },
+      },
+      configured: Object.fromEntries(restoredProfiles.map((value) => [value.profileId, true])),
+    });
+
+    const authority = await restoreProfileActivationAuthority({
+      authorityId: "authority-cold-start",
+      profiles: profiles(),
+      store,
+      createCommitId: () => "00000000-0000-4000-8000-000000000008",
+    });
+
+    expect(authority.snapshot).toMatchObject({
+      ready: true,
+      activation: { profileId: active.profileId },
+    });
+    expect(authority.snapshot.profiles).toHaveLength(4);
+    expect(authority.snapshot.profiles.map((value) => value.displayName)).toEqual([
+      "Profile 1",
+      "Profile 2",
+      "Profile 3",
+      "Profile 4",
+    ]);
+  });
+
   it("preserves the persisted Profile order across restoration and window projections", async () => {
     const second = {
       ...profile,

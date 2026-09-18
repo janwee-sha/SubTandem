@@ -4,6 +4,10 @@ import Foundation
 enum SubTandemSubtitleExtractorMain {
     static func run() async throws {
         let arguments = CommandLine.arguments
+        if arguments.contains("--rpc-client") {
+            try await FileRPCClient.run(arguments: arguments)
+            return
+        }
         guard let tempIndex = arguments.firstIndex(of: "--temp-directory"),
               arguments.indices.contains(tempIndex + 1),
               let readyIndex = arguments.firstIndex(of: "--ready-file"),
@@ -28,6 +32,9 @@ enum SubTandemSubtitleExtractorMain {
               readyFile.pathExtension == "json"
         else { throw ExtractorError.invalidRequest }
         let jobs = try ExtractionJobs(rootURL: rootURL)
+        try FileRPCClient.prepareDirectory(
+            rootURL.appendingPathComponent(".rpc", isDirectory: true)
+        )
         let token = try SecureRandom.token()
         let liveness = LivenessState(parentPID: parentPID)
         let server = try SubtitleExtractorServer(token: token, jobs: jobs, liveness: liveness)

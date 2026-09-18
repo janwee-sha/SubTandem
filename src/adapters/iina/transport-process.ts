@@ -40,17 +40,14 @@ export function parseReadyFrame(output: string, notBeforeMs = 0, nowMs = Date.no
 }
 
 export interface ProcessLauncher {
-  launch(
-    executable: string,
-    args: string[],
-    onStdout?: (data: string) => void,
-  ): Promise<{ status: number }>;
+  launch(executable: string, args: string[]): Promise<{ status: number }>;
 }
 
 export interface ReadyFileStore {
   exists(path: string): boolean;
   read(path: string): string | null;
   delete(path: string): void;
+  list?(path: string): Array<{ filename: string; isDir: boolean }>;
 }
 
 let readyFileSequence = 0;
@@ -72,14 +69,49 @@ function removeReadyFile(store: ReadyFileStore, path: string): void {
   }
 }
 
+export function removeStaleHelperFiles(
+  store: ReadyFileStore,
+  root: string,
+  nowMs = Date.now(),
+): void {
+  if (!store.list) return;
+  const normalizedRoot = root.replace(/\/+$/, "");
+  for (const [directory, pattern] of [
+    [".ready", /^(?:transport|extractor)-([0-9a-z]+)-[0-9a-z]+-[0-9a-z]+\.json$/],
+    [
+      ".rpc",
+      /^(?:transport|extractor)-([0-9a-z]+)-[0-9a-z]+-[0-9a-z]+\.(?:request|response)\.json$/,
+    ],
+  ] as const) {
+    let entries: Array<{ filename: string; isDir: boolean }> = [];
+    try {
+      entries = store.list(`${normalizedRoot}/${directory}`).slice(0, 64);
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const match = pattern.exec(entry.filename);
+      if (entry.isDir || !match) continue;
+      const createdAtMs = Number.parseInt(match[1]!, 36);
+      if (!Number.isSafeInteger(createdAtMs) || createdAtMs > nowMs - 300_000) continue;
+      removeReadyFile(store, `${normalizedRoot}/${directory}/${entry.filename}`);
+    }
+  }
+}
+
 export class TransportProcess {
   static async bootstrap(
     launcher: ProcessLauncher,
     readyFiles: ReadyFileStore,
-    options: { dataDirectory: string; parentPid?: number },
+    options: { dataDirectory: string; fileDirectory?: string; parentPid?: number },
     executable = "@plugin/dist/native/subtandem-transport",
   ): Promise<TransportSession> {
-    const readyFile = createReadyFilePath(options.dataDirectory, "transport");
+    const fileDirectory = options.fileDirectory ?? options.dataDirectory;
+    removeStaleHelperFiles(readyFiles, fileDirectory);
+    const readyFile = createReadyFilePath(fileDirectory, "transport");
+    const nativeReadyFile = `${options.dataDirectory.replace(/\/+$/, "")}/.ready/${readyFile.slice(
+      readyFile.lastIndexOf("/") + 1,
+    )}`;
     if (readyFiles.exists(readyFile)) {
       removeReadyFile(readyFiles, readyFile);
       throw new SubTandemError("HELPER_PROTOCOL", "protocol", "RESTART_IINA");
@@ -90,7 +122,7 @@ export class TransportProcess {
       "--data-directory",
       options.dataDirectory,
       "--ready-file",
-      readyFile,
+      nativeReadyFile,
       ...(options.parentPid === undefined ? [] : ["--parent-pid", String(options.parentPid)]),
     ]);
     void completion.then(

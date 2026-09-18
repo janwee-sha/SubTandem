@@ -3,8 +3,12 @@ import Foundation
 
 enum SubTandemTransportMain {
     static func run() async throws {
-        try relaunchWithoutInheritedProxyIfNeeded()
         let arguments = CommandLine.arguments
+        if arguments.contains("--rpc-client") {
+            try await FileRPCClient.run(arguments: arguments)
+            return
+        }
+        try relaunchWithoutInheritedProxyIfNeeded()
         let parentPID: Int32
         if let index = arguments.firstIndex(of: "--parent-pid"), arguments.indices.contains(index + 1) {
             parentPID = Int32(arguments[index + 1]) ?? getppid()
@@ -30,6 +34,9 @@ enum SubTandemTransportMain {
         else { throw TransportProtocolError.invalidRequest }
         let credentialStore = try SecureCredentialStore(
             directory: dataDirectory
+        )
+        try FileRPCClient.prepareDirectory(
+            dataDirectory.appendingPathComponent(".rpc", isDirectory: true)
         )
         let server = try TransportServer(
             token: token,

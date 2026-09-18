@@ -1,15 +1,15 @@
 import type { EmbeddedSubtitleCodec, ExtractedSubtitleResult } from "../../subtitles/types.js";
+import { LocalRpcResponseError, type LocalRpcBridge } from "../../transport/client.js";
 import {
   createReadyFilePath,
+  removeStaleHelperFiles,
   type HelperExecutableLocator,
   type ProcessLauncher,
   type ReadyFileStore,
   type ReadyFrame,
 } from "./transport-process.js";
 
-export interface SubtitleExtractorHttpBridge {
-  post<T>(url: string, bearerToken: string, body: unknown): Promise<T>;
-}
+export type SubtitleExtractorRpcBridge = LocalRpcBridge;
 
 export interface SubtitleExtractorSession {
   port: number;
@@ -146,7 +146,7 @@ export class SubtitleExtractorClient implements SubtitleExtractorRpcClient {
 
   constructor(
     private readonly session: SubtitleExtractorSession,
-    private readonly bridge: SubtitleExtractorHttpBridge,
+    private readonly bridge: SubtitleExtractorRpcBridge,
   ) {
     if (
       !Number.isInteger(session.port) ||
@@ -159,13 +159,23 @@ export class SubtitleExtractorClient implements SubtitleExtractorRpcClient {
 
   private async post<T>(path: string, body: unknown): Promise<T> {
     try {
-      return await this.bridge.post<T>(
-        `http://127.0.0.1:${this.session.port}${path}`,
-        this.session.token,
-        body,
-      );
+      return await this.bridge.post<T>(this.session.port, this.session.token, path, body);
     } catch (error) {
       if (error instanceof SubtitleExtractorError) throw error;
+      if (
+        error instanceof LocalRpcResponseError &&
+        [
+          "INVALID_REQUEST",
+          "UNSUPPORTED_CODEC",
+          "TRACK_IDENTITY_MISMATCH",
+          "EMPTY_OR_UNREADABLE",
+          "OUTPUT_LIMIT",
+          "TIMED_OUT",
+          "CANCELLED",
+          "EXTRACTION_FAILED",
+        ].includes(error.code)
+      )
+        throw new SubtitleExtractorError(error.code as SubtitleExtractorErrorCode);
       throw new SubtitleExtractorError("EXTRACTOR_UNAVAILABLE");
     }
   }
@@ -205,10 +215,15 @@ export class SubtitleExtractorProcess {
   static async bootstrap(
     launcher: ProcessLauncher,
     readyFiles: ReadyFileStore,
-    options: { tempDirectory: string; parentPid?: number },
+    options: { tempDirectory: string; fileDirectory?: string; parentPid?: number },
     executable: string,
   ): Promise<SubtitleExtractorSession> {
-    const readyFile = createReadyFilePath(options.tempDirectory, "extractor");
+    const fileDirectory = options.fileDirectory ?? options.tempDirectory;
+    removeStaleHelperFiles(readyFiles, fileDirectory);
+    const readyFile = createReadyFilePath(fileDirectory, "extractor");
+    const nativeReadyFile = `${options.tempDirectory.replace(/\/+$/, "")}/.ready/${readyFile.slice(
+      readyFile.lastIndexOf("/") + 1,
+    )}`;
     if (readyFiles.exists(readyFile)) {
       try {
         readyFiles.delete(readyFile);
@@ -223,7 +238,7 @@ export class SubtitleExtractorProcess {
       "--temp-directory",
       options.tempDirectory,
       "--ready-file",
-      readyFile,
+      nativeReadyFile,
       ...(options.parentPid === undefined ? [] : ["--parent-pid", String(options.parentPid)]),
     ]);
     void completion.then(

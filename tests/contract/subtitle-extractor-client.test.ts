@@ -3,15 +3,15 @@ import {
   parseSubtitleExtractorReadyFrame,
   SubtitleExtractorClient,
   SubtitleExtractorProcess,
-  type SubtitleExtractorHttpBridge,
+  type SubtitleExtractorRpcBridge,
 } from "../../src/adapters/iina/subtitle-extractor.js";
 import type { ReadyFileStore } from "../../src/adapters/iina/transport-process.js";
 
-class FakeBridge implements SubtitleExtractorHttpBridge {
-  readonly calls: Array<{ url: string; token: string; body: unknown }> = [];
+class FakeBridge implements SubtitleExtractorRpcBridge {
+  readonly calls: Array<{ port: number; path: string; token: string; body: unknown }> = [];
 
-  async post<T>(url: string, token: string, body: unknown): Promise<T> {
-    this.calls.push({ url, token, body });
+  async post<T>(port: number, token: string, path: string, body: unknown): Promise<T> {
+    this.calls.push({ port, path, token, body });
     return {
       jobId: "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae",
       state: "ready",
@@ -100,7 +100,8 @@ describe("subtitle extractor client contract", () => {
 
     expect(bridge.calls).toEqual([
       {
-        url: "http://127.0.0.1:49152/v1/prepare",
+        port: 49152,
+        path: "/v1/prepare",
         token: "session-token",
         body: {
           jobId: "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae",
@@ -126,7 +127,7 @@ describe("subtitle extractor client contract", () => {
   });
 
   it("rejects malformed result metadata without surfacing response fields", async () => {
-    const bridge: SubtitleExtractorHttpBridge = {
+    const bridge: SubtitleExtractorRpcBridge = {
       post: async () => ({
         jobId: "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae",
         state: "ready",
@@ -153,9 +154,8 @@ describe("subtitle extractor client contract", () => {
 
   it("uses strict idempotent cancel, release, and shutdown operations", async () => {
     const calls: Array<{ path: string; body: unknown }> = [];
-    const bridge: SubtitleExtractorHttpBridge = {
-      post: async <T>(url: string, _token: string, body: unknown): Promise<T> => {
-        const path = new URL(url).pathname;
+    const bridge: SubtitleExtractorRpcBridge = {
+      post: async <T>(_port: number, _token: string, path: string, body: unknown): Promise<T> => {
         calls.push({ path, body });
         if (path === "/v1/cancel") return { state: "unknown" } as T;
         if (path === "/v1/release") return { state: "released" } as T;

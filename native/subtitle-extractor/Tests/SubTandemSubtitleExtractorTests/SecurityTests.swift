@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 func runSecurityTests() async throws {
@@ -112,6 +113,58 @@ func runSecurityTests() async throws {
         readyEntries.allSatisfy { $0.pathExtension != "tmp" },
         "atomic publication must remove its temporary file"
     )
+
+    let rpcDirectory = root.appendingPathComponent(".rpc", isDirectory: true)
+    try FileRPCClient.prepareDirectory(rpcDirectory)
+    let liveness = LivenessState(parentPID: getpid())
+    let server = try SubtitleExtractorServer(token: "correct-token", jobs: jobs, liveness: liveness)
+    let port = try await server.start()
+    defer { server.stop() }
+    let rpcCreatedAt = String(Int64(Date().timeIntervalSince1970 * 1_000), radix: 36)
+    let stem = "extractor-\(rpcCreatedAt)-1-test"
+    let requestFile = rpcDirectory.appendingPathComponent("\(stem).request.json")
+    let responseFile = rpcDirectory.appendingPathComponent("\(stem).response.json")
+    let request: [String: Any] = [
+        "type": "request",
+        "protocolVersion": 1,
+        "createdAtMs": Int64(Date().timeIntervalSince1970 * 1_000),
+        "port": Int(port),
+        "token": "correct-token",
+        "path": "/v1/health",
+        "body": [:],
+    ]
+    try JSONSerialization.data(withJSONObject: request).write(to: requestFile)
+    try FileManager.default.setAttributes(
+        [.posixPermissions: 0o644],
+        ofItemAtPath: requestFile.path
+    )
+    try await FileRPCClient.run(arguments: [
+        "subtandem-subtitle-extractor",
+        "--rpc-client",
+        "--rpc-directory", rpcDirectory.path,
+        "--request-file", requestFile.path,
+        "--response-file", responseFile.path,
+    ])
+    try check(!FileManager.default.fileExists(atPath: requestFile.path), "RPC request must be removed")
+    let rpcDirectoryMode = try permissions(rpcDirectory)
+    let responseMode = try permissions(responseFile)
+    try check(rpcDirectoryMode == 0o700, "RPC directory must use mode 0700")
+    try check(responseMode == 0o600, "RPC response must use mode 0600")
+    let rpcResponse = try JSONSerialization.jsonObject(
+        with: Data(contentsOf: responseFile)
+    ) as? [String: Any]
+    let rpcBody = rpcResponse?["body"] as? [String: Any]
+    try check(rpcResponse?["statusCode"] as? Int == 200, "RPC health must preserve status")
+    try check(rpcBody?["state"] as? String == "ok", "RPC health must preserve its body")
+    var unexpected = request
+    unexpected["secretCopy"] = "private"
+    try expectError(.invalidRequest) {
+        do {
+            _ = try FileRPCClient.decodeRequest(JSONSerialization.data(withJSONObject: unexpected))
+        } catch {
+            throw ExtractorError.invalidRequest
+        }
+    }
 }
 
 private func expectError(_ expected: ExtractorError, _ operation: () throws -> Void) throws {

@@ -359,6 +359,16 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(sidebarSource).toContain('postMessage("subtitle:retry-preparation"');
     expect(sidebarSource).toContain("canRetry");
     expect(mainSource).toContain('runtime.sidebar.onMessage("subtitle:retry-preparation"');
+    const bootstrapFailure = mainSource.slice(
+      mainSource.indexOf("void coordinator()"),
+      mainSource.indexOf("const loadSource", mainSource.indexOf("void coordinator()")),
+    );
+    expect(bootstrapFailure).toContain("canRetry: false");
+  });
+
+  it("renders unavailable Profile storage as HELPER_UNAVAILABLE instead of an empty library", () => {
+    expect(sidebarSource).toContain("Profiles unavailable (HELPER_UNAVAILABLE). Restart IINA.");
+    expect(sidebarSource).toContain("profileAuthority?.ready === false");
   });
 
   it("announces subtitle preparation state once in the Session card", () => {

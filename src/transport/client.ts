@@ -6,8 +6,15 @@ import type {
   StoreCommitReceipt,
 } from "../domain/types.js";
 
-export interface LocalHttpBridge {
-  post<T>(url: string, bearerToken: string, body: unknown): Promise<T>;
+export interface LocalRpcBridge {
+  post<T>(port: number, bearerToken: string, path: string, body: unknown): Promise<T>;
+}
+
+export class LocalRpcResponseError extends Error {
+  constructor(readonly code: string) {
+    super("HELPER_RPC_FAILED");
+    this.name = "LocalRpcResponseError";
+  }
 }
 
 export const TRANSPORT_RPC_ERROR_CODES = [
@@ -139,7 +146,7 @@ export interface TransportRpcClient {
 export class TransportClient implements TransportRpcClient {
   constructor(
     private readonly session: TransportSession,
-    private readonly bridge: LocalHttpBridge,
+    private readonly bridge: LocalRpcBridge,
   ) {
     if (!Number.isInteger(session.port) || session.port < 1024 || session.port > 65535) {
       throw new Error("Invalid helper port");
@@ -149,14 +156,14 @@ export class TransportClient implements TransportRpcClient {
 
   private async post<T>(path: string, body: unknown): Promise<T> {
     try {
-      return await this.bridge.post<T>(
-        `http://127.0.0.1:${this.session.port}${path}`,
-        this.session.token,
-        body,
-      );
+      return await this.bridge.post<T>(this.session.port, this.session.token, path, body);
     } catch (error) {
       if (error instanceof SubTandemError) throw error;
       if (error instanceof TransportRpcError) throw rpcError(error);
+      if (error instanceof LocalRpcResponseError) {
+        const code = isTransportRpcErrorCode(error.code) ? error.code : "helper-rpc-failed";
+        throw rpcError(new TransportRpcError(code));
+      }
       throw new SubTandemError("HELPER_UNAVAILABLE", "network", "RESTART_IINA", true);
     }
   }
