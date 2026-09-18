@@ -10,7 +10,7 @@ import type {
   ProviderTransportRequest,
   ProviderTransportResponse,
 } from "../../providers/transport.js";
-import type { ProcessLauncher } from "./transport-process.js";
+import type { ProcessLauncher, ReadyFileStore } from "./transport-process.js";
 
 function allowlistedHelperErrorCode(value: unknown): TransportRpcErrorCode | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
@@ -61,9 +61,26 @@ export class IinaProcessLauncher implements ProcessLauncher {
   launch(
     executable: string,
     args: string[],
-    onStdout: (data: string) => void,
+    onStdout?: (data: string) => void,
   ): Promise<{ status: number }> {
+    if (!onStdout) return this.utils.exec(executable, args);
     return this.utils.exec(executable, args, null, onStdout, () => undefined);
+  }
+}
+
+export class IinaReadyFileStore implements ReadyFileStore {
+  constructor(private readonly file: IINA.API.File) {}
+
+  exists(path: string): boolean {
+    return this.file.exists(path);
+  }
+
+  read(path: string): string | null {
+    return this.file.read(path) ?? null;
+  }
+
+  delete(path: string): void {
+    this.file.delete(path);
   }
 }
 

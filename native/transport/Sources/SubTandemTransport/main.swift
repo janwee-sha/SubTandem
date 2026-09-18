@@ -14,10 +14,22 @@ enum SubTandemTransportMain {
         let token = try SecureRandom.token()
         let liveness = LivenessState(parentPID: parentPID)
         guard let dataIndex = arguments.firstIndex(of: "--data-directory"),
-              arguments.indices.contains(dataIndex + 1)
+              arguments.indices.contains(dataIndex + 1),
+              let readyIndex = arguments.firstIndex(of: "--ready-file"),
+              arguments.indices.contains(readyIndex + 1)
+        else { throw TransportProtocolError.invalidRequest }
+        let dataDirectory = URL(
+            fileURLWithPath: arguments[dataIndex + 1],
+            isDirectory: true
+        ).standardizedFileURL
+        let readyFile = URL(fileURLWithPath: arguments[readyIndex + 1]).standardizedFileURL
+        guard readyFile.deletingLastPathComponent().path == dataDirectory
+            .appendingPathComponent(".ready", isDirectory: true).path,
+              readyFile.lastPathComponent.hasPrefix("transport-"),
+              readyFile.pathExtension == "json"
         else { throw TransportProtocolError.invalidRequest }
         let credentialStore = try SecureCredentialStore(
-            directory: URL(fileURLWithPath: arguments[dataIndex + 1], isDirectory: true)
+            directory: dataDirectory
         )
         let server = try TransportServer(
             token: token,
@@ -25,7 +37,7 @@ enum SubTandemTransportMain {
             credentialStore: credentialStore
         )
         let port = try await server.start()
-        FileHandle.standardOutput.write(Data(try ReadyFrame(port: port, token: token).encodedLine().utf8))
+        try ReadyFileWriter.write(ReadyFrame(port: port, token: token), to: readyFile)
 
         while !liveness.shouldExit(parentIsAlive: liveness.actualParentIsAlive()) {
             try await Task.sleep(nanoseconds: 1_000_000_000)

@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 enum ProtocolLimits {
@@ -12,18 +13,65 @@ struct ReadyFrame: Encodable, Sendable {
     let port: UInt16
     let token: String
     let protocolVersion: Int
+    let createdAtMs: Int64
 
-    init(port: UInt16, token: String) {
+    init(
+        port: UInt16,
+        token: String,
+        createdAtMs: Int64 = Int64(Date().timeIntervalSince1970 * 1_000)
+    ) {
         self.type = "ready"
         self.port = port
         self.token = token
         self.protocolVersion = 1
+        self.createdAtMs = createdAtMs
     }
 
     func encodedLine() throws -> String {
         var data = try JSONEncoder().encode(self)
         data.append(0x0A)
         return String(decoding: data, as: UTF8.self)
+    }
+}
+
+enum ReadyFileWriter {
+    static func write(_ frame: ReadyFrame, to destination: URL) throws {
+        guard destination.isFileURL, destination.path.hasPrefix("/")
+        else { throw TransportProtocolError.invalidRequest }
+        let directory = destination.deletingLastPathComponent()
+        try FileManager.default.createDirectory(
+            at: directory,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o700],
+            ofItemAtPath: directory.path
+        )
+        let temporary = directory.appendingPathComponent(".\(UUID().uuidString).tmp")
+        var descriptor = open(temporary.path, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR)
+        guard descriptor >= 0 else { throw TransportProtocolError.invalidRequest }
+        defer {
+            if descriptor >= 0 { close(descriptor) }
+            unlink(temporary.path)
+        }
+        let data = Data(try frame.encodedLine().utf8)
+        try data.withUnsafeBytes { bytes in
+            guard let baseAddress = bytes.baseAddress else { return }
+            var offset = 0
+            while offset < data.count {
+                let count = Darwin.write(descriptor, baseAddress.advanced(by: offset), data.count - offset)
+                if count < 0 && errno == EINTR { continue }
+                guard count > 0 else { throw TransportProtocolError.invalidRequest }
+                offset += count
+            }
+        }
+        guard fsync(descriptor) == 0 else { throw TransportProtocolError.invalidRequest }
+        let closeResult = close(descriptor)
+        descriptor = -1
+        guard closeResult == 0,
+              link(temporary.path, destination.path) == 0
+        else { throw TransportProtocolError.invalidRequest }
     }
 }
 

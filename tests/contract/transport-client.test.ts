@@ -1,13 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   discoverHelperExecutable,
   parseReadyFrame,
   TransportProcess,
+  type ReadyFileStore,
 } from "../../src/adapters/iina/transport-process.js";
 import {
   HelperProviderTransport,
   IinaLocalHttpBridge,
+  IinaProcessLauncher,
 } from "../../src/adapters/iina/provider-transport.js";
+import { SubtitleExtractorProcess } from "../../src/adapters/iina/subtitle-extractor.js";
 import {
   TRANSPORT_RPC_ERROR_CODES,
   TransportClient,
@@ -80,6 +83,34 @@ class FakeBridge implements LocalHttpBridge {
   }
 }
 
+class MemoryReadyFiles implements ReadyFileStore {
+  readonly files = new Map<string, string>();
+  readonly deleted: string[] = [];
+
+  exists(path: string): boolean {
+    return this.files.has(path);
+  }
+
+  read(path: string): string | null {
+    return this.files.get(path) ?? null;
+  }
+
+  delete(path: string): void {
+    this.deleted.push(path);
+    this.files.delete(path);
+  }
+}
+
+function readyFrame(createdAtMs = Date.now()): string {
+  return `${JSON.stringify({
+    type: "ready",
+    port: 49152,
+    token: "abcDEF123_-",
+    protocolVersion: 1,
+    createdAtMs,
+  })}\n`;
+}
+
 describe("transport helper client", () => {
   it("declares non-sensitive Profile state conflict and validation errors", () => {
     expect(TRANSPORT_RPC_ERROR_CODES).toEqual(
@@ -87,18 +118,33 @@ describe("transport helper client", () => {
     );
   });
   it("accepts only one exact framed ready object", () => {
-    expect(
-      parseReadyFrame('{"type":"ready","port":49152,"token":"abcDEF123_-","protocolVersion":1}\n'),
-    ).toEqual({
+    expect(parseReadyFrame(readyFrame(10_000), 9_000, 10_000)).toEqual({
       type: "ready",
       port: 49152,
       token: "abcDEF123_-",
       protocolVersion: 1,
+      createdAtMs: 10_000,
     });
     expect(() => parseReadyFrame("debug\n{}")).toThrow();
     expect(() =>
-      parseReadyFrame('{"type":"ready","port":80,"token":"x","protocolVersion":2}'),
+      parseReadyFrame(
+        '{"type":"ready","port":80,"token":"x","protocolVersion":2,"createdAtMs":10000}',
+      ),
     ).toThrow();
+  });
+
+  it("calls long-lived helpers without JavaScript stdout or stderr hooks", async () => {
+    const calls: unknown[][] = [];
+    const launcher = new IinaProcessLauncher({
+      exec: (...args: unknown[]) => {
+        calls.push(args);
+        return Promise.resolve({ status: 0, stdout: "", stderr: "" });
+      },
+    } as unknown as IINA.API.Utils);
+
+    await launcher.launch("helper", ["--serve"]);
+
+    expect(calls).toEqual([["helper", ["--serve"]]]);
   });
 
   it("derives the absolute installed helper path from IINA's @data directory", () => {
@@ -161,25 +207,109 @@ describe("transport helper client", () => {
   });
 
   it("uses the ready frame and fails promptly when the helper exits during startup", async () => {
+    const readyFiles = new MemoryReadyFiles();
     await expect(
       TransportProcess.bootstrap(
         {
           launch: async (_executable, args, onStdout) => {
-            expect(args).toEqual(["--data-directory", "/private/test/io.subtandem.iina"]);
-            onStdout('{"type":"ready","port":49152,"token":"abcDEF123_-","protocolVersion":1}\n');
+            expect(args.slice(0, 3)).toEqual([
+              "--data-directory",
+              "/private/test/io.subtandem.iina",
+              "--ready-file",
+            ]);
+            expect(onStdout).toBeUndefined();
+            readyFiles.files.set(args[3]!, readyFrame());
             return new Promise<{ status: number }>(() => undefined);
           },
         },
+        readyFiles,
         { dataDirectory: "/private/test/io.subtandem.iina" },
       ),
     ).resolves.toMatchObject({ port: 49152, token: "abcDEF123_-" });
+    expect(readyFiles.files.size).toBe(0);
+    expect(readyFiles.deleted).toHaveLength(1);
 
     await expect(
       TransportProcess.bootstrap(
         { launch: async () => ({ status: 127 }) },
+        new MemoryReadyFiles(),
         { dataDirectory: "/private/test/io.subtandem.iina" },
       ),
     ).rejects.toMatchObject({ code: "HELPER_START_FAILED", userAction: "RESTART_IINA" });
+  });
+
+  it("rejects and cleans an expired or malformed ready file", async () => {
+    for (const content of [readyFrame(Date.now() - 60_000), "not-json\n"]) {
+      const readyFiles = new MemoryReadyFiles();
+      await expect(
+        TransportProcess.bootstrap(
+          {
+            launch: async (_executable, args) => {
+              readyFiles.files.set(args[3]!, content);
+              return new Promise<{ status: number }>(() => undefined);
+            },
+          },
+          readyFiles,
+          { dataDirectory: "/private/test/io.subtandem.iina" },
+        ),
+      ).rejects.toMatchObject({ code: "HELPER_PROTOCOL" });
+      expect(readyFiles.files.size).toBe(0);
+      expect(readyFiles.deleted).toHaveLength(1);
+    }
+  });
+
+  it("times out without a ready file and leaves no handshake artifact", async () => {
+    vi.useFakeTimers();
+    try {
+      const readyFiles = new MemoryReadyFiles();
+      const bootstrap = TransportProcess.bootstrap(
+        { launch: async () => new Promise<{ status: number }>(() => undefined) },
+        readyFiles,
+        { dataDirectory: "/private/test/io.subtandem.iina" },
+      );
+      const rejected = expect(bootstrap).rejects.toMatchObject({ code: "HELPER_START_TIMEOUT" });
+      await vi.advanceTimersByTimeAsync(5_100);
+      await rejected;
+      expect(readyFiles.files.size).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("starts transport and extractor together with parent liveness arguments", async () => {
+    const readyFiles = new MemoryReadyFiles();
+    const launches: Array<{ executable: string; args: string[]; hooked: boolean }> = [];
+    const launcher = {
+      launch: async (executable: string, args: string[], onStdout?: (data: string) => void) => {
+        launches.push({ executable, args, hooked: onStdout !== undefined });
+        const readyPath = args[3]!;
+        readyFiles.files.set(readyPath, readyFrame());
+        return new Promise<{ status: number }>(() => undefined);
+      },
+    };
+
+    await expect(
+      Promise.all([
+        TransportProcess.bootstrap(launcher, readyFiles, {
+          dataDirectory: "/private/plugin-data",
+          parentPid: 999_999,
+        }),
+        SubtitleExtractorProcess.bootstrap(
+          launcher,
+          readyFiles,
+          { tempDirectory: "/private/plugin-tmp", parentPid: 999_999 },
+          "/private/subtandem-subtitle-extractor",
+        ),
+      ]),
+    ).resolves.toEqual([
+      { port: 49152, token: "abcDEF123_-" },
+      expect.objectContaining({ port: 49152, token: "abcDEF123_-" }),
+    ]);
+    expect(launches).toHaveLength(2);
+    expect(launches.every((launch) => !launch.hooked)).toBe(true);
+    expect(launches.every((launch) => launch.args.includes("999999"))).toBe(true);
+    expect(JSON.stringify(launches)).not.toContain("abcDEF123_-");
+    expect(readyFiles.files.size).toBe(0);
   });
 
   it("sends bearer-authenticated health/credential/request/cancel RPC to loopback", async () => {

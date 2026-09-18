@@ -6,9 +6,11 @@ export interface ReadyFrame {
   port: number;
   token: string;
   protocolVersion: 1;
+  createdAtMs: number;
 }
 
-export function parseReadyFrame(output: string): ReadyFrame {
+export function parseReadyFrame(output: string, notBeforeMs = 0, nowMs = Date.now()): ReadyFrame {
+  if (output.length > 2_048) throw new Error("Unexpected helper output");
   if (output.split("\n").filter(Boolean).length !== 1) throw new Error("Unexpected helper output");
   let value: unknown;
   try {
@@ -20,14 +22,17 @@ export function parseReadyFrame(output: string): ReadyFrame {
     throw new Error("Malformed helper frame");
   const frame = value as Record<string, unknown>;
   if (
-    Object.keys(frame).sort().join(",") !== "port,protocolVersion,token,type" ||
+    Object.keys(frame).sort().join(",") !== "createdAtMs,port,protocolVersion,token,type" ||
     frame.type !== "ready" ||
     frame.protocolVersion !== 1 ||
     !Number.isInteger(frame.port) ||
     (frame.port as number) < 1024 ||
     (frame.port as number) > 65535 ||
     typeof frame.token !== "string" ||
-    !/^[A-Za-z0-9_-]{8,512}$/.test(frame.token)
+    !/^[A-Za-z0-9_-]{8,512}$/.test(frame.token) ||
+    !Number.isInteger(frame.createdAtMs) ||
+    (frame.createdAtMs as number) < notBeforeMs - 1_000 ||
+    (frame.createdAtMs as number) > nowMs + 1_000
   ) {
     throw new Error("Invalid helper ready frame");
   }
@@ -38,29 +43,56 @@ export interface ProcessLauncher {
   launch(
     executable: string,
     args: string[],
-    onStdout: (data: string) => void,
+    onStdout?: (data: string) => void,
   ): Promise<{ status: number }>;
+}
+
+export interface ReadyFileStore {
+  exists(path: string): boolean;
+  read(path: string): string | null;
+  delete(path: string): void;
+}
+
+let readyFileSequence = 0;
+
+export function createReadyFilePath(root: string, helper: "transport" | "extractor"): string {
+  const nonce = [
+    Date.now().toString(36),
+    (++readyFileSequence).toString(36),
+    Math.random().toString(36).slice(2, 14),
+  ].join("-");
+  return `${root.replace(/\/+$/, "")}/.ready/${helper}-${nonce}.json`;
+}
+
+function removeReadyFile(store: ReadyFileStore, path: string): void {
+  try {
+    if (store.exists(path)) store.delete(path);
+  } catch {
+    return;
+  }
 }
 
 export class TransportProcess {
   static async bootstrap(
     launcher: ProcessLauncher,
+    readyFiles: ReadyFileStore,
     options: { dataDirectory: string; parentPid?: number },
     executable = "@plugin/dist/native/subtandem-transport",
   ): Promise<TransportSession> {
-    let stdout = "";
+    const readyFile = createReadyFilePath(options.dataDirectory, "transport");
+    if (readyFiles.exists(readyFile)) {
+      removeReadyFile(readyFiles, readyFile);
+      throw new SubTandemError("HELPER_PROTOCOL", "protocol", "RESTART_IINA");
+    }
+    const startedAtMs = Date.now();
     let exitStatus: number | null = null;
-    const completion = launcher.launch(
-      executable,
-      [
-        "--data-directory",
-        options.dataDirectory,
-        ...(options.parentPid === undefined ? [] : ["--parent-pid", String(options.parentPid)]),
-      ],
-      (data) => {
-        stdout += data;
-      },
-    );
+    const completion = launcher.launch(executable, [
+      "--data-directory",
+      options.dataDirectory,
+      "--ready-file",
+      readyFile,
+      ...(options.parentPid === undefined ? [] : ["--parent-pid", String(options.parentPid)]),
+    ]);
     void completion.then(
       (result) => {
         exitStatus = result.status;
@@ -69,22 +101,26 @@ export class TransportProcess {
         exitStatus = -1;
       },
     );
-    for (let tries = 0; tries < 250 && !stdout.includes("\n"); tries += 1) {
-      if (exitStatus !== null)
-        throw new SubTandemError("HELPER_START_FAILED", "protocol", "RESTART_IINA", true);
-      await new Promise<void>((resolve) => setTimeout(resolve, 20));
-    }
-    if (!stdout.includes("\n")) {
+    try {
+      for (let tries = 0; tries < 250; tries += 1) {
+        if (exitStatus !== null)
+          throw new SubTandemError("HELPER_START_FAILED", "protocol", "RESTART_IINA", true);
+        const output = readyFiles.read(readyFile);
+        if (output !== null) {
+          try {
+            const frame = parseReadyFrame(output, startedAtMs);
+            return { port: frame.port, token: frame.token };
+          } catch {
+            throw new SubTandemError("HELPER_PROTOCOL", "protocol", "RESTART_IINA");
+          }
+        }
+        await new Promise<void>((resolve) => setTimeout(resolve, 20));
+      }
       void completion;
       throw new SubTandemError("HELPER_START_TIMEOUT", "timeout", "RESTART_IINA", true);
+    } finally {
+      removeReadyFile(readyFiles, readyFile);
     }
-    let frame: ReadyFrame;
-    try {
-      frame = parseReadyFrame(stdout.slice(0, stdout.indexOf("\n") + 1));
-    } catch {
-      throw new SubTandemError("HELPER_PROTOCOL", "protocol", "RESTART_IINA");
-    }
-    return { port: frame.port, token: frame.token };
   }
 }
 

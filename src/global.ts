@@ -26,7 +26,11 @@ import {
   CredentialStoreError,
 } from "./credentials/store.js";
 import { createDeferredPlayerPost } from "./adapters/iina/deferred-post.js";
-import { IinaLocalHttpBridge, IinaProcessLauncher } from "./adapters/iina/provider-transport.js";
+import {
+  IinaLocalHttpBridge,
+  IinaProcessLauncher,
+  IinaReadyFileStore,
+} from "./adapters/iina/provider-transport.js";
 import { discoverHelperExecutable, TransportProcess } from "./adapters/iina/transport-process.js";
 import { ProviderBroker } from "./providers/broker.js";
 import { ProviderConnectionTests } from "./providers/connection-tests.js";
@@ -145,6 +149,7 @@ function legacyProfileMetadata(): ProviderProfileSnapshot[] {
 const transport = new TransportSupervisor(async () => {
   const session = await TransportProcess.bootstrap(
     new IinaProcessLauncher(iina.utils),
+    new IinaReadyFileStore(iina.file),
     { dataDirectory: iina.utils.resolvePath("@data/.") },
     discoverHelperExecutable({
       exists: (path) => iina.file.exists(path),

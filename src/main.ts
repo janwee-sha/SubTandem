@@ -11,7 +11,11 @@ import {
   IinaSubtitleSourcePort,
   readSelectedSubtitle,
 } from "./adapters/iina/subtitle-source.js";
-import { IinaLocalHttpBridge, IinaProcessLauncher } from "./adapters/iina/provider-transport.js";
+import {
+  IinaLocalHttpBridge,
+  IinaProcessLauncher,
+  IinaReadyFileStore,
+} from "./adapters/iina/provider-transport.js";
 import { WebViewTranslationOverlay } from "./adapters/iina/webview-translation-overlay.js";
 import { SubtitlePreparationCoordinator } from "./app/subtitle-preparation.js";
 import {
@@ -295,6 +299,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
       });
       const session = await SubtitleExtractorProcess.bootstrap(
         new IinaProcessLauncher(runtime.utils),
+        new IinaReadyFileStore(runtime.file),
         { tempDirectory: runtime.utils.resolvePath("@tmp/subtandem-extraction") },
         executable,
       );

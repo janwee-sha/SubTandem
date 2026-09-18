@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   parseSubtitleExtractorReadyFrame,
   SubtitleExtractorClient,
+  SubtitleExtractorProcess,
   type SubtitleExtractorHttpBridge,
 } from "../../src/adapters/iina/subtitle-extractor.js";
+import type { ReadyFileStore } from "../../src/adapters/iina/transport-process.js";
 
 class FakeBridge implements SubtitleExtractorHttpBridge {
   readonly calls: Array<{ url: string; token: string; body: unknown }> = [];
@@ -26,15 +28,62 @@ describe("subtitle extractor client contract", () => {
   it("accepts exactly one authenticated protocol-v1 ready frame", () => {
     expect(
       parseSubtitleExtractorReadyFrame(
-        '{"type":"ready","port":49152,"token":"abcDEF123_-","protocolVersion":1}\n',
+        '{"type":"ready","port":49152,"token":"abcDEF123_-","protocolVersion":1,"createdAtMs":10000}\n',
+        9_000,
+        10_000,
       ),
-    ).toEqual({ type: "ready", port: 49152, token: "abcDEF123_-", protocolVersion: 1 });
+    ).toEqual({
+      type: "ready",
+      port: 49152,
+      token: "abcDEF123_-",
+      protocolVersion: 1,
+      createdAtMs: 10_000,
+    });
     expect(() => parseSubtitleExtractorReadyFrame("debug\n{}")).toThrow();
     expect(() =>
       parseSubtitleExtractorReadyFrame(
-        '{"type":"ready","port":49152,"token":"short","protocolVersion":1,"path":"private"}',
+        '{"type":"ready","port":49152,"token":"short","protocolVersion":1,"createdAtMs":10000,"path":"private"}',
       ),
     ).toThrow();
+  });
+
+  it("rejects expired ready files and removes them", async () => {
+    const files = new Map<string, string>();
+    const deleted: string[] = [];
+    const store: ReadyFileStore = {
+      exists: (path) => files.has(path),
+      read: (path) => files.get(path) ?? null,
+      delete: (path) => {
+        deleted.push(path);
+        files.delete(path);
+      },
+    };
+
+    await expect(
+      SubtitleExtractorProcess.bootstrap(
+        {
+          launch: async (_executable, args, onStdout) => {
+            expect(onStdout).toBeUndefined();
+            files.set(
+              args[3]!,
+              `${JSON.stringify({
+                type: "ready",
+                port: 49152,
+                token: "abcDEF123_-",
+                protocolVersion: 1,
+                createdAtMs: Date.now() - 60_000,
+              })}\n`,
+            );
+            return new Promise<{ status: number }>(() => undefined);
+          },
+        },
+        store,
+        { tempDirectory: "/private/plugin-tmp" },
+        "/private/subtandem-subtitle-extractor",
+      ),
+    ).rejects.toThrow("EXTRACTOR_PROTOCOL");
+    expect(files.size).toBe(0);
+    expect(deleted).toHaveLength(1);
   });
 
   it("sends the strict prepare body with a bearer token and accepts metadata only", async () => {

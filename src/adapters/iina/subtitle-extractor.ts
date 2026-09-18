@@ -1,5 +1,11 @@
 import type { EmbeddedSubtitleCodec, ExtractedSubtitleResult } from "../../subtitles/types.js";
-import type { HelperExecutableLocator, ProcessLauncher, ReadyFrame } from "./transport-process.js";
+import {
+  createReadyFilePath,
+  type HelperExecutableLocator,
+  type ProcessLauncher,
+  type ReadyFileStore,
+  type ReadyFrame,
+} from "./transport-process.js";
 
 export interface SubtitleExtractorHttpBridge {
   post<T>(url: string, bearerToken: string, body: unknown): Promise<T>;
@@ -53,7 +59,12 @@ function exactObject(value: unknown, keys: readonly string[]): Record<string, un
   return record;
 }
 
-export function parseSubtitleExtractorReadyFrame(output: string): ReadyFrame {
+export function parseSubtitleExtractorReadyFrame(
+  output: string,
+  notBeforeMs = 0,
+  nowMs = Date.now(),
+): ReadyFrame {
+  if (output.length > 2_048) throw new SubtitleExtractorError("EXTRACTOR_PROTOCOL");
   if (output.split("\n").filter(Boolean).length !== 1)
     throw new SubtitleExtractorError("EXTRACTOR_PROTOCOL");
   let value: unknown;
@@ -62,7 +73,7 @@ export function parseSubtitleExtractorReadyFrame(output: string): ReadyFrame {
   } catch {
     throw new SubtitleExtractorError("EXTRACTOR_PROTOCOL");
   }
-  const frame = exactObject(value, ["type", "port", "token", "protocolVersion"]);
+  const frame = exactObject(value, ["type", "port", "token", "protocolVersion", "createdAtMs"]);
   if (
     frame.type !== "ready" ||
     frame.protocolVersion !== 1 ||
@@ -70,7 +81,10 @@ export function parseSubtitleExtractorReadyFrame(output: string): ReadyFrame {
     (frame.port as number) < 1024 ||
     (frame.port as number) > 65535 ||
     typeof frame.token !== "string" ||
-    !/^[A-Za-z0-9_-]{8,512}$/.test(frame.token)
+    !/^[A-Za-z0-9_-]{8,512}$/.test(frame.token) ||
+    !Number.isInteger(frame.createdAtMs) ||
+    (frame.createdAtMs as number) < notBeforeMs - 1_000 ||
+    (frame.createdAtMs as number) > nowMs + 1_000
   )
     throw new SubtitleExtractorError("EXTRACTOR_PROTOCOL");
   return frame as unknown as ReadyFrame;
@@ -190,22 +204,28 @@ export class SubtitleExtractorClient implements SubtitleExtractorRpcClient {
 export class SubtitleExtractorProcess {
   static async bootstrap(
     launcher: ProcessLauncher,
+    readyFiles: ReadyFileStore,
     options: { tempDirectory: string; parentPid?: number },
     executable: string,
   ): Promise<SubtitleExtractorSession> {
-    let stdout = "";
+    const readyFile = createReadyFilePath(options.tempDirectory, "extractor");
+    if (readyFiles.exists(readyFile)) {
+      try {
+        readyFiles.delete(readyFile);
+      } catch {
+        throw new SubtitleExtractorError("EXTRACTOR_PROTOCOL");
+      }
+      throw new SubtitleExtractorError("EXTRACTOR_PROTOCOL");
+    }
+    const startedAtMs = Date.now();
     let exitStatus: number | null = null;
-    const completion = launcher.launch(
-      executable,
-      [
-        "--temp-directory",
-        options.tempDirectory,
-        ...(options.parentPid === undefined ? [] : ["--parent-pid", String(options.parentPid)]),
-      ],
-      (data) => {
-        stdout += data;
-      },
-    );
+    const completion = launcher.launch(executable, [
+      "--temp-directory",
+      options.tempDirectory,
+      "--ready-file",
+      readyFile,
+      ...(options.parentPid === undefined ? [] : ["--parent-pid", String(options.parentPid)]),
+    ]);
     void completion.then(
       (result) => {
         exitStatus = result.status;
@@ -214,12 +234,22 @@ export class SubtitleExtractorProcess {
         exitStatus = -1;
       },
     );
-    for (let attempt = 0; attempt < 750 && !stdout.includes("\n"); attempt += 1) {
-      if (exitStatus !== null) throw new SubtitleExtractorError("EXTRACTOR_UNAVAILABLE");
-      await new Promise<void>((resolve) => setTimeout(resolve, 20));
+    try {
+      for (let attempt = 0; attempt < 750; attempt += 1) {
+        if (exitStatus !== null) throw new SubtitleExtractorError("EXTRACTOR_UNAVAILABLE");
+        const output = readyFiles.read(readyFile);
+        if (output !== null)
+          return parseSubtitleExtractorReadyFrame(output, startedAtMs, Date.now());
+        await new Promise<void>((resolve) => setTimeout(resolve, 20));
+      }
+      throw new SubtitleExtractorError("EXTRACTOR_UNAVAILABLE");
+    } finally {
+      try {
+        if (readyFiles.exists(readyFile)) readyFiles.delete(readyFile);
+      } catch {
+        void completion;
+      }
     }
-    if (!stdout.includes("\n")) throw new SubtitleExtractorError("EXTRACTOR_UNAVAILABLE");
-    return parseSubtitleExtractorReadyFrame(stdout.slice(0, stdout.indexOf("\n") + 1));
   }
 }
 

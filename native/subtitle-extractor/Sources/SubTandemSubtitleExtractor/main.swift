@@ -5,7 +5,9 @@ enum SubTandemSubtitleExtractorMain {
     static func run() async throws {
         let arguments = CommandLine.arguments
         guard let tempIndex = arguments.firstIndex(of: "--temp-directory"),
-              arguments.indices.contains(tempIndex + 1)
+              arguments.indices.contains(tempIndex + 1),
+              let readyIndex = arguments.firstIndex(of: "--ready-file"),
+              arguments.indices.contains(readyIndex + 1)
         else { throw ExtractorError.invalidRequest }
         let parentPID: Int32
         if let parentIndex = arguments.firstIndex(of: "--parent-pid"),
@@ -15,13 +17,22 @@ enum SubTandemSubtitleExtractorMain {
         } else {
             parentPID = getppid()
         }
-        let rootURL = URL(fileURLWithPath: arguments[tempIndex + 1], isDirectory: true)
+        let rootURL = URL(
+            fileURLWithPath: arguments[tempIndex + 1],
+            isDirectory: true
+        ).standardizedFileURL
+        let readyFile = URL(fileURLWithPath: arguments[readyIndex + 1]).standardizedFileURL
+        guard readyFile.deletingLastPathComponent().path == rootURL
+            .appendingPathComponent(".ready", isDirectory: true).path,
+              readyFile.lastPathComponent.hasPrefix("extractor-"),
+              readyFile.pathExtension == "json"
+        else { throw ExtractorError.invalidRequest }
         let jobs = try ExtractionJobs(rootURL: rootURL)
         let token = try SecureRandom.token()
         let liveness = LivenessState(parentPID: parentPID)
         let server = try SubtitleExtractorServer(token: token, jobs: jobs, liveness: liveness)
         let port = try await server.start()
-        FileHandle.standardOutput.write(Data(try ReadyFrame(port: port, token: token).encodedLine().utf8))
+        try ReadyFileWriter.write(ReadyFrame(port: port, token: token), to: readyFile)
         while !liveness.shouldExit(activeJobs: jobs.activeCount()) {
             try await Task.sleep(nanoseconds: 1_000_000_000)
         }

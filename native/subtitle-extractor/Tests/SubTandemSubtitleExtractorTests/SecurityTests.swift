@@ -81,6 +81,37 @@ func runSecurityTests() async throws {
         String(decoding: response.body, as: UTF8.self) == #"{"error":"EXTRACTION_FAILED"}"#,
         "protocol errors must expose only fixed codes"
     )
+
+    let readyRoot = FileManager.default.temporaryDirectory
+        .appendingPathComponent("subtandem-extractor-ready-\(UUID().uuidString)", isDirectory: true)
+    let readyFile = readyRoot
+        .appendingPathComponent(".ready", isDirectory: true)
+        .appendingPathComponent("extractor-test.json")
+    defer { try? FileManager.default.removeItem(at: readyRoot) }
+    try ReadyFileWriter.write(
+        ReadyFrame(port: 49152, token: "opaque-token", createdAtMs: 10_000),
+        to: readyFile
+    )
+    let readyDirectoryMode = try permissions(readyFile.deletingLastPathComponent())
+    let readyFileMode = try permissions(readyFile)
+    try check(readyDirectoryMode == 0o700, "ready directory must use mode 0700")
+    try check(readyFileMode == 0o600, "ready file must use mode 0600")
+    let readyText = try String(contentsOf: readyFile, encoding: .utf8)
+    try check(readyText.contains("\"createdAtMs\":10000"), "ready frame must include its freshness timestamp")
+    try expectError(.extractionFailed) {
+        try ReadyFileWriter.write(
+            ReadyFrame(port: 49153, token: "other-token", createdAtMs: 20_000),
+            to: readyFile
+        )
+    }
+    let readyEntries = try FileManager.default.contentsOfDirectory(
+        at: readyFile.deletingLastPathComponent(),
+        includingPropertiesForKeys: nil
+    )
+    try check(
+        readyEntries.allSatisfy { $0.pathExtension != "tmp" },
+        "atomic publication must remove its temporary file"
+    )
 }
 
 private func expectError(_ expected: ExtractorError, _ operation: () throws -> Void) throws {
