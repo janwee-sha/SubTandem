@@ -4,23 +4,27 @@ import Foundation
 enum SubTandemTransportMain {
     static func run() async throws {
         let arguments = CommandLine.arguments
-        if arguments.count == 6,
+        if arguments.count == 8,
            arguments[1] == "launch",
            arguments[2] == "--data-directory",
-           arguments[4] == "--ready-file" {
+           arguments[4] == "--ready-file",
+           arguments[6] == "--rpc-session",
+           validRPCSession(arguments[7]) {
             let readyFile = URL(fileURLWithPath: arguments[5]).standardizedFileURL
             try DetachedBootstrap.launch(
-                arguments: Array(arguments[2...5]),
+                arguments: Array(arguments[2...7]),
                 readyFile: readyFile
             )
             return
         }
-        guard arguments.count == 8,
+        guard arguments.count == 10,
               arguments[1] == "serve",
               arguments[2] == "--data-directory",
               arguments[4] == "--ready-file",
-              arguments[6] == "--parent-pid",
-              let parentPID = Int32(arguments[7]),
+              arguments[6] == "--rpc-session",
+              validRPCSession(arguments[7]),
+              arguments[8] == "--parent-pid",
+              let parentPID = Int32(arguments[9]),
               parentPID > 1
         else { throw TransportProtocolError.invalidRequest }
         try relaunchWithoutInheritedProxyIfNeeded()
@@ -39,8 +43,11 @@ enum SubTandemTransportMain {
         let credentialStore = try SecureCredentialStore(
             directory: dataDirectory
         )
-        let rpcDirectory = dataDirectory.appendingPathComponent(".rpc", isDirectory: true)
+        let rpcDirectory = dataDirectory
+            .appendingPathComponent(".rpc", isDirectory: true)
+            .appendingPathComponent("transport-\(arguments[7])", isDirectory: true)
         try FileRPCWorker.prepareDirectory(rpcDirectory)
+        defer { try? FileManager.default.removeItem(at: rpcDirectory) }
         let server = try TransportServer(
             token: token,
             liveness: liveness,
@@ -86,6 +93,15 @@ enum SubTandemTransportMain {
                 }
             }
             if status == -1 { throw TransportProtocolError.invalidRequest }
+        }
+    }
+
+    private static func validRPCSession(_ value: String) -> Bool {
+        let parts = value.split(separator: "-", omittingEmptySubsequences: false)
+        return parts.count == 3 && parts.allSatisfy {
+            !$0.isEmpty && $0.allSatisfy { character in
+                character.isASCII && (character.isNumber || character.isLowercase)
+            }
         }
     }
 

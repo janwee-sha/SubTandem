@@ -113,18 +113,21 @@ export class SubtitlePreparationCoordinator {
     this.setState("preparing", track);
 
     const nativeOutcome = this.options.extractor
-      .prepare({
-        jobId,
-        mediaPath: media.localPath,
-        stream: {
-          ffIndex: track.ffIndex,
-          sourceId: track.codec === "mov_text" ? (track.sourceId ?? null) : null,
-          codec: track.codec,
+      .prepare(
+        {
+          jobId,
+          mediaPath: media.localPath,
+          stream: {
+            ffIndex: track.ffIndex,
+            sourceId: track.codec === "mov_text" ? (track.sourceId ?? null) : null,
+            codec: track.codec,
+          },
+          deadlineMs: 15_000,
+          maxCueCount: 20_000,
+          maxOutputBytes: 16_777_216,
         },
-        deadlineMs: 15_000,
-        maxCueCount: 20_000,
-        maxOutputBytes: 16_777_216,
-      })
+        () => this.accepts(media, track, attemptId) && this.now() < attempt.deadlineAt,
+      )
       .then(
         (result) => ({ type: "result" as const, result }),
         (error: unknown) => ({ type: "error" as const, error }),

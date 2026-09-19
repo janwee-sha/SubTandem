@@ -272,6 +272,7 @@ const profileCredentialPartialFailureMessage =
 const profileRows = new Map<string, HTMLElement>();
 let newProfileRow: HTMLElement | null = null;
 const pendingOperations = new Set<string>();
+const profileActivationTimeouts = new Map<string, number>();
 let activeProviderKind: ProviderKind = "openai";
 let editingProfile: ProfileView | null = null;
 let pendingProfileSave: {
@@ -1662,6 +1663,14 @@ profilesElement.addEventListener("change", (event) => {
   const requestId = nextRequestId();
   if (!sidebarState.beginProfileActivation(requestId, profile.profileId, enabled)) return;
   renderProfileActivationControls();
+  profileActivationTimeouts.set(
+    requestId,
+    window.setTimeout(() => {
+      profileActivationTimeouts.delete(requestId);
+      if (!sidebarState.expireProfileActivation(requestId)) return;
+      renderProfileActivationControls();
+    }, 8_000),
+  );
   window.iina?.postMessage(
     "profile-activation:set",
     envelope(
@@ -1731,7 +1740,13 @@ window.iina?.onMessage("profile-activation:state", (raw: unknown) => {
 });
 
 window.iina?.onMessage("profile-activation:result", (raw: unknown) => {
-  const result = sidebarState.finishProfileActivation(raw as SidebarProfileActivationResult);
+  const value = raw as SidebarProfileActivationResult;
+  const timeout = profileActivationTimeouts.get(value.requestId);
+  if (timeout !== undefined) {
+    window.clearTimeout(timeout);
+    profileActivationTimeouts.delete(value.requestId);
+  }
+  const result = sidebarState.finishProfileActivation(value);
   if (!result.accepted) return;
   renderedProfilesSignature = "";
   renderProfiles(sidebarState.snapshot.profiles as unknown as ProfileView[]);
@@ -2143,6 +2158,9 @@ function renderProfileActivationControls(): void {
     if (status && (view.error || view.readinessMessage)) {
       status.textContent = view.error ?? view.readinessMessage ?? "";
       status.dataset.state = view.error ? "error" : "pending";
+    } else if (status) {
+      status.textContent = "";
+      delete status.dataset.state;
     }
   }
 }

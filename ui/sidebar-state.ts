@@ -321,6 +321,7 @@ interface SidebarStateCoordinator {
     readinessMessage: string | null;
   };
   beginProfileActivation(requestId: string, profileId: string, enabled: boolean): boolean;
+  expireProfileActivation(requestId: string): boolean;
   finishProfileActivation(result: SidebarProfileActivationResult): {
     accepted: boolean;
     authorityAccepted: boolean;
@@ -746,6 +747,15 @@ function createSubTandemSidebarState(
       authorityAccepted,
       announce: result.outcome === "changed" || result.outcome === "failed",
     };
+  };
+
+  const expireProfileActivation = (requestId: string): boolean => {
+    const request = snapshot.profileActivationRequests[requestId];
+    if (!request) return false;
+    delete snapshot.profileActivationRequests[requestId];
+    snapshot.profileActivationErrors[request.profileId] =
+      "Profile activation timed out. Try again.";
+    return true;
   };
 
   const beginOperation = (request: SidebarOperationRequest, message = ""): void => {
@@ -1563,6 +1573,7 @@ function createSubTandemSidebarState(
     applyProfileAuthority,
     profileActivationView,
     beginProfileActivation,
+    expireProfileActivation,
     finishProfileActivation,
     beginOperation,
     finishOperation,

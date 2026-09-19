@@ -1274,6 +1274,21 @@ describe("Sidebar confirmed Profile activation", () => {
     ).toBe(false);
   });
 
+  it("releases every activation control after the bounded UI deadline", () => {
+    const state = createState();
+    state.applyProfileAuthority(authority(1));
+    state.beginProfileActivation("activation-timeout", "profile-b", true);
+
+    expect(state.expireProfileActivation("activation-timeout")).toBe(true);
+    expect(state.expireProfileActivation("activation-timeout")).toBe(false);
+    expect(state.profileActivationView("profile-b")).toMatchObject({
+      checked: false,
+      disabled: false,
+      busy: false,
+      error: expect.stringMatching(/timed out/i),
+    });
+  });
+
   it("reports restoration readiness without allowing activation requests", () => {
     const state = createState();
     state.applyProfileAuthority({ ...authority(1, null), ready: false });

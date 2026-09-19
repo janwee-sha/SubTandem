@@ -3,13 +3,17 @@ import Foundation
 func runServerTests() async throws {
     try check(TransportServer.boundHost == "127.0.0.1", "server must bind IPv4 loopback only")
     let daemonArguments = try DetachedBootstrap.daemonArguments(
-        ["--data-directory", "/private/data", "--ready-file", "/private/data/.ready/transport-test.json"],
+        [
+            "--data-directory", "/private/data", "--ready-file",
+            "/private/data/.ready/transport-test.json", "--rpc-session", "abc-1-session",
+        ],
         parentPID: 123
     )
     try check(
         daemonArguments == [
             "serve", "--data-directory", "/private/data", "--ready-file",
-            "/private/data/.ready/transport-test.json", "--parent-pid", "123",
+            "/private/data/.ready/transport-test.json", "--rpc-session", "abc-1-session",
+            "--parent-pid", "123",
         ],
         "bootstrap must pass the real parent PID to serve mode"
     )

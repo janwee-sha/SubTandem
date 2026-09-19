@@ -5,6 +5,7 @@ import {
   SubtitleExtractorClient,
   SubtitleExtractorError,
   SubtitleExtractorProcess,
+  SubtitleExtractorSupervisor,
   discoverSubtitleExtractorExecutable,
 } from "./adapters/iina/subtitle-extractor.js";
 import {
@@ -333,24 +334,28 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
           list: (path) => runtime.file.list(path, { includeSubDir: false }),
           read: (path) => runtime.file.read(path) ?? null,
         });
-        const session = await SubtitleExtractorProcess.bootstrap(
-          launcher,
-          files,
-          { tempDirectory, fileDirectory: "@tmp/subtandem-extraction" },
-          executable,
-        );
-        preparation = new SubtitlePreparationCoordinator({
-          playerId,
-          extractor: new SubtitleExtractorClient(
+        const extractor = new SubtitleExtractorSupervisor(async () => {
+          const session = await SubtitleExtractorProcess.bootstrap(
+            launcher,
+            files,
+            { tempDirectory, fileDirectory: "@tmp/subtandem-extraction" },
+            executable,
+          );
+          return new SubtitleExtractorClient(
             session,
             new IinaFileRpcBridge(files, {
               helper: "extractor",
-              fileDirectory: "@tmp/subtandem-extraction/.rpc",
+              fileDirectory: session.rpcDirectory,
               maxRequestBytes: 65_536,
               maxResponseBytes: 65_536,
               maxConcurrentRequests: 4,
             }),
-          ),
+          );
+        });
+        await extractor.health();
+        preparation = new SubtitlePreparationCoordinator({
+          playerId,
+          extractor,
           readResult: (resultId) =>
             sourcePort.readBinary(`@tmp/subtandem-extraction/${resultId}/output.srt`),
         });

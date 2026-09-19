@@ -22,13 +22,25 @@ import {
 } from "../../src/transport/client.js";
 
 class FakeBridge implements LocalRpcBridge {
-  readonly calls: Array<{ port: number; path: string; token: string; body: unknown }> = [];
+  readonly calls: Array<{
+    port: number;
+    path: string;
+    token: string;
+    body: unknown;
+    timeoutMs?: number;
+  }> = [];
   unavailable = false;
   credentials = new Map<string, Record<string, string>>();
 
-  async post<T>(port: number, token: string, path: string, body: unknown): Promise<T> {
+  async post<T>(
+    port: number,
+    token: string,
+    path: string,
+    body: unknown,
+    options?: { timeoutMs?: number },
+  ): Promise<T> {
     if (this.unavailable) throw new Error("connection refused with private body");
-    this.calls.push({ port, path, token, body });
+    this.calls.push({ port, path, token, body, timeoutMs: options?.timeoutMs });
     if (path === "/v1/health") return { state: "ok" } as T;
     if (path === "/v1/credentials") {
       const request = body as {
@@ -448,12 +460,24 @@ describe("transport helper client", () => {
         ),
       ]),
     ).resolves.toEqual([
-      { port: 49152, token: "abcDEF123_-" },
-      expect.objectContaining({ port: 49152, token: "abcDEF123_-" }),
+      expect.objectContaining({
+        port: 49152,
+        token: "abcDEF123_-",
+        rpcDirectory: expect.stringMatching(/\.rpc\/transport-[0-9a-z-]+$/),
+      }),
+      expect.objectContaining({
+        port: 49152,
+        token: "abcDEF123_-",
+        rpcDirectory: expect.stringMatching(/\.rpc\/extractor-[0-9a-z-]+$/),
+      }),
     ]);
     expect(launches).toHaveLength(2);
     expect(launches.every((launch) => !launch.hooked)).toBe(true);
     expect(launches.every((launch) => launch.args[0] === "launch")).toBe(true);
+    expect(launches.every((launch) => launch.args[5] === "--rpc-session")).toBe(true);
+    expect(
+      launches.every((launch) => /^[0-9a-z]+-[0-9a-z]+-[0-9a-z]+$/.test(launch.args[6]!)),
+    ).toBe(true);
     expect(JSON.stringify(launches)).not.toContain("abcDEF123_-");
     expect(readyFiles.files.size).toBe(0);
   });
@@ -489,6 +513,12 @@ describe("transport helper client", () => {
     expect(bridge.calls.every((call) => call.token === "session-token")).toBe(true);
     expect(bridge.calls.every((call) => call.port === 49152)).toBe(true);
     expect(bridge.calls.every((call) => call.path.startsWith("/v1/"))).toBe(true);
+    expect(bridge.calls.find((call) => call.path === "/v1/request")?.timeoutMs).toBe(130_000);
+    expect(
+      bridge.calls
+        .filter((call) => call.path !== "/v1/request")
+        .every((call) => call.timeoutMs === 1_000),
+    ).toBe(true);
   });
 
   it("maps provider request labels to helper-required UUID job IDs", async () => {
@@ -640,6 +670,57 @@ describe("transport helper client", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("honors a per-request control deadline instead of the provider deadline", async () => {
+    vi.useFakeTimers();
+    try {
+      const timerApi = new RetainingTimerApi();
+      const files = new MemoryReadyFiles();
+      const bridge = new IinaFileRpcBridge(files, {
+        helper: "transport",
+        fileDirectory: "@data/.rpc/transport-generation",
+        maxRequestBytes: 2_101_248,
+        maxResponseBytes: 4_210_688,
+        maxConcurrentRequests: 8,
+        timers: new HostTimers(timerApi),
+      });
+      const request = bridge.post(49152, "secret-token", "/v1/health", {}, { timeoutMs: 1_000 });
+      const rejected = expect(request).rejects.toThrow("HELPER_RPC_TIMEOUT");
+      await Promise.resolve();
+      vi.setSystemTime(Date.now() + 1_001);
+      timerApi.fireIntervals();
+      await rejected;
+      expect(files.files.size).toBe(0);
+      expect(timerApi.intervals.size).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("aborts pending and queued files when a helper generation is retired", async () => {
+    const timerApi = new RetainingTimerApi();
+    const files = new MemoryReadyFiles();
+    const bridge = new IinaFileRpcBridge(files, {
+      helper: "transport",
+      fileDirectory: "@data/.rpc/transport-generation",
+      maxRequestBytes: 2_101_248,
+      maxResponseBytes: 4_210_688,
+      maxConcurrentRequests: 1,
+      timers: new HostTimers(timerApi),
+    });
+    const first = bridge.post(49152, "secret-token", "/v1/health", {}, { timeoutMs: 1_000 });
+    const second = bridge.post(49152, "secret-token", "/v1/health", {}, { timeoutMs: 1_000 });
+    await Promise.resolve();
+    const request = [...files.files.keys()].find((path) => path.endsWith(".request.json"))!;
+    const processing = request.replace(".request.json", ".processing.json");
+    files.files.set(processing, files.files.get(request)!);
+    files.files.delete(request);
+    bridge.close();
+    await expect(first).rejects.toThrow("HELPER_RPC_CLOSED");
+    await expect(second).rejects.toThrow("HELPER_RPC_CLOSED");
+    expect(files.files.size).toBe(0);
+    expect(timerApi.intervals.size).toBe(0);
   });
 
   it("preserves safe upstream timeout and network classifications from the helper", async () => {

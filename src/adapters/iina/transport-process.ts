@@ -52,6 +52,15 @@ export interface ReadyFileStore {
 }
 
 let readyFileSequence = 0;
+let rpcSessionSequence = 0;
+
+export function createRpcSessionId(): string {
+  return [
+    Date.now().toString(36),
+    (++rpcSessionSequence).toString(36),
+    Math.random().toString(36).slice(2, 14).padEnd(10, "0"),
+  ].join("-");
+}
 
 export function createReadyFilePath(
   root: string,
@@ -109,9 +118,11 @@ export class TransportProcess {
     readyFiles: ReadyFileStore,
     options: { dataDirectory: string; fileDirectory?: string },
     executable = "@plugin/dist/native/subtandem-transport",
-  ): Promise<TransportSession> {
+  ): Promise<TransportSession & { rpcSessionId: string; rpcDirectory: string }> {
     const fileDirectory = options.fileDirectory ?? options.dataDirectory;
     removeStaleHelperFiles(readyFiles, fileDirectory);
+    const rpcSessionId = createRpcSessionId();
+    const rpcDirectory = `${fileDirectory.replace(/\/+$/, "")}/.rpc/transport-${rpcSessionId}`;
     const readyFile = createReadyFilePath(fileDirectory, "transport");
     const nativeReadyFile = `${options.dataDirectory.replace(/\/+$/, "")}/.ready/${readyFile.slice(
       readyFile.lastIndexOf("/") + 1,
@@ -128,6 +139,8 @@ export class TransportProcess {
       options.dataDirectory,
       "--ready-file",
       nativeReadyFile,
+      "--rpc-session",
+      rpcSessionId,
     ]);
     void completion.then(
       (result) => {
@@ -143,7 +156,7 @@ export class TransportProcess {
         if (output !== null) {
           try {
             const frame = parseReadyFrame(output, startedAtMs);
-            return { port: frame.port, token: frame.token };
+            return { port: frame.port, token: frame.token, rpcSessionId, rpcDirectory };
           } catch {
             throw new SubTandemError("HELPER_PROTOCOL", "protocol", "RESTART_IINA");
           }

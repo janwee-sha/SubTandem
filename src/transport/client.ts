@@ -7,7 +7,14 @@ import type {
 } from "../domain/types.js";
 
 export interface LocalRpcBridge {
-  post<T>(port: number, bearerToken: string, path: string, body: unknown): Promise<T>;
+  post<T>(
+    port: number,
+    bearerToken: string,
+    path: string,
+    body: unknown,
+    options?: { timeoutMs?: number },
+  ): Promise<T>;
+  close?(error?: unknown): void;
 }
 
 export class LocalRpcResponseError extends Error {
@@ -141,7 +148,11 @@ export interface TransportRpcClient {
   request(request: TransportRequest): Promise<TransportResponse>;
   cancel(jobId: string): Promise<"cancelled" | "already-completed" | "unknown">;
   shutdown(): Promise<void>;
+  dispose?(): void;
 }
+
+const controlRpcTimeoutMs = 1_000;
+const providerRpcTimeoutMs = 130_000;
 
 export class TransportClient implements TransportRpcClient {
   constructor(
@@ -154,9 +165,11 @@ export class TransportClient implements TransportRpcClient {
     if (!/^[A-Za-z0-9_-]{8,512}$/.test(session.token)) throw new Error("Invalid helper token");
   }
 
-  private async post<T>(path: string, body: unknown): Promise<T> {
+  private async post<T>(path: string, body: unknown, timeoutMs = controlRpcTimeoutMs): Promise<T> {
     try {
-      return await this.bridge.post<T>(this.session.port, this.session.token, path, body);
+      return await this.bridge.post<T>(this.session.port, this.session.token, path, body, {
+        timeoutMs,
+      });
     } catch (error) {
       if (error instanceof SubTandemError) throw error;
       if (error instanceof TransportRpcError) throw rpcError(error);
@@ -243,7 +256,7 @@ export class TransportClient implements TransportRpcClient {
   }
 
   request(request: TransportRequest): Promise<TransportResponse> {
-    return this.post("/v1/request", request);
+    return this.post("/v1/request", request, providerRpcTimeoutMs);
   }
 
   async cancel(jobId: string): Promise<"cancelled" | "already-completed" | "unknown"> {
@@ -255,7 +268,15 @@ export class TransportClient implements TransportRpcClient {
   }
 
   async shutdown(): Promise<void> {
-    await this.post("/v1/shutdown", {});
+    try {
+      await this.post("/v1/shutdown", {});
+    } finally {
+      this.dispose();
+    }
+  }
+
+  dispose(): void {
+    this.bridge.close?.();
   }
 }
 

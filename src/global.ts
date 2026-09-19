@@ -168,7 +168,7 @@ const transport = new TransportSupervisor(async () => {
     session,
     new IinaFileRpcBridge(files, {
       helper: "transport",
-      fileDirectory: "@data/.rpc",
+      fileDirectory: session.rpcDirectory,
       maxRequestBytes: 2_101_248,
       maxResponseBytes: 4_210_688,
       maxConcurrentRequests: 8,
@@ -1075,8 +1075,13 @@ globalMailbox.onMessage("profile-activation:get", async (raw: unknown, playerId?
 
 globalMailbox.onMessage("profile-activation:set", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
+  let message: ReturnType<typeof parseProfileActivationSet>;
   try {
-    const message = parseProfileActivationSet(raw);
+    message = parseProfileActivationSet(raw);
+  } catch {
+    return;
+  }
+  try {
     await profileReady;
     const result = await profileAuthority.set({
       senderId: playerId,
@@ -1088,7 +1093,13 @@ globalMailbox.onMessage("profile-activation:set", async (raw: unknown, playerId?
     if (result.outcome === "changed") publishProfileAuthority();
     else if (result.outcome === "unchanged") publishProfileAuthority(playerId);
   } catch {
-    return;
+    await profileReady;
+    postToPlayer(playerId, "profile-activation:result", {
+      requestId: message.requestId,
+      outcome: "failed",
+      authority: profileAuthority.snapshot,
+      error: { code: "PROFILE_ACTIVATION_FAILED", userAction: "RETRY" },
+    });
   }
 });
 
