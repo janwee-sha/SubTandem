@@ -18,12 +18,46 @@ func checkThrows(_ message: String, _ operation: () throws -> Void) throws {
 }
 
 func runProtocolTests() throws {
-    let frame = ReadyFrame(protocolVersion: 1, port: 49_152, token: "opaque-token")
+    let frame = ReadyFrame(port: 49_152, token: "opaque-token", createdAtMs: 10_000)
     let object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(frame)) as? [String: Any]
-    try check(Set(object?.keys.map { $0 } ?? []) == Set(["protocolVersion", "port", "token"]), "ready keys")
+    try check(
+        Set(object?.keys.map { $0 } ?? []) == Set(["type", "protocolVersion", "port", "token", "createdAtMs"]),
+        "ready keys"
+    )
+    try check(object?["type"] as? String == "ready", "ready type")
     try check(object?["protocolVersion"] as? Int == 1, "ready version")
     try check(object?["port"] as? Int == 49_152, "ready port")
     try check(object?["token"] as? String == "opaque-token", "ready token")
+    try check(object?["createdAtMs"] as? Int == 10_000, "ready freshness")
+    let daemonArguments = try DetachedBootstrap.daemonArguments(
+        ["--ready-file", "/private/.ready/style-picker-test.json"],
+        parentPID: 123
+    )
+    try check(
+        daemonArguments == [
+            "serve", "--ready-file", "/private/.ready/style-picker-test.json", "--parent-pid", "123",
+        ],
+        "bootstrap must pass the real parent PID to serve mode"
+    )
+    try checkThrows("bootstrap must reject init as parent") {
+        _ = try DetachedBootstrap.daemonArguments([], parentPID: 1)
+    }
+
+    let readyRoot = FileManager.default.temporaryDirectory
+        .appendingPathComponent("subtandem-style-ready-\(UUID().uuidString)", isDirectory: true)
+    let readyFile = readyRoot
+        .appendingPathComponent(".ready", isDirectory: true)
+        .appendingPathComponent("style-picker-test.json")
+    defer { try? FileManager.default.removeItem(at: readyRoot) }
+    try ReadyFileWriter.write(frame, to: readyFile)
+    let directoryMode = try FileManager.default.attributesOfItem(
+        atPath: readyFile.deletingLastPathComponent().path
+    )[.posixPermissions] as? NSNumber
+    let fileMode = try FileManager.default.attributesOfItem(
+        atPath: readyFile.path
+    )[.posixPermissions] as? NSNumber
+    try check(directoryMode?.intValue == 0o700, "ready directory permissions")
+    try check(fileMode?.intValue == 0o600, "ready file permissions")
 
     try check(ProtocolValidator.authorized(headers: ["authorization": "Bearer secret"], token: "secret"), "authorization")
     try check(!ProtocolValidator.authorized(headers: [:], token: "secret"), "missing authorization")

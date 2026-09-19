@@ -1,4 +1,11 @@
-import type { HelperExecutableLocator } from "./transport-process.js";
+import {
+  createReadyFilePath,
+  parseReadyFrame,
+  removeStaleHelperFiles,
+  type HelperExecutableLocator,
+  type ProcessLauncher,
+  type ReadyFileStore,
+} from "./transport-process.js";
 import {
   isFontFamily,
   isRgbaColor,
@@ -12,30 +19,20 @@ export interface StylePickerSession {
 }
 
 export interface StylePickerReadyFrame extends StylePickerSession {
+  type: "ready";
   protocolVersion: 1;
+  createdAtMs: number;
 }
 
 export interface StylePickerHttpBridge {
   request<T>(method: "GET" | "POST", url: string, bearerToken: string, body?: unknown): Promise<T>;
 }
 
-export interface StylePickerProcessLauncher {
-  launch(
-    executable: string,
-    args: string[],
-    onStdout: (data: string) => void,
-  ): Promise<{ status: number }>;
-}
-
-export class IinaStylePickerProcessLauncher implements StylePickerProcessLauncher {
+export class IinaStylePickerProcessLauncher implements ProcessLauncher {
   constructor(private readonly utils: IINA.API.Utils) {}
 
-  launch(
-    executable: string,
-    args: string[],
-    onStdout: (data: string) => void,
-  ): Promise<{ status: number }> {
-    return this.utils.exec(executable, args, null, onStdout, () => undefined);
+  launch(executable: string, args: string[]): Promise<{ status: number }> {
+    return this.utils.exec(executable, args);
   }
 }
 
@@ -62,23 +59,13 @@ const validId = (value: unknown): value is string =>
 const validRevision = (value: unknown): value is number =>
   Number.isInteger(value) && (value as number) >= 0;
 
-export function parseStylePickerReadyFrame(output: string): StylePickerReadyFrame {
+export function parseStylePickerReadyFrame(
+  output: string,
+  notBeforeMs = 0,
+  nowMs = Date.now(),
+): StylePickerReadyFrame {
   try {
-    if (output.split("\n").filter(Boolean).length !== 1) throw new Error();
-    const value = JSON.parse(output.trim()) as unknown;
-    if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error();
-    const frame = value as Record<string, unknown>;
-    if (
-      !exactKeys(frame, ["protocolVersion", "port", "token"]) ||
-      frame.protocolVersion !== 1 ||
-      !Number.isInteger(frame.port) ||
-      (frame.port as number) < 1024 ||
-      (frame.port as number) > 65535 ||
-      typeof frame.token !== "string" ||
-      !/^[A-Za-z0-9_-]{8,512}$/.test(frame.token)
-    )
-      throw new Error();
-    return frame as unknown as StylePickerReadyFrame;
+    return parseReadyFrame(output, notBeforeMs, nowMs);
   } catch {
     throw new Error("STYLE_PICKER_PROTOCOL");
   }
@@ -86,22 +73,21 @@ export function parseStylePickerReadyFrame(output: string): StylePickerReadyFram
 
 export class StylePickerProcess {
   static async bootstrap(
-    launcher: StylePickerProcessLauncher,
-    options: { parentPid?: number },
+    launcher: ProcessLauncher,
+    readyFiles: ReadyFileStore,
+    options: { dataDirectory: string; fileDirectory?: string },
     executable: string,
   ): Promise<StylePickerSession> {
-    let stdout = "";
+    const fileDirectory = options.fileDirectory ?? options.dataDirectory;
+    removeStaleHelperFiles(readyFiles, fileDirectory);
+    const readyFile = createReadyFilePath(fileDirectory, "style-picker");
+    const nativeReadyFile = `${options.dataDirectory.replace(/\/+$/, "")}/.ready/${readyFile.slice(
+      readyFile.lastIndexOf("/") + 1,
+    )}`;
+    if (readyFiles.exists(readyFile)) throw new Error("STYLE_PICKER_PROTOCOL");
+    const startedAtMs = Date.now();
     let exitStatus: number | null = null;
-    const completion = launcher.launch(
-      executable,
-      [
-        "serve",
-        ...(options.parentPid === undefined ? [] : ["--parent-pid", String(options.parentPid)]),
-      ],
-      (data) => {
-        stdout += data;
-      },
-    );
+    const completion = launcher.launch(executable, ["launch", "--ready-file", nativeReadyFile]);
     void completion.then(
       (result) => {
         exitStatus = result.status;
@@ -110,13 +96,24 @@ export class StylePickerProcess {
         exitStatus = -1;
       },
     );
-    for (let tries = 0; tries < 250 && !stdout.includes("\n"); tries += 1) {
-      if (exitStatus !== null) throw new Error("STYLE_PICKER_START_FAILED");
-      await new Promise<void>((resolve) => setTimeout(resolve, 20));
+    try {
+      for (let tries = 0; tries < 250; tries += 1) {
+        const output = readyFiles.exists(readyFile) ? readyFiles.read(readyFile) : null;
+        if (output !== null) {
+          const frame = parseStylePickerReadyFrame(output, startedAtMs);
+          return { port: frame.port, token: frame.token };
+        }
+        if (exitStatus !== null && exitStatus !== 0) throw new Error("STYLE_PICKER_START_FAILED");
+        await new Promise<void>((resolve) => setTimeout(resolve, 20));
+      }
+      throw new Error("STYLE_PICKER_START_FAILED");
+    } finally {
+      try {
+        if (readyFiles.exists(readyFile)) readyFiles.delete(readyFile);
+      } catch {
+        void completion;
+      }
     }
-    if (!stdout.includes("\n")) throw new Error("STYLE_PICKER_START_FAILED");
-    const frame = parseStylePickerReadyFrame(stdout.slice(0, stdout.indexOf("\n") + 1));
-    return { port: frame.port, token: frame.token };
   }
 }
 

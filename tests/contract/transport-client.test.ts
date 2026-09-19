@@ -88,6 +88,7 @@ class MemoryReadyFiles implements ReadyFileStore {
   readonly files = new Map<string, string>();
   readonly deleted: string[] = [];
   readonly reads: string[] = [];
+  onWrite: ((path: string, content: string) => void) | null = null;
 
   exists(path: string): boolean {
     return this.files.has(path);
@@ -102,6 +103,7 @@ class MemoryReadyFiles implements ReadyFileStore {
 
   write(path: string, content: string): void {
     this.files.set(path, content);
+    this.onWrite?.(path, content);
   }
 
   delete(path: string): void {
@@ -241,14 +243,15 @@ describe("transport helper client", () => {
       TransportProcess.bootstrap(
         {
           launch: async (_executable, args, onStdout) => {
-            expect(args.slice(0, 3)).toEqual([
+            expect(args.slice(0, 4)).toEqual([
+              "launch",
               "--data-directory",
               "/private/test/io.subtandem.iina",
               "--ready-file",
             ]);
             expect(onStdout).toBeUndefined();
-            readyFiles.files.set(args[3]!, readyFrame());
-            return new Promise<{ status: number }>(() => undefined);
+            readyFiles.files.set(args[4]!, readyFrame());
+            return { status: 0 };
           },
         },
         readyFiles,
@@ -273,8 +276,8 @@ describe("transport helper client", () => {
       TransportProcess.bootstrap(
         {
           launch: async (_executable, args) => {
-            setTimeout(() => readyFiles.files.set(args[3]!, readyFrame()), 1);
-            return new Promise<{ status: number }>(() => undefined);
+            setTimeout(() => readyFiles.files.set(args[4]!, readyFrame()), 1);
+            return { status: 0 };
           },
         },
         readyFiles,
@@ -291,7 +294,7 @@ describe("transport helper client", () => {
       TransportProcess.bootstrap(
         {
           launch: async (_executable, args) => {
-            nativeReadyFile = args[3]!;
+            nativeReadyFile = args[4]!;
             const filename = nativeReadyFile.slice(nativeReadyFile.lastIndexOf("/") + 1);
             readyFiles.files.set(`@data/.ready/${filename}`, readyFrame());
             return new Promise<{ status: number }>(() => undefined);
@@ -316,8 +319,8 @@ describe("transport helper client", () => {
         TransportProcess.bootstrap(
           {
             launch: async (_executable, args) => {
-              readyFiles.files.set(args[3]!, content);
-              return new Promise<{ status: number }>(() => undefined);
+              readyFiles.files.set(args[4]!, content);
+              return { status: 0 };
             },
           },
           readyFiles,
@@ -355,6 +358,8 @@ describe("transport helper client", () => {
       [`/private/plugin/.ready/transport-${old}-1-old.json`, "old"],
       [`/private/plugin/.ready/transport-${recent}-2-new.json`, "new"],
       [`/private/plugin/.rpc/extractor-${old}-3-old.request.json`, "private"],
+      [`/private/plugin/.rpc/transport-${old}-5-old.processing.json`, "private"],
+      [`/private/plugin/.rpc/transport-${old}-6-old.request.ready`, ""],
       [`/private/plugin/.rpc/unrelated-${old}-4-old.response.json`, "keep"],
     ]);
     const deleted: string[] = [];
@@ -378,20 +383,22 @@ describe("transport helper client", () => {
     expect(deleted).toEqual([
       `/private/plugin/.ready/transport-${old}-1-old.json`,
       `/private/plugin/.rpc/extractor-${old}-3-old.request.json`,
+      `/private/plugin/.rpc/transport-${old}-5-old.processing.json`,
+      `/private/plugin/.rpc/transport-${old}-6-old.request.ready`,
     ]);
     expect(files.has(`/private/plugin/.ready/transport-${recent}-2-new.json`)).toBe(true);
     expect(files.has(`/private/plugin/.rpc/unrelated-${old}-4-old.response.json`)).toBe(true);
   });
 
-  it("starts transport and extractor together with parent liveness arguments", async () => {
+  it("starts transport and extractor through short-lived launch modes", async () => {
     const readyFiles = new MemoryReadyFiles();
     const launches: Array<{ executable: string; args: string[]; hooked: boolean }> = [];
     const launcher = {
       launch: async (executable: string, args: string[], onStdout?: (data: string) => void) => {
         launches.push({ executable, args, hooked: onStdout !== undefined });
-        const readyPath = args[3]!;
+        const readyPath = args[4]!;
         readyFiles.files.set(readyPath, readyFrame());
-        return new Promise<{ status: number }>(() => undefined);
+        return { status: 0 };
       },
     };
 
@@ -399,12 +406,11 @@ describe("transport helper client", () => {
       Promise.all([
         TransportProcess.bootstrap(launcher, readyFiles, {
           dataDirectory: "/private/plugin-data",
-          parentPid: 999_999,
         }),
         SubtitleExtractorProcess.bootstrap(
           launcher,
           readyFiles,
-          { tempDirectory: "/private/plugin-tmp", parentPid: 999_999 },
+          { tempDirectory: "/private/plugin-tmp" },
           "/private/subtandem-subtitle-extractor",
         ),
       ]),
@@ -414,7 +420,7 @@ describe("transport helper client", () => {
     ]);
     expect(launches).toHaveLength(2);
     expect(launches.every((launch) => !launch.hooked)).toBe(true);
-    expect(launches.every((launch) => launch.args.includes("999999"))).toBe(true);
+    expect(launches.every((launch) => launch.args[0] === "launch")).toBe(true);
     expect(JSON.stringify(launches)).not.toContain("abcDEF123_-");
     expect(readyFiles.files.size).toBe(0);
   });
@@ -476,52 +482,47 @@ describe("transport helper client", () => {
     await expect(client.cancel("job-1")).rejects.not.toThrow(/private body|secret-token/);
   });
 
-  it("maps a failed native RPC client to an unavailable helper without leaking request data", async () => {
+  it("handles 300 file RPC posts without launching a process per request", async () => {
     const files = new MemoryReadyFiles();
-    const bridge = new IinaFileRpcBridge(
-      { launch: async () => ({ status: 1 }) },
-      files,
-      "/private/subtandem-transport",
-      {
-        helper: "transport",
-        fileDirectory: "@data/.rpc",
-        nativeDirectory: "/private/plugin-data/.rpc",
-        maxRequestBytes: 2_101_248,
-        maxResponseBytes: 4_210_688,
-        maxConcurrentRequests: 8,
-      },
-    );
-    const client = new TransportClient({ port: 49152, token: "secret-token" }, bridge);
-
-    await expect(client.health()).rejects.toMatchObject({
-      code: "HELPER_UNAVAILABLE",
-      retryable: true,
-      userAction: "RESTART_IINA",
+    let publications = 0;
+    files.onWrite = (path) => {
+      if (!path.endsWith(".request.ready")) return;
+      publications += 1;
+      const requestPath = path.replace(".request.ready", ".request.json");
+      const request = JSON.parse(files.files.get(requestPath)!) as Record<string, unknown>;
+      expect(request).toMatchObject({
+        type: "request",
+        protocolVersion: 1,
+        port: 49152,
+        token: "secret-token",
+        path: "/v1/health",
+        body: {},
+      });
+      files.write(
+        path.replace(".request.ready", ".response.json"),
+        JSON.stringify({
+          type: "response",
+          protocolVersion: 1,
+          createdAtMs: Date.now(),
+          statusCode: 200,
+          body: { state: "ok" },
+        }),
+      );
+    };
+    const bridge = new IinaFileRpcBridge(files, {
+      helper: "transport",
+      fileDirectory: "@data/.rpc",
+      maxRequestBytes: 2_101_248,
+      maxResponseBytes: 4_210_688,
+      maxConcurrentRequests: 8,
     });
-    await expect(client.health()).rejects.not.toThrow(/secret-token/);
-    expect(files.files.size).toBe(0);
-  });
 
-  it("maps a successful RPC client without a response file to a fixed missing-response error", async () => {
-    const files = new MemoryReadyFiles();
-    const bridge = new IinaFileRpcBridge(
-      { launch: async () => ({ status: 0 }) },
-      files,
-      "/private/subtandem-transport",
-      {
-        helper: "transport",
-        fileDirectory: "@data/.rpc",
-        nativeDirectory: "/private/plugin-data/.rpc",
-        maxRequestBytes: 2_101_248,
-        maxResponseBytes: 4_210_688,
-        maxConcurrentRequests: 8,
-      },
-    );
-
-    await expect(bridge.post(49152, "secret-token", "/v1/health", {})).rejects.toThrow(
-      "HELPER_RPC_MISSING_RESPONSE",
-    );
-    expect(files.reads).toHaveLength(0);
+    await expect(
+      Promise.all(
+        Array.from({ length: 300 }, () => bridge.post(49152, "secret-token", "/v1/health", {})),
+      ),
+    ).resolves.toHaveLength(300);
+    expect(publications).toBe(300);
     expect(files.files.size).toBe(0);
   });
 
@@ -559,102 +560,70 @@ describe("transport helper client", () => {
     }
   });
 
-  it("consumes an atomic response even when the native launch promise remains pending", async () => {
+  it("publishes a complete request before consuming the daemon response", async () => {
     const files = new MemoryReadyFiles();
-    const launches: Array<{ executable: string; args: string[] }> = [];
-    const bridge = new IinaFileRpcBridge(
-      {
-        launch: (executable, args) => {
-          launches.push({ executable, args });
-          const requestEntry = [...files.files].find(([path]) => path.endsWith(".request.json"));
-          expect(requestEntry).toBeDefined();
-          expect(JSON.parse(requestEntry![1])).toMatchObject({
-            type: "request",
+    files.onWrite = (path) => {
+      if (path.endsWith(".request.ready")) {
+        const requestEntry = [...files.files].find(([path]) => path.endsWith(".request.json"));
+        expect(requestEntry).toBeDefined();
+        expect(JSON.parse(requestEntry![1])).toMatchObject({
+          type: "request",
+          protocolVersion: 1,
+          port: 49152,
+          token: "secret-token",
+          path: "/v1/health",
+          body: {},
+        });
+        files.write(
+          requestEntry![0].replace(".request.json", ".response.json"),
+          JSON.stringify({
+            type: "response",
             protocolVersion: 1,
-            port: 49152,
-            token: "secret-token",
-            path: "/v1/health",
-            body: {},
-          });
-          const responsePath = requestEntry![0].replace(".request.json", ".response.json");
-          setTimeout(
-            () =>
-              files.write(
-                responsePath,
-                JSON.stringify({
-                  type: "response",
-                  protocolVersion: 1,
-                  createdAtMs: Date.now(),
-                  statusCode: 200,
-                  body: { state: "ok" },
-                }),
-              ),
-            1,
-          );
-          return new Promise<{ status: number }>(() => undefined);
-        },
-      },
-      files,
-      "/private/subtandem-transport",
-      {
-        helper: "transport",
-        fileDirectory: "@data/.rpc",
-        nativeDirectory: "/private/plugin-data/.rpc",
-        maxRequestBytes: 2_097_152,
-        maxResponseBytes: 4_210_688,
-        maxConcurrentRequests: 8,
-      },
-    );
+            createdAtMs: Date.now(),
+            statusCode: 200,
+            body: { state: "ok" },
+          }),
+        );
+      }
+    };
+    const bridge = new IinaFileRpcBridge(files, {
+      helper: "transport",
+      fileDirectory: "@data/.rpc",
+      maxRequestBytes: 2_097_152,
+      maxResponseBytes: 4_210_688,
+      maxConcurrentRequests: 8,
+    });
 
     await expect(bridge.post(49152, "secret-token", "/v1/health", {})).resolves.toEqual({
       state: "ok",
     });
-    expect(launches).toHaveLength(1);
-    expect(launches[0]?.args).toEqual([
-      "--rpc-client",
-      "--rpc-directory",
-      "/private/plugin-data/.rpc",
-      "--request-file",
-      expect.stringMatching(/^\/private\/plugin-data\/\.rpc\/transport-/),
-      "--response-file",
-      expect.stringMatching(/^\/private\/plugin-data\/\.rpc\/transport-/),
-    ]);
-    expect(JSON.stringify(launches)).not.toContain("secret-token");
     expect(files.files.size).toBe(0);
   });
 
   it("maps only an allowlisted error code from the native response file", async () => {
     const files = new MemoryReadyFiles();
-    const bridge = new IinaFileRpcBridge(
-      {
-        launch: async () => {
-          const requestPath = [...files.files.keys()].find((path) =>
-            path.endsWith(".request.json"),
-          )!;
-          files.write(
-            requestPath.replace(".request.json", ".response.json"),
-            JSON.stringify({
-              type: "response",
-              protocolVersion: 1,
-              createdAtMs: Date.now(),
-              statusCode: 504,
-              body: { error: "upstream-timeout", detail: "private provider response" },
-            }),
-          );
-          return { status: 0 };
-        },
-      },
-      files,
-      "/private/subtandem-transport",
-      {
-        helper: "transport",
-        fileDirectory: "@data/.rpc",
-        nativeDirectory: "/private/plugin-data/.rpc",
-        maxRequestBytes: 2_101_248,
-        maxResponseBytes: 4_210_688,
-        maxConcurrentRequests: 8,
-      },
-    );
+    files.onWrite = (path) => {
+      if (path.endsWith(".request.ready")) {
+        const requestPath = [...files.files.keys()].find((path) => path.endsWith(".request.json"))!;
+        files.write(
+          requestPath.replace(".request.json", ".response.json"),
+          JSON.stringify({
+            type: "response",
+            protocolVersion: 1,
+            createdAtMs: Date.now(),
+            statusCode: 504,
+            body: { error: "upstream-timeout", detail: "private provider response" },
+          }),
+        );
+      }
+    };
+    const bridge = new IinaFileRpcBridge(files, {
+      helper: "transport",
+      fileDirectory: "@data/.rpc",
+      maxRequestBytes: 2_101_248,
+      maxResponseBytes: 4_210_688,
+      maxConcurrentRequests: 8,
+    });
     const client = new TransportClient({ port: 49152, token: "secret-token" }, bridge);
 
     await expect(

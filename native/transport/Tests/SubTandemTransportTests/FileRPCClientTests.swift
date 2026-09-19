@@ -1,13 +1,33 @@
 import Darwin
 import Foundation
 
+private actor FileRPCConcurrencyProbe {
+    private var active = 0
+    private var maximum = 0
+    private var handled = 0
+
+    func begin() {
+        active += 1
+        handled += 1
+        maximum = max(maximum, active)
+    }
+
+    func end() {
+        active -= 1
+    }
+
+    func snapshot() -> (Int, Int) {
+        (maximum, handled)
+    }
+}
+
 func runFileRPCClientTests() async throws {
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent("subtandem-file-rpc-\(UUID().uuidString)", isDirectory: true)
     let rpcDirectory = root.appendingPathComponent(".rpc", isDirectory: true)
     let credentialDirectory = root.appendingPathComponent("credentials", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: root) }
-    try FileRPCClient.prepareDirectory(rpcDirectory)
+    try FileRPCWorker.prepareDirectory(rpcDirectory)
     let credentialStore = try SecureCredentialStore(directory: credentialDirectory)
     let liveness = LivenessState(parentPID: getpid())
     let server = try TransportServer(
@@ -17,6 +37,12 @@ func runFileRPCClientTests() async throws {
     )
     let port = try await server.start()
     defer { server.stop() }
+    let worker = Task {
+        await FileRPCWorker.run(directory: rpcDirectory, port: port) { path, token, body in
+            await server.handleFileRequest(path: path, token: token, body: body)
+        }
+    }
+    defer { worker.cancel() }
 
     let createdAt = String(Int64(Date().timeIntervalSince1970 * 1_000), radix: 36)
     let stem = "transport-\(createdAt)-1-test"
@@ -36,13 +62,8 @@ func runFileRPCClientTests() async throws {
         [.posixPermissions: 0o644],
         ofItemAtPath: requestFile.path
     )
-    try await FileRPCClient.run(arguments: [
-        "subtandem-transport",
-        "--rpc-client",
-        "--rpc-directory", rpcDirectory.path,
-        "--request-file", requestFile.path,
-        "--response-file", responseFile.path,
-    ])
+    try Data().write(to: rpcDirectory.appendingPathComponent("\(stem).request.ready"))
+    try await waitForFile(responseFile)
     try check(!FileManager.default.fileExists(atPath: requestFile.path), "RPC request must be removed")
     let directoryMode = try FileManager.default.attributesOfItem(
         atPath: rpcDirectory.path
@@ -74,13 +95,8 @@ func runFileRPCClientTests() async throws {
     unauthorizedFrame["token"] = "wrong-token"
     unauthorizedFrame["createdAtMs"] = Int64(Date().timeIntervalSince1970 * 1_000)
     try JSONSerialization.data(withJSONObject: unauthorizedFrame).write(to: unauthorizedRequest)
-    try await FileRPCClient.run(arguments: [
-        "subtandem-transport",
-        "--rpc-client",
-        "--rpc-directory", rpcDirectory.path,
-        "--request-file", unauthorizedRequest.path,
-        "--response-file", unauthorizedResponse.path,
-    ])
+    try Data().write(to: rpcDirectory.appendingPathComponent("\(unauthorizedStem).request.ready"))
+    try await waitForFile(unauthorizedResponse)
     let unauthorized = try JSONSerialization.jsonObject(
         with: Data(contentsOf: unauthorizedResponse)
     ) as? [String: Any]
@@ -91,16 +107,92 @@ func runFileRPCClientTests() async throws {
     var unexpected = request
     unexpected["secretCopy"] = "private"
     try expectFailure("RPC request must reject extra fields") {
-        _ = try FileRPCClient.decodeRequest(
+        _ = try FileRPCWorker.decodeRequest(
             JSONSerialization.data(withJSONObject: unexpected)
         )
     }
     var expired = request
     expired["createdAtMs"] = 1
     try expectFailure("RPC request must reject expired files") {
-        _ = try FileRPCClient.decodeRequest(
+        _ = try FileRPCWorker.decodeRequest(
             JSONSerialization.data(withJSONObject: expired),
             nowMs: 100_000
         )
     }
+
+    let symlinkStem = "transport-\(createdAt)-3-test"
+    let symlinkTarget = root.appendingPathComponent("symlink-target.json")
+    let symlinkRequest = rpcDirectory.appendingPathComponent("\(symlinkStem).request.json")
+    let symlinkMarker = rpcDirectory.appendingPathComponent("\(symlinkStem).request.ready")
+    let symlinkResponse = rpcDirectory.appendingPathComponent("\(symlinkStem).response.json")
+    try JSONSerialization.data(withJSONObject: request).write(to: symlinkTarget)
+    guard symlink(symlinkTarget.path, symlinkRequest.path) == 0 else {
+        throw ContractTestFailure(description: "failed to create RPC symlink fixture")
+    }
+    try Data().write(to: symlinkMarker)
+    try await waitForRemoval(symlinkMarker)
+    try check(
+        FileManager.default.fileExists(atPath: symlinkTarget.path),
+        "RPC worker must not follow request symlinks"
+    )
+    try check(
+        !FileManager.default.fileExists(atPath: symlinkResponse.path),
+        "rejected RPC symlinks must not publish a response"
+    )
+
+    let concurrencyDirectory = root.appendingPathComponent("concurrency", isDirectory: true)
+    try FileRPCWorker.prepareDirectory(concurrencyDirectory)
+    let concurrencyPort: UInt16 = 49_153
+    let probe = FileRPCConcurrencyProbe()
+    let concurrencyWorker = Task {
+        await FileRPCWorker.run(
+            directory: concurrencyDirectory,
+            port: concurrencyPort,
+            maximumConcurrentRequests: 3
+        ) { _, _, _ in
+            await probe.begin()
+            try? await Task.sleep(for: .milliseconds(30))
+            await probe.end()
+            return .json(statusCode: 200, ["state": "ok"])
+        }
+    }
+    defer { concurrencyWorker.cancel() }
+    var concurrencyResponses: [URL] = []
+    for index in 0..<12 {
+        let concurrentStem = "transport-\(createdAt)-\(String(index + 10, radix: 36))-test"
+        let concurrentRequest = concurrencyDirectory
+            .appendingPathComponent("\(concurrentStem).request.json")
+        let concurrentMarker = concurrencyDirectory
+            .appendingPathComponent("\(concurrentStem).request.ready")
+        let concurrentResponse = concurrencyDirectory
+            .appendingPathComponent("\(concurrentStem).response.json")
+        var concurrentFrame = request
+        concurrentFrame["port"] = Int(concurrencyPort)
+        concurrentFrame["createdAtMs"] = Int64(Date().timeIntervalSince1970 * 1_000)
+        try JSONSerialization.data(withJSONObject: concurrentFrame).write(to: concurrentRequest)
+        try Data().write(to: concurrentMarker)
+        concurrencyResponses.append(concurrentResponse)
+    }
+    for response in concurrencyResponses {
+        try await waitForFile(response)
+    }
+    let concurrency = await probe.snapshot()
+    try check(concurrency.0 == 3, "RPC worker must enforce its native concurrency ceiling")
+    try check(concurrency.1 == 12, "RPC worker must claim each request exactly once")
+}
+
+private func waitForFile(_ file: URL) async throws {
+    for _ in 0..<250 {
+        if FileManager.default.fileExists(atPath: file.path) { return }
+        try await Task.sleep(for: .milliseconds(20))
+    }
+    throw ContractTestFailure(description: "file RPC response timed out")
+}
+
+private func waitForRemoval(_ file: URL) async throws {
+    for _ in 0..<250 {
+        if !FileManager.default.fileExists(atPath: file.path) { return }
+        try await Task.sleep(for: .milliseconds(20))
+    }
+    throw ContractTestFailure(description: "file RPC claim timed out")
 }

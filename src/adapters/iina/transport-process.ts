@@ -52,7 +52,10 @@ export interface ReadyFileStore {
 
 let readyFileSequence = 0;
 
-export function createReadyFilePath(root: string, helper: "transport" | "extractor"): string {
+export function createReadyFilePath(
+  root: string,
+  helper: "transport" | "extractor" | "style-picker",
+): string {
   const nonce = [
     Date.now().toString(36),
     (++readyFileSequence).toString(36),
@@ -77,10 +80,10 @@ export function removeStaleHelperFiles(
   if (!store.list) return;
   const normalizedRoot = root.replace(/\/+$/, "");
   for (const [directory, pattern] of [
-    [".ready", /^(?:transport|extractor)-([0-9a-z]+)-[0-9a-z]+-[0-9a-z]+\.json$/],
+    [".ready", /^(?:transport|extractor|style-picker)-([0-9a-z]+)-[0-9a-z]+-[0-9a-z]+\.json$/],
     [
       ".rpc",
-      /^(?:transport|extractor)-([0-9a-z]+)-[0-9a-z]+-[0-9a-z]+\.(?:request|response)\.json$/,
+      /^(?:transport|extractor)-([0-9a-z]+)-[0-9a-z]+-[0-9a-z]+\.(?:request\.ready|(?:request|processing|response)\.json)$/,
     ],
   ] as const) {
     let entries: Array<{ filename: string; isDir: boolean }> = [];
@@ -103,7 +106,7 @@ export class TransportProcess {
   static async bootstrap(
     launcher: ProcessLauncher,
     readyFiles: ReadyFileStore,
-    options: { dataDirectory: string; fileDirectory?: string; parentPid?: number },
+    options: { dataDirectory: string; fileDirectory?: string },
     executable = "@plugin/dist/native/subtandem-transport",
   ): Promise<TransportSession> {
     const fileDirectory = options.fileDirectory ?? options.dataDirectory;
@@ -119,11 +122,11 @@ export class TransportProcess {
     const startedAtMs = Date.now();
     let exitStatus: number | null = null;
     const completion = launcher.launch(executable, [
+      "launch",
       "--data-directory",
       options.dataDirectory,
       "--ready-file",
       nativeReadyFile,
-      ...(options.parentPid === undefined ? [] : ["--parent-pid", String(options.parentPid)]),
     ]);
     void completion.then(
       (result) => {
@@ -135,8 +138,6 @@ export class TransportProcess {
     );
     try {
       for (let tries = 0; tries < 250; tries += 1) {
-        if (exitStatus !== null)
-          throw new SubTandemError("HELPER_START_FAILED", "protocol", "RESTART_IINA", true);
         const output = readyFiles.exists(readyFile) ? readyFiles.read(readyFile) : null;
         if (output !== null) {
           try {
@@ -146,6 +147,8 @@ export class TransportProcess {
             throw new SubTandemError("HELPER_PROTOCOL", "protocol", "RESTART_IINA");
           }
         }
+        if (exitStatus !== null && exitStatus !== 0)
+          throw new SubTandemError("HELPER_START_FAILED", "protocol", "RESTART_IINA", true);
         await new Promise<void>((resolve) => setTimeout(resolve, 20));
       }
       void completion;

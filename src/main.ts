@@ -321,10 +321,9 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
           playerId,
           extractor: new SubtitleExtractorClient(
             session,
-            new IinaFileRpcBridge(launcher, files, executable, {
+            new IinaFileRpcBridge(files, {
               helper: "extractor",
               fileDirectory: "@tmp/subtandem-extraction/.rpc",
-              nativeDirectory: `${tempDirectory}/.rpc`,
               maxRequestBytes: 65_536,
               maxResponseBytes: 65_536,
               maxConcurrentRequests: 4,

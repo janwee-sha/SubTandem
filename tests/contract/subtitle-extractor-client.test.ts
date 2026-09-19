@@ -69,7 +69,7 @@ describe("subtitle extractor client contract", () => {
           launch: async (_executable, args, onStdout) => {
             expect(onStdout).toBeUndefined();
             files.set(
-              args[3]!,
+              args[4]!,
               `${JSON.stringify({
                 type: "ready",
                 port: 49152,
@@ -78,7 +78,7 @@ describe("subtitle extractor client contract", () => {
                 createdAtMs: Date.now() - 60_000,
               })}\n`,
             );
-            return new Promise<{ status: number }>(() => undefined);
+            return { status: 0 };
           },
         },
         store,
@@ -113,7 +113,7 @@ describe("subtitle extractor client contract", () => {
             setTimeout(
               () =>
                 files.set(
-                  args[3]!,
+                  args[4]!,
                   `${JSON.stringify({
                     type: "ready",
                     port: 49152,
@@ -124,7 +124,7 @@ describe("subtitle extractor client contract", () => {
                 ),
               1,
             );
-            return new Promise<{ status: number }>(() => undefined);
+            return { status: 0 };
           },
         },
         store,

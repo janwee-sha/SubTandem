@@ -14,14 +14,20 @@ private func secureToken() throws -> String {
         .replacingOccurrences(of: "=", with: "")
 }
 
-private func parentPID(arguments: [String]) throws -> Int32? {
-    guard arguments.first == "serve" else { throw ProtocolError.invalid }
-    if arguments.count == 1 { return nil }
-    guard arguments.count == 3,
-          arguments[1] == "--parent-pid",
-          let value = Int32(arguments[2]),
+private func serveArguments(_ arguments: [String]) throws -> (URL, Int32) {
+    guard arguments.count == 5,
+          arguments[0] == "serve",
+          arguments[1] == "--ready-file",
+          arguments[3] == "--parent-pid",
+          let value = Int32(arguments[4]),
           value > 1 else { throw ProtocolError.invalid }
-    return value
+    let readyFile = URL(fileURLWithPath: arguments[2]).standardizedFileURL
+    guard readyFile.path.hasPrefix("/"),
+          readyFile.deletingLastPathComponent().lastPathComponent == ".ready",
+          readyFile.lastPathComponent.hasPrefix("style-picker-"),
+          readyFile.pathExtension == "json"
+    else { throw ProtocolError.invalid }
+    return (readyFile, value)
 }
 
 private func processRunning(_ pid: Int32) -> Bool {
@@ -31,7 +37,18 @@ private func processRunning(_ pid: Int32) -> Bool {
 
 @MainActor
 private func run() throws {
-    let observedParent = try parentPID(arguments: Array(CommandLine.arguments.dropFirst()))
+    let arguments = Array(CommandLine.arguments.dropFirst())
+    if arguments.count == 3,
+       arguments[0] == "launch",
+       arguments[1] == "--ready-file" {
+        let readyFile = URL(fileURLWithPath: arguments[2]).standardizedFileURL
+        try DetachedBootstrap.launch(
+            arguments: Array(arguments[1...2]),
+            readyFile: readyFile
+        )
+        return
+    }
+    let (readyFile, observedParent) = try serveArguments(arguments)
     let application = NSApplication.shared
     application.setActivationPolicy(.accessory)
     let catalog = FontCatalog()
@@ -42,10 +59,7 @@ private func run() throws {
         }
     }
     let port = try server.start()
-    let ready = ReadyFrame(protocolVersion: 1, port: port, token: token)
-    var output = try JSONEncoder().encode(ready)
-    output.append(0x0a)
-    FileHandle.standardOutput.write(output)
+    try ReadyFileWriter.write(ReadyFrame(port: port, token: token), to: readyFile)
 
     let timer = makeParentProcessMonitor(
         parentPID: observedParent,

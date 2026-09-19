@@ -115,11 +115,17 @@ func runSecurityTests() async throws {
     )
 
     let rpcDirectory = root.appendingPathComponent(".rpc", isDirectory: true)
-    try FileRPCClient.prepareDirectory(rpcDirectory)
+    try FileRPCWorker.prepareDirectory(rpcDirectory)
     let liveness = LivenessState(parentPID: getpid())
     let server = try SubtitleExtractorServer(token: "correct-token", jobs: jobs, liveness: liveness)
     let port = try await server.start()
     defer { server.stop() }
+    let worker = Task {
+        await FileRPCWorker.run(directory: rpcDirectory, port: port) { path, token, body in
+            await server.handleFileRequest(path: path, token: token, body: body)
+        }
+    }
+    defer { worker.cancel() }
     let rpcCreatedAt = String(Int64(Date().timeIntervalSince1970 * 1_000), radix: 36)
     let stem = "extractor-\(rpcCreatedAt)-1-test"
     let requestFile = rpcDirectory.appendingPathComponent("\(stem).request.json")
@@ -138,13 +144,8 @@ func runSecurityTests() async throws {
         [.posixPermissions: 0o644],
         ofItemAtPath: requestFile.path
     )
-    try await FileRPCClient.run(arguments: [
-        "subtandem-subtitle-extractor",
-        "--rpc-client",
-        "--rpc-directory", rpcDirectory.path,
-        "--request-file", requestFile.path,
-        "--response-file", responseFile.path,
-    ])
+    try Data().write(to: rpcDirectory.appendingPathComponent("\(stem).request.ready"))
+    try await waitForFile(responseFile)
     try check(!FileManager.default.fileExists(atPath: requestFile.path), "RPC request must be removed")
     let rpcDirectoryMode = try permissions(rpcDirectory)
     let responseMode = try permissions(responseFile)
@@ -160,11 +161,19 @@ func runSecurityTests() async throws {
     unexpected["secretCopy"] = "private"
     try expectError(.invalidRequest) {
         do {
-            _ = try FileRPCClient.decodeRequest(JSONSerialization.data(withJSONObject: unexpected))
+            _ = try FileRPCWorker.decodeRequest(JSONSerialization.data(withJSONObject: unexpected))
         } catch {
             throw ExtractorError.invalidRequest
         }
     }
+}
+
+private func waitForFile(_ file: URL) async throws {
+    for _ in 0..<250 {
+        if FileManager.default.fileExists(atPath: file.path) { return }
+        try await Task.sleep(for: .milliseconds(20))
+    }
+    throw SubtitleExtractorTestFailure(description: "file RPC response timed out")
 }
 
 private func expectError(_ expected: ExtractorError, _ operation: () throws -> Void) throws {

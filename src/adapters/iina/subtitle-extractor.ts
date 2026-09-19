@@ -215,7 +215,7 @@ export class SubtitleExtractorProcess {
   static async bootstrap(
     launcher: ProcessLauncher,
     readyFiles: ReadyFileStore,
-    options: { tempDirectory: string; fileDirectory?: string; parentPid?: number },
+    options: { tempDirectory: string; fileDirectory?: string },
     executable: string,
   ): Promise<SubtitleExtractorSession> {
     const fileDirectory = options.fileDirectory ?? options.tempDirectory;
@@ -235,11 +235,11 @@ export class SubtitleExtractorProcess {
     const startedAtMs = Date.now();
     let exitStatus: number | null = null;
     const completion = launcher.launch(executable, [
+      "launch",
       "--temp-directory",
       options.tempDirectory,
       "--ready-file",
       nativeReadyFile,
-      ...(options.parentPid === undefined ? [] : ["--parent-pid", String(options.parentPid)]),
     ]);
     void completion.then(
       (result) => {
@@ -251,10 +251,11 @@ export class SubtitleExtractorProcess {
     );
     try {
       for (let attempt = 0; attempt < 750; attempt += 1) {
-        if (exitStatus !== null) throw new SubtitleExtractorError("EXTRACTOR_UNAVAILABLE");
         const output = readyFiles.exists(readyFile) ? readyFiles.read(readyFile) : null;
         if (output !== null)
           return parseSubtitleExtractorReadyFrame(output, startedAtMs, Date.now());
+        if (exitStatus !== null && exitStatus !== 0)
+          throw new SubtitleExtractorError("EXTRACTOR_UNAVAILABLE");
         await new Promise<void>((resolve) => setTimeout(resolve, 20));
       }
       throw new SubtitleExtractorError("EXTRACTOR_UNAVAILABLE");

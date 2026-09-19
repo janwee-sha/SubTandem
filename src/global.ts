@@ -165,10 +165,9 @@ const transport = new TransportSupervisor(async () => {
   );
   return new TransportClient(
     session,
-    new IinaFileRpcBridge(launcher, files, executable, {
+    new IinaFileRpcBridge(files, {
       helper: "transport",
       fileDirectory: "@data/.rpc",
-      nativeDirectory: `${dataDirectory}/.rpc`,
       maxRequestBytes: 2_101_248,
       maxResponseBytes: 4_210_688,
       maxConcurrentRequests: 8,
@@ -604,24 +603,17 @@ function stylePickerLocator() {
   };
 }
 
-function currentParentPid(): number | undefined {
-  try {
-    const value = iina.mpv.getNumber("pid");
-    return Number.isInteger(value) && value > 1 ? value : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 async function ensureStylePickerClient(): Promise<StylePickerClient> {
   if (stylePickerClient) return stylePickerClient;
   if (stylePickerStartup) return stylePickerStartup;
   stylePickerStartup = (async () => {
     const executable = discoverStylePickerExecutable(stylePickerLocator());
-    const parentPid = currentParentPid();
+    const dataDirectory = iina.utils.resolvePath("@data/.");
+    const files = new IinaReadyFileStore(iina.file);
     const session = await StylePickerProcess.bootstrap(
       new IinaStylePickerProcessLauncher(iina.utils),
-      parentPid === undefined ? {} : { parentPid },
+      files,
+      { dataDirectory, fileDirectory: "@data" },
       executable,
     );
     const client = new StylePickerClient(session, new IinaStylePickerHttpBridge(iina.http));

@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 
-enum FileRPCClientError: Error {
+enum FileRPCWorkerError: Error {
     case invalidRequest
     case requestTooLarge
     case responseTooLarge
@@ -15,12 +15,12 @@ struct FileRPCRequestFrame: Sendable {
     let body: Data
 }
 
-struct FileRPCNetworkResponse: Sendable {
-    let statusCode: Int
-    let body: Data
+private struct ClaimedFileRPCRequest: Sendable {
+    let processingFile: URL
+    let responseFile: URL
 }
 
-enum FileRPCClient {
+enum FileRPCWorker {
     static let maximumRequestFileBytes = ProtocolLimits.maxRequestBytes + 4_096
     static let maximumResponseFileBytes = ProtocolLimits.maxResponseBytes + 16_384
     static let allowedPaths = Set([
@@ -34,7 +34,7 @@ enum FileRPCClient {
 
     static func prepareDirectory(_ directory: URL) throws {
         guard directory.isFileURL, directory.path.hasPrefix("/")
-        else { throw FileRPCClientError.invalidRequest }
+        else { throw FileRPCWorkerError.invalidRequest }
         try FileManager.default.createDirectory(
             at: directory,
             withIntermediateDirectories: true,
@@ -46,28 +46,47 @@ enum FileRPCClient {
         )
     }
 
-    static func run(arguments: [String]) async throws {
-        guard arguments.count == 8,
-              arguments[1] == "--rpc-client",
-              arguments[2] == "--rpc-directory",
-              arguments[4] == "--request-file",
-              arguments[6] == "--response-file",
-              getppid() != 1
-        else { throw FileRPCClientError.invalidRequest }
-        let directory = URL(fileURLWithPath: arguments[3], isDirectory: true).standardizedFileURL
-        let requestFile = URL(fileURLWithPath: arguments[5]).standardizedFileURL
-        let responseFile = URL(fileURLWithPath: arguments[7]).standardizedFileURL
-        try prepareDirectory(directory)
-        try validatePaths(directory: directory, requestFile: requestFile, responseFile: responseFile)
-        defer { unlink(requestFile.path) }
-        let request = try decodeRequest(
-            try readPrivateFile(requestFile, maximumBytes: maximumRequestFileBytes)
-        )
-        let response = try await send(request)
-        try writeResponse(response, to: responseFile)
+    static func run(
+        directory: URL,
+        port: UInt16,
+        maximumConcurrentRequests: Int = 8,
+        handle: @escaping @Sendable (String, String, Data) async -> ProtocolResponse
+    ) async {
+        await withTaskGroup(of: Void.self) { group in
+            var activeRequests = 0
+            while !Task.isCancelled {
+                if activeRequests >= maximumConcurrentRequests {
+                    _ = await group.next()
+                    activeRequests -= 1
+                    continue
+                }
+                let claims = claimRequests(
+                    directory: directory,
+                    limit: maximumConcurrentRequests - activeRequests
+                )
+                for claim in claims {
+                    activeRequests += 1
+                    group.addTask {
+                        await process(claim, expectedPort: port, handle: handle)
+                    }
+                }
+                if claims.isEmpty {
+                    do {
+                        try await Task.sleep(nanoseconds: 20_000_000)
+                    } catch {
+                        break
+                    }
+                }
+            }
+            group.cancelAll()
+            await group.waitForAll()
+        }
     }
 
-    static func decodeRequest(_ data: Data, nowMs: Int64 = Int64(Date().timeIntervalSince1970 * 1_000)) throws -> FileRPCRequestFrame {
+    static func decodeRequest(
+        _ data: Data,
+        nowMs: Int64 = Int64(Date().timeIntervalSince1970 * 1_000)
+    ) throws -> FileRPCRequestFrame {
         guard data.count <= maximumRequestFileBytes,
               let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               Set(json.keys) == Set(["type", "protocolVersion", "createdAtMs", "port", "token", "path", "body"]),
@@ -85,91 +104,114 @@ enum FileRPCClient {
               let path = json["path"] as? String,
               allowedPaths.contains(path),
               let body = json["body"] as? [String: Any]
-        else { throw FileRPCClientError.invalidRequest }
+        else { throw FileRPCWorkerError.invalidRequest }
         let bodyData = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
         guard bodyData.count <= ProtocolLimits.maxRequestBytes
-        else { throw FileRPCClientError.requestTooLarge }
+        else { throw FileRPCWorkerError.requestTooLarge }
         return FileRPCRequestFrame(port: port, token: token, path: path, body: bodyData)
     }
 
-    private static func validatePaths(directory: URL, requestFile: URL, responseFile: URL) throws {
-        guard requestFile.deletingLastPathComponent().path == directory.path,
-              responseFile.deletingLastPathComponent().path == directory.path,
-              requestFile.lastPathComponent.hasPrefix("transport-"),
-              requestFile.lastPathComponent.hasSuffix(".request.json")
-        else { throw FileRPCClientError.invalidRequest }
-        let stem = String(requestFile.lastPathComponent.dropLast(".request.json".count))
-        guard responseFile.lastPathComponent == "\(stem).response.json",
-              !FileManager.default.fileExists(atPath: responseFile.path)
-        else { throw FileRPCClientError.invalidRequest }
+    private static func claimRequests(directory: URL, limit: Int) -> [ClaimedFileRPCRequest] {
+        guard limit > 0,
+              let entries = try? FileManager.default.contentsOfDirectory(
+                  at: directory,
+                  includingPropertiesForKeys: nil,
+                  options: [.skipsHiddenFiles]
+              )
+        else { return [] }
+        var claims: [ClaimedFileRPCRequest] = []
+        for marker in entries.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
+            guard claims.count < limit,
+                  let stem = requestStem(marker.lastPathComponent)
+            else {
+                if claims.count >= limit { break }
+                continue
+            }
+            let requestFile = directory.appendingPathComponent("\(stem).request.json")
+            let processingFile = directory.appendingPathComponent("\(stem).processing.json")
+            let responseFile = directory.appendingPathComponent("\(stem).response.json")
+            guard !FileManager.default.fileExists(atPath: processingFile.path),
+                  !FileManager.default.fileExists(atPath: responseFile.path)
+            else {
+                unlink(marker.path)
+                continue
+            }
+            if rename(requestFile.path, processingFile.path) == 0 {
+                unlink(marker.path)
+                claims.append(
+                    ClaimedFileRPCRequest(
+                        processingFile: processingFile,
+                        responseFile: responseFile
+                    )
+                )
+            } else if errno == ENOENT {
+                unlink(marker.path)
+            }
+        }
+        return claims
+    }
+
+    private static func requestStem(_ filename: String) -> String? {
+        let suffix = ".request.ready"
+        guard filename.hasPrefix("transport-"), filename.hasSuffix(suffix) else { return nil }
+        let stem = String(filename.dropLast(suffix.count))
+        let parts = stem.split(separator: "-", omittingEmptySubsequences: false)
+        guard parts.count == 4,
+              parts[0] == "transport",
+              parts.dropFirst().allSatisfy({
+                  !$0.isEmpty && $0.allSatisfy { $0.isASCII && ($0.isNumber || $0.isLowercase) }
+              })
+        else { return nil }
+        return stem
+    }
+
+    private static func process(
+        _ claim: ClaimedFileRPCRequest,
+        expectedPort: UInt16,
+        handle: @escaping @Sendable (String, String, Data) async -> ProtocolResponse
+    ) async {
+        defer { unlink(claim.processingFile.path) }
+        do {
+            let request = try decodeRequest(
+                try readPrivateFile(
+                    claim.processingFile,
+                    maximumBytes: maximumRequestFileBytes
+                )
+            )
+            guard request.port == expectedPort else { throw FileRPCWorkerError.invalidRequest }
+            let response = await handle(request.path, request.token, request.body)
+            try writeResponse(response, to: claim.responseFile)
+        } catch {
+            return
+        }
     }
 
     private static func readPrivateFile(_ file: URL, maximumBytes: Int) throws -> Data {
         let descriptor = open(file.path, O_RDWR | O_NOFOLLOW)
-        guard descriptor >= 0 else { throw FileRPCClientError.invalidRequest }
+        guard descriptor >= 0 else { throw FileRPCWorkerError.invalidRequest }
         defer { close(descriptor) }
         var metadata = stat()
         guard fstat(descriptor, &metadata) == 0,
               metadata.st_uid == geteuid(),
               metadata.st_mode & S_IFMT == S_IFREG,
               fchmod(descriptor, S_IRUSR | S_IWUSR) == 0
-        else { throw FileRPCClientError.invalidRequest }
+        else { throw FileRPCWorkerError.invalidRequest }
         var data = Data()
         var buffer = [UInt8](repeating: 0, count: 8_192)
         while true {
             let count = Darwin.read(descriptor, &buffer, buffer.count)
             if count < 0 && errno == EINTR { continue }
-            guard count >= 0 else { throw FileRPCClientError.invalidRequest }
+            guard count >= 0 else { throw FileRPCWorkerError.invalidRequest }
             if count == 0 { break }
             data.append(contentsOf: buffer.prefix(count))
-            guard data.count <= maximumBytes else { throw FileRPCClientError.requestTooLarge }
+            guard data.count <= maximumBytes else { throw FileRPCWorkerError.requestTooLarge }
         }
         return data
     }
 
-    private static func send(_ request: FileRPCRequestFrame) async throws -> FileRPCNetworkResponse {
-        let parentPID = getppid()
-        return try await withThrowingTaskGroup(of: FileRPCNetworkResponse.self) { group in
-            group.addTask { try await perform(request) }
-            group.addTask {
-                while kill(parentPID, 0) == 0 || errno == EPERM {
-                    try await Task.sleep(nanoseconds: 250_000_000)
-                }
-                throw FileRPCClientError.unavailable
-            }
-            defer { group.cancelAll() }
-            guard let response = try await group.next()
-            else { throw FileRPCClientError.unavailable }
-            return response
-        }
-    }
-
-    private static func perform(_ request: FileRPCRequestFrame) async throws -> FileRPCNetworkResponse {
-        guard let url = URL(string: "http://127.0.0.1:\(request.port)\(request.path)")
-        else { throw FileRPCClientError.invalidRequest }
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.connectionProxyDictionary = [:]
-        configuration.timeoutIntervalForRequest = 125
-        configuration.timeoutIntervalForResource = 125
-        let session = URLSession(configuration: configuration)
-        defer { session.invalidateAndCancel() }
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "POST"
-        urlRequest.httpBody = request.body
-        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        urlRequest.setValue("Bearer \(request.token)", forHTTPHeaderField: "Authorization")
-        let (data, response) = try await session.data(for: urlRequest)
-        guard let http = response as? HTTPURLResponse,
-              (100...599).contains(http.statusCode),
-              data.count <= ProtocolLimits.maxResponseBytes,
-              (try JSONSerialization.jsonObject(with: data)) is [String: Any]
-        else { throw FileRPCClientError.unavailable }
-        return FileRPCNetworkResponse(statusCode: http.statusCode, body: data)
-    }
-
-    private static func writeResponse(_ response: FileRPCNetworkResponse, to destination: URL) throws {
+    private static func writeResponse(_ response: ProtocolResponse, to destination: URL) throws {
         guard let body = try JSONSerialization.jsonObject(with: response.body) as? [String: Any]
-        else { throw FileRPCClientError.unavailable }
+        else { throw FileRPCWorkerError.unavailable }
         let object: [String: Any] = [
             "type": "response",
             "protocolVersion": 1,
@@ -179,11 +221,11 @@ enum FileRPCClient {
         ]
         let data = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
         guard data.count <= maximumResponseFileBytes
-        else { throw FileRPCClientError.responseTooLarge }
+        else { throw FileRPCWorkerError.responseTooLarge }
         let temporary = destination.deletingLastPathComponent()
             .appendingPathComponent(".\(UUID().uuidString).tmp")
         var descriptor = open(temporary.path, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR)
-        guard descriptor >= 0 else { throw FileRPCClientError.unavailable }
+        guard descriptor >= 0 else { throw FileRPCWorkerError.unavailable }
         defer {
             if descriptor >= 0 { close(descriptor) }
             unlink(temporary.path)
@@ -194,14 +236,14 @@ enum FileRPCClient {
             while offset < data.count {
                 let count = Darwin.write(descriptor, baseAddress.advanced(by: offset), data.count - offset)
                 if count < 0 && errno == EINTR { continue }
-                guard count > 0 else { throw FileRPCClientError.unavailable }
+                guard count > 0 else { throw FileRPCWorkerError.unavailable }
                 offset += count
             }
         }
-        guard fsync(descriptor) == 0 else { throw FileRPCClientError.unavailable }
+        guard fsync(descriptor) == 0 else { throw FileRPCWorkerError.unavailable }
         let closeResult = close(descriptor)
         descriptor = -1
         guard closeResult == 0, link(temporary.path, destination.path) == 0
-        else { throw FileRPCClientError.unavailable }
+        else { throw FileRPCWorkerError.unavailable }
     }
 }

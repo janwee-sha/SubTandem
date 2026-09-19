@@ -43,13 +43,11 @@ const rpcResponseTimeoutMs = {
 
 function privateRpcPaths(
   fileDirectory: string,
-  nativeDirectory: string,
   helper: "transport" | "extractor",
 ): {
   requestFile: string;
+  requestReadyFile: string;
   responseFile: string;
-  nativeRequestFile: string;
-  nativeResponseFile: string;
 } {
   const stem = [
     helper,
@@ -59,9 +57,8 @@ function privateRpcPaths(
   ].join("-");
   return {
     requestFile: `${fileDirectory}/${stem}.request.json`,
+    requestReadyFile: `${fileDirectory}/${stem}.request.ready`,
     responseFile: `${fileDirectory}/${stem}.response.json`,
-    nativeRequestFile: `${nativeDirectory}/${stem}.request.json`,
-    nativeResponseFile: `${nativeDirectory}/${stem}.response.json`,
   };
 }
 
@@ -108,13 +105,10 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
   private readonly waiters: Array<() => void> = [];
 
   constructor(
-    private readonly launcher: ProcessLauncher,
     private readonly files: RpcFileStore,
-    private readonly executable: string,
     private readonly options: {
       helper: "transport" | "extractor";
       fileDirectory: string;
-      nativeDirectory: string;
       maxRequestBytes: number;
       maxResponseBytes: number;
       maxConcurrentRequests: number;
@@ -145,7 +139,6 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
   ): Promise<T> {
     const paths = privateRpcPaths(
       this.options.fileDirectory.replace(/\/+$/, ""),
-      this.options.nativeDirectory.replace(/\/+$/, ""),
       this.options.helper,
     );
     const startedAtMs = Date.now();
@@ -160,34 +153,17 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
     });
     if (utf8Length(request) > this.options.maxRequestBytes)
       throw new Error("HELPER_RPC_REQUEST_TOO_LARGE");
-    if (this.files.exists(paths.requestFile) || this.files.exists(paths.responseFile))
+    if (
+      this.files.exists(paths.requestFile) ||
+      this.files.exists(paths.requestReadyFile) ||
+      this.files.exists(paths.responseFile)
+    )
       throw new Error("HELPER_RPC_FILE_CONFLICT");
     try {
       this.files.write(paths.requestFile, request);
-      let exitStatus: number | null = null;
-      const completion = this.launcher.launch(this.executable, [
-        "--rpc-client",
-        "--rpc-directory",
-        this.options.nativeDirectory,
-        "--request-file",
-        paths.nativeRequestFile,
-        "--response-file",
-        paths.nativeResponseFile,
-      ]);
-      void completion.then(
-        (result) => {
-          exitStatus = result.status;
-        },
-        () => {
-          exitStatus = -1;
-        },
-      );
+      this.files.write(paths.requestReadyFile, "");
       const deadline = Date.now() + rpcResponseTimeoutMs[this.options.helper];
       while (!this.files.exists(paths.responseFile)) {
-        if (exitStatus !== null)
-          throw new Error(
-            exitStatus === 0 ? "HELPER_RPC_MISSING_RESPONSE" : "HELPER_RPC_FAILED",
-          );
         if (Date.now() >= deadline) throw new Error("HELPER_RPC_TIMEOUT");
         await new Promise<void>((resolve) => setTimeout(resolve, 20));
       }
@@ -208,6 +184,7 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
       return frame.body as T;
     } finally {
       removeRpcFile(this.files, paths.requestFile);
+      removeRpcFile(this.files, paths.requestReadyFile);
       removeRpcFile(this.files, paths.responseFile);
     }
   }

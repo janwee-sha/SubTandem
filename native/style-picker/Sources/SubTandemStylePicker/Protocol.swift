@@ -2,9 +2,23 @@ import Foundation
 import Dispatch
 
 struct ReadyFrame: Codable, Equatable, Sendable {
-    let protocolVersion: Int
+    let type: String
     let port: Int
     let token: String
+    let protocolVersion: Int
+    let createdAtMs: Int64
+
+    init(
+        port: Int,
+        token: String,
+        createdAtMs: Int64 = Int64(Date().timeIntervalSince1970 * 1_000)
+    ) {
+        self.type = "ready"
+        self.port = port
+        self.token = token
+        self.protocolVersion = 1
+        self.createdAtMs = createdAtMs
+    }
 }
 
 struct RgbaColor: Codable, Equatable, Sendable {
