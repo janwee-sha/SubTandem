@@ -8,33 +8,53 @@ STYLE_PICKER_PACKAGE="$ROOT_DIR/native/style-picker"
 OUTPUT_DIR="$ROOT_DIR/dist/native"
 HASH_FILE="$ROOT_DIR/build/native-hashes.json"
 MODULE_CACHE="$ROOT_DIR/native/.build/module-cache"
+SWIFT_BUILD_DIR="$ROOT_DIR/native/.build/swiftbuild"
 
-mkdir -p "$OUTPUT_DIR"
+mkdir -p "$OUTPUT_DIR" "$SWIFT_BUILD_DIR"
 find "$OUTPUT_DIR" -mindepth 1 -delete
+find "$SWIFT_BUILD_DIR" -mindepth 1 -delete
 mkdir -p "$MODULE_CACHE" "$ROOT_DIR/build"
 export MACOSX_DEPLOYMENT_TARGET=12.0
 export CLANG_MODULE_CACHE_PATH="$MODULE_CACHE"
 export SWIFTPM_MODULECACHE_OVERRIDE="$MODULE_CACHE"
 
-swift package --package-path "$TRANSPORT_PACKAGE" clean
-swift package --package-path "$EXTRACTOR_PACKAGE" clean
-swift package --package-path "$STYLE_PICKER_PACKAGE" clean
+build_package() {
+  PACKAGE_DIR=$1
+  SCRATCH_PATH=$2
+  ARCH=$3
+  FFMPEG_PREFIX=${4:-}
+
+  SUBTANDEM_FFMPEG_PREFIX="$FFMPEG_PREFIX" \
+    swift build --build-system swiftbuild --disable-sandbox --package-path "$PACKAGE_DIR" --scratch-path "$SCRATCH_PATH" -c release --triple "$ARCH-apple-macosx12.0"
+  SWIFT_BIN_PATH=$(SUBTANDEM_FFMPEG_PREFIX="$FFMPEG_PREFIX" \
+    swift build --build-system swiftbuild --disable-sandbox --package-path "$PACKAGE_DIR" --scratch-path "$SCRATCH_PATH" -c release --triple "$ARCH-apple-macosx12.0" --show-bin-path)
+}
 
 "$ROOT_DIR/scripts/build-ffmpeg.sh" "${SUBTANDEM_FFMPEG_SOURCE:-$ROOT_DIR/native/.build/ffmpeg/downloads/ffmpeg-8.1.2.tar.xz}"
 
 for ARCH in arm64 x86_64; do
-  swift build --build-system native --disable-sandbox --package-path "$TRANSPORT_PACKAGE" -c release --arch "$ARCH"
-  SUBTANDEM_FFMPEG_PREFIX="$ROOT_DIR/native/.build/ffmpeg/$ARCH" \
-    swift build --build-system native --disable-sandbox --package-path "$EXTRACTOR_PACKAGE" -c release --arch "$ARCH"
-  swift build --build-system native --disable-sandbox --package-path "$STYLE_PICKER_PACKAGE" -c release --arch "$ARCH"
+  TRANSPORT_SCRATCH="$SWIFT_BUILD_DIR/transport/$ARCH"
+  EXTRACTOR_SCRATCH="$SWIFT_BUILD_DIR/subtitle-extractor/$ARCH"
+  STYLE_PICKER_SCRATCH="$SWIFT_BUILD_DIR/style-picker/$ARCH"
+
+  build_package "$TRANSPORT_PACKAGE" "$TRANSPORT_SCRATCH" "$ARCH"
+  TRANSPORT_BIN_PATH=$SWIFT_BIN_PATH
+  build_package "$EXTRACTOR_PACKAGE" "$EXTRACTOR_SCRATCH" "$ARCH" "$ROOT_DIR/native/.build/ffmpeg/$ARCH"
+  EXTRACTOR_BIN_PATH=$SWIFT_BIN_PATH
+  build_package "$STYLE_PICKER_PACKAGE" "$STYLE_PICKER_SCRATCH" "$ARCH"
+  STYLE_PICKER_BIN_PATH=$SWIFT_BIN_PATH
+
+  if [ "$ARCH" = arm64 ]; then
+    TRANSPORT_ARM="$TRANSPORT_BIN_PATH/subtandem-transport"
+    EXTRACTOR_ARM="$EXTRACTOR_BIN_PATH/subtandem-subtitle-extractor"
+    STYLE_PICKER_ARM="$STYLE_PICKER_BIN_PATH/subtandem-style-picker"
+  else
+    TRANSPORT_INTEL="$TRANSPORT_BIN_PATH/subtandem-transport"
+    EXTRACTOR_INTEL="$EXTRACTOR_BIN_PATH/subtandem-subtitle-extractor"
+    STYLE_PICKER_INTEL="$STYLE_PICKER_BIN_PATH/subtandem-style-picker"
+  fi
 done
 
-TRANSPORT_ARM="$TRANSPORT_PACKAGE/.build/arm64-apple-macosx/release/subtandem-transport"
-TRANSPORT_INTEL="$TRANSPORT_PACKAGE/.build/x86_64-apple-macosx/release/subtandem-transport"
-EXTRACTOR_ARM="$EXTRACTOR_PACKAGE/.build/arm64-apple-macosx/release/subtandem-subtitle-extractor"
-EXTRACTOR_INTEL="$EXTRACTOR_PACKAGE/.build/x86_64-apple-macosx/release/subtandem-subtitle-extractor"
-STYLE_PICKER_ARM="$STYLE_PICKER_PACKAGE/.build/arm64-apple-macosx/release/subtandem-style-picker"
-STYLE_PICKER_INTEL="$STYLE_PICKER_PACKAGE/.build/x86_64-apple-macosx/release/subtandem-style-picker"
 lipo -create "$TRANSPORT_ARM" "$TRANSPORT_INTEL" -output "$OUTPUT_DIR/subtandem-transport"
 lipo -create "$EXTRACTOR_ARM" "$EXTRACTOR_INTEL" -output "$OUTPUT_DIR/subtandem-subtitle-extractor"
 lipo -create "$STYLE_PICKER_ARM" "$STYLE_PICKER_INTEL" -output "$OUTPUT_DIR/subtandem-style-picker"
