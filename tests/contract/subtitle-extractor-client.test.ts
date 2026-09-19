@@ -52,7 +52,11 @@ describe("subtitle extractor client contract", () => {
     const deleted: string[] = [];
     const store: ReadyFileStore = {
       exists: (path) => files.has(path),
-      read: (path) => files.get(path) ?? null,
+      read: (path) => {
+        const value = files.get(path);
+        if (value === undefined) throw new Error("IINA_FILE_READ_MISSING");
+        return value;
+      },
       delete: (path) => {
         deleted.push(path);
         files.delete(path);
@@ -84,6 +88,51 @@ describe("subtitle extractor client contract", () => {
     ).rejects.toThrow("EXTRACTOR_PROTOCOL");
     expect(files.size).toBe(0);
     expect(deleted).toHaveLength(1);
+  });
+
+  it("waits for a ready file to exist before reading it with IINA semantics", async () => {
+    const files = new Map<string, string>();
+    const reads: string[] = [];
+    const store: ReadyFileStore = {
+      exists: (path) => files.has(path),
+      read: (path) => {
+        reads.push(path);
+        const value = files.get(path);
+        if (value === undefined) throw new Error("IINA_FILE_READ_MISSING");
+        return value;
+      },
+      delete: (path) => {
+        files.delete(path);
+      },
+    };
+
+    await expect(
+      SubtitleExtractorProcess.bootstrap(
+        {
+          launch: async (_executable, args) => {
+            setTimeout(
+              () =>
+                files.set(
+                  args[3]!,
+                  `${JSON.stringify({
+                    type: "ready",
+                    port: 49152,
+                    token: "abcDEF123_-",
+                    protocolVersion: 1,
+                    createdAtMs: Date.now(),
+                  })}\n`,
+                ),
+              1,
+            );
+            return new Promise<{ status: number }>(() => undefined);
+          },
+        },
+        store,
+        { tempDirectory: "/private/plugin-tmp" },
+        "/private/subtandem-subtitle-extractor",
+      ),
+    ).resolves.toMatchObject({ port: 49152, token: "abcDEF123_-" });
+    expect(reads).toHaveLength(1);
   });
 
   it("sends the strict prepare body with a bearer token and accepts metadata only", async () => {

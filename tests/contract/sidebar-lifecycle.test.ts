@@ -371,6 +371,32 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(sidebarSource).toContain("profileAuthority?.ready === false");
   });
 
+  it("defers and coalesces Profile list refreshes outside the Global callback stack", () => {
+    const handlerStart = mainSource.indexOf(
+      'runtime.global.onMessage("profile-activation:state"',
+    );
+    const handlerEnd = mainSource.indexOf(
+      'runtime.global.onMessage("profile-activation:result"',
+      handlerStart,
+    );
+    const handler = mainSource.slice(handlerStart, handlerEnd);
+    const schedulerStart = mainSource.indexOf("const scheduleProfileRequest");
+    const schedulerEnd = mainSource.indexOf("const requestProfileActivation", schedulerStart);
+    const scheduler = mainSource.slice(schedulerStart, schedulerEnd);
+
+    expect(handler).toContain("scheduleProfileRequest()");
+    expect(handler).not.toContain("requestProfiles()");
+    expect(scheduler).toContain("profileListRequestTimer !== null");
+    expect(scheduler).toContain("setTimeout(() =>");
+    expect(scheduler).toContain("requestProfiles()");
+  });
+
+  it("latches extractor bootstrap failures for the current media epoch", () => {
+    expect(mainSource).toContain("new EpochBootstrapGate<SubtitlePreparationCoordinator>()");
+    expect(mainSource).toContain("preparationBootstrap.run(");
+    expect(mainSource).toContain('new SubtitleExtractorError("EXTRACTOR_UNAVAILABLE")');
+  });
+
   it("announces subtitle preparation state once in the Session card", () => {
     expect(sidebarHtml).not.toContain('id="source-preparation"');
     expect(sidebarSource).not.toContain("sourcePreparation.textContent");

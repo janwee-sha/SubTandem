@@ -137,7 +137,7 @@ export class TransportProcess {
       for (let tries = 0; tries < 250; tries += 1) {
         if (exitStatus !== null)
           throw new SubTandemError("HELPER_START_FAILED", "protocol", "RESTART_IINA", true);
-        const output = readyFiles.read(readyFile);
+        const output = readyFiles.exists(readyFile) ? readyFiles.read(readyFile) : null;
         if (output !== null) {
           try {
             const frame = parseReadyFrame(output, startedAtMs);

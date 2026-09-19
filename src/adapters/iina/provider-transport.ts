@@ -36,6 +36,11 @@ function utf8Length(value: string): number {
 
 let rpcSequence = 0;
 
+const rpcResponseTimeoutMs = {
+  transport: 130_000,
+  extractor: 25_000,
+} as const;
+
 function privateRpcPaths(
   fileDirectory: string,
   nativeDirectory: string,
@@ -159,7 +164,8 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
       throw new Error("HELPER_RPC_FILE_CONFLICT");
     try {
       this.files.write(paths.requestFile, request);
-      const result = await this.launcher.launch(this.executable, [
+      let exitStatus: number | null = null;
+      const completion = this.launcher.launch(this.executable, [
         "--rpc-client",
         "--rpc-directory",
         this.options.nativeDirectory,
@@ -168,7 +174,23 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
         "--response-file",
         paths.nativeResponseFile,
       ]);
-      if (result.status !== 0) throw new Error("HELPER_RPC_FAILED");
+      void completion.then(
+        (result) => {
+          exitStatus = result.status;
+        },
+        () => {
+          exitStatus = -1;
+        },
+      );
+      const deadline = Date.now() + rpcResponseTimeoutMs[this.options.helper];
+      while (!this.files.exists(paths.responseFile)) {
+        if (exitStatus !== null)
+          throw new Error(
+            exitStatus === 0 ? "HELPER_RPC_MISSING_RESPONSE" : "HELPER_RPC_FAILED",
+          );
+        if (Date.now() >= deadline) throw new Error("HELPER_RPC_TIMEOUT");
+        await new Promise<void>((resolve) => setTimeout(resolve, 20));
+      }
       const response = this.files.read(paths.responseFile);
       if (response === null) throw new Error("HELPER_RPC_MISSING_RESPONSE");
       const frame = parseFileRpcFrame(response, startedAtMs, this.options.maxResponseBytes);

@@ -3,6 +3,7 @@ import { GlobalProviderClient } from "./adapters/iina/global-provider-client.js"
 import { finitePosition } from "./adapters/iina/runtime.js";
 import {
   SubtitleExtractorClient,
+  SubtitleExtractorError,
   SubtitleExtractorProcess,
   discoverSubtitleExtractorExecutable,
 } from "./adapters/iina/subtitle-extractor.js";
@@ -18,6 +19,7 @@ import {
 } from "./adapters/iina/provider-transport.js";
 import { WebViewTranslationOverlay } from "./adapters/iina/webview-translation-overlay.js";
 import { SubtitlePreparationCoordinator } from "./app/subtitle-preparation.js";
+import { EpochBootstrapGate } from "./app/epoch-bootstrap-gate.js";
 import {
   parseProviderModelsRequest,
   parseProviderModelsPreviewRequest,
@@ -114,7 +116,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   let sourceSelectionTimer: ReturnType<typeof setTimeout> | null = null;
   let sourceReloadAttempt = 0;
   let preparation: SubtitlePreparationCoordinator | null = null;
-  let preparationPromise: Promise<SubtitlePreparationCoordinator> | null = null;
+  const preparationBootstrap = new EpochBootstrapGate<SubtitlePreparationCoordinator>();
   let preparationView: SourcePreparationView | null = null;
   let embeddedPreparationKey: string | null = null;
   const controller = new PlaybackController({
@@ -151,6 +153,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
   };
   const sidebarMessages = new SidebarMessageBuffer();
   let profileListState = createProfileListSyncState<AuthorityProfile>();
+  let profileListRequestTimer: ReturnType<typeof setTimeout> | null = null;
   const activationGetRequestId = `profile-activation.init.${playerId}`;
   const profileActivationSync = new ProfileActivationSync(activationGetRequestId);
   const modelCatalogSync = new ModelCatalogSync();
@@ -193,6 +196,14 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
       revision: 1,
       payload: {},
     });
+  };
+
+  const scheduleProfileRequest = (): void => {
+    if (profileListRequestTimer !== null) return;
+    profileListRequestTimer = setTimeout(() => {
+      profileListRequestTimer = null;
+      requestProfiles();
+    }, 0);
   };
 
   const requestProfileActivation = (): void => {
@@ -288,45 +299,44 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
 
   const coordinator = (): Promise<SubtitlePreparationCoordinator> => {
     if (preparation) return Promise.resolve(preparation);
-    if (preparationPromise) return preparationPromise;
-    preparationPromise = (async () => {
-      const tempDirectory = runtime.utils.resolvePath("@tmp/subtandem-extraction");
-      const launcher = new IinaProcessLauncher(runtime.utils);
-      const files = new IinaReadyFileStore(runtime.file);
-      const executable = discoverSubtitleExtractorExecutable({
-        exists: (path) => runtime.file.exists(path),
-        resolvePath: (path) => runtime.utils.resolvePath(path),
-        list: (path) => runtime.file.list(path, { includeSubDir: false }),
-        read: (path) => runtime.file.read(path) ?? null,
-      });
-      const session = await SubtitleExtractorProcess.bootstrap(
-        launcher,
-        files,
-        { tempDirectory, fileDirectory: "@tmp/subtandem-extraction" },
-        executable,
-      );
-      preparation = new SubtitlePreparationCoordinator({
-        playerId,
-        extractor: new SubtitleExtractorClient(
-          session,
-          new IinaFileRpcBridge(launcher, files, executable, {
-            helper: "extractor",
-            fileDirectory: "@tmp/subtandem-extraction/.rpc",
-            nativeDirectory: `${tempDirectory}/.rpc`,
-            maxRequestBytes: 65_536,
-            maxResponseBytes: 65_536,
-            maxConcurrentRequests: 4,
-          }),
-        ),
-        readResult: (resultId) =>
-          sourcePort.readBinary(`@tmp/subtandem-extraction/${resultId}/output.srt`),
-      });
-      return preparation;
-    })();
-    void preparationPromise.catch(() => {
-      preparationPromise = null;
-    });
-    return preparationPromise;
+    return preparationBootstrap.run(
+      mediaEpoch,
+      async () => {
+        const tempDirectory = runtime.utils.resolvePath("@tmp/subtandem-extraction");
+        const launcher = new IinaProcessLauncher(runtime.utils);
+        const files = new IinaReadyFileStore(runtime.file);
+        const executable = discoverSubtitleExtractorExecutable({
+          exists: (path) => runtime.file.exists(path),
+          resolvePath: (path) => runtime.utils.resolvePath(path),
+          list: (path) => runtime.file.list(path, { includeSubDir: false }),
+          read: (path) => runtime.file.read(path) ?? null,
+        });
+        const session = await SubtitleExtractorProcess.bootstrap(
+          launcher,
+          files,
+          { tempDirectory, fileDirectory: "@tmp/subtandem-extraction" },
+          executable,
+        );
+        preparation = new SubtitlePreparationCoordinator({
+          playerId,
+          extractor: new SubtitleExtractorClient(
+            session,
+            new IinaFileRpcBridge(launcher, files, executable, {
+              helper: "extractor",
+              fileDirectory: "@tmp/subtandem-extraction/.rpc",
+              nativeDirectory: `${tempDirectory}/.rpc`,
+              maxRequestBytes: 65_536,
+              maxResponseBytes: 65_536,
+              maxConcurrentRequests: 4,
+            }),
+          ),
+          readResult: (resultId) =>
+            sourcePort.readBinary(`@tmp/subtandem-extraction/${resultId}/output.srt`),
+        });
+        return preparation;
+      },
+      () => new SubtitleExtractorError("EXTRACTOR_UNAVAILABLE"),
+    );
   };
 
   const acceptPrepared = (key: string, prepared: PreparedSubtitleSource | null): void => {
@@ -708,7 +718,7 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
         parseProfileActivationState(hasWrappedAuthority ? wrapped.authority : raw),
         hasWrappedAuthority ? (wrapped.requestId as string) : undefined,
       );
-      if (accepted) requestProfiles();
+      if (accepted) scheduleProfileRequest();
     } catch {
       return;
     }
@@ -982,13 +992,14 @@ function wirePlayer(runtime: MainRuntime, playerId: string): PlaybackController 
     });
     modelCatalogSync.remove(playerId);
     if (sourceSelectionTimer !== null) clearTimeout(sourceSelectionTimer);
+    if (profileListRequestTimer !== null) clearTimeout(profileListRequestTimer);
     currentSelection = null;
     targetLanguageSession.close();
     selectedSourceTrackId = null;
     selectedSourceContentHash = null;
     void preparation?.shutdown();
     preparation = null;
-    preparationPromise = null;
+    preparationBootstrap.reset();
     preparationView = null;
     embeddedPreparationKey = null;
     controller.endFile();

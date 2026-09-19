@@ -87,13 +87,17 @@ class FakeBridge implements LocalRpcBridge {
 class MemoryReadyFiles implements ReadyFileStore {
   readonly files = new Map<string, string>();
   readonly deleted: string[] = [];
+  readonly reads: string[] = [];
 
   exists(path: string): boolean {
     return this.files.has(path);
   }
 
   read(path: string): string | null {
-    return this.files.get(path) ?? null;
+    this.reads.push(path);
+    const value = this.files.get(path);
+    if (value === undefined) throw new Error("IINA_FILE_READ_MISSING");
+    return value;
   }
 
   write(path: string, content: string): void {
@@ -261,6 +265,23 @@ describe("transport helper client", () => {
         { dataDirectory: "/private/test/io.subtandem.iina" },
       ),
     ).rejects.toMatchObject({ code: "HELPER_START_FAILED", userAction: "RESTART_IINA" });
+  });
+
+  it("waits for a ready file to exist before reading it with IINA semantics", async () => {
+    const readyFiles = new MemoryReadyFiles();
+    await expect(
+      TransportProcess.bootstrap(
+        {
+          launch: async (_executable, args) => {
+            setTimeout(() => readyFiles.files.set(args[3]!, readyFrame()), 1);
+            return new Promise<{ status: number }>(() => undefined);
+          },
+        },
+        readyFiles,
+        { dataDirectory: "/private/test/io.subtandem.iina" },
+      ),
+    ).resolves.toMatchObject({ port: 49152, token: "abcDEF123_-" });
+    expect(readyFiles.reads).toHaveLength(1);
   });
 
   it("keeps IINA pseudo paths separate from native helper paths", async () => {
@@ -481,6 +502,29 @@ describe("transport helper client", () => {
     expect(files.files.size).toBe(0);
   });
 
+  it("maps a successful RPC client without a response file to a fixed missing-response error", async () => {
+    const files = new MemoryReadyFiles();
+    const bridge = new IinaFileRpcBridge(
+      { launch: async () => ({ status: 0 }) },
+      files,
+      "/private/subtandem-transport",
+      {
+        helper: "transport",
+        fileDirectory: "@data/.rpc",
+        nativeDirectory: "/private/plugin-data/.rpc",
+        maxRequestBytes: 2_101_248,
+        maxResponseBytes: 4_210_688,
+        maxConcurrentRequests: 8,
+      },
+    );
+
+    await expect(bridge.post(49152, "secret-token", "/v1/health", {})).rejects.toThrow(
+      "HELPER_RPC_MISSING_RESPONSE",
+    );
+    expect(files.reads).toHaveLength(0);
+    expect(files.files.size).toBe(0);
+  });
+
   it("preserves safe upstream timeout and network classifications from the helper", async () => {
     for (const [rpcCode, expected] of [
       [
@@ -515,12 +559,12 @@ describe("transport helper client", () => {
     }
   });
 
-  it("publishes a private request, waits for native completion, parses the response, and cleans both files", async () => {
+  it("consumes an atomic response even when the native launch promise remains pending", async () => {
     const files = new MemoryReadyFiles();
     const launches: Array<{ executable: string; args: string[] }> = [];
     const bridge = new IinaFileRpcBridge(
       {
-        launch: async (executable, args) => {
+        launch: (executable, args) => {
           launches.push({ executable, args });
           const requestEntry = [...files.files].find(([path]) => path.endsWith(".request.json"));
           expect(requestEntry).toBeDefined();
@@ -533,17 +577,21 @@ describe("transport helper client", () => {
             body: {},
           });
           const responsePath = requestEntry![0].replace(".request.json", ".response.json");
-          files.write(
-            responsePath,
-            JSON.stringify({
-              type: "response",
-              protocolVersion: 1,
-              createdAtMs: Date.now(),
-              statusCode: 200,
-              body: { state: "ok" },
-            }),
+          setTimeout(
+            () =>
+              files.write(
+                responsePath,
+                JSON.stringify({
+                  type: "response",
+                  protocolVersion: 1,
+                  createdAtMs: Date.now(),
+                  statusCode: 200,
+                  body: { state: "ok" },
+                }),
+              ),
+            1,
           );
-          return { status: 0 };
+          return new Promise<{ status: number }>(() => undefined);
         },
       },
       files,

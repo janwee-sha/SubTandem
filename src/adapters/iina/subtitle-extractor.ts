@@ -252,7 +252,7 @@ export class SubtitleExtractorProcess {
     try {
       for (let attempt = 0; attempt < 750; attempt += 1) {
         if (exitStatus !== null) throw new SubtitleExtractorError("EXTRACTOR_UNAVAILABLE");
-        const output = readyFiles.read(readyFile);
+        const output = readyFiles.exists(readyFile) ? readyFiles.read(readyFile) : null;
         if (output !== null)
           return parseSubtitleExtractorReadyFrame(output, startedAtMs, Date.now());
         await new Promise<void>((resolve) => setTimeout(resolve, 20));
