@@ -12,6 +12,7 @@ import {
   isSubtitleStyleValue,
   type RgbaColor,
 } from "../../domain/subtitle-style.js";
+import { hostTimers } from "./host-timers.js";
 
 export interface StylePickerSession {
   port: number;
@@ -104,7 +105,7 @@ export class StylePickerProcess {
           return { port: frame.port, token: frame.token };
         }
         if (exitStatus !== null && exitStatus !== 0) throw new Error("STYLE_PICKER_START_FAILED");
-        await new Promise<void>((resolve) => setTimeout(resolve, 20));
+        await hostTimers.delay(20);
       }
       throw new Error("STYLE_PICKER_START_FAILED");
     } finally {

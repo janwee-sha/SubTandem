@@ -25,7 +25,8 @@ import {
   HelperProfileStateStore,
   CredentialStoreError,
 } from "./credentials/store.js";
-import { createDeferredPlayerPost } from "./adapters/iina/deferred-post.js";
+import { hostTimers } from "./adapters/iina/host-timers.js";
+import { GlobalMailbox, IinaGlobalMailboxFileStore } from "./adapters/iina/global-mailbox.js";
 import {
   IinaFileRpcBridge,
   IinaProcessLauncher,
@@ -574,10 +575,10 @@ function supportedProviderKind(value: unknown): "openai" | "claude" | "deepseek"
   throw new Error("UNSUPPORTED_PROVIDER_KIND");
 }
 
-const postToPlayer = createDeferredPlayerPost(
-  (playerId, name, data) => iina.global.postMessage(playerId, name, data),
-  setTimeout,
-);
+const globalMailbox = new GlobalMailbox(new IinaGlobalMailboxFileStore(iina.file));
+globalMailbox.onSessionClose((playerId) => profilePlayers.delete(playerId));
+const postToPlayer = (playerId: null | number | string, name: string, data: unknown): void =>
+  globalMailbox.postMessage(playerId, name, data);
 
 interface ActiveStylePickerSession {
   requestId: string;
@@ -792,7 +793,7 @@ function startStylePickerPolling(client: StylePickerClient): void {
           await handleStylePickerEvent(client, event);
         }
       }
-      setTimeout(() => void poll(), 100);
+      hostTimers.setTimeout(() => void poll(), 100);
     } catch {
       stylePickerClient = null;
       stylePickerPolling = false;
@@ -830,7 +831,7 @@ function publishProfileAuthority(playerId: string | null = null): void {
   for (const target of profilePlayers) postToPlayer(target, "profile-activation:state", snapshot);
 }
 
-iina.global.onMessage("defaults:save", (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("defaults:save", (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     const message = parseTargetLanguageSave(raw);
@@ -850,7 +851,7 @@ iina.global.onMessage("defaults:save", (raw: unknown, playerId?: string) => {
   }
 });
 
-iina.global.onMessage("overlay-position:get", (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("overlay-position:get", (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     parseOverlayPositionGet(raw);
@@ -860,7 +861,7 @@ iina.global.onMessage("overlay-position:get", (raw: unknown, playerId?: string) 
   }
 });
 
-iina.global.onMessage("overlay-position:preview", (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("overlay-position:preview", (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     const message = parseOverlayPositionPreview(raw);
@@ -871,7 +872,7 @@ iina.global.onMessage("overlay-position:preview", (raw: unknown, playerId?: stri
   }
 });
 
-iina.global.onMessage("overlay-position:save", (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("overlay-position:save", (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   let requestId = "overlay-position.invalid";
   try {
@@ -907,7 +908,7 @@ iina.global.onMessage("overlay-position:save", (raw: unknown, playerId?: string)
   }
 });
 
-iina.global.onMessage("subtitle-style:get", (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("subtitle-style:get", (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     parseSubtitleStyleGet(raw);
@@ -917,7 +918,7 @@ iina.global.onMessage("subtitle-style:get", (raw: unknown, playerId?: string) =>
   }
 });
 
-iina.global.onMessage("subtitle-style:edit", (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("subtitle-style:edit", (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     const message = parseSubtitleStyleEdit(raw);
@@ -969,7 +970,7 @@ iina.global.onMessage("subtitle-style:edit", (raw: unknown, playerId?: string) =
   }
 });
 
-iina.global.onMessage("subtitle-style:picker-open", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("subtitle-style:picker-open", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   let request: ActiveStylePickerSession | null = null;
   try {
@@ -1015,7 +1016,7 @@ iina.global.onMessage("subtitle-style:picker-open", async (raw: unknown, playerI
   }
 });
 
-iina.global.onMessage("subtitle-style:picker-focus", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("subtitle-style:picker-focus", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     parseSubtitleStyleGet(raw);
@@ -1027,7 +1028,7 @@ iina.global.onMessage("subtitle-style:picker-focus", async (raw: unknown, player
   }
 });
 
-iina.global.onMessage("subtitle-style:picker-cancel", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("subtitle-style:picker-cancel", async (raw: unknown, playerId?: string) => {
   if (!playerId || !activeStylePicker || activeStylePicker.playerId !== playerId) return;
   try {
     const message = parseSubtitleStyleGet(raw);
@@ -1045,7 +1046,7 @@ iina.global.onMessage("subtitle-style:picker-cancel", async (raw: unknown, playe
   }
 });
 
-iina.global.onMessage("profiles:list", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("profiles:list", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
   const authority = profileAuthority.snapshot;
@@ -1057,7 +1058,7 @@ iina.global.onMessage("profiles:list", async (raw: unknown, playerId?: string) =
   });
 });
 
-iina.global.onMessage("profile-activation:get", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("profile-activation:get", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     const message = parseProfileActivationGet(raw);
@@ -1072,7 +1073,7 @@ iina.global.onMessage("profile-activation:get", async (raw: unknown, playerId?: 
   }
 });
 
-iina.global.onMessage("profile-activation:set", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("profile-activation:set", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     const message = parseProfileActivationSet(raw);
@@ -1082,6 +1083,7 @@ iina.global.onMessage("profile-activation:set", async (raw: unknown, playerId?: 
       requestId: message.requestId,
       ...message.payload,
     });
+    if (result.outcome === "changed") await broker.cancelAll();
     postToPlayer(playerId, "profile-activation:result", result);
     if (result.outcome === "changed") publishProfileAuthority();
     else if (result.outcome === "unchanged") publishProfileAuthority(playerId);
@@ -1090,7 +1092,7 @@ iina.global.onMessage("profile-activation:set", async (raw: unknown, playerId?: 
   }
 });
 
-iina.global.onMessage("provider:models", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("provider:models", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
   let externalRequestId = requestId(raw);
@@ -1193,7 +1195,7 @@ iina.global.onMessage("provider:models", async (raw: unknown, playerId?: string)
   }
 });
 
-iina.global.onMessage("provider:models-preview", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("provider:models-preview", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
   let externalRequestId = requestId(raw);
@@ -1267,7 +1269,7 @@ iina.global.onMessage("provider:models-preview", async (raw: unknown, playerId?:
   }
 });
 
-iina.global.onMessage("profile:create-revision", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("profile:create-revision", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
   try {
@@ -1319,7 +1321,7 @@ iina.global.onMessage("profile:create-revision", async (raw: unknown, playerId?:
   }
 });
 
-iina.global.onMessage("profile:delete", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("profile:delete", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
   try {
@@ -1351,7 +1353,7 @@ iina.global.onMessage("profile:delete", async (raw: unknown, playerId?: string) 
   }
 });
 
-iina.global.onMessage("credential:set", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("credential:set", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
   try {
@@ -1393,7 +1395,7 @@ iina.global.onMessage("credential:set", async (raw: unknown, playerId?: string) 
   }
 });
 
-iina.global.onMessage("provider:test", async (raw: unknown, senderId?: string) => {
+globalMailbox.onMessage("provider:test", async (raw: unknown, senderId?: string) => {
   if (!senderId) return;
   let owner: ProviderConnectionTestTask | null = null;
   try {
@@ -1499,7 +1501,7 @@ iina.global.onMessage("provider:test", async (raw: unknown, senderId?: string) =
   }
 });
 
-iina.global.onMessage("provider:test-cancel", async (raw: unknown, senderId?: string) => {
+globalMailbox.onMessage("provider:test-cancel", async (raw: unknown, senderId?: string) => {
   if (!senderId) return;
   try {
     const message = parseProviderTestCancelRequest(raw);
@@ -1511,7 +1513,7 @@ iina.global.onMessage("provider:test-cancel", async (raw: unknown, senderId?: st
   }
 });
 
-iina.global.onMessage("provider:attempt", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("provider:attempt", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
   const id = requestId(raw);
@@ -1537,7 +1539,7 @@ iina.global.onMessage("provider:attempt", async (raw: unknown, playerId?: string
   }
 });
 
-iina.global.onMessage("provider:cancel", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("provider:cancel", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
   const values = payload(raw);
@@ -1591,7 +1593,7 @@ async function prefetchProfileModels(profile: ProviderProfileSnapshot): Promise<
   }
 }
 
-setTimeout(async () => {
+hostTimers.setTimeout(async () => {
   await profileReady;
   for (const profile of profiles.listLatest())
     void prefetchProfileModels(profile).catch(() => undefined);

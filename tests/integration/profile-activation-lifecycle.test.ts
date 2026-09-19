@@ -27,6 +27,18 @@ function setup() {
     endpoint: "https://b.example/v1",
     model: "model-b",
   });
+  const c = profiles.save({
+    displayName: "C",
+    kind: "claude",
+    endpoint: "https://c.example/v1",
+    model: "model-c",
+  });
+  const d = profiles.save({
+    displayName: "D",
+    kind: "ollama",
+    endpoint: "http://d.example",
+    model: "model-d",
+  });
   const commits: ProfileState[] = [];
   const commit = async (input: {
     commitId: string;
@@ -46,7 +58,10 @@ function setup() {
       },
       profileState: structuredClone(input.profileState),
       credentialConfigured: Object.fromEntries(
-        input.profileState.profiles.map((profile) => [profile.profileId, false]),
+        input.profileState.profiles.map((profile) => [
+          profile.profileId,
+          profile.kind === "claude",
+        ]),
       ),
     };
   };
@@ -55,12 +70,17 @@ function setup() {
     authorityId: "authority-1",
     profiles,
     storeRevision: 1,
-    credentialConfigured: { [a.profileId]: false, [b.profileId]: false },
+    credentialConfigured: {
+      [a.profileId]: false,
+      [b.profileId]: false,
+      [c.profileId]: true,
+      [d.profileId]: false,
+    },
     activation: null,
     commit,
     createCommitId: () => `00000000-0000-4000-8000-${String(++commitId).padStart(12, "0")}`,
   });
-  return { profiles, authority, a, b, commits };
+  return { profiles, authority, a, b, c, d, commits };
 }
 
 function activationRequest(profile: ProviderProfileSnapshot, enabled: boolean, requestId: string) {
@@ -98,6 +118,89 @@ function providerRequest(
 }
 
 describe("global Profile activation lifecycle", () => {
+  it("cancels each obsolete Provider generation once across OpenAI, Claude and Ollama", async () => {
+    const { profiles, authority, a, c, d } = setup();
+    const controls = new Map<
+      string,
+      {
+        active: number;
+        cancelCount: number;
+        progress?: (value: TranslationBatchResult) => void;
+        resolve?: (value: TranslationBatchResult) => void;
+        reject?: (error: unknown) => void;
+      }
+    >();
+    const broker = new ProviderBroker(profiles, authority, (profile) => ({
+      attempt: (_request, onProgress) => {
+        const pending = new Promise<TranslationBatchResult>((resolve, reject) => {
+          controls.set(profile.profileId, {
+            active: 1,
+            cancelCount: controls.get(profile.profileId)?.cancelCount ?? 0,
+            progress: onProgress,
+            resolve,
+            reject,
+          });
+        });
+        return pending.finally(() => {
+          controls.get(profile.profileId)!.active = 0;
+        });
+      },
+      cancel: async () => {
+        const control = controls.get(profile.profileId)!;
+        control.active = 0;
+        control.cancelCount += 1;
+        control.reject?.({ category: "cancelled", retryable: false });
+      },
+    }));
+    const activate = async (profile: ProviderProfileSnapshot, requestId: string) => {
+      const result = await authority.set(activationRequest(profile, true, requestId));
+      if (result.outcome === "changed") await broker.cancelAll();
+      return authority.snapshot;
+    };
+
+    let snapshot = await activate(a, "activate-openai");
+    const progress: string[] = [];
+    const openai = broker.attempt(
+      "iina-window-1",
+      providerRequest(a, snapshot.authorityId, snapshot.activationGeneration),
+      (value) => progress.push(value.translations[0]?.text ?? ""),
+    );
+    while (!controls.has(a.profileId)) await Promise.resolve();
+    snapshot = await activate(c, "activate-claude");
+    await expect(openai).rejects.toMatchObject({ category: "cancelled" });
+    controls.get(a.profileId)?.progress?.({ translations: [{ id: "cue-1", text: "late-a" }] });
+
+    const claude = broker.attempt(
+      "iina-window-1",
+      providerRequest(c, snapshot.authorityId, snapshot.activationGeneration),
+      (value) => progress.push(value.translations[0]?.text ?? ""),
+    );
+    while (!controls.has(c.profileId)) await Promise.resolve();
+    snapshot = await activate(d, "activate-ollama");
+    await expect(claude).rejects.toMatchObject({ category: "cancelled" });
+    controls.get(c.profileId)?.progress?.({ translations: [{ id: "cue-1", text: "late-b" }] });
+
+    const ollama = broker.attempt(
+      "iina-window-1",
+      providerRequest(d, snapshot.authorityId, snapshot.activationGeneration),
+      (value) => progress.push(value.translations[0]?.text ?? ""),
+    );
+    while (!controls.has(d.profileId)) await Promise.resolve();
+    controls.get(d.profileId)?.progress?.({ translations: [{ id: "cue-1", text: "current" }] });
+    controls.get(d.profileId)?.resolve?.({
+      translations: [{ id: "cue-1", text: "ollama-final" }],
+    });
+
+    await expect(ollama).resolves.toEqual({
+      translations: [{ id: "cue-1", text: "ollama-final" }],
+    });
+    expect(progress).toEqual(["current"]);
+    expect(controls.get(a.profileId)).toMatchObject({ active: 0, cancelCount: 1 });
+    expect(controls.get(c.profileId)).toMatchObject({ active: 0, cancelCount: 1 });
+    expect(controls.get(d.profileId)).toMatchObject({ active: 0, cancelCount: 0 });
+    expect([...controls.values()].every(({ active }) => active === 0)).toBe(true);
+  });
+
   it("rejects A after a B switch completes while Provider construction is waiting", async () => {
     const { profiles, authority, a, b } = setup();
     await authority.set(activationRequest(a, true, "activate-a"));
@@ -153,17 +256,25 @@ describe("global Profile activation lifecycle", () => {
   });
 
   it("atomically deletes the active Profile and clears the shared activation", async () => {
-    const { authority, a, b, commits } = setup();
+    const { authority, a, b, c, d, commits } = setup();
     await authority.set(activationRequest(a, true, "window-1-activate-a"));
 
     const deletion = await authority.deleteProfile(a.profileId, a.revision);
 
     expect(deletion.outcome).toBe("changed");
     expect(authority.snapshot.activation).toBeNull();
-    expect(authority.snapshot.profiles.map((profile) => profile.profileId)).toEqual([b.profileId]);
+    expect(authority.snapshot.profiles.map((profile) => profile.profileId)).toEqual([
+      b.profileId,
+      c.profileId,
+      d.profileId,
+    ]);
     expect(commits.at(-1)).toMatchObject({
       activation: null,
-      profiles: [{ profileId: b.profileId, revision: b.revision }],
+      profiles: [
+        { profileId: b.profileId, revision: b.revision },
+        { profileId: c.profileId, revision: c.revision },
+        { profileId: d.profileId, revision: d.revision },
+      ],
     });
   });
 

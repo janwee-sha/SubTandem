@@ -2,6 +2,7 @@ import {
   SubtitleExtractorError,
   type SubtitleExtractorRpcClient,
 } from "../adapters/iina/subtitle-extractor.js";
+import { hostTimers, type HostTimeout, type HostTimers } from "../adapters/iina/host-timers.js";
 import { loadPreparedSubtitleSource } from "../subtitles/source.js";
 import type {
   MediaSessionIdentity,
@@ -18,8 +19,7 @@ export interface SubtitlePreparationCoordinatorOptions {
   readResult(resultId: string): Uint8Array | null;
   createId?: () => string;
   now?: () => number;
-  setTimer?: (callback: () => void, milliseconds: number) => ReturnType<typeof setTimeout>;
-  clearTimer?: (timer: ReturnType<typeof setTimeout>) => void;
+  timers?: Pick<HostTimers, "setTimeout">;
 }
 
 interface ActivePreparation {
@@ -61,21 +61,16 @@ function safeState(error: unknown): SubtitlePreparationState {
 export class SubtitlePreparationCoordinator {
   private readonly createId: () => string;
   private readonly now: () => number;
-  private readonly setTimer: (
-    callback: () => void,
-    milliseconds: number,
-  ) => ReturnType<typeof setTimeout>;
-  private readonly clearTimer: (timer: ReturnType<typeof setTimeout>) => void;
+  private readonly timers: Pick<HostTimers, "setTimeout">;
   private active: ActivePreparation | null = null;
-  private timer: ReturnType<typeof setTimeout> | null = null;
+  private timer: HostTimeout | null = null;
   private prepared: PreparedSubtitleSource | null = null;
   private publicView: SourcePreparationView | null = null;
 
   constructor(private readonly options: SubtitlePreparationCoordinatorOptions) {
     this.createId = options.createId ?? fallbackUuid;
     this.now = options.now ?? Date.now;
-    this.setTimer = options.setTimer ?? setTimeout;
-    this.clearTimer = options.clearTimer ?? clearTimeout;
+    this.timers = options.timers ?? hostTimers;
   }
 
   get view(): SourcePreparationView | null {
@@ -135,7 +130,8 @@ export class SubtitlePreparationCoordinator {
         (error: unknown) => ({ type: "error" as const, error }),
       );
     const timeoutOutcome = new Promise<{ type: "timeout" }>((resolve) => {
-      this.timer = this.setTimer(() => {
+      this.timer = this.timers.setTimeout(() => {
+        this.timer = null;
         if (!this.accepts(media, track, attemptId)) return;
         attempt.status = "timedOut";
         this.setState("timedOut", track);
@@ -250,7 +246,7 @@ export class SubtitlePreparationCoordinator {
 
   private stopTimer(): void {
     if (this.timer === null) return;
-    this.clearTimer(this.timer);
+    this.timer.cancel();
     this.timer = null;
   }
 

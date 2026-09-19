@@ -8,6 +8,7 @@ import {
   type ReadyFileStore,
   type ReadyFrame,
 } from "./transport-process.js";
+import { hostTimers } from "./host-timers.js";
 
 export type SubtitleExtractorRpcBridge = LocalRpcBridge;
 
@@ -256,7 +257,7 @@ export class SubtitleExtractorProcess {
           return parseSubtitleExtractorReadyFrame(output, startedAtMs, Date.now());
         if (exitStatus !== null && exitStatus !== 0)
           throw new SubtitleExtractorError("EXTRACTOR_UNAVAILABLE");
-        await new Promise<void>((resolve) => setTimeout(resolve, 20));
+        await hostTimers.delay(20);
       }
       throw new SubtitleExtractorError("EXTRACTOR_UNAVAILABLE");
     } finally {

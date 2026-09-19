@@ -1,5 +1,6 @@
 import type { TransportSession } from "../../transport/client.js";
 import { SubTandemError } from "../../domain/errors.js";
+import { hostTimers } from "./host-timers.js";
 
 export interface ReadyFrame {
   type: "ready";
@@ -149,7 +150,7 @@ export class TransportProcess {
         }
         if (exitStatus !== null && exitStatus !== 0)
           throw new SubTandemError("HELPER_START_FAILED", "protocol", "RESTART_IINA", true);
-        await new Promise<void>((resolve) => setTimeout(resolve, 20));
+        await hostTimers.delay(20);
       }
       void completion;
       throw new SubTandemError("HELPER_START_TIMEOUT", "timeout", "RESTART_IINA", true);

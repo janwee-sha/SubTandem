@@ -8,6 +8,7 @@ import type {
   ProviderTransportRequest,
   ProviderTransportResponse,
 } from "../../providers/transport.js";
+import { hostTimers, type HostInterval, type HostTimers } from "./host-timers.js";
 import type { ProcessLauncher, ReadyFileStore } from "./transport-process.js";
 
 export interface RpcFileStore {
@@ -23,6 +24,14 @@ interface FileRpcFrame {
   createdAtMs: number;
   statusCode: number;
   body: unknown;
+}
+
+interface PendingFileRpc {
+  paths: ReturnType<typeof privateRpcPaths>;
+  startedAtMs: number;
+  deadlineMs: number;
+  resolve(value: unknown): void;
+  reject(error: unknown): void;
 }
 
 function utf8Length(value: string): number {
@@ -103,6 +112,9 @@ function removeRpcFile(files: RpcFileStore, path: string): void {
 export class IinaFileRpcBridge implements LocalRpcBridge {
   private activeRequests = 0;
   private readonly waiters: Array<() => void> = [];
+  private readonly pending = new Map<string, PendingFileRpc>();
+  private poller: HostInterval | null = null;
+  private readonly timers: Pick<HostTimers, "setInterval">;
 
   constructor(
     private readonly files: RpcFileStore,
@@ -112,6 +124,7 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
       maxRequestBytes: number;
       maxResponseBytes: number;
       maxConcurrentRequests: number;
+      timers?: Pick<HostTimers, "setInterval">;
     },
   ) {
     if (
@@ -120,6 +133,7 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
       options.maxConcurrentRequests > 32
     )
       throw new Error("HELPER_RPC_CONCURRENCY_INVALID");
+    this.timers = options.timers ?? hostTimers;
   }
 
   async post<T>(port: number, bearerToken: string, path: string, body: unknown): Promise<T> {
@@ -159,34 +173,75 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
       this.files.exists(paths.responseFile)
     )
       throw new Error("HELPER_RPC_FILE_CONFLICT");
-    try {
-      this.files.write(paths.requestFile, request);
-      this.files.write(paths.requestReadyFile, "");
-      const deadline = Date.now() + rpcResponseTimeoutMs[this.options.helper];
-      while (!this.files.exists(paths.responseFile)) {
-        if (Date.now() >= deadline) throw new Error("HELPER_RPC_TIMEOUT");
-        await new Promise<void>((resolve) => setTimeout(resolve, 20));
+    return new Promise<T>((resolve, reject) => {
+      try {
+        this.files.write(paths.requestFile, request);
+        this.pending.set(paths.responseFile, {
+          paths,
+          startedAtMs,
+          deadlineMs: Date.now() + rpcResponseTimeoutMs[this.options.helper],
+          resolve: (value) => resolve(value as T),
+          reject,
+        });
+        this.files.write(paths.requestReadyFile, "");
+        this.pollPending();
+      } catch (error) {
+        this.pending.delete(paths.responseFile);
+        this.removeFiles(paths);
+        reject(error);
       }
-      const response = this.files.read(paths.responseFile);
-      if (response === null) throw new Error("HELPER_RPC_MISSING_RESPONSE");
-      const frame = parseFileRpcFrame(response, startedAtMs, this.options.maxResponseBytes);
-      if (frame.statusCode < 200 || frame.statusCode >= 300) {
-        const error =
-          frame.body && typeof frame.body === "object" && !Array.isArray(frame.body)
-            ? (frame.body as Record<string, unknown>).error
-            : undefined;
-        throw new LocalRpcResponseError(
-          typeof error === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(error)
-            ? error
-            : "helper-rpc-failed",
-        );
+    });
+  }
+
+  private pollPending(): void {
+    for (const pending of [...this.pending.values()].slice(0, this.options.maxConcurrentRequests)) {
+      try {
+        if (this.files.exists(pending.paths.responseFile)) {
+          const response = this.files.read(pending.paths.responseFile);
+          if (response === null) throw new Error("HELPER_RPC_MISSING_RESPONSE");
+          const frame = parseFileRpcFrame(
+            response,
+            pending.startedAtMs,
+            this.options.maxResponseBytes,
+          );
+          if (frame.statusCode < 200 || frame.statusCode >= 300) {
+            const error =
+              frame.body && typeof frame.body === "object" && !Array.isArray(frame.body)
+                ? (frame.body as Record<string, unknown>).error
+                : undefined;
+            throw new LocalRpcResponseError(
+              typeof error === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(error)
+                ? error
+                : "helper-rpc-failed",
+            );
+          }
+          this.settle(pending, frame.body);
+        } else if (Date.now() >= pending.deadlineMs) {
+          throw new Error("HELPER_RPC_TIMEOUT");
+        }
+      } catch (error) {
+        this.settle(pending, undefined, error);
       }
-      return frame.body as T;
-    } finally {
-      removeRpcFile(this.files, paths.requestFile);
-      removeRpcFile(this.files, paths.requestReadyFile);
-      removeRpcFile(this.files, paths.responseFile);
     }
+    if (this.pending.size === 0 && this.waiters.length === 0) {
+      this.poller?.cancel();
+      this.poller = null;
+    } else if (this.pending.size > 0 && this.poller === null) {
+      this.poller = this.timers.setInterval(() => this.pollPending(), 20);
+    }
+  }
+
+  private settle(pending: PendingFileRpc, value: unknown, error?: unknown): void {
+    if (!this.pending.delete(pending.paths.responseFile)) return;
+    this.removeFiles(pending.paths);
+    if (error === undefined) pending.resolve(value);
+    else pending.reject(error);
+  }
+
+  private removeFiles(paths: ReturnType<typeof privateRpcPaths>): void {
+    removeRpcFile(this.files, paths.requestFile);
+    removeRpcFile(this.files, paths.requestReadyFile);
+    removeRpcFile(this.files, paths.responseFile);
   }
 
   private acquire(): Promise<void> {

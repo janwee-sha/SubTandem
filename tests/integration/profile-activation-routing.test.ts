@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PlaybackController } from "../../src/app/controller.js";
 import { GlobalProviderClient } from "../../src/adapters/iina/global-provider-client.js";
+import {
+  MainGlobalMailbox,
+  type GlobalMailboxFileStore,
+} from "../../src/adapters/iina/global-mailbox.js";
 import { ProfileActivationSync } from "../../src/adapters/iina/profile-activation-sync.js";
 import { parseProfileActivationState } from "../../src/domain/messages.js";
 import type { AuthoritySnapshot, ProfileState } from "../../src/domain/types.js";
@@ -12,8 +16,6 @@ import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 vi.mock("../../src/providers/model-discovery.js", () => ({
   discoverProviderModels: vi.fn(async () => []),
 }));
-
-type Handler = (data: unknown, senderId?: string) => unknown;
 
 async function setup(restoreActive = false) {
   const { HelperCredentialStore, HelperProfileStateStore } =
@@ -80,42 +82,63 @@ async function setup(restoreActive = false) {
     .mockImplementation(async (request) => ({
       translations: request.items.map(({ id, text }) => ({ id, text: `Translated ${text}` })),
     }));
-  const handlers = new Map<string, Handler>();
-  const windows = new Map<string, Map<string, Handler>>();
   const delivered: Array<{ target: string | number | null; name: string; data: unknown }> = [];
-  const inFlight: Promise<unknown>[] = [];
+  const mailboxContents = new Map<string, string>();
+  const mailboxFiles: GlobalMailboxFileStore = {
+    list: (path) =>
+      [...mailboxContents.keys()]
+        .filter((item) => item.startsWith(path))
+        .map((item) => ({ filename: item.slice(path.length), isDir: false })),
+    exists: (path) => mailboxContents.has(path),
+    read: (path) => mailboxContents.get(path) ?? null,
+    write: (path, content) => {
+      mailboxContents.set(path, content);
+      if (!path.endsWith(".json") || path.endsWith(".secrets.json")) return;
+      const frame = JSON.parse(content) as {
+        direction?: unknown;
+        targetId?: unknown;
+        name?: unknown;
+        data?: unknown;
+      };
+      if (
+        frame.direction === "response" &&
+        typeof frame.targetId === "string" &&
+        typeof frame.name === "string"
+      ) {
+        delivered.push({
+          target: frame.targetId,
+          name: frame.name,
+          data: structuredClone(frame.data),
+        });
+      }
+    },
+    delete: (path) => {
+      mailboxContents.delete(path);
+    },
+  };
+  const mailboxes = new Map<string, MainGlobalMailbox>();
   const send = async (sender: string, name: string, data: unknown): Promise<void> => {
-    const handler = handlers.get(name);
-    if (!handler) throw new Error(`Missing handler: ${name}`);
-    await handler(structuredClone(data), sender);
+    const mailbox = mailboxes.get(sender);
+    if (!mailbox) throw new Error(`Missing mailbox: ${sender}`);
+    mailbox.postMessage(name, structuredClone(data));
   };
   vi.stubGlobal("iina", {
     preferences: { get: () => undefined },
-    global: {
-      onMessage: (name: string, handler: Handler) => handlers.set(name, handler),
-      postMessage: (target: string | number | null, name: string, data: unknown) => {
-        delivered.push({ target, name, data: structuredClone(data) });
-        // IINA 1.4.4 null broadcasts only reach plugin-created childAPIs.
-        if (typeof target === "string") windows.get(target)?.get(name)?.(structuredClone(data));
-      },
-    },
+    file: mailboxFiles,
   });
   await import("../../src/global.js");
+  let drainQueue = Promise.resolve();
   const drain = async (): Promise<void> => {
-    await Promise.all(inFlight.splice(0));
-    await vi.runAllTimersAsync();
-    await Promise.all(inFlight.splice(0));
-    await vi.runAllTimersAsync();
+    drainQueue = drainQueue.then(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+      await Promise.resolve();
+    });
+    await drainQueue;
   };
   const window = async (label: string) => {
-    const listeners = new Map<string, Handler>();
-    windows.set(label, listeners);
-    const client = new GlobalProviderClient({
-      onMessage: (name, handler) => listeners.set(name, handler),
-      postMessage: (name, data) => {
-        inFlight.push(send(label, name, data));
-      },
-    });
+    const mailbox = new MainGlobalMailbox(mailboxFiles, label);
+    mailboxes.set(label, mailbox);
+    const client = new GlobalProviderClient(mailbox);
     const controller = new PlaybackController({
       playerId: `main-lifecycle-${label}`,
       provider: client,
@@ -146,11 +169,11 @@ async function setup(restoreActive = false) {
         });
       else controller.clearProviderSelection();
     };
-    listeners.set("profile-activation:state", (raw) => {
+    mailbox.onMessage("profile-activation:state", (raw) => {
       const value = raw as { requestId?: string; authority?: unknown };
       apply(parseProfileActivationState(value.authority ?? raw), value.requestId);
     });
-    listeners.set("profile-activation:result", (raw) => {
+    mailbox.onMessage("profile-activation:result", (raw) => {
       const value = raw as { authority: AuthoritySnapshot };
       apply(parseProfileActivationState(value.authority));
     });

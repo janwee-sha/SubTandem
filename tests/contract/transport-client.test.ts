@@ -12,6 +12,7 @@ import {
   IinaFileRpcBridge,
   IinaProcessLauncher,
 } from "../../src/adapters/iina/provider-transport.js";
+import { HostTimers, type HostTimerApi } from "../../src/adapters/iina/host-timers.js";
 import { SubtitleExtractorProcess } from "../../src/adapters/iina/subtitle-extractor.js";
 import {
   TRANSPORT_RPC_ERROR_CODES,
@@ -109,6 +110,38 @@ class MemoryReadyFiles implements ReadyFileStore {
   delete(path: string): void {
     this.deleted.push(path);
     this.files.delete(path);
+  }
+}
+
+class RetainingTimerApi implements HostTimerApi {
+  private sequence = 0;
+  readonly timeouts = new Map<number, () => void>();
+  readonly intervals = new Map<number, () => void>();
+  maximumActiveIntervals = 0;
+
+  setTimeout(callback: () => void): number {
+    const handle = ++this.sequence;
+    this.timeouts.set(handle, callback);
+    return handle;
+  }
+
+  clearTimeout(handle: unknown): void {
+    this.timeouts.delete(handle as number);
+  }
+
+  setInterval(callback: () => void): number {
+    const handle = ++this.sequence;
+    this.intervals.set(handle, callback);
+    this.maximumActiveIntervals = Math.max(this.maximumActiveIntervals, this.intervals.size);
+    return handle;
+  }
+
+  clearInterval(handle: unknown): void {
+    this.intervals.delete(handle as number);
+  }
+
+  fireIntervals(): void {
+    for (const callback of [...this.intervals.values()]) callback();
   }
 }
 
@@ -482,8 +515,9 @@ describe("transport helper client", () => {
     await expect(client.cancel("job-1")).rejects.not.toThrow(/private body|secret-token/);
   });
 
-  it("handles 300 file RPC posts without launching a process per request", async () => {
+  it("handles 300 delayed file RPC posts with one bounded shared poller", async () => {
     const files = new MemoryReadyFiles();
+    const timerApi = new RetainingTimerApi();
     let publications = 0;
     files.onWrite = (path) => {
       if (!path.endsWith(".request.ready")) return;
@@ -498,8 +532,64 @@ describe("transport helper client", () => {
         path: "/v1/health",
         body: {},
       });
-      files.write(
-        path.replace(".request.ready", ".response.json"),
+    };
+    const bridge = new IinaFileRpcBridge(files, {
+      helper: "transport",
+      fileDirectory: "@data/.rpc",
+      maxRequestBytes: 2_101_248,
+      maxResponseBytes: 4_210_688,
+      maxConcurrentRequests: 8,
+      timers: new HostTimers(timerApi),
+    });
+
+    const requests = Promise.all(
+      Array.from({ length: 300 }, () => bridge.post(49152, "secret-token", "/v1/health", {})),
+    );
+    let completed = false;
+    void requests.then(() => {
+      completed = true;
+    });
+    for (let cycle = 0; cycle < 100 && !completed; cycle += 1) {
+      await Promise.resolve();
+      const requestPaths = [...files.files.keys()].filter((path) => path.endsWith(".request.json"));
+      expect(requestPaths.length).toBeLessThanOrEqual(8);
+      for (const requestPath of requestPaths)
+        files.write(
+          requestPath.replace(".request.json", ".response.json"),
+          JSON.stringify({
+            type: "response",
+            protocolVersion: 1,
+            createdAtMs: Date.now(),
+            statusCode: 200,
+            body: { state: "ok" },
+          }),
+        );
+      timerApi.fireIntervals();
+      await Promise.resolve();
+      await Promise.resolve();
+    }
+    await expect(requests).resolves.toHaveLength(300);
+    expect(publications).toBe(300);
+    expect(timerApi.maximumActiveIntervals).toBe(1);
+    expect(timerApi.intervals.size).toBe(0);
+    expect(files.files.size).toBe(0);
+  });
+
+  it("settles one file read failure without blocking another pending RPC", async () => {
+    const timerApi = new RetainingTimerApi();
+    const files = new MemoryReadyFiles();
+    let failedResponse = "";
+    const read = files.read.bind(files);
+    files.read = (path) => {
+      if (path === failedResponse) throw new Error("IINA_FILE_READ_FAILED");
+      return read(path);
+    };
+    files.onWrite = (path) => {
+      if (!path.endsWith(".request.ready")) return;
+      const responsePath = path.replace(".request.ready", ".response.json");
+      if (!failedResponse) failedResponse = responsePath;
+      files.files.set(
+        responsePath,
         JSON.stringify({
           type: "response",
           protocolVersion: 1,
@@ -510,20 +600,46 @@ describe("transport helper client", () => {
       );
     };
     const bridge = new IinaFileRpcBridge(files, {
-      helper: "transport",
-      fileDirectory: "@data/.rpc",
-      maxRequestBytes: 2_101_248,
-      maxResponseBytes: 4_210_688,
-      maxConcurrentRequests: 8,
+      helper: "extractor",
+      fileDirectory: "@tmp/.rpc",
+      maxRequestBytes: 65_536,
+      maxResponseBytes: 65_536,
+      maxConcurrentRequests: 4,
+      timers: new HostTimers(timerApi),
     });
 
-    await expect(
-      Promise.all(
-        Array.from({ length: 300 }, () => bridge.post(49152, "secret-token", "/v1/health", {})),
-      ),
-    ).resolves.toHaveLength(300);
-    expect(publications).toBe(300);
+    const first = bridge.post(49152, "secret-token", "/v1/prepare", {});
+    const second = bridge.post(49152, "secret-token", "/v1/prepare", {});
+    await expect(first).rejects.toThrow("IINA_FILE_READ_FAILED");
+    await expect(second).resolves.toEqual({ state: "ok" });
     expect(files.files.size).toBe(0);
+    expect(timerApi.intervals.size).toBe(0);
+  });
+
+  it("times out a shared-poller RPC and removes all private files", async () => {
+    vi.useFakeTimers();
+    try {
+      const timerApi = new RetainingTimerApi();
+      const files = new MemoryReadyFiles();
+      const bridge = new IinaFileRpcBridge(files, {
+        helper: "extractor",
+        fileDirectory: "@tmp/.rpc",
+        maxRequestBytes: 65_536,
+        maxResponseBytes: 65_536,
+        maxConcurrentRequests: 4,
+        timers: new HostTimers(timerApi),
+      });
+      const request = bridge.post(49152, "secret-token", "/v1/prepare", {});
+      const rejected = expect(request).rejects.toThrow("HELPER_RPC_TIMEOUT");
+      await Promise.resolve();
+      vi.setSystemTime(Date.now() + 25_001);
+      timerApi.fireIntervals();
+      await rejected;
+      expect(files.files.size).toBe(0);
+      expect(timerApi.intervals.size).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("preserves safe upstream timeout and network classifications from the helper", async () => {
