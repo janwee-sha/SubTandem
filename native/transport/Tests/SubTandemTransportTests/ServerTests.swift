@@ -2,6 +2,24 @@ import Foundation
 
 func runServerTests() async throws {
     try check(TransportServer.boundHost == "127.0.0.1", "server must bind IPv4 loopback only")
+    let daemonArguments = try DetachedBootstrap.daemonArguments(
+        [
+            "--data-directory", "/private/data", "--ready-file",
+            "/private/data/.ready/transport-test.json", "--rpc-session", "abc-1-session",
+        ],
+        parentPID: 123
+    )
+    try check(
+        daemonArguments == [
+            "serve", "--data-directory", "/private/data", "--ready-file",
+            "/private/data/.ready/transport-test.json", "--rpc-session", "abc-1-session",
+            "--parent-pid", "123",
+        ],
+        "bootstrap must pass the real parent PID to serve mode"
+    )
+    try expectFailure("bootstrap must reject init as parent") {
+        _ = try DetachedBootstrap.daemonArguments([], parentPID: 1)
+    }
 
     let credentialDirectory = FileManager.default.temporaryDirectory
         .appendingPathComponent("subtandem-credential-contract-\(UUID().uuidString)", isDirectory: true)
@@ -187,9 +205,50 @@ func runServerTests() async throws {
     )
     try check(invalidCredential.statusCode == 400, "invalid profile IDs must be rejected")
 
-    let encoded = try ReadyFrame(port: 49152, token: "opaque-token").encodedLine()
+    let encoded = try ReadyFrame(
+        port: 49152,
+        token: "opaque-token",
+        createdAtMs: 10_000
+    ).encodedLine()
     try check(encoded.filter { $0 == "\n" }.count == 1 && encoded.hasSuffix("\n"), "startup frame must be one JSON line")
     try check(!encoded.contains("debug"), "startup frame must not include logs")
+    let readyRoot = FileManager.default.temporaryDirectory
+        .appendingPathComponent("subtandem-ready-\(UUID().uuidString)", isDirectory: true)
+    let readyFile = readyRoot
+        .appendingPathComponent(".ready", isDirectory: true)
+        .appendingPathComponent("transport-test.json")
+    defer { try? FileManager.default.removeItem(at: readyRoot) }
+    try ReadyFileWriter.write(
+        ReadyFrame(port: 49152, token: "opaque-token", createdAtMs: 10_000),
+        to: readyFile
+    )
+    let readyDirectoryMode = try FileManager.default.attributesOfItem(
+        atPath: readyFile.deletingLastPathComponent().path
+    )[.posixPermissions] as? NSNumber
+    let readyFileMode = try FileManager.default.attributesOfItem(
+        atPath: readyFile.path
+    )[.posixPermissions] as? NSNumber
+    try check(readyDirectoryMode?.intValue == 0o700, "ready directory must use mode 0700")
+    try check(readyFileMode?.intValue == 0o600, "ready file must use mode 0600")
+    let readyText = try String(contentsOf: readyFile, encoding: .utf8)
+    let readyJSON = try JSONSerialization.jsonObject(with: Data(readyText.utf8)) as? [String: Any]
+    try check(readyJSON?["port"] as? Int == 49152, "ready file must contain the bound port")
+    try check(readyJSON?["token"] as? String == "opaque-token", "ready file must contain the session token")
+    try check(readyJSON?["createdAtMs"] as? Int == 10_000, "ready file must contain the freshness timestamp")
+    try expectFailure("ready file publication must not replace an existing file") {
+        try ReadyFileWriter.write(
+            ReadyFrame(port: 49153, token: "other-token", createdAtMs: 20_000),
+            to: readyFile
+        )
+    }
+    let readyEntries = try FileManager.default.contentsOfDirectory(
+        at: readyFile.deletingLastPathComponent(),
+        includingPropertiesForKeys: nil
+    )
+    try check(
+        readyEntries.allSatisfy { $0.pathExtension != "tmp" },
+        "atomic publication must remove its temporary file"
+    )
 
     let body = Data("{}".utf8)
     let header = Data((

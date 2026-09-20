@@ -3,33 +3,69 @@ import Foundation
 
 enum SubTandemTransportMain {
     static func run() async throws {
-        try relaunchWithoutInheritedProxyIfNeeded()
         let arguments = CommandLine.arguments
-        let parentPID: Int32
-        if let index = arguments.firstIndex(of: "--parent-pid"), arguments.indices.contains(index + 1) {
-            parentPID = Int32(arguments[index + 1]) ?? getppid()
-        } else {
-            parentPID = getppid()
+        if arguments.count == 8,
+           arguments[1] == "launch",
+           arguments[2] == "--data-directory",
+           arguments[4] == "--ready-file",
+           arguments[6] == "--rpc-session",
+           validRPCSession(arguments[7]) {
+            let readyFile = URL(fileURLWithPath: arguments[5]).standardizedFileURL
+            try DetachedBootstrap.launch(
+                arguments: Array(arguments[2...7]),
+                readyFile: readyFile
+            )
+            return
         }
+        guard arguments.count == 10,
+              arguments[1] == "serve",
+              arguments[2] == "--data-directory",
+              arguments[4] == "--ready-file",
+              arguments[6] == "--rpc-session",
+              validRPCSession(arguments[7]),
+              arguments[8] == "--parent-pid",
+              let parentPID = Int32(arguments[9]),
+              parentPID > 1
+        else { throw TransportProtocolError.invalidRequest }
+        try relaunchWithoutInheritedProxyIfNeeded()
         let token = try SecureRandom.token()
         let liveness = LivenessState(parentPID: parentPID)
-        guard let dataIndex = arguments.firstIndex(of: "--data-directory"),
-              arguments.indices.contains(dataIndex + 1)
+        let dataDirectory = URL(
+            fileURLWithPath: arguments[3],
+            isDirectory: true
+        ).standardizedFileURL
+        let readyFile = URL(fileURLWithPath: arguments[5]).standardizedFileURL
+        guard readyFile.deletingLastPathComponent().path == dataDirectory
+            .appendingPathComponent(".ready", isDirectory: true).path,
+              readyFile.lastPathComponent.hasPrefix("transport-"),
+              readyFile.pathExtension == "json"
         else { throw TransportProtocolError.invalidRequest }
         let credentialStore = try SecureCredentialStore(
-            directory: URL(fileURLWithPath: arguments[dataIndex + 1], isDirectory: true)
+            directory: dataDirectory
         )
+        let rpcDirectory = dataDirectory
+            .appendingPathComponent(".rpc", isDirectory: true)
+            .appendingPathComponent("transport-\(arguments[7])", isDirectory: true)
+        try FileRPCWorker.prepareDirectory(rpcDirectory)
+        defer { try? FileManager.default.removeItem(at: rpcDirectory) }
         let server = try TransportServer(
             token: token,
             liveness: liveness,
             credentialStore: credentialStore
         )
         let port = try await server.start()
-        FileHandle.standardOutput.write(Data(try ReadyFrame(port: port, token: token).encodedLine().utf8))
+        let worker = Task {
+            await FileRPCWorker.run(directory: rpcDirectory, port: port) { path, token, body in
+                await server.handleFileRequest(path: path, token: token, body: body)
+            }
+        }
+        try ReadyFileWriter.write(ReadyFrame(port: port, token: token), to: readyFile)
 
         while !liveness.shouldExit(parentIsAlive: liveness.actualParentIsAlive()) {
             try await Task.sleep(nanoseconds: 1_000_000_000)
         }
+        worker.cancel()
+        await worker.value
         server.stop()
     }
 
@@ -57,6 +93,15 @@ enum SubTandemTransportMain {
                 }
             }
             if status == -1 { throw TransportProtocolError.invalidRequest }
+        }
+    }
+
+    private static func validRPCSession(_ value: String) -> Bool {
+        let parts = value.split(separator: "-", omittingEmptySubsequences: false)
+        return parts.count == 3 && parts.allSatisfy {
+            !$0.isEmpty && $0.allSatisfy { character in
+                character.isASCII && (character.isNumber || character.isLowercase)
+            }
         }
     }
 

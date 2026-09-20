@@ -14,6 +14,21 @@ final class BlockingExtractionEngine: ExtractionEngine, @unchecked Sendable {
 }
 
 func runLifecycleTests() async throws {
+    let daemonArguments = try DetachedBootstrap.daemonArguments(
+        [
+            "--temp-directory", "/private/tmp", "--ready-file",
+            "/private/tmp/.ready/extractor-test.json", "--rpc-session", "abc-1-session",
+        ],
+        parentPID: 123
+    )
+    try check(
+        daemonArguments == [
+            "serve", "--temp-directory", "/private/tmp", "--ready-file",
+            "/private/tmp/.ready/extractor-test.json", "--rpc-session", "abc-1-session",
+            "--parent-pid", "123",
+        ],
+        "bootstrap must pass the real parent PID to serve mode"
+    )
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent("subtandem-lifecycle-\(UUID().uuidString)", isDirectory: true)
     let engine = BlockingExtractionEngine()

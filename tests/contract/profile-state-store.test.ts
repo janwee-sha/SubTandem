@@ -7,7 +7,7 @@ import { ProviderProfiles } from "../../src/providers/profiles.js";
 import {
   TransportClient,
   parseProfileStateStoreSnapshot,
-  type LocalHttpBridge,
+  type LocalRpcBridge,
   type ProfileStateStoreSnapshot,
 } from "../../src/transport/client.js";
 
@@ -22,16 +22,16 @@ const profile = {
   model: "model-a",
 };
 
-class ProfileStateBridge implements LocalHttpBridge {
-  readonly requests: Array<{ url: string; body: unknown }> = [];
+class ProfileStateBridge implements LocalRpcBridge {
+  readonly requests: Array<{ port: number; path: string; body: unknown }> = [];
   response: unknown;
 
   constructor(response: unknown) {
     this.response = response;
   }
 
-  async post<T>(url: string, _bearerToken: string, body: unknown): Promise<T> {
-    this.requests.push({ url, body });
+  async post<T>(port: number, _bearerToken: string, path: string, body: unknown): Promise<T> {
+    this.requests.push({ port, path, body });
     return structuredClone(this.response) as T;
   }
 }
@@ -46,8 +46,8 @@ function sortedKeysClone<T>(value: T): T {
   ) as T;
 }
 
-class NativeSortedProfileStateBridge implements LocalHttpBridge {
-  async post<T>(_url: string, _bearerToken: string, body: unknown): Promise<T> {
+class NativeSortedProfileStateBridge implements LocalRpcBridge {
+  async post<T>(_port: number, _bearerToken: string, _path: string, body: unknown): Promise<T> {
     const request = body as {
       action: string;
       commitId: string;
@@ -174,7 +174,8 @@ describe("versioned Profile state transport", () => {
     await expect(client.profileStateRead()).resolves.toEqual(snapshot());
     expect(bridge.requests).toEqual([
       {
-        url: "http://127.0.0.1:49152/v1/profile-state",
+        port: 49152,
+        path: "/v1/profile-state",
         body: { action: "read" },
       },
     ]);

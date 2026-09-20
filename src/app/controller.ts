@@ -17,6 +17,7 @@ import { classifyAttemptFailure, retryDelayMs } from "./retry-policy.js";
 import { SessionTranslationCache, type CacheIdentity } from "./session-cache.js";
 import { TranslationPipeline } from "./translation-pipeline.js";
 import { formatTranslationComparison } from "./translation-log.js";
+import { hostTimers } from "../adapters/iina/host-timers.js";
 
 export interface ControllerSource {
   cues: SubtitleCue[];
@@ -362,7 +363,7 @@ export class PlaybackController {
   ): Promise<boolean> {
     return new Promise((resolve) => {
       let settled = false;
-      const timer = setTimeout(() => {
+      const timer = hostTimers.setTimeout(() => {
         if (settled) return;
         settled = true;
         unregister();
@@ -371,7 +372,7 @@ export class PlaybackController {
       const unregister = this.session.registerCancellation(() => {
         if (settled) return;
         settled = true;
-        clearTimeout(timer);
+        timer.cancel();
         resolve(false);
       });
     });

@@ -19,7 +19,10 @@ swiftc -parse-as-library \
   "$SOURCE_DIR/HTTPClient.swift" \
   "$SOURCE_DIR/DirectCurlTransport.swift" \
   "$SOURCE_DIR/Server.swift" \
+  "$SOURCE_DIR/FileRPCClient.swift" \
+  "$SOURCE_DIR/DetachedBootstrap.swift" \
   "$TEST_DIR/SubTandemTransportTests/ServerTests.swift" \
+  "$TEST_DIR/SubTandemTransportTests/FileRPCClientTests.swift" \
   "$TEST_DIR/SubTandemTransportTests/HTTPClientTests.swift" \
   "$TEST_DIR/SubTandemTransportContractTests/TestMain.swift" \
   -o "$BUILD_DIR/subtandem-transport-contract-tests"
@@ -35,6 +38,7 @@ swiftc -parse-as-library \
   "$STYLE_PICKER_SOURCE/FontCatalog.swift" \
   "$STYLE_PICKER_SOURCE/FontPicker.swift" \
   "$STYLE_PICKER_SOURCE/ColorPicker.swift" \
+  "$STYLE_PICKER_SOURCE/DetachedBootstrap.swift" \
   "$STYLE_PICKER_TESTS/ProtocolTests.swift" \
   "$STYLE_PICKER_TESTS/FontPickerTests.swift" \
   "$STYLE_PICKER_TESTS/ColorPickerTests.swift" \
@@ -56,6 +60,8 @@ swiftc -parse-as-library \
   "$EXTRACTOR_SOURCE/Extractor.swift" \
   "$EXTRACTOR_SOURCE/ExtractionJobs.swift" \
   "$EXTRACTOR_SOURCE/Server.swift" \
+  "$EXTRACTOR_SOURCE/FileRPCClient.swift" \
+  "$EXTRACTOR_SOURCE/DetachedBootstrap.swift" \
   "$EXTRACTOR_TESTS/PackageTests.swift" \
   "$EXTRACTOR_TESTS/ExtractionTests.swift" \
   "$EXTRACTOR_TESTS/LifecycleTests.swift" \

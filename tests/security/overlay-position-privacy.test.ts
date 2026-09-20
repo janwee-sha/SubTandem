@@ -16,8 +16,8 @@ describe("overlay position privacy and input boundaries", () => {
 
   it("keeps Global position messages free of text, media and provider fields", () => {
     const globalSource = rootFile("src/global.ts");
-    const start = globalSource.indexOf('iina.global.onMessage("overlay-position:get"');
-    const end = globalSource.indexOf('iina.global.onMessage("subtitle-style:get"', start);
+    const start = globalSource.indexOf('globalMailbox.onMessage("overlay-position:get"');
+    const end = globalSource.indexOf('globalMailbox.onMessage("subtitle-style:get"', start);
     const positionHandlers = globalSource.slice(start, end);
     expect(positionHandlers).not.toMatch(/lines|subtitle|media|provider|credential|console\./i);
     expect(positionHandlers).toContain('postToPlayer(null, "overlay-position:state"');

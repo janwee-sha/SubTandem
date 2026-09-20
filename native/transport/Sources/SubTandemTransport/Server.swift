@@ -60,6 +60,15 @@ final class TransportServer: @unchecked Sendable {
 
     func stop() { listener.cancel() }
 
+    func handleFileRequest(path: String, token: String, body: Data) async -> ProtocolResponse {
+        liveness.touch()
+        return await handler.handle(
+            path: path,
+            authorization: "Bearer \(token)",
+            body: body
+        )
+    }
+
     private func accept(_ connection: NWConnection) {
         guard case .hostPort(let host, _) = connection.endpoint,
               host.debugDescription.contains("127.0.0.1") || host.debugDescription.contains("::ffff:127.0.0.1")

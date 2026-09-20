@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   StylePickerClient,
+  StylePickerProcess,
   parseStylePickerReadyFrame,
   type StylePickerHttpBridge,
 } from "../../src/adapters/iina/style-picker-client.js";
+import type { ReadyFileStore } from "../../src/adapters/iina/transport-process.js";
 
 class FakeBridge implements StylePickerHttpBridge {
   readonly requests: Array<{
@@ -23,16 +25,68 @@ class FakeBridge implements StylePickerHttpBridge {
 describe("style picker client", () => {
   it("accepts one exact ready frame and rejects leaked or malformed output", () => {
     expect(
-      parseStylePickerReadyFrame('{"protocolVersion":1,"port":49152,"token":"abcdefgh"}\n'),
-    ).toEqual({ protocolVersion: 1, port: 49152, token: "abcdefgh" });
+      parseStylePickerReadyFrame(
+        '{"type":"ready","protocolVersion":1,"port":49152,"token":"abcdefgh","createdAtMs":10000}\n',
+        9_000,
+        10_000,
+      ),
+    ).toEqual({
+      type: "ready",
+      protocolVersion: 1,
+      port: 49152,
+      token: "abcdefgh",
+      createdAtMs: 10_000,
+    });
     for (const output of [
       "{}\n",
-      '{"protocolVersion":1,"port":49152,"token":"short"}\n',
-      '{"protocolVersion":1,"port":49152,"token":"abcdefgh","text":"body"}\n',
-      '{"protocolVersion":1,"port":49152,"token":"abcdefgh"}\nextra\n',
+      '{"type":"ready","protocolVersion":1,"port":49152,"token":"short","createdAtMs":10000}\n',
+      '{"type":"ready","protocolVersion":1,"port":49152,"token":"abcdefgh","createdAtMs":10000,"text":"body"}\n',
+      '{"type":"ready","protocolVersion":1,"port":49152,"token":"abcdefgh","createdAtMs":10000}\nextra\n',
     ]) {
       expect(() => parseStylePickerReadyFrame(output)).toThrow("STYLE_PICKER_PROTOCOL");
     }
+  });
+
+  it("starts through a short-lived launch process and reads a private ready file", async () => {
+    const files = new Map<string, string>();
+    const deleted: string[] = [];
+    const store: ReadyFileStore = {
+      exists: (path) => files.has(path),
+      read: (path) => files.get(path) ?? null,
+      delete: (path) => {
+        deleted.push(path);
+        files.delete(path);
+      },
+    };
+    const launches: string[][] = [];
+    await expect(
+      StylePickerProcess.bootstrap(
+        {
+          launch: async (_executable, args) => {
+            launches.push(args);
+            files.set(
+              args[2]!,
+              `${JSON.stringify({
+                type: "ready",
+                protocolVersion: 1,
+                port: 49152,
+                token: "abcdefgh",
+                createdAtMs: Date.now(),
+              })}\n`,
+            );
+            return { status: 0 };
+          },
+        },
+        store,
+        { dataDirectory: "/private/plugin-data" },
+        "/private/subtandem-style-picker",
+      ),
+    ).resolves.toEqual({ port: 49152, token: "abcdefgh" });
+    expect(launches).toEqual([
+      ["launch", "--ready-file", expect.stringMatching(/\/\.ready\/style-picker-/)],
+    ]);
+    expect(deleted).toHaveLength(1);
+    expect(files.size).toBe(0);
   });
 
   it("authenticates exact font open and availability requests", async () => {

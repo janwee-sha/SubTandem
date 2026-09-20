@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 import { parseRetrySubtitlePreparation } from "../../src/domain/messages.js";
@@ -22,6 +22,29 @@ describe("IINA sidebar lifecycle contract", () => {
     new URL("../../src/adapters/iina/overlay-region-runtime.ts", import.meta.url),
     "utf8",
   );
+
+  it("keeps raw host timers inside the managed timer adapter", () => {
+    const adapterDirectory = new URL("../../src/adapters/iina/", import.meta.url);
+    const sources = [
+      ["src/main.ts", mainSource],
+      ["src/global.ts", globalSource],
+      ...readdirSync(adapterDirectory)
+        .filter(
+          (name) =>
+            name.endsWith(".ts") && name !== "host-timers.ts" && name !== "playback-events.ts",
+        )
+        .map((name) => [
+          `src/adapters/iina/${name}`,
+          readFileSync(new URL(name, adapterDirectory), "utf8"),
+        ]),
+    ] as const;
+    for (const [path, source] of sources) {
+      expect(source, path).not.toMatch(/(?<![.A-Za-z])setTimeout\(/);
+      expect(source, path).not.toMatch(/(?<![.A-Za-z])clearTimeout\(/);
+      expect(source, path).not.toMatch(/(?<![.A-Za-z])setInterval\(/);
+      expect(source, path).not.toMatch(/(?<![.A-Za-z])clearInterval\(/);
+    }
+  });
 
   it("updates stable Profile rows and mounts one editor only in the active row", () => {
     const renderStart = sidebarSource.indexOf("function renderProfiles");
@@ -173,12 +196,13 @@ describe("IINA sidebar lifecycle contract", () => {
   });
 
   it("keeps the in-memory tick alive when IINA reuses a closed player context", () => {
-    expect(mainSource).toContain("clearTimeout(sourceSelectionTimer)");
+    expect(mainSource).toContain("sourceSelectionTimer?.cancel()");
     const closeStart = mainSource.indexOf('runtime.event.on("iina.window-will-close"');
     const closeSource = mainSource.slice(closeStart);
     expect(closeSource).toContain("closeOverlayRegion()");
     expect(closeSource).toContain("controller.endFile()");
     expect(closeSource).toContain("controller.clearProviderSelection()");
+    expect(closeSource).toContain("translationTickTimer.cancel()");
     expect(closeSource).not.toContain("controller.close()");
   });
 
@@ -216,7 +240,7 @@ describe("IINA sidebar lifecycle contract", () => {
   });
 
   it("initializes a normal player without waiting for a global registration reply", () => {
-    expect(mainSource).toContain("wirePlayer(iina, `player-${Date.now()}`)");
+    expect(mainSource).toContain("wirePlayer(iina, createMailboxPlayerId())");
     expect(mainSource).not.toContain('onMessage("main:registered"');
   });
 
@@ -359,6 +383,40 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(sidebarSource).toContain('postMessage("subtitle:retry-preparation"');
     expect(sidebarSource).toContain("canRetry");
     expect(mainSource).toContain('runtime.sidebar.onMessage("subtitle:retry-preparation"');
+    const bootstrapFailure = mainSource.slice(
+      mainSource.indexOf("void coordinator()"),
+      mainSource.indexOf("const loadSource", mainSource.indexOf("void coordinator()")),
+    );
+    expect(bootstrapFailure).toContain("canRetry: false");
+  });
+
+  it("renders unavailable Profile storage as HELPER_UNAVAILABLE instead of an empty library", () => {
+    expect(sidebarSource).toContain("Profiles unavailable (HELPER_UNAVAILABLE). Restart IINA.");
+    expect(sidebarSource).toContain("profileAuthority?.ready === false");
+  });
+
+  it("defers and coalesces Profile list refreshes outside the Global callback stack", () => {
+    const handlerStart = mainSource.indexOf('runtime.global.onMessage("profile-activation:state"');
+    const handlerEnd = mainSource.indexOf(
+      'runtime.global.onMessage("profile-activation:result"',
+      handlerStart,
+    );
+    const handler = mainSource.slice(handlerStart, handlerEnd);
+    const schedulerStart = mainSource.indexOf("const scheduleProfileRequest");
+    const schedulerEnd = mainSource.indexOf("const requestProfileActivation", schedulerStart);
+    const scheduler = mainSource.slice(schedulerStart, schedulerEnd);
+
+    expect(handler).toContain("scheduleProfileRequest()");
+    expect(handler).not.toContain("requestProfiles()");
+    expect(scheduler).toContain("profileListRequestTimer !== null");
+    expect(scheduler).toContain("setTimeout(() =>");
+    expect(scheduler).toContain("requestProfiles()");
+  });
+
+  it("latches extractor bootstrap failures for the current media epoch", () => {
+    expect(mainSource).toContain("new EpochBootstrapGate<SubtitlePreparationCoordinator>()");
+    expect(mainSource).toContain("preparationBootstrap.run(");
+    expect(mainSource).toContain('new SubtitleExtractorError("EXTRACTOR_UNAVAILABLE")');
   });
 
   it("announces subtitle preparation state once in the Session card", () => {
@@ -411,7 +469,7 @@ describe("IINA sidebar lifecycle contract", () => {
     const readyStart = mainSource.indexOf('runtime.sidebar.onMessage("ui:ready"');
     const pollStart = mainSource.indexOf('runtime.sidebar.onMessage("ui:poll"', readyStart);
     expect(mainSource.slice(readyStart, pollStart)).toContain("requestOverlayPosition()");
-    expect(globalSource).toContain('iina.global.onMessage("overlay-position:get"');
+    expect(globalSource).toContain('globalMailbox.onMessage("overlay-position:get"');
     expect(globalSource).toContain("overlayPositionPreferences.read().position");
   });
 
@@ -432,7 +490,7 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(mainSource).not.toContain('runtime.event.on("mpv.sub-use-margins.changed"');
     expect(mainSource).not.toContain('runtime.event.on("mpv.sub-ass-force-margins.changed"');
     expect(mainSource).toContain("overlayRegion.pollDynamicInputs()");
-    expect(mainSource).toContain("const overlayRegionTimer = setInterval(");
+    expect(mainSource).toContain("const overlayRegionTimer = hostTimers.setInterval(");
     expect(mainSource).toContain('runtime.event.on("iina.window-fs.changed", (fullscreen)');
     expect(mainSource).toContain("overlayRegion.setFullscreen(fullscreen)");
     expect(mainSource).not.toContain(
@@ -445,7 +503,7 @@ describe("IINA sidebar lifecycle contract", () => {
     const shutdownStart = mainSource.indexOf("const closeOverlayRegion =");
     const shutdownEnd = mainSource.indexOf('runtime.event.on("mpv.shutdown"', shutdownStart);
     const shutdownBlock = mainSource.slice(shutdownStart, shutdownEnd);
-    expect(shutdownBlock).toContain("clearInterval(overlayRegionTimer)");
+    expect(shutdownBlock).toContain("overlayRegionTimer.cancel()");
     expect(shutdownBlock).toContain("overlayRegion.close()");
     const closeStart = mainSource.indexOf('runtime.event.on("iina.window-will-close"');
     const closeEnd = mainSource.indexOf("});", closeStart);
@@ -469,7 +527,7 @@ describe("Subtitle Font lifecycle contract", () => {
     for (const field of ["fontColor", "fontSize", "fontFamily", "bold", "italic"])
       expect(sidebarSource).toContain(`"${field}"`);
     expect(mainSource).toContain('runtime.sidebar.onMessage("subtitle-style:edit"');
-    expect(globalSource).toContain('iina.global.onMessage("subtitle-style:edit"');
+    expect(globalSource).toContain('globalMailbox.onMessage("subtitle-style:edit"');
   });
 
   it("requests the font picker, expresses control activity and handles latest-only safe results", () => {
@@ -484,7 +542,7 @@ describe("Subtitle Font lifecycle contract", () => {
 
   it("requests authoritative style at startup and when Sidebar becomes live", () => {
     expect(mainSource).toContain('runtime.global.postMessage("subtitle-style:get"');
-    expect(globalSource).toContain('iina.global.onMessage("subtitle-style:get"');
+    expect(globalSource).toContain('globalMailbox.onMessage("subtitle-style:get"');
     const readyStart = mainSource.indexOf('runtime.sidebar.onMessage("ui:ready"');
     const pollStart = mainSource.indexOf('runtime.sidebar.onMessage("ui:poll"', readyStart);
     expect(mainSource.slice(readyStart, pollStart)).toContain("requestSubtitleStyle()");
@@ -575,7 +633,7 @@ describe("System color picker lifecycle contract", () => {
     expect(colorPickerSource).toContain("func windowDidResignKey");
     expect(sidebarSource).toContain('postMessage("subtitle-style:picker-focus"');
     expect(mainSource).toContain('runtime.sidebar.onMessage("subtitle-style:picker-focus"');
-    expect(globalSource).toContain('iina.global.onMessage("subtitle-style:picker-focus"');
+    expect(globalSource).toContain('globalMailbox.onMessage("subtitle-style:picker-focus"');
     expect(globalSource).toContain("client.activate");
     expect(serverSource).toContain('case "/v1/activate"');
     expect(sidebarSource).not.toContain("Another subtitle style picker is already open.");

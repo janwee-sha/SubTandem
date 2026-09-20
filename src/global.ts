@@ -25,8 +25,13 @@ import {
   HelperProfileStateStore,
   CredentialStoreError,
 } from "./credentials/store.js";
-import { createDeferredPlayerPost } from "./adapters/iina/deferred-post.js";
-import { IinaLocalHttpBridge, IinaProcessLauncher } from "./adapters/iina/provider-transport.js";
+import { hostTimers } from "./adapters/iina/host-timers.js";
+import { GlobalMailbox, IinaGlobalMailboxFileStore } from "./adapters/iina/global-mailbox.js";
+import {
+  IinaFileRpcBridge,
+  IinaProcessLauncher,
+  IinaReadyFileStore,
+} from "./adapters/iina/provider-transport.js";
 import { discoverHelperExecutable, TransportProcess } from "./adapters/iina/transport-process.js";
 import { ProviderBroker } from "./providers/broker.js";
 import { ProviderConnectionTests } from "./providers/connection-tests.js";
@@ -58,6 +63,7 @@ import { SubtitleStyleAuthority } from "./adapters/iina/subtitle-style-sync.js";
 import {
   discoverStylePickerExecutable,
   IinaStylePickerHttpBridge,
+  IinaStylePickerProcessLauncher,
   StylePickerClient,
   StylePickerProcess,
   type StylePickerEvent,
@@ -143,17 +149,31 @@ function legacyProfileMetadata(): ProviderProfileSnapshot[] {
 }
 
 const transport = new TransportSupervisor(async () => {
+  const dataDirectory = iina.utils.resolvePath("@data/.");
+  const launcher = new IinaProcessLauncher(iina.utils);
+  const files = new IinaReadyFileStore(iina.file);
+  const executable = discoverHelperExecutable({
+    exists: (path) => iina.file.exists(path),
+    resolvePath: (path) => iina.utils.resolvePath(path),
+    list: (path) => iina.file.list(path, { includeSubDir: false }),
+    read: (path) => iina.file.read(path) ?? null,
+  });
   const session = await TransportProcess.bootstrap(
-    new IinaProcessLauncher(iina.utils),
-    { dataDirectory: iina.utils.resolvePath("@data/.") },
-    discoverHelperExecutable({
-      exists: (path) => iina.file.exists(path),
-      resolvePath: (path) => iina.utils.resolvePath(path),
-      list: (path) => iina.file.list(path, { includeSubDir: false }),
-      read: (path) => iina.file.read(path) ?? null,
+    launcher,
+    files,
+    { dataDirectory, fileDirectory: "@data" },
+    executable,
+  );
+  return new TransportClient(
+    session,
+    new IinaFileRpcBridge(files, {
+      helper: "transport",
+      fileDirectory: session.rpcDirectory,
+      maxRequestBytes: 2_101_248,
+      maxResponseBytes: 4_210_688,
+      maxConcurrentRequests: 8,
     }),
   );
-  return new TransportClient(session, new IinaLocalHttpBridge(iina.http));
 });
 
 const credentials = new HelperCredentialStore(transport);
@@ -555,10 +575,10 @@ function supportedProviderKind(value: unknown): "openai" | "claude" | "deepseek"
   throw new Error("UNSUPPORTED_PROVIDER_KIND");
 }
 
-const postToPlayer = createDeferredPlayerPost(
-  (playerId, name, data) => iina.global.postMessage(playerId, name, data),
-  setTimeout,
-);
+const globalMailbox = new GlobalMailbox(new IinaGlobalMailboxFileStore(iina.file));
+globalMailbox.onSessionClose((playerId) => profilePlayers.delete(playerId));
+const postToPlayer = (playerId: null | number | string, name: string, data: unknown): void =>
+  globalMailbox.postMessage(playerId, name, data);
 
 interface ActiveStylePickerSession {
   requestId: string;
@@ -584,24 +604,17 @@ function stylePickerLocator() {
   };
 }
 
-function currentParentPid(): number | undefined {
-  try {
-    const value = iina.mpv.getNumber("pid");
-    return Number.isInteger(value) && value > 1 ? value : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 async function ensureStylePickerClient(): Promise<StylePickerClient> {
   if (stylePickerClient) return stylePickerClient;
   if (stylePickerStartup) return stylePickerStartup;
   stylePickerStartup = (async () => {
     const executable = discoverStylePickerExecutable(stylePickerLocator());
-    const parentPid = currentParentPid();
+    const dataDirectory = iina.utils.resolvePath("@data/.");
+    const files = new IinaReadyFileStore(iina.file);
     const session = await StylePickerProcess.bootstrap(
-      new IinaProcessLauncher(iina.utils),
-      parentPid === undefined ? {} : { parentPid },
+      new IinaStylePickerProcessLauncher(iina.utils),
+      files,
+      { dataDirectory, fileDirectory: "@data" },
       executable,
     );
     const client = new StylePickerClient(session, new IinaStylePickerHttpBridge(iina.http));
@@ -780,7 +793,7 @@ function startStylePickerPolling(client: StylePickerClient): void {
           await handleStylePickerEvent(client, event);
         }
       }
-      setTimeout(() => void poll(), 100);
+      hostTimers.setTimeout(() => void poll(), 100);
     } catch {
       stylePickerClient = null;
       stylePickerPolling = false;
@@ -818,7 +831,7 @@ function publishProfileAuthority(playerId: string | null = null): void {
   for (const target of profilePlayers) postToPlayer(target, "profile-activation:state", snapshot);
 }
 
-iina.global.onMessage("defaults:save", (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("defaults:save", (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     const message = parseTargetLanguageSave(raw);
@@ -838,7 +851,7 @@ iina.global.onMessage("defaults:save", (raw: unknown, playerId?: string) => {
   }
 });
 
-iina.global.onMessage("overlay-position:get", (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("overlay-position:get", (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     parseOverlayPositionGet(raw);
@@ -848,7 +861,7 @@ iina.global.onMessage("overlay-position:get", (raw: unknown, playerId?: string) 
   }
 });
 
-iina.global.onMessage("overlay-position:preview", (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("overlay-position:preview", (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     const message = parseOverlayPositionPreview(raw);
@@ -859,7 +872,7 @@ iina.global.onMessage("overlay-position:preview", (raw: unknown, playerId?: stri
   }
 });
 
-iina.global.onMessage("overlay-position:save", (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("overlay-position:save", (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   let requestId = "overlay-position.invalid";
   try {
@@ -895,7 +908,7 @@ iina.global.onMessage("overlay-position:save", (raw: unknown, playerId?: string)
   }
 });
 
-iina.global.onMessage("subtitle-style:get", (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("subtitle-style:get", (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     parseSubtitleStyleGet(raw);
@@ -905,7 +918,7 @@ iina.global.onMessage("subtitle-style:get", (raw: unknown, playerId?: string) =>
   }
 });
 
-iina.global.onMessage("subtitle-style:edit", (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("subtitle-style:edit", (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     const message = parseSubtitleStyleEdit(raw);
@@ -957,7 +970,7 @@ iina.global.onMessage("subtitle-style:edit", (raw: unknown, playerId?: string) =
   }
 });
 
-iina.global.onMessage("subtitle-style:picker-open", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("subtitle-style:picker-open", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   let request: ActiveStylePickerSession | null = null;
   try {
@@ -1003,7 +1016,7 @@ iina.global.onMessage("subtitle-style:picker-open", async (raw: unknown, playerI
   }
 });
 
-iina.global.onMessage("subtitle-style:picker-focus", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("subtitle-style:picker-focus", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     parseSubtitleStyleGet(raw);
@@ -1015,7 +1028,7 @@ iina.global.onMessage("subtitle-style:picker-focus", async (raw: unknown, player
   }
 });
 
-iina.global.onMessage("subtitle-style:picker-cancel", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("subtitle-style:picker-cancel", async (raw: unknown, playerId?: string) => {
   if (!playerId || !activeStylePicker || activeStylePicker.playerId !== playerId) return;
   try {
     const message = parseSubtitleStyleGet(raw);
@@ -1033,7 +1046,7 @@ iina.global.onMessage("subtitle-style:picker-cancel", async (raw: unknown, playe
   }
 });
 
-iina.global.onMessage("profiles:list", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("profiles:list", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
   const authority = profileAuthority.snapshot;
@@ -1045,7 +1058,7 @@ iina.global.onMessage("profiles:list", async (raw: unknown, playerId?: string) =
   });
 });
 
-iina.global.onMessage("profile-activation:get", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("profile-activation:get", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     const message = parseProfileActivationGet(raw);
@@ -1060,25 +1073,37 @@ iina.global.onMessage("profile-activation:get", async (raw: unknown, playerId?: 
   }
 });
 
-iina.global.onMessage("profile-activation:set", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("profile-activation:set", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
+  let message: ReturnType<typeof parseProfileActivationSet>;
   try {
-    const message = parseProfileActivationSet(raw);
+    message = parseProfileActivationSet(raw);
+  } catch {
+    return;
+  }
+  try {
     await profileReady;
     const result = await profileAuthority.set({
       senderId: playerId,
       requestId: message.requestId,
       ...message.payload,
     });
+    if (result.outcome === "changed") await broker.cancelAll();
     postToPlayer(playerId, "profile-activation:result", result);
     if (result.outcome === "changed") publishProfileAuthority();
     else if (result.outcome === "unchanged") publishProfileAuthority(playerId);
   } catch {
-    return;
+    await profileReady;
+    postToPlayer(playerId, "profile-activation:result", {
+      requestId: message.requestId,
+      outcome: "failed",
+      authority: profileAuthority.snapshot,
+      error: { code: "PROFILE_ACTIVATION_FAILED", userAction: "RETRY" },
+    });
   }
 });
 
-iina.global.onMessage("provider:models", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("provider:models", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
   let externalRequestId = requestId(raw);
@@ -1181,7 +1206,7 @@ iina.global.onMessage("provider:models", async (raw: unknown, playerId?: string)
   }
 });
 
-iina.global.onMessage("provider:models-preview", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("provider:models-preview", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
   let externalRequestId = requestId(raw);
@@ -1255,7 +1280,7 @@ iina.global.onMessage("provider:models-preview", async (raw: unknown, playerId?:
   }
 });
 
-iina.global.onMessage("profile:create-revision", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("profile:create-revision", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
   try {
@@ -1307,7 +1332,7 @@ iina.global.onMessage("profile:create-revision", async (raw: unknown, playerId?:
   }
 });
 
-iina.global.onMessage("profile:delete", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("profile:delete", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
   try {
@@ -1339,7 +1364,7 @@ iina.global.onMessage("profile:delete", async (raw: unknown, playerId?: string) 
   }
 });
 
-iina.global.onMessage("credential:set", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("credential:set", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
   try {
@@ -1381,7 +1406,7 @@ iina.global.onMessage("credential:set", async (raw: unknown, playerId?: string) 
   }
 });
 
-iina.global.onMessage("provider:test", async (raw: unknown, senderId?: string) => {
+globalMailbox.onMessage("provider:test", async (raw: unknown, senderId?: string) => {
   if (!senderId) return;
   let owner: ProviderConnectionTestTask | null = null;
   try {
@@ -1487,7 +1512,7 @@ iina.global.onMessage("provider:test", async (raw: unknown, senderId?: string) =
   }
 });
 
-iina.global.onMessage("provider:test-cancel", async (raw: unknown, senderId?: string) => {
+globalMailbox.onMessage("provider:test-cancel", async (raw: unknown, senderId?: string) => {
   if (!senderId) return;
   try {
     const message = parseProviderTestCancelRequest(raw);
@@ -1499,7 +1524,7 @@ iina.global.onMessage("provider:test-cancel", async (raw: unknown, senderId?: st
   }
 });
 
-iina.global.onMessage("provider:attempt", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("provider:attempt", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
   const id = requestId(raw);
@@ -1525,7 +1550,7 @@ iina.global.onMessage("provider:attempt", async (raw: unknown, playerId?: string
   }
 });
 
-iina.global.onMessage("provider:cancel", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("provider:cancel", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
   const values = payload(raw);
@@ -1579,7 +1604,7 @@ async function prefetchProfileModels(profile: ProviderProfileSnapshot): Promise<
   }
 }
 
-setTimeout(async () => {
+hostTimers.setTimeout(async () => {
   await profileReady;
   for (const profile of profiles.listLatest())
     void prefetchProfileModels(profile).catch(() => undefined);

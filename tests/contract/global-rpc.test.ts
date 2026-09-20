@@ -4,6 +4,20 @@ import { GlobalRpcRouter } from "../../src/adapters/iina/global-rpc.js";
 import { GLOBAL_MESSAGE_NAMES, SIDEBAR_MESSAGE_NAMES } from "../../src/domain/messages.js";
 
 describe("authoritative global RPC routing", () => {
+  it("keeps every Main and Global message off IINA's synchronous cross-context bridge", () => {
+    const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
+    const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+    const mailboxSource = readFileSync(
+      new URL("../../src/adapters/iina/global-mailbox.ts", import.meta.url),
+      "utf8",
+    );
+    for (const source of [mainSource, globalSource, mailboxSource]) {
+      expect(source).not.toMatch(/iina\.global\.(?:postMessage|onMessage)/);
+    }
+    expect(mainSource).toContain("new MainGlobalMailbox(");
+    expect(globalSource).toContain("new GlobalMailbox(");
+  });
+
   it("routes the complete Claude lifecycle through shared strict RPC names", () => {
     const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
     expect(source).toContain('import { ClaudeProvider } from "./providers/claude.js"');
@@ -36,6 +50,20 @@ describe("authoritative global RPC routing", () => {
     expect(
       readFileSync(new URL("../../src/providers/profile-activation.ts", import.meta.url), "utf8"),
     ).toMatch(/profile\.kind === "claude"[\s\S]*credentialConfigured/);
+  });
+
+  it("cancels obsolete Provider work before publishing a changed activation", () => {
+    const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+    const start = source.indexOf('onMessage("profile-activation:set"');
+    const end = source.indexOf('onMessage("provider:models"', start);
+    const handler = source.slice(start, end);
+    expect(handler).toContain('if (result.outcome === "changed") await broker.cancelAll()');
+    expect(handler.indexOf("await broker.cancelAll()")).toBeLessThan(
+      handler.indexOf('postToPlayer(playerId, "profile-activation:result"'),
+    );
+    expect(handler.indexOf("await broker.cancelAll()")).toBeLessThan(
+      handler.indexOf("publishProfileAuthority()"),
+    );
   });
 
   it("binds saved, preview and startup Claude pagination to a per-page active owner", () => {

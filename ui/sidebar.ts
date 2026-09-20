@@ -272,6 +272,7 @@ const profileCredentialPartialFailureMessage =
 const profileRows = new Map<string, HTMLElement>();
 let newProfileRow: HTMLElement | null = null;
 const pendingOperations = new Set<string>();
+const profileActivationTimeouts = new Map<string, number>();
 let activeProviderKind: ProviderKind = "openai";
 let editingProfile: ProfileView | null = null;
 let pendingProfileSave: {
@@ -1662,6 +1663,14 @@ profilesElement.addEventListener("change", (event) => {
   const requestId = nextRequestId();
   if (!sidebarState.beginProfileActivation(requestId, profile.profileId, enabled)) return;
   renderProfileActivationControls();
+  profileActivationTimeouts.set(
+    requestId,
+    window.setTimeout(() => {
+      profileActivationTimeouts.delete(requestId);
+      if (!sidebarState.expireProfileActivation(requestId)) return;
+      renderProfileActivationControls();
+    }, 8_000),
+  );
   window.iina?.postMessage(
     "profile-activation:set",
     envelope(
@@ -1731,7 +1740,13 @@ window.iina?.onMessage("profile-activation:state", (raw: unknown) => {
 });
 
 window.iina?.onMessage("profile-activation:result", (raw: unknown) => {
-  const result = sidebarState.finishProfileActivation(raw as SidebarProfileActivationResult);
+  const value = raw as SidebarProfileActivationResult;
+  const timeout = profileActivationTimeouts.get(value.requestId);
+  if (timeout !== undefined) {
+    window.clearTimeout(timeout);
+    profileActivationTimeouts.delete(value.requestId);
+  }
+  const result = sidebarState.finishProfileActivation(value);
   if (!result.accepted) return;
   renderedProfilesSignature = "";
   renderProfiles(sidebarState.snapshot.profiles as unknown as ProfileView[]);
@@ -2100,16 +2115,17 @@ function mountProfileDrawer(): void {
 
 function renderDrawerAvailability(): void {
   const drawer = sidebarState.snapshot.drawer;
+  const unavailable = sidebarState.snapshot.profileAuthority?.ready === false;
   const conflict = drawer.validity === "conflict";
   const saving = drawer.savePhase !== null;
   const deleting = drawer.deletePhase === "deleting";
   const testing = drawer.test?.phase === "testing";
-  testProfileButton.disabled = conflict || saving || deleting || testing;
-  saveProfileButton.disabled = conflict || saving || deleting;
-  deleteProfileButton.disabled = conflict || saving || deleting;
+  testProfileButton.disabled = unavailable || conflict || saving || deleting || testing;
+  saveProfileButton.disabled = unavailable || conflict || saving || deleting;
+  deleteProfileButton.disabled = unavailable || conflict || saving || deleting;
   cancelProfileButton.disabled = saving || deleting;
-  refreshModelsButton.disabled = conflict || saving || deleting;
-  newProfileButton.disabled = saving;
+  refreshModelsButton.disabled = unavailable || conflict || saving || deleting;
+  newProfileButton.disabled = unavailable || saving;
   if (conflict) {
     profileEditorStatus.dataset.conflict = "true";
     profileEditorStatus.dataset.state = "error";
@@ -2142,6 +2158,9 @@ function renderProfileActivationControls(): void {
     if (status && (view.error || view.readinessMessage)) {
       status.textContent = view.error ?? view.readinessMessage ?? "";
       status.dataset.state = view.error ? "error" : "pending";
+    } else if (status) {
+      status.textContent = "";
+      delete status.dataset.state;
     }
   }
 }
@@ -2173,7 +2192,12 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
   if (!viewProfiles.length && drawer.mode !== "new") {
     const empty = existingEmpty ?? document.createElement("p");
     empty.className = "empty";
-    empty.textContent = "No saved profiles yet.";
+    const unavailable = sidebarState.snapshot.profileAuthority?.ready === false;
+    empty.textContent = unavailable
+      ? "Profiles unavailable (HELPER_UNAVAILABLE). Restart IINA."
+      : "No saved profiles yet.";
+    if (unavailable) empty.dataset.state = "error";
+    else delete empty.dataset.state;
     profilesElement.append(empty);
   } else {
     existingEmpty?.remove();

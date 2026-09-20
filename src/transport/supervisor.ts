@@ -21,28 +21,25 @@ export class TransportSupervisor implements TransportRpcClient {
 
   private async currentOrStart(): Promise<TransportRpcClient> {
     if (this.client) return this.client;
-    if (!this.starting) {
-      const starting = this.start();
-      this.starting = starting;
-      void starting.then(
-        (client) => {
-          if (this.starting === starting) {
-            this.client = client;
-            this.starting = null;
-          }
-        },
-        () => {
-          if (this.starting === starting) this.starting = null;
-        },
-      );
+    if (!this.starting) this.starting = this.start();
+    const starting = this.starting;
+    try {
+      const client = await starting;
+      if (this.starting === starting) {
+        this.client = client;
+        this.starting = null;
+      }
+      return client;
+    } catch (error) {
+      if (this.starting === starting) this.starting = null;
+      throw error;
     }
-    return this.starting;
   }
 
   private retireExpiredClient(client: TransportRpcClient): void {
     if (this.client !== client) return;
     this.client = null;
-    void client.shutdown().catch(() => undefined);
+    client.dispose?.();
   }
 
   private async liveClient(): Promise<TransportRpcClient> {
