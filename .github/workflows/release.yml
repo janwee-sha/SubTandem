@@ -46,7 +46,7 @@ jobs:
           xcrun --find swift
           xcodebuild -version | grep -Fx 'Xcode 26.3'
           swift --version
-          swift build -help | grep -E 'swiftbuild.+Swift Build build engine'
+          swift build --build-system swiftbuild --package-path native/transport --scratch-path "$RUNNER_TEMP/swiftbuild-probe" --show-bin-path
           test "$(uname -m)" = "arm64"
           test "$(node --version)" = "v24.18.0"
           npm --version | grep -Eq '^11\.'
