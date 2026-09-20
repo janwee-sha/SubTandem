@@ -1,9 +1,9 @@
 {
   "name": "SubTandem",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "identifier": "io.subtandem.iina",
   "ghRepo": "janwee-sha/SubTandem",
-  "ghVersion": 1006,
+  "ghVersion": 1007,
   "description": "Translates the selected local embedded text subtitle or external SRT/ASS subtitle and renders translated subtitles itself in IINA.",
   "author": {
     "name": "SubTandem Contributors"
