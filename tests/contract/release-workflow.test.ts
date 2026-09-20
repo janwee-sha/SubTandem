@@ -24,8 +24,9 @@ describe("automatic release workflow", () => {
     expect(workflow).toContain('test -d "$DEVELOPER_DIR"');
     expect(workflow).toContain("xcodebuild -version | grep -Fx 'Xcode 26.3'");
     expect(workflow).toContain(
-      "swift build -help | grep -E 'swiftbuild.+Swift Build build engine'",
+      'swift build --build-system swiftbuild --package-path native/transport --scratch-path "$RUNNER_TEMP/swiftbuild-probe" --show-bin-path',
     );
+    expect(workflow).not.toContain("swift build -help");
     expect(workflow).toContain('test "$(uname -m)" = "arm64"');
     expect(workflow).toContain('node-version: "24.18.0"');
     expect(workflow).toContain("IINA.v1.4.4.dmg");
