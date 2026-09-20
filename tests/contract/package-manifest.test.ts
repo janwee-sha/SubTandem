@@ -136,11 +136,13 @@ describe("IINA package manifest", () => {
     expect(scripts).toContain("native/ffmpeg.lock.json");
   });
 
-  it("pins Swift Build with explicit macOS 12 target triples", () => {
+  it("pins Swift Build to one architecture with macOS 12 destinations", () => {
     const nativeBuild = rootFile("scripts/build-native.sh");
 
     expect(nativeBuild.match(/swift build --build-system swiftbuild/g)).toHaveLength(2);
-    expect(nativeBuild).toContain('--triple "$ARCH-apple-macosx12.0"');
+    expect(nativeBuild).toContain('--destination "$DESTINATION_PATH" --arch "$ARCH"');
+    expect(nativeBuild).toContain('"$ARCH-apple-macosx12.0"');
+    expect(nativeBuild).not.toContain('--triple "$ARCH-apple-macosx12.0"');
     expect(nativeBuild).not.toContain("--build-system native");
   });
 

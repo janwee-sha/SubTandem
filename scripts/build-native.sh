@@ -9,39 +9,45 @@ OUTPUT_DIR="$ROOT_DIR/dist/native"
 HASH_FILE="$ROOT_DIR/build/native-hashes.json"
 MODULE_CACHE="$ROOT_DIR/native/.build/module-cache"
 SWIFT_BUILD_DIR="$ROOT_DIR/native/.build/swiftbuild"
+DESTINATION_DIR="$SWIFT_BUILD_DIR/destinations"
 
 mkdir -p "$OUTPUT_DIR" "$SWIFT_BUILD_DIR"
 find "$OUTPUT_DIR" -mindepth 1 -delete
 find "$SWIFT_BUILD_DIR" -mindepth 1 -delete
-mkdir -p "$MODULE_CACHE" "$ROOT_DIR/build"
+mkdir -p "$MODULE_CACHE" "$ROOT_DIR/build" "$DESTINATION_DIR"
 export MACOSX_DEPLOYMENT_TARGET=12.0
 export CLANG_MODULE_CACHE_PATH="$MODULE_CACHE"
 export SWIFTPM_MODULECACHE_OVERRIDE="$MODULE_CACHE"
+SWIFT_SDK=$(xcrun --sdk macosx --show-sdk-path)
+SWIFT_TOOLCHAIN_BIN=$(dirname "$(xcrun --find swift)")
 
 build_package() {
   PACKAGE_DIR=$1
   SCRATCH_PATH=$2
   ARCH=$3
-  FFMPEG_PREFIX=${4:-}
+  DESTINATION_PATH=$4
+  FFMPEG_PREFIX=${5:-}
 
   SUBTANDEM_FFMPEG_PREFIX="$FFMPEG_PREFIX" \
-    swift build --build-system swiftbuild --disable-sandbox --package-path "$PACKAGE_DIR" --scratch-path "$SCRATCH_PATH" -c release --triple "$ARCH-apple-macosx12.0"
+    swift build --build-system swiftbuild --disable-sandbox --package-path "$PACKAGE_DIR" --scratch-path "$SCRATCH_PATH" -c release --destination "$DESTINATION_PATH" --arch "$ARCH"
   SWIFT_BIN_PATH=$(SUBTANDEM_FFMPEG_PREFIX="$FFMPEG_PREFIX" \
-    swift build --build-system swiftbuild --disable-sandbox --package-path "$PACKAGE_DIR" --scratch-path "$SCRATCH_PATH" -c release --triple "$ARCH-apple-macosx12.0" --show-bin-path)
+    swift build --build-system swiftbuild --disable-sandbox --package-path "$PACKAGE_DIR" --scratch-path "$SCRATCH_PATH" -c release --destination "$DESTINATION_PATH" --arch "$ARCH" --show-bin-path)
 }
 
 "$ROOT_DIR/scripts/build-ffmpeg.sh" "${SUBTANDEM_FFMPEG_SOURCE:-$ROOT_DIR/native/.build/ffmpeg/downloads/ffmpeg-8.1.2.tar.xz}"
 
 for ARCH in arm64 x86_64; do
+  DESTINATION_PATH="$DESTINATION_DIR/$ARCH.json"
   TRANSPORT_SCRATCH="$SWIFT_BUILD_DIR/transport/$ARCH"
   EXTRACTOR_SCRATCH="$SWIFT_BUILD_DIR/subtitle-extractor/$ARCH"
   STYLE_PICKER_SCRATCH="$SWIFT_BUILD_DIR/style-picker/$ARCH"
+  node -e 'const fs=require("node:fs");const [path,sdk,bin,target]=process.argv.slice(1);fs.writeFileSync(path,JSON.stringify({version:1,sdk,"toolchain-bin-dir":bin,target,"extra-cc-flags":[],"extra-swiftc-flags":[],"extra-cpp-flags":[]},null,2)+"\n")' "$DESTINATION_PATH" "$SWIFT_SDK" "$SWIFT_TOOLCHAIN_BIN" "$ARCH-apple-macosx12.0"
 
-  build_package "$TRANSPORT_PACKAGE" "$TRANSPORT_SCRATCH" "$ARCH"
+  build_package "$TRANSPORT_PACKAGE" "$TRANSPORT_SCRATCH" "$ARCH" "$DESTINATION_PATH"
   TRANSPORT_BIN_PATH=$SWIFT_BIN_PATH
-  build_package "$EXTRACTOR_PACKAGE" "$EXTRACTOR_SCRATCH" "$ARCH" "$ROOT_DIR/native/.build/ffmpeg/$ARCH"
+  build_package "$EXTRACTOR_PACKAGE" "$EXTRACTOR_SCRATCH" "$ARCH" "$DESTINATION_PATH" "$ROOT_DIR/native/.build/ffmpeg/$ARCH"
   EXTRACTOR_BIN_PATH=$SWIFT_BIN_PATH
-  build_package "$STYLE_PICKER_PACKAGE" "$STYLE_PICKER_SCRATCH" "$ARCH"
+  build_package "$STYLE_PICKER_PACKAGE" "$STYLE_PICKER_SCRATCH" "$ARCH" "$DESTINATION_PATH"
   STYLE_PICKER_BIN_PATH=$SWIFT_BIN_PATH
 
   if [ "$ARCH" = arm64 ]; then
