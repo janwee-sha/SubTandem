@@ -20,6 +20,12 @@ describe("automatic release workflow", () => {
 
   it("pins the Arm64 build environment and IINA package", () => {
     expect(workflow).toContain("runs-on: macos-15");
+    expect(workflow).toContain("DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer");
+    expect(workflow).toContain('test -d "$DEVELOPER_DIR"');
+    expect(workflow).toContain("xcodebuild -version | grep -Fx 'Xcode 26.3'");
+    expect(workflow).toContain(
+      "swift build -help | grep -E 'swiftbuild.+Swift Build build engine'",
+    );
     expect(workflow).toContain('test "$(uname -m)" = "arm64"');
     expect(workflow).toContain('node-version: "24.18.0"');
     expect(workflow).toContain("IINA.v1.4.4.dmg");

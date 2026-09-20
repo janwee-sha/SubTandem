@@ -16,6 +16,8 @@ jobs:
   build:
     if: github.ref == 'refs/heads/main'
     runs-on: macos-15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
     permissions:
       contents: read
     outputs:
@@ -40,9 +42,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          xcode-select --print-path
-          xcodebuild -version
+          test -d "$DEVELOPER_DIR"
+          xcrun --find swift
+          xcodebuild -version | grep -Fx 'Xcode 26.3'
           swift --version
+          swift build -help | grep -E 'swiftbuild.+Swift Build build engine'
           test "$(uname -m)" = "arm64"
           test "$(node --version)" = "v24.18.0"
           npm --version | grep -Eq '^11\.'
