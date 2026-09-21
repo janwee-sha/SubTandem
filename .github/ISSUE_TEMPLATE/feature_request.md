@@ -3,7 +3,7 @@ name: Feature request
 about: Suggest an improvement or new capability for SubTandem
 title: "[Feature]: "
 labels: enhancement
-assignees: ''
+assignees: ""
 ---
 
 ## Before submitting
