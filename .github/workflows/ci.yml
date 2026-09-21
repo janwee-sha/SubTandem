@@ -37,10 +37,30 @@ jobs:
           xcrun --find swift
           xcodebuild -version | grep -Fx 'Xcode 26.3'
           swift --version
-          swift build --build-system swiftbuild --package-path native/transport --scratch-path "$RUNNER_TEMP/swiftbuild-probe" --show-bin-path
+          ./scripts/verify-native-toolchain.sh
           test "$(uname -m)" = "arm64"
           test "$(node --version)" = "v24.18.0"
           npm --version | grep -Eq '^11\.'
+
+      - name: Restore locked FFmpeg build
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: |
+            native/.build/ffmpeg/downloads/ffmpeg-8.1.2.tar.xz
+            native/.build/ffmpeg/arm64
+            native/.build/ffmpeg/x86_64
+            native/.build/ffmpeg/build-context.sha256
+          key: native-ffmpeg-${{ runner.os }}-${{ runner.arch }}-xcode-26.3-macos12-${{ hashFiles('native/ffmpeg.lock.json', 'scripts/build-ffmpeg.sh', 'scripts/verify-native-toolchain.sh') }}
+
+      - name: Restore incremental Swift build
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: |
+            native/.build/module-cache
+            native/.build/swiftbuild
+          key: native-swift-${{ runner.os }}-${{ runner.arch }}-xcode-26.3-macos12-ffmpeg-${{ hashFiles('native/ffmpeg.lock.json', 'scripts/build-ffmpeg.sh') }}-source-${{ hashFiles('native/*/Package.swift', 'native/*/Sources/**', 'scripts/build-native.sh', 'scripts/verify-native-toolchain.sh') }}
+          restore-keys: |
+            native-swift-${{ runner.os }}-${{ runner.arch }}-xcode-26.3-macos12-ffmpeg-${{ hashFiles('native/ffmpeg.lock.json', 'scripts/build-ffmpeg.sh') }}-source-
 
       - name: Install locked dependencies
         run: npm ci

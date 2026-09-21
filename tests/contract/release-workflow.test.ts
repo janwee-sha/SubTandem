@@ -44,9 +44,8 @@ describe("automatic release workflow", () => {
     expect(workflow).toContain("DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer");
     expect(workflow).toContain('test -d "$DEVELOPER_DIR"');
     expect(workflow).toContain("xcodebuild -version | grep -Fx 'Xcode 26.3'");
-    expect(workflow).toContain(
-      'swift build --build-system swiftbuild --package-path native/transport --scratch-path "$RUNNER_TEMP/swiftbuild-probe" --show-bin-path',
-    );
+    expect(workflow).toContain("./scripts/verify-native-toolchain.sh");
+    expect(workflow).not.toContain("swiftbuild-probe");
     expect(workflow).not.toContain("swift build -help");
     expect(workflow).toContain('test "$(uname -m)" = "arm64"');
     expect(workflow).toContain('node-version: "24.18.0"');
@@ -180,6 +179,8 @@ describe("pull request CI workflow", () => {
       "DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer",
     );
     expect(pullRequestWorkflow).toContain("xcodebuild -version | grep -Fx 'Xcode 26.3'");
+    expect(pullRequestWorkflow).toContain("./scripts/verify-native-toolchain.sh");
+    expect(pullRequestWorkflow).not.toContain("swiftbuild-probe");
     expect(pullRequestWorkflow).toContain('node-version: "24.18.0"');
     expect(actionCommit(pullRequestWorkflow, "actions/checkout")).toBe(
       actionCommit(workflow, "actions/checkout"),
@@ -188,9 +189,24 @@ describe("pull request CI workflow", () => {
       actionCommit(workflow, "actions/setup-node"),
     );
     expect(pullRequestWorkflow).toContain("persist-credentials: false");
+    expect(actionCommit(pullRequestWorkflow, "actions/cache")).toBe(
+      "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+    );
     expect(pullRequestWorkflow.match(/uses:\s+[^\s]+@[^\s]+/g) ?? []).toSatisfy((uses: string[]) =>
       uses.every((value) => /@[0-9a-f]{40}$/.test(value)),
     );
+  });
+
+  it("caches validated FFmpeg outputs and incremental Swift state only for pull requests", () => {
+    expect(pullRequestWorkflow).toContain("native/.build/ffmpeg/downloads/ffmpeg-8.1.2.tar.xz");
+    expect(pullRequestWorkflow).toContain("native/.build/ffmpeg/build-context.sha256");
+    expect(pullRequestWorkflow).toContain("native/.build/module-cache");
+    expect(pullRequestWorkflow).toContain("native/.build/swiftbuild");
+    expect(pullRequestWorkflow).toContain("native-ffmpeg-${{ runner.os }}-${{ runner.arch }}");
+    expect(pullRequestWorkflow).toContain("xcode-26.3-macos12");
+    expect(pullRequestWorkflow).toContain("native-swift-${{ runner.os }}-${{ runner.arch }}");
+    expect(pullRequestWorkflow).toContain("restore-keys:");
+    expect(workflow).not.toContain("actions/cache@");
   });
 
   it("cancels superseded runs for the same pull request", () => {
