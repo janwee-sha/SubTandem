@@ -8,6 +8,8 @@ TEST_DIR="$ROOT_DIR/native/transport/Tests"
 BUILD_DIR="$ROOT_DIR/native/transport/.build/contract-tests"
 MODULE_CACHE="$ROOT_DIR/native/.build/module-cache"
 
+"$ROOT_DIR/scripts/verify-native-toolchain.sh"
+
 mkdir -p "$BUILD_DIR" "$MODULE_CACHE"
 export CLANG_MODULE_CACHE_PATH="$MODULE_CACHE"
 export SWIFTPM_MODULECACHE_OVERRIDE="$MODULE_CACHE"

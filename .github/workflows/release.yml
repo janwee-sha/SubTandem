@@ -28,7 +28,7 @@ jobs:
       version: ${{ steps.metadata.outputs.version }}
     steps:
       - name: Check out the triggering commit
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
 
@@ -46,7 +46,7 @@ jobs:
           xcrun --find swift
           xcodebuild -version | grep -Fx 'Xcode 26.3'
           swift --version
-          swift build --build-system swiftbuild --package-path native/transport --scratch-path "$RUNNER_TEMP/swiftbuild-probe" --show-bin-path
+          ./scripts/verify-native-toolchain.sh
           test "$(uname -m)" = "arm64"
           test "$(node --version)" = "v24.18.0"
           npm --version | grep -Eq '^11\.'
@@ -85,6 +85,9 @@ jobs:
 
       - name: Run linting
         run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
 
       - name: Build native helper
         run: npm run build:native
@@ -142,7 +145,7 @@ jobs:
       contents: write
     steps:
       - name: Check out the publishing interface
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
 

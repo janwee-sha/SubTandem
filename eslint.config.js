@@ -24,7 +24,7 @@ module.exports = tseslint.config(
     },
   },
   {
-    files: ["**/*.ts"],
+    files: ["**/*.{ts,mts}"],
     rules: {
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-explicit-any": "off",
