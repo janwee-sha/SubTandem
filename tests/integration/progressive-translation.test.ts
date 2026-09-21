@@ -489,4 +489,50 @@ describe("progressive translation output", () => {
     expect(overlay.frames).toEqual([]);
     expect(overlay.clears).toBeGreaterThan(clearsBeforeInvalidation);
   });
+
+  it.each(["final", "failure"] as const)(
+    "keeps waitingForConfiguration after late progress and %s from the disabled last activation",
+    async (terminal) => {
+      let lateProgress: TranslationProgressHandler | undefined;
+      let resolve!: (value: { translations: Array<{ id: string; text: string }> }) => void;
+      let reject!: (error: unknown) => void;
+      const provider: TranslationProvider = {
+        attempt: (_request, onProgress) => {
+          lateProgress = onProgress;
+          return new Promise((resolveAttempt, rejectAttempt) => {
+            resolve = resolveAttempt;
+            reject = rejectAttempt;
+          });
+        },
+        cancel: () => undefined,
+      };
+      const overlay = new RecordingOverlay();
+      const playback = new PlaybackController({
+        playerId: `disabled-last-${terminal}`,
+        provider,
+        overlay,
+        targetLanguage: "zh-Hans",
+        requiresProviderSelection: true,
+      });
+      playback.setProviderSelection({
+        profileId: "profile-active",
+        revision: 1,
+        endpointFingerprint: "endpoint-active",
+      });
+      playback.setSource({ cues: denseCues, contentHash: "disabled-last", format: "srt" });
+      playback.tick(0);
+      await Promise.resolve();
+
+      playback.clearProviderSelection();
+      lateProgress?.({ translations: [{ id: "cue-1", text: "late-progress" }] });
+      if (terminal === "final") resolve({ translations: [{ id: "cue-1", text: "late-final" }] });
+      else reject({ category: "network", retryable: false });
+      await playback.whenIdle();
+
+      expect(playback.status).toBe("waitingForConfiguration");
+      expect(playback.providerError).toBeNull();
+      expect(playback.cacheSize).toBe(0);
+      expect(overlay.frames).toEqual([]);
+    },
+  );
 });

@@ -474,6 +474,7 @@ function providerTestCode(category: string, providerCode?: string): string {
       "CREDENTIAL_CONTEXT_CHANGED",
       "REQUEST_CANCELLED",
       "TEST_INVALIDATED",
+      "UNKNOWN_PROVIDER_ERROR",
     ].includes(providerCode)
   )
     return providerCode;

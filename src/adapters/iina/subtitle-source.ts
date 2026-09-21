@@ -33,6 +33,7 @@ export interface SubtitleSelectionSnapshot {
 
 export type SubtitleSelectionClassification =
   | { kind: "none"; state: "emptyOrUnreadable" }
+  | { kind: "indeterminate" }
   | { kind: "external"; track: SubtitleTrackIdentity }
   | { kind: "embedded"; media: MediaSessionIdentity; track: SubtitleTrackIdentity }
   | {
@@ -123,17 +124,17 @@ export function classifySubtitleSelection(
       node["main-selection"] === 0
     );
   }) as MpvSubtitleTrackNode[];
-  if (matches.length !== 1) return { kind: "none", state: "emptyOrUnreadable" };
+  if (matches.length !== 1) return { kind: "indeterminate" };
   const node = matches[0]!;
   const identity = exactTrackIdentity(node);
   if (node.external === true) {
-    return identity
-      ? { kind: "external", track: identity }
-      : { kind: "none", state: "emptyOrUnreadable" };
+    return identity ? { kind: "external", track: identity } : { kind: "indeterminate" };
   }
+  if (node.external !== false) return { kind: "indeterminate" };
+  if (typeof node.codec !== "string" || !node.codec.trim()) return { kind: "indeterminate" };
   if (snapshot.isNetworkResource) return { kind: "unsupported", state: "remoteUnsupported" };
-  if (!identity || identity.origin !== "embedded")
-    return { kind: "unsupported", state: "unsupportedType" };
+  if (!normalizeSubtitleCodec(node.codec)) return { kind: "unsupported", state: "unsupportedType" };
+  if (!identity || identity.origin !== "embedded") return { kind: "indeterminate" };
   const path = localPath(snapshot.mediaUrl);
   if (!path) return { kind: "unsupported", state: "emptyOrUnreadable", track: identity };
   return {

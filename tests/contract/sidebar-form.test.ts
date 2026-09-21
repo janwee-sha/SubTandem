@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 describe("IINA sidebar bundle contract", () => {
@@ -8,6 +8,14 @@ describe("IINA sidebar bundle contract", () => {
   const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
   const sessionStatusSource = readFileSync(
     new URL("../../ui/session-status.ts", import.meta.url),
+    "utf8",
+  );
+  const serviceFailurePath = new URL("../../ui/service-failure-message.ts", import.meta.url);
+  const serviceFailureSource = existsSync(serviceFailurePath)
+    ? readFileSync(serviceFailurePath, "utf8")
+    : "";
+  const providerStatusSource = readFileSync(
+    new URL("../../ui/provider-status.ts", import.meta.url),
     "utf8",
   );
   const packageJson = JSON.parse(
@@ -46,6 +54,25 @@ describe("IINA sidebar bundle contract", () => {
     expect(html).not.toContain('type="module"');
     expect(html.indexOf("./provider-status.ts")).toBeLessThan(html.indexOf("./sidebar.ts"));
     expect(html.indexOf("./sidebar-state.ts")).toBeLessThan(html.indexOf("./sidebar.ts"));
+  });
+
+  it("loads one shared service failure mapper before both feedback consumers", () => {
+    expect(serviceFailureSource).not.toBe("");
+    expect(html).toContain('<script src="./service-failure-message.ts"></script>');
+    expect(html.indexOf("./service-failure-message.ts")).toBeLessThan(
+      html.indexOf("./provider-status.ts"),
+    );
+    expect(html.indexOf("./service-failure-message.ts")).toBeLessThan(
+      html.indexOf("./session-status.ts"),
+    );
+    for (const consumer of [providerStatusSource, sessionStatusSource]) {
+      expect(consumer).toContain("subtandemServiceFailureMessage");
+      expect(consumer).not.toContain("Authentication failed. Check the Profile’s API key.");
+      expect(consumer).not.toContain(
+        "The service limit was reached. Check the account quota or try again later.",
+      );
+      expect(consumer).not.toContain("Translation failed. Test the Profile and try again.");
+    }
   });
 
   it("renders each Profile activation as a confirmed accessible switch", () => {
@@ -361,6 +388,25 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarSource).toContain('postMessage(\n    "provider:test"');
     expect(sidebarSource).not.toContain('className = "profile-test-state"');
     expect(sidebarSource).not.toContain("profileTestStates");
+  });
+
+  it("keeps one non-focusable live region for Session and Profile Test feedback", () => {
+    const sessionFeedback =
+      html.match(/<p id="status"[^>]*role="status"[^>]*aria-live="polite"[^>]*>/g) ?? [];
+    const testFeedback =
+      html.match(/<p\s+id="profile-test-status"[^>]*role="status"[^>]*aria-live="polite"[^>]*>/g) ??
+      [];
+
+    expect(sessionFeedback).toHaveLength(1);
+    expect(testFeedback).toHaveLength(1);
+    expect(sessionFeedback[0]).not.toMatch(/hidden|assistive-only|tabindex/);
+    expect(testFeedback[0]).not.toMatch(/hidden|assistive-only|tabindex/);
+    expect(html.match(/id="status"/g)).toHaveLength(1);
+    expect(html.match(/id="profile-test-status"/g)).toHaveLength(1);
+    expect(html.match(/aria-describedby="profile-test-status"/g)).toHaveLength(1);
+    expect(html).not.toMatch(
+      /(?:hidden|assistive-only|tabindex="0")[^>]*>[^<]*(?:Translation failed|Authentication failed|translation service|subtitle type not supported)/i,
+    );
   });
 
   it("exposes one catalog-driven Target Language control without source language input", () => {

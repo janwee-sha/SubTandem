@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
 beforeAll(async () => {
+  await import("../../ui/service-failure-message.js");
   await import("../../ui/session-status.js");
 });
 
@@ -79,24 +80,40 @@ describe("Session failure presentation", () => {
   });
 
   it("uses the first matching signal and recognizes status-only failures", () => {
-    expect(failureMessage({ category: "quota", statusCode: 401 })).toBe(
-      "Authentication failed. Check the Profile’s API key.",
-    );
-    expect(failureMessage({ category: "configuration", statusCode: 403 })).toBe(
-      "Access was denied. Check the Profile’s API key and model access.",
-    );
-    expect(failureMessage({ category: "http", statusCode: 408 })).toBe(
-      "The translation service timed out. Try again.",
-    );
-    expect(failureMessage({ category: "http", statusCode: 504 })).toBe(
-      "The translation service timed out. Try again.",
-    );
-    expect(failureMessage({ category: "http", statusCode: 402 })).toBe(
-      "The service limit was reached. Check the account quota or try again later.",
-    );
-    expect(failureMessage({ category: "http", statusCode: 429 })).toBe(
-      "The service limit was reached. Check the account quota or try again later.",
-    );
+    for (const [input, expected] of [
+      [
+        { category: "quota", statusCode: 401 },
+        "Authentication failed. Check the Profile’s API key.",
+      ],
+      [
+        { category: "configuration", statusCode: 403 },
+        "Access was denied. Check the Profile’s API key and model access.",
+      ],
+      [
+        { category: "network", statusCode: 504 },
+        "Couldn’t reach the translation service. Check your connection and Network route.",
+      ],
+      [
+        { category: "configuration", statusCode: 429 },
+        "The Profile settings were rejected. Check the Endpoint and Model ID.",
+      ],
+      [{ category: "timeout", statusCode: 429 }, "The translation service timed out. Try again."],
+      [
+        { category: "model", statusCode: 429 },
+        "The model is unavailable. Check the Profile’s Model ID.",
+      ],
+      [{ category: "quota", statusCode: 408 }, "The translation service timed out. Try again."],
+      [{ category: "http", statusCode: 504 }, "The translation service timed out. Try again."],
+      [
+        { category: "http", statusCode: 402 },
+        "The service limit was reached. Check the account quota or try again later.",
+      ],
+      [
+        { category: "http", statusCode: 429 },
+        "The service limit was reached. Check the account quota or try again later.",
+      ],
+    ] as const)
+      expect(failureMessage(input)).toBe(expected);
   });
 
   it("treats the normalized unknown code as unknown and cancellation as no failure", () => {
@@ -153,7 +170,7 @@ describe("Session presentation priority", () => {
     ],
     [
       { status: "waitingForConfiguration" as const },
-      "Enable and test a translation service",
+      "No translation service enabled. Enable one to translate.",
       "waitingForConfiguration",
     ],
     [
@@ -178,5 +195,55 @@ describe("Session presentation priority", () => {
     expect(first?.signature).toBe("running\u0000Translations are running");
     expect(equivalent?.signature).toBe(first?.signature);
     expect(changed?.signature).not.toBe(first?.signature);
+  });
+
+  it("uses the one exact unsupported subtitle message with a stable presentation signature", () => {
+    const first = presentation({
+      status: "waitingForSubtitle",
+      sourcePreparation: { state: "unsupportedType" },
+    });
+    const equivalent = presentation({
+      status: "serviceUnavailable",
+      providerError: { category: "network" },
+      sourcePreparation: { state: "unsupportedType" },
+    });
+
+    expect(first).toEqual({
+      text: "Subtitle type not supported. Select a text subtitle in IINA.",
+      state: "unsupportedType",
+      signature:
+        "unsupportedType\u0000Subtitle type not supported. Select a text subtitle in IINA.",
+    });
+    expect(equivalent?.signature).toBe(first?.signature);
+    expect(presentation({ status: "waitingForSubtitle", sourceIssue: "unreadable" })?.text).toBe(
+      "IINA has not exposed readable subtitle data yet; reselect the external subtitle.",
+    );
+  });
+
+  it("keeps the no-service message stable while preserving disabled and subtitle priority", () => {
+    const noService = presentation({ status: "waitingForConfiguration" });
+
+    expect(noService).toEqual({
+      text: "No translation service enabled. Enable one to translate.",
+      state: "waitingForConfiguration",
+      signature:
+        "waitingForConfiguration\u0000No translation service enabled. Enable one to translate.",
+    });
+    expect(presentation({ status: "waitingForConfiguration" })?.signature).toBe(
+      noService?.signature,
+    );
+    expect(
+      presentation({
+        status: "waitingForConfiguration",
+        sourcePreparation: { state: "preparing" },
+      })?.state,
+    ).toBe("preparing");
+    expect(
+      presentation({ status: "waitingForConfiguration", sourceIssue: "unreadable" })?.state,
+    ).toBe("waitingForSubtitle");
+    expect(presentation({ status: "disabled" })?.text).toBe("Translation is off");
+    expect(presentation({ status: "running" })?.text).not.toContain(
+      "No translation service enabled",
+    );
   });
 });

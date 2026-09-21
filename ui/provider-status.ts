@@ -8,6 +8,7 @@ interface ProviderTestStatus {
 }
 
 interface Window {
+  subtandemServiceFailureMessage(result: ProviderTestStatus): string | null;
   subtandemProviderTestStatusMessage(result: ProviderTestStatus): string;
   subtandemCredentialStatusMessage(result: CredentialStatus): string;
   subtandemModelCatalogStatusMessage(result: ModelCatalogStatus): string;
@@ -31,34 +32,18 @@ function providerTestStatusMessage(result: ProviderTestStatus): string {
   if (result.ok) return "Test passed";
   if (result.code === "TEST_INVALIDATED")
     return "This test is no longer current. Review the Profile and test again.";
-  if (result.category === "protocol")
-    return "Provider response was incompatible. Check that the selected model supports structured JSON output.";
   switch (result.userAction) {
-    case "CHECK_CREDENTIALS":
-      return "Authentication failed. Re-enter the API key and test again.";
-    case "CHECK_MODEL":
-      return "The service rejected this model. Check the exact model identifier and availability.";
-    case "CHECK_QUOTA":
-      return "The service reported a quota or billing limit. Check the provider account before retrying.";
     case "RESTART_IINA":
       return "The secure transport helper is unavailable. Restart IINA and test again.";
     case "CHECK_INSTALLATION":
       return "The bundled transport helper could not be found. Re-link or reinstall the SubTandem plugin, then restart IINA.";
-    case "CHECK_NETWORK":
-      if (typeof result.statusCode === "number")
-        return `The service returned HTTP ${result.statusCode}. Check service health or try a different network route.`;
-      return result.category === "timeout"
-        ? "The service timed out. Check network reachability and service status, then retry."
-        : "The service could not be reached. Check the network and service status, then retry.";
-    case "CHECK_ENDPOINT":
-      if (result.providerKind === "ollama")
-        return "The endpoint rejected the request. Check the Ollama server URL and chat support.";
-      if (result.providerKind === "claude")
-        return "The endpoint rejected the request. Check the API root, /v1/messages support, Anthropic version compatibility, and exact model ID.";
-      return "The endpoint rejected the request. Check the OpenAI API URL and chat-completions support.";
-    default:
-      return "Connection test failed. Review the endpoint, credentials, model, and service status.";
   }
+  return (
+    (globalThis as typeof globalThis & Window).subtandemServiceFailureMessage({
+      ...result,
+      ...(result.code === undefined ? {} : { providerCode: result.code }),
+    }) ?? ""
+  );
 }
 
 (globalThis as typeof globalThis & Window).subtandemProviderTestStatusMessage =

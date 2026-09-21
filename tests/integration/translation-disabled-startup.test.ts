@@ -7,7 +7,7 @@ import type {
   SubtitleSourcePort,
 } from "../../src/adapters/iina/subtitle-source.js";
 
-type SelectionKind = "external" | "embedded";
+type SelectionKind = "external" | "embedded" | "unsupported";
 
 const subtitleBytes = utf8Encode("1\n00:00:01,000 --> 00:00:02,000\nHello\n");
 const jobId = "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae";
@@ -191,7 +191,7 @@ function createHarness(options: HarnessOptions): RuntimeHarness {
                   selected: true,
                   "main-selection": 0,
                   external: false,
-                  codec: "subrip",
+                  codec: selection === "unsupported" ? "hdmv_pgs_subtitle" : "subrip",
                   "ff-index": 3,
                 },
           ],
@@ -273,7 +273,7 @@ afterEach(() => {
 });
 
 describe("translation-disabled Main startup", () => {
-  it.each(["external", "embedded"] as const)(
+  it.each(["external", "embedded", "unsupported"] as const)(
     "does no subtitle work for a persisted disabled %s selection across every loading entry",
     async (selection) => {
       const harness = createHarness({ enabled: false, selection });
@@ -358,6 +358,37 @@ describe("translation-disabled Main startup", () => {
       source: { format: "srt", cueCount: 1 },
       sourceIssue: null,
       sourcePreparation: null,
+    });
+    harness.close();
+  });
+
+  it("classifies the current unsupported selection only after re-enable", async () => {
+    const harness = createHarness({ enabled: false, selection: "unsupported" });
+    await startHarness(harness);
+    harness.triggerEvent("iina.file-loaded");
+    harness.triggerEvent("mpv.sid.changed");
+    harness.triggerEvent("mpv.track-list.changed");
+    await vi.advanceTimersByTimeAsync(1_500);
+
+    expect(harness.counts.selectionReads).toBe(0);
+    expect(harness.counts.subtitleReads).toBe(0);
+    expect(harness.counts.bootstrapCalls).toBe(0);
+
+    harness.triggerSidebar("translation:set-enabled", {
+      requestId: "enable-unsupported",
+      revision: 1,
+      payload: { enabled: true },
+    });
+    await settle();
+
+    expect(harness.counts.selectionReads).toBe(1);
+    expect(harness.counts.subtitleReads).toBe(0);
+    expect(harness.counts.bootstrapCalls).toBe(0);
+    expect(harness.counts.prepareCalls).toBe(0);
+    expect(harness.states().at(-1)).toMatchObject({
+      source: null,
+      sourceIssue: null,
+      sourcePreparation: { state: "unsupportedType", canRetry: false },
     });
     harness.close();
   });

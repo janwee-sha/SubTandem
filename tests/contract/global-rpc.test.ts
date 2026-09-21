@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { GlobalRpcRouter } from "../../src/adapters/iina/global-rpc.js";
-import { GLOBAL_MESSAGE_NAMES, SIDEBAR_MESSAGE_NAMES } from "../../src/domain/messages.js";
+import {
+  GLOBAL_MESSAGE_NAMES,
+  SIDEBAR_MESSAGE_NAMES,
+  parseProviderTestResult,
+} from "../../src/domain/messages.js";
 
 describe("authoritative global RPC routing", () => {
   it("keeps every Main and Global message off IINA's synchronous cross-context bridge", () => {
@@ -149,6 +153,31 @@ describe("authoritative global RPC routing", () => {
     expect(handler).not.toContain("modelCatalogs.set");
     expect(handler).not.toContain("setSecret");
     expect(handler).not.toContain("persistProfileMetadata");
+  });
+
+  it("allows only the fixed unknown Provider sentinel across the Test result wire", () => {
+    const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+    const messages = readFileSync(new URL("../../src/domain/messages.ts", import.meta.url), "utf8");
+    const safeUnknown = {
+      requestId: "test-unknown-1",
+      drawerId: "drawer-1",
+      draftRevision: 1,
+      ok: false,
+      category: "protocol",
+      retryable: false,
+      code: "UNKNOWN_PROVIDER_ERROR",
+      userAction: "NONE",
+    };
+
+    expect(parseProviderTestResult(safeUnknown)).toEqual(safeUnknown);
+    expect(source).toContain('"UNKNOWN_PROVIDER_ERROR"');
+    expect(messages).toContain('"UNKNOWN_PROVIDER_ERROR"');
+    for (const code of ["invalid_api_key", "provider-private-code", "raw_502_body"])
+      expect(() => parseProviderTestResult({ ...safeUnknown, code })).toThrow("INVALID_MESSAGE");
+    for (const field of ["responseBody", "body", "credential", "subtitle", "endpoint"])
+      expect(() => parseProviderTestResult({ ...safeUnknown, [field]: "must-not-cross" })).toThrow(
+        "INVALID_MESSAGE",
+      );
   });
   it("routes provider model requests in the host window scope", async () => {
     const replies: Array<{ playerId: string; name: string; data: unknown }> = [];
