@@ -20,7 +20,7 @@ describe("native build script", () => {
   });
 
   it("combines a macOS 12 destination with one explicit architecture", () => {
-    expect(buildScript).toContain('SWIFT_SDK=$(xcrun --sdk macosx --show-sdk-path)');
+    expect(buildScript).toContain("SWIFT_SDK=$(xcrun --sdk macosx --show-sdk-path)");
     expect(buildScript).toContain('SWIFT_TOOLCHAIN_BIN=$(dirname "$(xcrun --find swift)")');
     expect(buildScript).toContain('DESTINATION_PATH="$DESTINATION_DIR/$ARCH.json"');
     expect(buildScript).toContain('"$ARCH-apple-macosx12.0"');

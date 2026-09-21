@@ -86,6 +86,9 @@ jobs:
       - name: Run linting
         run: npm run lint
 
+      - name: Check formatting
+        run: npm run format:check
+
       - name: Build native helper
         run: npm run build:native
 

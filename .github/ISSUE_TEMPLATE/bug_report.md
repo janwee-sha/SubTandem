@@ -3,7 +3,7 @@ name: Bug report
 about: Report a reproducible problem with SubTandem
 title: "[Bug]: "
 labels: bug
-assignees: ''
+assignees: ""
 ---
 
 ## Before submitting

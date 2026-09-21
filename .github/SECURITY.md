@@ -4,10 +4,10 @@
 
 Security fixes are provided for the latest published SubTandem release.
 
-| Version | Supported |
-| --- | --- |
-| Latest published release | Yes |
-| Older releases | No |
+| Version                  | Supported |
+| ------------------------ | --------- |
+| Latest published release | Yes       |
+| Older releases           | No        |
 
 Reports that affect the `main` branch or an unreleased development build are welcome, but support commitments apply only to the latest published release.
 

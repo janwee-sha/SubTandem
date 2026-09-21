@@ -5,10 +5,28 @@ const workflow = readFileSync(
   new URL("../../.github/workflows/release.yml", import.meta.url),
   "utf8",
 );
+const pullRequestWorkflow = readFileSync(
+  new URL("../../.github/workflows/ci.yml", import.meta.url),
+  "utf8",
+);
 const publishScript = readFileSync(
   new URL("../../scripts/publish-release.mjs", import.meta.url),
   "utf8",
 );
+
+const sharedGates = [
+  "run: npm run test\n",
+  "run: npm run typecheck\n",
+  "run: npm run lint\n",
+  "run: npm run format:check\n",
+  "run: npm run build:native\n",
+  "run: npm run test:native\n",
+  "run: npm run build\n",
+  "run: npm run verify:package\n",
+];
+
+const gatePositions = (source: string, gates: string[]): number[] =>
+  gates.map((gate) => source.indexOf(gate));
 
 describe("automatic release workflow", () => {
   it("runs only for main pushes or main manual retries", () => {
@@ -45,18 +63,8 @@ describe("automatic release workflow", () => {
     );
   });
 
-  it("executes all eight gates in the required order", () => {
-    const gates = [
-      "run: npm run test\n",
-      "run: npm run typecheck\n",
-      "run: npm run lint\n",
-      "run: npm run build:native\n",
-      "run: npm run test:native\n",
-      "run: npm run build\n",
-      "run: npm run verify:package\n",
-      "run: npm run pack\n",
-    ];
-    const positions = gates.map((gate) => workflow.indexOf(gate));
+  it("executes all nine gates in the required order", () => {
+    const positions = gatePositions(workflow, [...sharedGates, "run: npm run pack\n"]);
 
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((left, right) => left - right));
@@ -141,5 +149,60 @@ describe("automatic release workflow", () => {
     expect(workflow).not.toMatch(/release\s+upload[^\n]*(release-audit|release-notes)/);
     expect(workflow).toMatch(/build:\s*\n[\s\S]*?contents: read/);
     expect(workflow).toMatch(/publish:\s*\n[\s\S]*?contents: write/);
+  });
+});
+
+describe("pull request CI workflow", () => {
+  it("runs only for pull requests targeting main", () => {
+    expect(pullRequestWorkflow).toMatch(/pull_request:\s*\n\s*branches:\s*\[main\]/);
+    expect(pullRequestWorkflow).not.toMatch(/^\s*push:/m);
+    expect(pullRequestWorkflow).not.toContain("workflow_dispatch:");
+    expect(pullRequestWorkflow).not.toContain("pull_request_target:");
+  });
+
+  it("uses a read-only token without secrets or publication steps", () => {
+    expect(pullRequestWorkflow).toMatch(/permissions:\s*\n\s*contents: read/);
+    expect(pullRequestWorkflow).not.toContain("contents: write");
+    expect(pullRequestWorkflow).not.toContain("secrets.");
+    expect(pullRequestWorkflow).not.toContain("npm run pack");
+    expect(pullRequestWorkflow).not.toContain("IINA.v1.4.4.dmg");
+    expect(pullRequestWorkflow).not.toMatch(/upload-artifact|publish-release|release-metadata/);
+  });
+
+  it("pins the release build environment and every action", () => {
+    expect(pullRequestWorkflow).toContain("runs-on: macos-15");
+    expect(pullRequestWorkflow).toContain(
+      "DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer",
+    );
+    expect(pullRequestWorkflow).toContain("xcodebuild -version | grep -Fx 'Xcode 26.3'");
+    expect(pullRequestWorkflow).toContain('node-version: "24.18.0"');
+    expect(pullRequestWorkflow).toContain(
+      "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd",
+    );
+    expect(pullRequestWorkflow).toContain(
+      "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+    );
+    expect(pullRequestWorkflow).toContain("persist-credentials: false");
+    expect(pullRequestWorkflow.match(/uses:\s+[^\s]+@[^\s]+/g) ?? []).toSatisfy((uses: string[]) =>
+      uses.every((value) => /@[0-9a-f]{40}$/.test(value)),
+    );
+  });
+
+  it("cancels superseded runs for the same pull request", () => {
+    expect(pullRequestWorkflow).toContain("github.event.pull_request.number");
+    expect(pullRequestWorkflow).toContain("cancel-in-progress: true");
+  });
+
+  it("keeps all shared release gates in the same order", () => {
+    expect(pullRequestWorkflow).toContain("run: npm ci");
+    const pullRequestPositions = gatePositions(pullRequestWorkflow, sharedGates);
+    const releasePositions = gatePositions(workflow, sharedGates);
+
+    expect(pullRequestPositions.every((position) => position >= 0)).toBe(true);
+    expect(pullRequestPositions).toEqual(
+      [...pullRequestPositions].sort((left, right) => left - right),
+    );
+    expect(releasePositions.every((position) => position >= 0)).toBe(true);
+    expect(releasePositions).toEqual([...releasePositions].sort((left, right) => left - right));
   });
 });
