@@ -19,7 +19,7 @@
     "test:watch": "vitest",
     "test:native": "./scripts/test-native.sh",
     "typecheck": "tsc -p tsconfig.plugin.json --noEmit && tsc -p tsconfig.webview.json --noEmit",
-    "lint": "eslint src ui tests scripts vitest.config.ts",
+    "lint": "eslint src ui tests scripts vitest.config.mts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "verify:package": "./scripts/verify-package.sh"
@@ -68,6 +68,6 @@
     "prettier": "3.9.8",
     "typescript": "5.9.3",
     "typescript-eslint": "8.70.0",
-    "vitest": "3.2.7"
+    "vitest": "4.1.11"
   }
 }
