@@ -26,6 +26,8 @@ import {
 } from "../../src/domain/messages.js";
 import { normalizeProviderError } from "../../src/domain/errors.js";
 import { SESSION_STATUSES, USER_ACTIONS } from "../../src/domain/status.js";
+import "../../ui/service-failure-message.js";
+import "../../ui/session-status.js";
 import "../../ui/provider-status.js";
 import { makeProviderRequest } from "./provider-test-helpers.js";
 
@@ -35,11 +37,21 @@ const providerTestStatusMessage = (
       ok?: boolean;
       category?: string;
       statusCode?: number;
+      code?: string;
       userAction?: string;
       providerKind?: "openai" | "claude" | "deepseek" | "ollama";
     }): string;
   }
 ).subtandemProviderTestStatusMessage;
+const sessionFailureMessage = (
+  globalThis as typeof globalThis & {
+    subtandemSessionFailureMessage(result: {
+      category?: string;
+      statusCode?: number;
+      providerCode?: string;
+    }): string | null;
+  }
+).subtandemSessionFailureMessage;
 const credentialStatusMessage = (
   globalThis as typeof globalThis & {
     subtandemCredentialStatusMessage(result: {
@@ -285,31 +297,30 @@ describe("Sidebar/Main/Global security messages", () => {
       providerTestStatusMessage({
         ok: false,
         category: "protocol",
+        code: "PROVIDER_TEST_FAILED",
         userAction: "CHECK_ENDPOINT",
         providerKind: "claude",
       }),
     ).toBe(
-      "Provider response was incompatible. Check that the selected model supports structured JSON output.",
+      "The translation service returned an unsupported response. Check the Profile’s service type and model.",
     );
-    expect(providerStatusSource).toContain(
-      'return "Provider response was incompatible. Check that the selected model supports structured JSON output."',
-    );
+    expect(providerStatusSource).toContain("subtandemServiceFailureMessage");
     expect(
       providerTestStatusMessage({
         ok: false,
         category: "authentication",
         userAction: "CHECK_CREDENTIALS",
       }),
-    ).toMatch(/API key/i);
+    ).toBe("Authentication failed. Check the Profile’s API key.");
     expect(
       providerTestStatusMessage({ ok: false, category: "model", userAction: "CHECK_MODEL" }),
-    ).toMatch(/model/i);
+    ).toBe("The model is unavailable. Check the Profile’s Model ID.");
     expect(
       providerTestStatusMessage({ ok: false, category: "quota", userAction: "CHECK_QUOTA" }),
-    ).toMatch(/quota|billing/i);
+    ).toBe("The service limit was reached. Check the account quota or try again later.");
     expect(
       providerTestStatusMessage({ ok: false, category: "timeout", userAction: "CHECK_NETWORK" }),
-    ).toMatch(/timed out/i);
+    ).toBe("The translation service timed out. Try again.");
     expect(
       providerTestStatusMessage({
         ok: false,
@@ -317,7 +328,7 @@ describe("Sidebar/Main/Global security messages", () => {
         statusCode: 503,
         userAction: "CHECK_NETWORK",
       }),
-    ).toMatch(/HTTP 503.*network route/i);
+    ).toBe("Couldn’t reach the translation service. Check your connection and Network route.");
     expect(
       providerTestStatusMessage({
         ok: false,
@@ -325,21 +336,103 @@ describe("Sidebar/Main/Global security messages", () => {
         userAction: "CHECK_ENDPOINT",
         providerKind: "ollama",
       }),
-    ).toMatch(/Ollama server URL.*chat support/i);
+    ).toBe("The Profile settings were rejected. Check the Endpoint and Model ID.");
     expect(
       providerTestStatusMessage({
         ok: false,
+        category: "http",
         userAction: "CHECK_ENDPOINT",
         providerKind: "openai",
       }),
-    ).toMatch(/OpenAI.*chat-completions/i);
+    ).toBe(
+      "The translation service rejected the request. Check the Profile settings and try again.",
+    );
     expect(
       providerTestStatusMessage({
         ok: false,
+        category: "configuration",
         userAction: "CHECK_ENDPOINT",
         providerKind: "claude",
       }),
-    ).toMatch(/API root.*\/v1\/messages.*version.*model ID/i);
+    ).toBe("The Profile settings were rejected. Check the Endpoint and Model ID.");
+  });
+
+  it("uses the same exact eleven service failure messages for Session and Profile Test", () => {
+    const cases = [
+      [
+        { category: "authentication", userAction: "CHECK_CREDENTIALS" },
+        "Authentication failed. Check the Profile’s API key.",
+      ],
+      [
+        { category: "authentication", statusCode: 403, userAction: "CHECK_CREDENTIALS" },
+        "Access was denied. Check the Profile’s API key and model access.",
+      ],
+      [
+        { category: "configuration", userAction: "CHECK_ENDPOINT" },
+        "The Profile settings were rejected. Check the Endpoint and Model ID.",
+      ],
+      [
+        { category: "network", statusCode: 502, userAction: "CHECK_NETWORK" },
+        "Couldn’t reach the translation service. Check your connection and Network route.",
+      ],
+      [
+        { category: "timeout", userAction: "CHECK_NETWORK" },
+        "The translation service timed out. Try again.",
+      ],
+      [
+        { category: "model", userAction: "CHECK_MODEL" },
+        "The model is unavailable. Check the Profile’s Model ID.",
+      ],
+      [
+        { category: "quota", userAction: "CHECK_QUOTA" },
+        "The service limit was reached. Check the account quota or try again later.",
+      ],
+      [
+        { category: "refusal", userAction: "NONE" },
+        "The translation service refused this request. Try another model or Profile.",
+      ],
+      [
+        { category: "protocol", code: "INVALID_MESSAGE", userAction: "CHECK_ENDPOINT" },
+        "The translation service returned an unsupported response. Check the Profile’s service type and model.",
+      ],
+      [
+        { category: "http", statusCode: 400, userAction: "CHECK_ENDPOINT" },
+        "The translation service rejected the request. Check the Profile settings and try again.",
+      ],
+      [
+        { category: "protocol", code: "UNKNOWN_PROVIDER_ERROR", userAction: "NONE" },
+        "Translation failed. Test the Profile and try again.",
+      ],
+    ] as const;
+
+    for (const [input, expected] of cases) {
+      expect(
+        sessionFailureMessage({
+          category: input.category,
+          ...(input.statusCode === undefined ? {} : { statusCode: input.statusCode }),
+          ...(input.code === undefined ? {} : { providerCode: input.code }),
+        }),
+      ).toBe(expected);
+      expect(providerTestStatusMessage(input)).toBe(expected);
+    }
+  });
+
+  it("keeps Profile Test-only lifecycle feedback outside the shared service mapper", () => {
+    expect(providerTestStatusMessage({ ok: true })).toBe("Test passed");
+    expect(
+      providerTestStatusMessage({
+        category: "cancelled",
+        code: "TEST_INVALIDATED",
+        userAction: "RETRY",
+      }),
+    ).toBe("This test is no longer current. Review the Profile and test again.");
+    expect(providerTestStatusMessage({ category: "cancelled", userAction: "NONE" })).toBe("");
+    expect(providerTestStatusMessage({ userAction: "RESTART_IINA" })).toMatch(
+      /secure transport helper.*Restart IINA/i,
+    );
+    expect(providerTestStatusMessage({ userAction: "CHECK_INSTALLATION" })).toMatch(
+      /transport helper.*reinstall/i,
+    );
   });
 
   it("distinguishes entered, saved and absent credentials in model refresh guidance", () => {
@@ -626,6 +719,17 @@ describe("Sidebar/Main/Global security messages", () => {
       }),
     ).toMatchObject({ payload: {} });
     expect(parseProviderTestResult(result)).toEqual(result);
+    expect(Object.keys(parseProviderTestResult(result)).sort()).toEqual([
+      "category",
+      "code",
+      "draftRevision",
+      "drawerId",
+      "ok",
+      "requestId",
+      "retryable",
+      "statusCode",
+      "userAction",
+    ]);
     expect(GLOBAL_MESSAGE_NAMES).toContain("provider:test");
     expect(GLOBAL_MESSAGE_NAMES).toContain("provider:test-cancel");
     expect(SIDEBAR_MESSAGE_NAMES).toContain("provider:test");
@@ -650,6 +754,21 @@ describe("Sidebar/Main/Global security messages", () => {
     expect(() => parseProviderTestResult({ ...result, code: "provider_private_code" })).toThrow(
       "INVALID_MESSAGE",
     );
+    for (const forbidden of [
+      "message",
+      "body",
+      "responseBody",
+      "credential",
+      "apiKey",
+      "subtitle",
+      "endpoint",
+      "providerKind",
+      "providerName",
+      "diagnostic",
+    ])
+      expect(() => parseProviderTestResult({ ...result, [forbidden]: "must-not-cross" })).toThrow(
+        "INVALID_MESSAGE",
+      );
   });
 
   it("accepts only the strict model refresh request fields", () => {

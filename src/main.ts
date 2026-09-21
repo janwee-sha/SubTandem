@@ -185,7 +185,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     cacheSize: controller.cacheSize,
     providerError: controller.providerError,
     source: null,
-    sourceIssue: controller.session.enabled ? "unreadable" : null,
+    sourceIssue: null,
     sourcePreparation: null,
     targetLanguage: targetLanguageSession.snapshot.targetLanguage,
     targetLanguageRevision: targetLanguageSession.snapshot.revision,
@@ -500,6 +500,8 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     }
     if (selection?.kind === "unsupported") {
       invalidatePreparation();
+      selectedSourceTrackId = snapshot?.selectedTrackId ?? null;
+      selectedSourceContentHash = null;
       preparationView = {
         state: selection.state,
         origin: "embedded",
@@ -513,6 +515,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
       updateSidebarState({ source: null, sourceIssue: null, sourcePreparation: preparationView });
       return true;
     }
+    if (selection?.kind === "indeterminate") return false;
     invalidatePreparation();
     const loaded = readSelectedSubtitle(sourcePort);
     if (!loaded.ok) {
@@ -554,22 +557,28 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     sourceSelectionTimer = hostTimers.setTimeout(attemptSourceReload, 250);
   };
 
-  const scheduleSourceReload = (invalidateChangedSelection = false): void => {
+  const scheduleSourceReload = (): void => {
     if (!sourceLoadingAllowed()) {
       suspendSourceLoading();
       return;
     }
     const selectedId = runtime.core.subtitle.id;
-    if (invalidateChangedSelection && selectedId !== selectedSourceTrackId)
-      clearSource("unreadable");
     sourceSelectionTimer?.cancel();
     sourceReloadAttempt = 0;
+    if (selectedId !== selectedSourceTrackId) {
+      invalidatePreparation();
+      selectedSourceTrackId = selectedId;
+      selectedSourceContentHash = null;
+      controller.setSource(null);
+      updateSidebarState({ source: null, sourceIssue: null, sourcePreparation: null });
+    }
+    if (loadSource(false)) return;
     sourceSelectionTimer = hostTimers.setTimeout(attemptSourceReload, 250);
   };
 
   runtime.sidebar.loadFile("dist/ui/sidebar.html");
   runtime.sidebar.onMessage("ui:ready", () => {
-    if (sourceLoadingAllowed() && !loadSource(false)) scheduleSourceReload();
+    if (sourceLoadingAllowed()) scheduleSourceReload();
     else if (!sourceLoadingAllowed()) suspendSourceLoading();
     requestProfileActivation();
     requestOverlayPosition();
@@ -640,7 +649,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     controller.setEnabled(enabled);
     if (!enabled) {
       suspendSourceLoading();
-    } else if (!loadSource(false)) scheduleSourceReload();
+    } else scheduleSourceReload();
     translationEnabledPreferences.save(enabled);
     updateSidebarState();
     queueSidebarMessage("operation:result", {
@@ -996,10 +1005,13 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
 
   runtime.event.on("iina.file-loaded", () => {
     mediaEpoch += 1;
+    sourceSelectionTimer?.cancel();
     invalidatePreparation();
+    selectedSourceTrackId = null;
+    selectedSourceContentHash = null;
     controller.endFile();
     if (sourceLoadingAllowed()) {
-      clearSource("unreadable");
+      updateSidebarState({ source: null, sourceIssue: null, sourcePreparation: null });
       scheduleSourceReload();
     } else {
       suspendSourceLoading();
@@ -1012,7 +1024,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     }
     const selectedId = runtime.core.subtitle.id;
     if (selectedId === selectedSourceTrackId) return;
-    scheduleSourceReload(true);
+    scheduleSourceReload();
   });
   runtime.event.on("mpv.track-list.changed", () => {
     if (sourceLoadingAllowed()) scheduleSourceReload();
@@ -1108,10 +1120,10 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     embeddedPreparationKey = null;
     controller.endFile();
     controller.clearProviderSelection();
-    updateSidebarState({ source: null, sourceIssue: "unreadable", selection: null });
+    updateSidebarState({ source: null, sourceIssue: null, selection: null });
   });
   if (sourceLoadingAllowed()) {
-    if (!loadSource(false)) scheduleSourceReload();
+    scheduleSourceReload();
   } else {
     suspendSourceLoading();
   }

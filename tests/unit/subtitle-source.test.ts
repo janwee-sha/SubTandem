@@ -171,7 +171,7 @@ describe("selected subtitle source", () => {
     if (result.kind === "embedded") expect(result.track).not.toHaveProperty("language");
   });
 
-  it("fails closed for missing, ambiguous, remote, graphic, unknown, and conflicting tracks", () => {
+  it("separates unstable metadata from explicit unsupported subtitle codecs", () => {
     const base = {
       playerId: "player-A",
       mediaEpoch: 1,
@@ -196,7 +196,7 @@ describe("selected subtitle source", () => {
     });
     expect(
       classifySubtitleSelection({ ...base, tracks: [graphic("ass"), graphic("ass")] }),
-    ).toEqual({ kind: "none", state: "emptyOrUnreadable" });
+    ).toEqual({ kind: "indeterminate" });
     for (const codec of ["hdmv_pgs_subtitle", "dvd_subtitle", "dvb_subtitle", "unknown"])
       expect(classifySubtitleSelection({ ...base, tracks: [graphic(codec)] })).toEqual({
         kind: "unsupported",
@@ -215,12 +215,22 @@ describe("selected subtitle source", () => {
         ...base,
         tracks: [{ ...graphic("ass"), "ff-index": "3" }],
       }),
-    ).toEqual({ kind: "unsupported", state: "unsupportedType" });
+    ).toEqual({ kind: "indeterminate" });
     expect(
       classifySubtitleSelection({
         ...base,
         tracks: [{ ...graphic("ass"), "src-id": "12" }],
       }),
-    ).toEqual({ kind: "unsupported", state: "unsupportedType" });
+    ).toEqual({ kind: "indeterminate" });
+    for (const partial of [
+      { ...graphic("ass"), codec: undefined },
+      { ...graphic("ass"), codec: "" },
+      { ...graphic("ass"), external: undefined },
+      { ...graphic("ass"), selected: false },
+      { ...graphic("ass"), "main-selection": undefined },
+    ])
+      expect(classifySubtitleSelection({ ...base, tracks: [partial] })).toEqual({
+        kind: "indeterminate",
+      });
   });
 });

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { parseRetrySubtitlePreparation } from "../../src/domain/messages.js";
 
 await import("../../ui/sidebar-state.js");
+await import("../../ui/service-failure-message.js");
 await import("../../ui/session-status.js");
 
 describe("IINA sidebar lifecycle contract", () => {
@@ -184,6 +185,50 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(sidebarSource).toContain("reconcileDrawerAfterAuthority(previousTest)");
     expect(sidebarSource).toContain('window.addEventListener("pagehide"');
     expect(openDeleteHandler).not.toContain("cancelActiveDrawerTest");
+    expect(resultHandler.match(/profileTestStatus\.textContent = message/g)).toHaveLength(1);
+  });
+
+  it("clears Test ownership for every drawer invalidation without creating another result node", () => {
+    const resultStart = sidebarSource.indexOf('onMessage("provider:test-result"');
+    const resultEnd = sidebarSource.indexOf('onMessage("provider:models-result"', resultStart);
+    const resultHandler = sidebarSource.slice(resultStart, resultEnd);
+    const closeStart = sidebarSource.indexOf("function clearProfileDrawer");
+    const closeEnd = sidebarSource.indexOf("function openProfileDrawer", closeStart);
+    const closeHandler = sidebarSource.slice(closeStart, closeEnd);
+    const saveStart = sidebarSource.indexOf('saveProfileButton.addEventListener("click"');
+    const saveEnd = sidebarSource.indexOf('newProfileButton.addEventListener("click"', saveStart);
+    const saveHandler = sidebarSource.slice(saveStart, saveEnd);
+    const confirmDeleteStart = sidebarSource.indexOf(
+      'confirmProfileDeleteButton.addEventListener("click"',
+    );
+    const confirmDeleteEnd = sidebarSource.indexOf(
+      'profileDeleteDialog.addEventListener("keydown"',
+      confirmDeleteStart,
+    );
+    const confirmDeleteHandler = sidebarSource.slice(confirmDeleteStart, confirmDeleteEnd);
+
+    for (const fieldEvent of [
+      'providerKind.addEventListener("change"',
+      'providerEndpoint.addEventListener("input"',
+      'providerProxyMode.addEventListener("change"',
+      'providerModelSelect.addEventListener("change"',
+      'providerModel.addEventListener("input"',
+      'providerKey.addEventListener("input"',
+    ])
+      expect(
+        sidebarSource.slice(
+          sidebarSource.indexOf(fieldEvent),
+          sidebarSource.indexOf(fieldEvent) + 240,
+        ),
+      ).toMatch(/invalidateDrawerTestField/);
+    expect(closeHandler).toContain("cancelActiveDrawerTest()");
+    expect(saveHandler).toContain("cancelActiveDrawerTest()");
+    expect(confirmDeleteHandler).toContain("cancelActiveDrawerTest()");
+    expect(sidebarSource).toContain('window.addEventListener("pagehide"');
+    expect(resultHandler).toContain("currentTest.requestId !== result.requestId");
+    expect(resultHandler).toContain("currentTest.drawerId !== result.drawerId");
+    expect(resultHandler).toContain("currentTest.draftRevision !== result.draftRevision");
+    expect(sidebarHtml.match(/id="profile-test-status"/g)).toHaveLength(1);
   });
 
   it("reuses saved credentials only for the same normalized service identity", () => {
@@ -407,7 +452,7 @@ describe("IINA sidebar lifecycle contract", () => {
   it("prioritizes every safe embedded preparation state and exposes Retry only when allowed", () => {
     for (const text of [
       "Preparing the selected embedded subtitle…",
-      "This subtitle type is not supported. Select a text subtitle in IINA.",
+      "Subtitle type not supported. Select a text subtitle in IINA.",
       "Embedded subtitles in remote media are not supported.",
       "The selected subtitle is empty or unreadable.",
       "Subtitle preparation timed out. Playback continues.",
@@ -422,6 +467,50 @@ describe("IINA sidebar lifecycle contract", () => {
       mainSource.indexOf("const loadSource", mainSource.indexOf("void coordinator()")),
     );
     expect(bootstrapFailure).toContain("canRetry: false");
+  });
+
+  it("atomically replaces unsupported text once without Retry or another live region", () => {
+    const stateStart = sidebarSource.indexOf('window.iina?.onMessage("state:update"');
+    const stateHandler = sidebarSource.slice(stateStart);
+
+    expect(sessionStatusSource).toContain(
+      'unsupportedType: "Subtitle type not supported. Select a text subtitle in IINA."',
+    );
+    expect(sessionStatusSource).not.toContain(
+      "This subtitle type is not supported. Select a text subtitle in IINA.",
+    );
+    expect(stateHandler).toContain(
+      "sessionPresentation.signature !== lastSessionPresentationSignature",
+    );
+    expect(
+      stateHandler.match(/statusMessage\.textContent = sessionPresentation\.text/g),
+    ).toHaveLength(1);
+    expect(sidebarHtml.match(/id="status"/g)).toHaveLength(1);
+    expect(
+      globalThis.subtandemResolveSessionSourceDetails({
+        sourcePreparation: { state: "unsupportedType", canRetry: false },
+      }),
+    ).toMatchObject({ retryAvailable: false });
+  });
+
+  it("atomically replaces no-service feedback and yields after re-enable or Translate off", () => {
+    const noService = globalThis.subtandemResolveSessionPresentation({
+      status: "waitingForConfiguration",
+    });
+    const reEnabled = globalThis.subtandemResolveSessionPresentation({ status: "preparing" });
+    const disabled = globalThis.subtandemResolveSessionPresentation({
+      status: "disabled",
+      providerError: { category: "network" },
+    });
+
+    expect(noService?.text).toBe("No translation service enabled. Enable one to translate.");
+    expect(reEnabled?.text).toBe("Preparing nearby translations…");
+    expect(disabled?.text).toBe("Translation is off");
+    expect(sessionStatusSource).not.toContain("Enable and test a translation service");
+    expect(sidebarHtml.match(/id="status"/g)).toHaveLength(1);
+    expect(sidebarSource).toContain(
+      "sessionPresentation.signature !== lastSessionPresentationSignature",
+    );
   });
 
   it("renders unavailable Profile storage as HELPER_UNAVAILABLE instead of an empty library", () => {

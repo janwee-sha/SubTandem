@@ -118,6 +118,40 @@ function providerRequest(
 }
 
 describe("global Profile activation lifecycle", () => {
+  it("uses one null activation for empty, all-disabled, last-disabled and re-enabled states", async () => {
+    const emptyProfiles = new ProviderProfiles(() => "unused");
+    const emptyAuthority = new ProfileActivationAuthority({
+      authorityId: "authority-empty",
+      profiles: emptyProfiles,
+      storeRevision: 1,
+      credentialConfigured: {},
+      activation: null,
+      commit: async () => {
+        throw new Error("unexpected commit");
+      },
+      createCommitId: () => "00000000-0000-4000-8000-000000000001",
+    });
+    const { authority, a } = setup();
+
+    expect(emptyAuthority.snapshot).toMatchObject({ profiles: [], activation: null });
+    expect(emptyAuthority.acceptsTranslations).toBe(false);
+    expect(authority.snapshot.profiles.length).toBeGreaterThan(0);
+    expect(authority.snapshot.activation).toBeNull();
+    expect(authority.acceptsTranslations).toBe(false);
+
+    await authority.set(activationRequest(a, true, "enable-a"));
+    expect(authority.snapshot.activation?.profileId).toBe(a.profileId);
+    expect(authority.acceptsTranslations).toBe(true);
+
+    await authority.set(activationRequest(a, false, "disable-last"));
+    expect(authority.snapshot.activation).toBeNull();
+    expect(authority.acceptsTranslations).toBe(false);
+
+    await authority.set(activationRequest(a, true, "re-enable-a"));
+    expect(authority.snapshot.activation?.profileId).toBe(a.profileId);
+    expect(authority.acceptsTranslations).toBe(true);
+  });
+
   it("cancels each obsolete Provider generation once across OpenAI, Claude and Ollama", async () => {
     const { profiles, authority, a, c, d } = setup();
     const controls = new Map<

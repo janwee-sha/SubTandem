@@ -260,6 +260,9 @@ describe("Profile activation through ordinary IINA window routing", () => {
     await host.activate(third.label, authorityId, host.b, false);
     expect(first.sync.snapshot?.activation).toBeNull();
     expect(second.sync.snapshot?.activation).toBeNull();
+    expect(first.controller.status).toBe("waitingForConfiguration");
+    expect(second.controller.status).toBe("waitingForConfiguration");
+    expect(third.controller.status).toBe("waitingForConfiguration");
     const attempts = host.providerAttempt.mock.calls.length;
     first.controller.tick(1_000);
     await host.drain();

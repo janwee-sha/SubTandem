@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { PlaybackController, type TranslationOverlaySink } from "../../src/app/controller.js";
 import { SubtitlePreparationCoordinator } from "../../src/app/subtitle-preparation.js";
@@ -23,6 +24,7 @@ class RecordingOverlay implements TranslationOverlaySink {
 }
 
 describe("embedded subtitle translation", () => {
+  const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
   it("prepares the exact supported track and enters the existing finite translation path", async () => {
     const bytes = utf8Encode(subtitle);
     const released: string[] = [];
@@ -245,5 +247,45 @@ describe("embedded subtitle translation", () => {
     expect(provider.requests).toHaveLength(0);
     expect(overlay.frames).toHaveLength(0);
     expect(controller.status).toBe("waitingForSubtitle");
+  });
+
+  it("evaluates startup, file load and track changes before retrying without publishing unreadable", () => {
+    const initialState = mainSource.slice(
+      mainSource.indexOf("let sidebarState"),
+      mainSource.indexOf("const sidebarMessages"),
+    );
+    const reload = mainSource.slice(
+      mainSource.indexOf("const scheduleSourceReload"),
+      mainSource.indexOf("runtime.sidebar.loadFile"),
+    );
+    const fileLoaded = mainSource.slice(
+      mainSource.indexOf('runtime.event.on("iina.file-loaded"'),
+      mainSource.indexOf('runtime.event.on("mpv.sid.changed"'),
+    );
+    const sidChanged = mainSource.slice(
+      mainSource.indexOf('runtime.event.on("mpv.sid.changed"'),
+      mainSource.indexOf('runtime.event.on("mpv.track-list.changed"'),
+    );
+
+    expect(initialState).toContain("sourceIssue: null");
+    expect(reload.indexOf("loadSource(false)")).toBeLessThan(reload.indexOf("setTimeout"));
+    expect(reload).not.toContain('clearSource("unreadable")');
+    expect(fileLoaded).toContain("scheduleSourceReload()");
+    expect(fileLoaded).not.toContain('clearSource("unreadable")');
+    expect(sidChanged).toContain("scheduleSourceReload()");
+    expect(sidChanged).not.toContain('clearSource("unreadable")');
+  });
+
+  it("owns unsupported selections atomically and keeps equivalent polls side-effect free", () => {
+    const unsupportedStart = mainSource.indexOf('if (selection?.kind === "unsupported")');
+    const unsupportedEnd = mainSource.indexOf("const loaded =", unsupportedStart);
+    const unsupported = mainSource.slice(unsupportedStart, unsupportedEnd);
+
+    expect(unsupported).toContain("selectedSourceTrackId = snapshot?.selectedTrackId ?? null");
+    expect(unsupported).toContain("controller.setSource(null)");
+    expect(unsupported).toContain("sourceIssue: null");
+    expect(unsupported).not.toContain("coordinator()");
+    expect(unsupported).not.toContain("provider");
+    expect(mainSource).toContain("selectedId === selectedSourceTrackId");
   });
 });

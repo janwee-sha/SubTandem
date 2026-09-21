@@ -223,6 +223,7 @@ describe("Profile activation restoration", () => {
     expect(store.calls).toEqual(["read", "initialize"]);
     expect(authority.snapshot).toMatchObject({ ready: true, activation: null });
     expect(authority.snapshot.profiles[0]?.revision).toBe(3);
+    expect(authority.acceptsTranslations).toBe(false);
     expect(legacyReads).toBe(1);
   });
 

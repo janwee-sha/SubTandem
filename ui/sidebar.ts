@@ -1742,7 +1742,9 @@ window.iina?.onMessage("provider:test-result", (raw: unknown) => {
     draftRevision?: number;
     ok?: boolean;
     category?: string;
+    statusCode?: number;
     code?: string;
+    retryable?: boolean;
     userAction?: string;
   };
   const currentTest = sidebarState.snapshot.drawer.test;
