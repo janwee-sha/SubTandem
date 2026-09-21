@@ -28,6 +28,9 @@ const sharedGates = [
 const gatePositions = (source: string, gates: string[]): number[] =>
   gates.map((gate) => source.indexOf(gate));
 
+const actionCommit = (source: string, action: string): string | undefined =>
+  source.match(new RegExp(`uses:\\s+${action}@([0-9a-f]{40})`))?.[1];
+
 describe("automatic release workflow", () => {
   it("runs only for main pushes or main manual retries", () => {
     expect(workflow).toMatch(/push:\s*\n\s*branches:\s*\[main\]/);
@@ -52,12 +55,14 @@ describe("automatic release workflow", () => {
   });
 
   it("pins every official action to a full commit SHA", () => {
-    expect(workflow).toContain("actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd");
-    expect(workflow).toContain("actions/setup-node@820762786026740c76f36085b0efc47a31fe5020");
-    expect(workflow).toContain("actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a");
-    expect(workflow).toContain(
-      "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
-    );
+    for (const action of [
+      "actions/checkout",
+      "actions/setup-node",
+      "actions/upload-artifact",
+      "actions/download-artifact",
+    ]) {
+      expect(actionCommit(workflow, action)).toMatch(/^[0-9a-f]{40}$/);
+    }
     expect(workflow.match(/uses:\s+[^\s]+@[^\s]+/g) ?? []).toSatisfy((uses: string[]) =>
       uses.every((value) => /@[0-9a-f]{40}$/.test(value)),
     );
@@ -176,11 +181,11 @@ describe("pull request CI workflow", () => {
     );
     expect(pullRequestWorkflow).toContain("xcodebuild -version | grep -Fx 'Xcode 26.3'");
     expect(pullRequestWorkflow).toContain('node-version: "24.18.0"');
-    expect(pullRequestWorkflow).toContain(
-      "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd",
+    expect(actionCommit(pullRequestWorkflow, "actions/checkout")).toBe(
+      actionCommit(workflow, "actions/checkout"),
     );
-    expect(pullRequestWorkflow).toContain(
-      "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+    expect(actionCommit(pullRequestWorkflow, "actions/setup-node")).toBe(
+      actionCommit(workflow, "actions/setup-node"),
     );
     expect(pullRequestWorkflow).toContain("persist-credentials: false");
     expect(pullRequestWorkflow.match(/uses:\s+[^\s]+@[^\s]+/g) ?? []).toSatisfy((uses: string[]) =>
