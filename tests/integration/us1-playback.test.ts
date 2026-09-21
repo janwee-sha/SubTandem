@@ -284,4 +284,123 @@ describe("US1 playback acceptance", () => {
     await controller.whenIdle();
     expect(overlay.frames.at(-1)).toEqual(["ZH:World"]);
   });
+
+  it("latches a real failure through ordinary success and accepts a newer failure", async () => {
+    const spacedCues = Array.from({ length: 4 }, (_, index) => ({
+      id: `spaced-${index + 1}`,
+      index,
+      startMs: index * 200_000,
+      endMs: index * 200_000 + 1_000,
+      sourceText: `source-${index + 1}`,
+      normalizedText: `source-${index + 1}`,
+    }));
+    let attempt = 0;
+    const provider: TranslationProvider = {
+      attempt: async (request) => {
+        attempt += 1;
+        if (attempt === 2) throw { category: "authentication", retryable: false };
+        if (attempt === 4) throw { category: "model", retryable: false };
+        return {
+          translations: request.items.map((item) => ({ id: item.id, text: `T:${item.text}` })),
+        };
+      },
+    };
+    const controller = new PlaybackController({
+      playerId: "latched-failure",
+      provider,
+      overlay: new RecordingOverlay(),
+      targetLanguage: "zh-Hans",
+    });
+    controller.setSource({ cues: spacedCues, contentHash: "latched", format: "srt" });
+
+    controller.tick(0);
+    await controller.whenIdle();
+    expect(controller.status).toBe("running");
+
+    controller.tick(200_000);
+    await controller.whenIdle();
+    expect(controller.status).toBe("partialFailure");
+    expect(controller.providerError).toMatchObject({ category: "authentication" });
+
+    controller.tick(400_000);
+    await controller.whenIdle();
+    expect(controller.status).toBe("partialFailure");
+    expect(controller.providerError).toMatchObject({ category: "authentication" });
+
+    controller.tick(600_000);
+    await controller.whenIdle();
+    expect(controller.status).toBe("partialFailure");
+    expect(controller.providerError).toMatchObject({ category: "model" });
+  });
+
+  it("does not commit a current-session cancellation as a failure", async () => {
+    const controller = new PlaybackController({
+      playerId: "cancelled-attempt",
+      provider: {
+        attempt: async () => {
+          throw { category: "cancelled", retryable: false };
+        },
+      },
+      overlay: new RecordingOverlay(),
+      targetLanguage: "zh-Hans",
+    });
+    controller.setSource({ cues, contentHash: "cancelled", format: "srt" });
+
+    controller.tick(1_000);
+    await controller.whenIdle();
+
+    expect(controller.providerError).toBeNull();
+    expect(controller.status).not.toBe("partialFailure");
+    expect(controller.status).not.toBe("serviceUnavailable");
+  });
+
+  it.each([
+    [
+      "track",
+      (value: PlaybackController) =>
+        value.setSource({ cues, contentHash: "next-track", format: "srt" }),
+    ],
+    ["file", (value: PlaybackController) => value.endFile()],
+    [
+      "Profile",
+      (value: PlaybackController) =>
+        value.setProviderSelection({
+          profileId: "next-profile",
+          revision: 2,
+          endpointFingerprint: "next-endpoint",
+          kind: "openai",
+        }),
+    ],
+    ["target language", (value: PlaybackController) => value.setTargetLanguage("ja")],
+    [
+      "reopen",
+      (value: PlaybackController) => {
+        value.setEnabled(false);
+        value.setEnabled(true);
+      },
+    ],
+  ])("clears a latched failure for a new %s session epoch", async (_name, reset) => {
+    const controller = new PlaybackController({
+      playerId: `reset-${_name}`,
+      provider: {
+        attempt: async () => {
+          throw { category: "authentication", retryable: false };
+        },
+      },
+      overlay: new RecordingOverlay(),
+      targetLanguage: "zh-Hans",
+    });
+    controller.setSource({ cues, contentHash: "before-reset", format: "srt" });
+    controller.tick(1_000);
+    await controller.whenIdle();
+    expect(controller.providerError).toMatchObject({ category: "authentication" });
+    const previousEpoch = controller.session.sessionEpoch;
+
+    reset(controller);
+
+    expect(controller.session.sessionEpoch).toBeGreaterThan(previousEpoch);
+    expect(controller.providerError).toBeNull();
+    expect(controller.status).not.toBe("partialFailure");
+    expect(controller.status).not.toBe("serviceUnavailable");
+  });
 });

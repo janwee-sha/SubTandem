@@ -159,12 +159,10 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     authorityId: string;
     activationGeneration: number;
   } | null = null;
-  const boundedWork = "120 s / 40 cues; 25 cues / 5,000 code points per request";
   let sidebarState: Record<string, unknown> = {
     status: controller.status,
     cacheSize: controller.cacheSize,
     providerError: controller.providerError,
-    boundedWork,
     source: null,
     sourceIssue: "unreadable",
     sourcePreparation: null,
@@ -196,8 +194,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
       status: controller.status,
       cacheSize: controller.cacheSize,
       providerError: controller.providerError,
-      boundedWork,
-      sourcePreparation: preparation?.view ?? preparationView,
+      sourcePreparation: preparationView,
       targetLanguage: targetLanguageSession.snapshot.targetLanguage,
       targetLanguageRevision: targetLanguageSession.snapshot.revision,
       targetLanguages: TARGET_LANGUAGES,
@@ -366,8 +363,9 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
   };
 
   const acceptPrepared = (key: string, prepared: PreparedSubtitleSource | null): void => {
+    if (embeddedPreparationKey !== key) return;
     preparationView = preparation?.view ?? null;
-    if (!prepared || embeddedPreparationKey !== key) {
+    if (!prepared) {
       updateSidebarState({ sourcePreparation: preparationView });
       return;
     }
@@ -377,7 +375,8 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
       current?.kind !== "embedded" ||
       preparationKey(current.track, current.media.mediaEpoch) !== key
     ) {
-      preparation?.invalidate("invalidated");
+      invalidatePreparation();
+      updateSidebarState({ sourcePreparation: null });
       return;
     }
     selectedSourceContentHash = prepared.contentHash;
@@ -393,7 +392,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
         warnings: [],
       },
       sourceIssue: null,
-      sourcePreparation: preparation?.view ?? preparationView,
+      sourcePreparation: preparationView,
     });
   };
 

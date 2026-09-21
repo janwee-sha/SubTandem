@@ -145,18 +145,20 @@ describe("Profile delete dialog interaction coordinator", () => {
 });
 
 describe("Profile Test button label", () => {
-  it("preserves its label slot while switching between Test and Testing", () => {
+  it("keeps the same focused Test node and accessible name while toggling busy", () => {
     class Button {
       disabled = false;
-      label = { textContent: "Test" };
-      placeholder = { textContent: "Testing…", ariaHidden: "true" };
-      children = [this.label, this.placeholder];
+      focused = true;
+      children: unknown[] = [];
       attributes = new Map<string, string>();
-      querySelector(selector: string) {
-        return selector === ".profile-action-label" ? this.label : null;
+      textWrites = 0;
+      private label = "Test";
+      get textContent() {
+        return this.label;
       }
       set textContent(value: string) {
-        this.children = [{ textContent: value }];
+        this.textWrites += 1;
+        this.label = value;
       }
       setAttribute(name: string, value: string) {
         this.attributes.set(name, value);
@@ -166,21 +168,27 @@ describe("Profile Test button label", () => {
       }
     }
     const button = new Button();
-    const children = [...button.children];
+    const originalButton = button;
+    const originalChildren = button.children;
     const runtime = loadSidebarFunctions(["setActionBusy"], {
       controlForAction: () => button,
-      idleLabelForAction: () => "Test",
       HTMLButtonElement: Button,
     });
     runtime.setActionBusy("test", undefined, true, "Testing…");
-    expect(button.label.textContent).toBe("Testing…");
+    expect(button).toBe(originalButton);
+    expect(button.textContent).toBe("Test");
+    expect(button.focused).toBe(true);
     expect(button.disabled).toBe(true);
     expect(button.attributes.get("aria-busy")).toBe("true");
-    expect(button.children).toEqual(children);
+    expect(button.children).toBe(originalChildren);
+    expect(button.textWrites).toBe(0);
     runtime.setActionBusy("test", undefined, false);
-    expect(button.label.textContent).toBe("Test");
+    expect(button).toBe(originalButton);
+    expect(button.textContent).toBe("Test");
+    expect(button.focused).toBe(true);
     expect(button.disabled).toBe(false);
     expect(button.attributes.has("aria-busy")).toBe(false);
-    expect(button.children).toEqual(children);
+    expect(button.children).toBe(originalChildren);
+    expect(button.textWrites).toBe(0);
   });
 });

@@ -404,9 +404,13 @@
           </div>
           <div class="profile-drawer-actions">
             <div class="profile-drawer-test-row">
-              <button id="test-profile" class="secondary" type="button">
-                <span class="profile-action-label">Test</span>
-                <span class="profile-action-placeholder" aria-hidden="true">Testing…</span>
+              <button
+                id="test-profile"
+                class="secondary"
+                type="button"
+                aria-describedby="profile-test-status"
+              >
+                Test
               </button>
               <p
                 id="profile-test-status"
@@ -466,10 +470,6 @@
               <dt>Session cache</dt>
               <dd id="cache-size">0 cues</dd>
             </div>
-            <div>
-              <dt>Work bound</dt>
-              <dd id="work-bound">120 s / 40 cues</dd>
-            </div>
           </dl>
         </div>
       </section>
@@ -506,6 +506,7 @@
     <script src="./provider-status.ts"></script>
     <script src="./sidebar-state.ts"></script>
     <script src="./profile-card-interactions.ts"></script>
+    <script src="./session-status.ts"></script>
     <script src="./sidebar.ts"></script>
   </body>
 </html>
