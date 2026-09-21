@@ -402,8 +402,8 @@ describe("IINA sidebar bundle contract", () => {
   it("shows source and actionable session details without local language detection", () => {
     expect(html).toContain('id="source-format"');
     expect(html).toContain('id="source-cues"');
-    expect(sidebarSource).toContain("view.source.format");
-    expect(sidebarSource).toContain("view.source.cueCount");
+    expect(sidebarSource).toContain("sourceDetails.source.format");
+    expect(sidebarSource).toContain("sourceDetails.source.cueCount");
     expect(sessionStatusSource).toContain("sessionSourcePreparationLabels");
     expect(sessionStatusSource).toContain("serviceUnavailable");
     expect(`${html}\n${sidebarSource}`).not.toMatch(

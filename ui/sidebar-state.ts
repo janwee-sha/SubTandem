@@ -334,6 +334,7 @@ interface SidebarStateCoordinator {
     message: string,
     visibility?: SidebarFeedbackVisibility,
   ): { accepted: boolean; request?: SidebarOperationRequest };
+  clearOperationRegion(regionId: string): string[];
   deleteSucceeded(input: { requestId: string; profileId: string; message: string }): {
     announced: boolean;
   };
@@ -781,6 +782,18 @@ function createSubTandemSidebarState(
     if (current?.requestId !== requestId) return { accepted: false, request };
     writeFeedback(request, phase, message, visibility);
     return { accepted: true, request };
+  };
+
+  const clearOperationRegion = (regionId: string): string[] => {
+    const removed: string[] = [];
+    for (const [requestId, request] of Object.entries(snapshot.requests)) {
+      if (request.regionId !== regionId) continue;
+      delete snapshot.requests[requestId];
+      removed.push(requestId);
+    }
+    delete snapshot.latestRequestByRegion[regionId];
+    if (snapshot.activeFeedback?.regionId === regionId) snapshot.activeFeedback = null;
+    return removed;
   };
 
   const deleteSucceeded = (input: {
@@ -1577,6 +1590,7 @@ function createSubTandemSidebarState(
     finishProfileActivation,
     beginOperation,
     finishOperation,
+    clearOperationRegion,
     deleteSucceeded,
     resetProfileName,
     changeServiceTypeLabel,
