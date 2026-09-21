@@ -61,7 +61,7 @@
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
-    "@types/node": "24.10.1",
+    "@types/node": "26.6.1",
     "eslint": "9.39.5",
     "iina-plugin-definition": "0.99.4",
     "parcel": "2.16.4",
