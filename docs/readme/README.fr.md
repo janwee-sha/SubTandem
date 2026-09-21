@@ -159,7 +159,7 @@ SubTandem n'effectue pas de transcription audio, d'OCR ou d'extraction de sous-t
 ## 🛠️ Dépannage
 
 - **Select a supported text subtitle :** sélectionnez une piste locale intégrée SubRip/ASS/SSA/`mov_text` ou un SRT/ASS externe. Les pistes graphiques et intégrées distantes ne sont pas prises en charge ; suivez l'état pour resélectionner ou utiliser Retry après un échec.
-- **Translation service unavailable :** testez le Profile et vérifiez son endpoint, son Model ID exact, son API key, sa route réseau ou le processus Ollama. Pour Claude, vérifiez l'API root, la compatibilité Messages, l'authentification/version, l'accès au modèle, les limites de dépenses, quotas, débit et les refus. Pour DeepSeek, vérifiez aussi le solde, le quota, le débit et la route API fixe. La lecture continue normalement.
+- **Échec de la traduction :** suivez l'action précise indiquée dans Session. Selon la cause, testez le Profile et vérifiez son endpoint, son Model ID exact, son API key, sa route réseau, les limites du compte ou le processus Ollama. La lecture et les sous-titres d'origine continuent normalement.
 - **Credential could not be saved :** installez le paquet Release plutôt qu'une copie de développement incomplète, vérifiez que le répertoire de données du plugin est accessible en écriture, puis quittez complètement et relancez IINA.
 - **Aucune traduction affichée :** vérifiez que l'interrupteur du Profile voulu et **Translate** sont tous deux activés et que la lecture se trouve dans l'intervalle d'un cue déjà traduit.
 - **Le proxy bloque le service :** essayez d'abord la route proxy macOS par défaut. Si elle refuse le service, passez ce Profile à **Connect directly**, enregistrez-le, testez-le puis activez la nouvelle révision.

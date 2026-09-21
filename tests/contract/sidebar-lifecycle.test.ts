@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { parseRetrySubtitlePreparation } from "../../src/domain/messages.js";
 
 await import("../../ui/sidebar-state.js");
+await import("../../ui/session-status.js");
 
 describe("IINA sidebar lifecycle contract", () => {
   const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
@@ -12,6 +13,10 @@ describe("IINA sidebar lifecycle contract", () => {
     "utf8",
   );
   const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
+  const sessionStatusSource = readFileSync(
+    new URL("../../ui/session-status.ts", import.meta.url),
+    "utf8",
+  );
   const sidebarStateSource = readFileSync(
     new URL("../../ui/sidebar-state.ts", import.meta.url),
     "utf8",
@@ -150,6 +155,35 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(mainSource).toMatch(
       /iina\.window-will-close[\s\S]*?postMessage\("provider:test-cancel"/,
     );
+  });
+
+  it("keeps one Testing message and rejects duplicate or late Profile Test results", () => {
+    const testStart = sidebarSource.indexOf('testProfileButton.addEventListener("click"');
+    const testEnd = sidebarSource.indexOf('saveProfileButton.addEventListener("click"', testStart);
+    const testHandler = sidebarSource.slice(testStart, testEnd);
+    const resultStart = sidebarSource.indexOf('onMessage("provider:test-result"');
+    const resultEnd = sidebarSource.indexOf('onMessage("provider:models-result"', resultStart);
+    const resultHandler = sidebarSource.slice(resultStart, resultEnd);
+    const deleteStart = sidebarSource.indexOf('deleteProfileButton.addEventListener("click"');
+    const confirmStart = sidebarSource.indexOf(
+      'confirmProfileDeleteButton.addEventListener("click"',
+      deleteStart,
+    );
+    const openDeleteHandler = sidebarSource.slice(deleteStart, confirmStart);
+
+    expect(testHandler).toContain("sidebarState.beginDrawerTest(requestId)");
+    expect(testHandler).toContain("if (!started) return");
+    expect(testHandler).toContain('profileTestStatus.textContent = "Testing…"');
+    expect(sidebarSource.match(/Testing…/g)).toHaveLength(1);
+    expect(resultHandler).toContain("currentTest.requestId !== result.requestId");
+    expect(resultHandler).toContain("currentTest.drawerId !== result.drawerId");
+    expect(resultHandler).toContain("currentTest.draftRevision !== result.draftRevision");
+    expect(resultHandler).toContain("sidebarState.finishDrawerTest");
+    expect(sidebarSource).toContain("invalidateDrawerTestField(true)");
+    expect(sidebarSource).toContain("cancelActiveDrawerTest()");
+    expect(sidebarSource).toContain("reconcileDrawerAfterAuthority(previousTest)");
+    expect(sidebarSource).toContain('window.addEventListener("pagehide"');
+    expect(openDeleteHandler).not.toContain("cancelActiveDrawerTest");
   });
 
   it("reuses saved credentials only for the same normalized service identity", () => {
@@ -379,7 +413,7 @@ describe("IINA sidebar lifecycle contract", () => {
       "Subtitle preparation timed out. Playback continues.",
       "Subtitle preparation failed. Playback continues.",
     ])
-      expect(sidebarSource).toContain(text);
+      expect(sessionStatusSource).toContain(text);
     expect(sidebarSource).toContain('postMessage("subtitle:retry-preparation"');
     expect(sidebarSource).toContain("canRetry");
     expect(mainSource).toContain('runtime.sidebar.onMessage("subtitle:retry-preparation"');
@@ -422,6 +456,59 @@ describe("IINA sidebar lifecycle contract", () => {
   it("announces subtitle preparation state once in the Session card", () => {
     expect(sidebarHtml).not.toContain('id="source-preparation"');
     expect(sidebarSource).not.toContain("sourcePreparation.textContent");
+  });
+
+  it("renders Session failures through one safe presentation projection", () => {
+    expect(sidebarHtml).toContain('<script src="./session-status.ts"></script>');
+    expect(sidebarHtml.indexOf("./session-status.ts")).toBeLessThan(
+      sidebarHtml.indexOf("./sidebar.ts"),
+    );
+    expect(sidebarSource).toContain("subtandemResolveSessionPresentation");
+    expect(sidebarSource).not.toContain("safeProviderErrorDetail");
+    expect(sidebarSource).not.toContain("HTTP ${error.statusCode}");
+    expect(sidebarSource).not.toContain("Some cues could not be translated");
+    expect(sidebarSource).not.toContain("Translation service unavailable");
+    expect(sidebarSource).not.toContain("playback continues");
+  });
+
+  it.each([
+    ["preparing", { sourcePreparation: { state: "preparing" } }],
+    ["preparation failure", { sourcePreparation: { state: "failed" } }],
+    ["invalidated selection", { sourcePreparation: { state: "invalidated" } }],
+    ["missing configuration", { status: "waitingForConfiguration" }],
+    ["service failure", { providerError: { category: "authentication" } }],
+    ["late running update", { status: "running" }],
+  ])("keeps Translation off above %s", (_name, competing) => {
+    expect(
+      globalThis.subtandemResolveSessionPresentation({
+        ...competing,
+        status: "disabled",
+      }),
+    ).toMatchObject({ text: "Translation is off", state: "disabled" });
+  });
+
+  it("publishes only the current preparation owner and never revives an invalid coordinator", () => {
+    expect(mainSource).not.toContain("preparation?.view ?? preparationView");
+    expect(mainSource).toContain("sourcePreparation: preparationView");
+    expect(mainSource).toContain("embeddedPreparationKey !== key");
+    expect(mainSource).toMatch(
+      /const invalidatePreparation = \(\): void => \{[\s\S]*?preparationView = null;[\s\S]*?embeddedPreparationKey = null;/,
+    );
+  });
+
+  it("does not mutate the Session live region for an equivalent presentation", () => {
+    expect(sidebarSource).toContain("lastSessionPresentationSignature");
+    expect(sidebarSource).toContain("sessionPresentation.signature");
+    expect(sidebarSource).toMatch(
+      /sessionPresentation\.signature !== lastSessionPresentationSignature[\s\S]*?statusMessage\.textContent[\s\S]*?statusDot\.dataset\.state/,
+    );
+  });
+
+  it("does not publish or render obsolete Work bound state", () => {
+    expect(mainSource).not.toContain("boundedWork");
+    expect(sidebarSource).not.toContain("boundedWork");
+    expect(sidebarHtml).not.toContain("Work bound");
+    expect(sidebarHtml).not.toContain("work-bound");
   });
 
   it("accepts only a strict revisioned empty Retry envelope", () => {

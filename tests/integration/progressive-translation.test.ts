@@ -347,6 +347,49 @@ describe("progressive translation output", () => {
     expect(playback.status).toBe("running");
   });
 
+  it("stays running through a seek and twenty normal refill batches", async () => {
+    const refillCues = Array.from({ length: 21 }, (_, index): SubtitleCue => ({
+      id: `refill-${index}`,
+      index,
+      startMs: index * 200_000,
+      endMs: index * 200_000 + 1_000,
+      sourceText: `refill source ${index}`,
+      normalizedText: `refill source ${index}`,
+    }));
+    let attempts = 0;
+    const provider: TranslationProvider = {
+      attempt: async (request) => {
+        attempts += 1;
+        return {
+          translations: request.items.map((item) => ({ id: item.id, text: `T:${item.text}` })),
+        };
+      },
+    };
+    const playback = new PlaybackController({
+      playerId: "stable-refills",
+      provider,
+      overlay: new RecordingOverlay(),
+      targetLanguage: "zh-Hans",
+    });
+    playback.setSource({ cues: refillCues, contentHash: "stable-refills", format: "srt" });
+
+    playback.tick(0);
+    await playback.whenIdle();
+    expect(playback.status).toBe("running");
+
+    for (let index = 1; index <= 20; index += 1) {
+      const position = index * 200_000;
+      playback.onSeek(position);
+      expect(playback.status).toBe("running");
+      playback.tick(position);
+      expect(playback.status).toBe("running");
+      await playback.whenIdle();
+      expect(playback.status).toBe("running");
+    }
+
+    expect(attempts).toBe(21);
+  });
+
   it("rejects late Claude progress after the owning session closes", async () => {
     let progress: TranslationProgressHandler | undefined;
     const overlay = new RecordingOverlay();

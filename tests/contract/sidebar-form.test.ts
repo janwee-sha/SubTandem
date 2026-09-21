@@ -5,6 +5,11 @@ describe("IINA sidebar bundle contract", () => {
   const html = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
   const sidebarCss = readFileSync(new URL("../../ui/sidebar.css", import.meta.url), "utf8");
   const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
+  const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
+  const sessionStatusSource = readFileSync(
+    new URL("../../ui/session-status.ts", import.meta.url),
+    "utf8",
+  );
   const packageJson = JSON.parse(
     readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
   ) as { targets?: { sidebar?: { publicUrl?: string } } };
@@ -61,7 +66,7 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarSource).toContain('article.classList.toggle("is-editing", expanded)');
   });
 
-  it("provides a local accessible delete confirmation layer and stable Test label slot", () => {
+  it("provides a local accessible delete confirmation and one stable Test label", () => {
     expect(html).toMatch(
       /id="profile-delete-dialog"[\s\S]*?role="alertdialog"[\s\S]*?aria-modal="true"/,
     );
@@ -71,11 +76,18 @@ describe("IINA sidebar bundle contract", () => {
     expect(html.indexOf('id="confirm-profile-delete"')).toBeLessThan(
       html.indexOf('id="cancel-profile-delete"'),
     );
-    expect(html).toContain("profile-action-placeholder");
-    expect(sidebarSource).toContain("Testing…");
+    expect(html).toMatch(
+      /<button[^>]*id="test-profile"[^>]*aria-describedby="profile-test-status"[^>]*>\s*Test\s*<\/button>/,
+    );
+    expect(html).not.toContain("profile-action-placeholder");
+    expect(sidebarSource.match(/Testing…/g)).toHaveLength(1);
     expect(sidebarSource).not.toContain("Testing the current draft");
     expect(sidebarSource).toContain("Deleting…");
-    expect(sidebarCss).toContain(".profile-action-placeholder");
+    expect(sidebarSource).toContain('"The profile will be permanently deleted."');
+    expect(sidebarCss).not.toContain(".profile-action-placeholder");
+    expect(`${html}\n${sidebarSource}\n${sidebarCss}`).not.toMatch(
+      /busy-ring|spinner|test-profile[^\n{]*::(?:before|after)|profile-test[^\n{]*animation/i,
+    );
   });
 
   it("centers both Profile actions in fixed-height slots with a destructive filled Delete", () => {
@@ -86,10 +98,8 @@ describe("IINA sidebar bundle contract", () => {
     expect(actionRule).toContain("line-height: 14px");
     expect(actionRule).toContain("white-space: nowrap");
     expect(sidebarCss).not.toMatch(/\.profile span\s*[,{]/);
-    expect(sidebarCss).toMatch(
-      /\.profile-action-label,\s*\.profile-action-placeholder\s*{[^}]*grid-area: 1 \/ 1/,
-    );
-    expect(sidebarCss).toMatch(/\.profile-action-placeholder\s*{[^}]*visibility: hidden/);
+    expect(sidebarCss).not.toContain(".profile-action-label");
+    expect(sidebarCss).not.toContain(".profile-action-placeholder");
     expect(sidebarCss).toMatch(
       /\.profile-drawer-actions \.danger\s*{[^}]*color: white;[^}]*background: var\(--destructive-fill\)/,
     );
@@ -394,11 +404,18 @@ describe("IINA sidebar bundle contract", () => {
     expect(html).toContain('id="source-cues"');
     expect(sidebarSource).toContain("view.source.format");
     expect(sidebarSource).toContain("view.source.cueCount");
-    expect(sidebarSource).toContain("sourcePreparationLabels");
-    expect(sidebarSource).toContain("serviceUnavailable");
+    expect(sessionStatusSource).toContain("sessionSourcePreparationLabels");
+    expect(sessionStatusSource).toContain("serviceUnavailable");
     expect(`${html}\n${sidebarSource}`).not.toMatch(
       /Detected language|source-detected-language|\bUnknown\b|detectingLanguage|languageUnrecognized|languageUnsupported|noTranslationNeeded/,
     );
+  });
+
+  it("omits the obsolete Work bound summary from the Session surface", () => {
+    expect(html).not.toContain("Work bound");
+    expect(html).not.toContain('id="work-bound"');
+    expect(sidebarSource).not.toContain("boundedWork");
+    expect(mainSource).not.toContain("boundedWork");
   });
 
   it("offers an accessible native position range in the Subtitle section", () => {

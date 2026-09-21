@@ -159,7 +159,7 @@ SubTandemは、音声文字起こし、画像ベース字幕のOCR/抽出、リ�
 ## 🛠️ トラブルシューティング
 
 - **Select a supported text subtitle:** ローカル埋め込みSubRip/ASS/SSA/`mov_text`または外部SRT/ASSを主字幕として選択してください。画像ベースとリモート埋め込み字幕は非対応です。状態表示に従って再選択するか、準備失敗後にRetryしてください。
-- **Translation service unavailable:** Profileをテストし、endpoint、正確なModel ID、API key、ネットワーク経路、Ollamaプロセスを確認してください。ClaudeではAPI root、Messages互換性、認証/version、モデルアクセス、spend limit、クォータ、rate limit、拒否を、DeepSeekでは残高、クォータ、rate limit、固定API routeを確認してください。再生と元字幕は継続します。
+- **翻訳に失敗する：** Sessionに表示される具体的な対処方法に従ってください。原因に応じてProfileをテストし、endpoint、正確なModel ID、API key、ネットワーク経路、アカウント上限、Ollamaプロセスを確認します。再生と元字幕は通常どおり継続します。
 - **Credential could not be saved:** 不完全な開発用コピーではなくReleaseパッケージをインストールし、プラグインデータディレクトリが書き込み可能であることを確認してから、IINAを完全に終了して再起動してください。
 - **翻訳が表示されない：** 対象Profileのスイッチと**Translate**が両方オンであり、再生位置が翻訳済みcueの時間範囲内にあることを確認してください。
 - **プロキシがサービスをブロックする：** まずデフォルトのmacOSプロキシ経路を試します。プロキシがサービスを拒否する場合、そのProfileを**Connect directly**に変更し、保存、テスト、新しいリビジョンの有効化を行ってください。

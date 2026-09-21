@@ -160,7 +160,7 @@ SubTandem 不提供音频转写、图形字幕 OCR/提取、远程媒体内嵌�
 ## 🛠️ 故障排查
 
 - **Select a supported text subtitle：** 在 IINA 中选择本地内嵌 SubRip/ASS/SSA/`mov_text` 或外部 SRT/ASS 作为主字幕。远程内嵌和图形字幕不受支持；可按状态提示重新选轨，或对失败的准备操作执行 Retry。
-- **Translation service unavailable：** 测试 Profile，并检查 endpoint、准确的 Model ID、API key、网络路由或 Ollama 进程。Claude 还需要确认填写的是 API root 而非完整资源 URL，并检查 Messages 兼容性、认证/版本支持、模型权限、spend limit、配额、rate limit 和拒绝状态；DeepSeek 还需检查余额、配额、rate limit 和固定 API 路由。视频和原字幕会继续正常播放。
+- **翻译失败：** 按照 Session 显示的具体操作处理。根据失败原因测试 Profile，并检查 endpoint、准确的 Model ID、API key、网络路由、账户限额或 Ollama 进程。视频和原字幕会继续正常播放。
 - **Credential could not be saved：** 使用正式 Release 安装包，不要使用内容不完整的开发副本；确认插件数据目录可写，并完全退出后重启 IINA。
 - **没有显示译文：** 确认目标 Profile 开关和 **Translate** 均已开启；播放位置还需要处于已有译文的字幕时段内。
 - **代理阻止服务连接：** 先尝试默认的 macOS 代理路由。如果代理拒绝该服务，将 Profile 改为 **Connect directly**，保存、测试并启用新修订版。

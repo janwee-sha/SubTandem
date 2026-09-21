@@ -39,50 +39,6 @@ type SourcePreparationState =
   | "failed"
   | "invalidated";
 
-const labels: Record<SessionStatus, string> = {
-  disabled: "Translation is off",
-  waitingForSubtitle: "Select a readable external SRT or ASS subtitle",
-  waitingForConfiguration: "Enable and test a translation service",
-  preparing: "Preparing nearby translations…",
-  running: "Translations are running",
-  partialFailure: "Some cues could not be translated; playback continues",
-  serviceUnavailable: "Translation service unavailable; playback continues",
-};
-
-const sourceIssueLabels: Record<string, string> = {
-  "not-external": "Select an external SRT or ASS subtitle track.",
-  unreadable: "IINA has not exposed readable subtitle data yet; reselect the external subtitle.",
-  "unsupported-format": "The selected external subtitle is not readable SRT or ASS text.",
-  "unsupported-encoding": "The selected subtitle encoding is not supported.",
-  empty: "The selected subtitle contains no readable cues.",
-};
-
-const sourcePreparationLabels: Record<SourcePreparationState, string> = {
-  preparing: "Preparing the selected embedded subtitle…",
-  ready: "",
-  unsupportedType: "This subtitle type is not supported. Select a text subtitle in IINA.",
-  remoteUnsupported: "Embedded subtitles in remote media are not supported.",
-  emptyOrUnreadable: "The selected subtitle is empty or unreadable.",
-  timedOut: "Subtitle preparation timed out. Playback continues.",
-  failed: "Subtitle preparation failed. Playback continues.",
-  invalidated: "The subtitle selection changed. Reselect a subtitle in IINA.",
-};
-
-function safeProviderErrorDetail(error: SessionProviderError | null | undefined): string {
-  if (!error) return "";
-  if (typeof error.statusCode === "number") return `HTTP ${error.statusCode}`;
-  const category: Record<string, string> = {
-    network: "Network request failed",
-    timeout: "Provider request timed out",
-    authentication: "Authentication failed",
-    model: "Model is unavailable",
-    quota: "Quota or rate limit reached",
-    protocol: "Provider response was incompatible",
-    configuration: "Provider configuration was rejected",
-  };
-  return category[error.category ?? ""] ?? "Provider request failed";
-}
-
 const statusMessage = document.querySelector<HTMLParagraphElement>("#status")!;
 const statusDot = document.querySelector<HTMLSpanElement>("#status-dot")!;
 const sourcePreparationControls = document.querySelector<HTMLElement>(
@@ -285,6 +241,7 @@ let pendingProfileSave: {
 let renderedAssistiveFeedbackSignature = "";
 let requestSequence = 0;
 let renderedProfilesSignature = "";
+let lastSessionPresentationSignature: string | null = null;
 let targetLanguageRevision = 1;
 let committedTargetLanguage = "zh-Hans";
 let targetLanguageHydrated = false;
@@ -379,8 +336,7 @@ function renderDeleteDialog(): void {
     return;
   }
   profileDeleteTitle.textContent = `Delete ${confirmation.displayName}?`;
-  profileDeleteDescription.textContent =
-    "This Profile configuration and its saved credential will be permanently deleted. This cannot be undone.";
+  profileDeleteDescription.textContent = "The profile will be permanently deleted.";
   const deleting = confirmation.phase === "deleting";
   confirmProfileDeleteButton.disabled = deleting;
   cancelProfileDeleteButton.disabled = deleting;
@@ -600,6 +556,7 @@ function setActionBusy(
   control.disabled = busy;
   if (busy) control.setAttribute("aria-busy", "true");
   else control.removeAttribute("aria-busy");
+  if (actionId === "test") return;
   if (control instanceof HTMLButtonElement) {
     const label = control.querySelector<HTMLElement>(".profile-action-label");
     if (label) label.textContent = busy ? busyLabel : idleLabelForAction(actionId);
@@ -1476,7 +1433,7 @@ testProfileButton.addEventListener("click", () => {
   if (!started) return;
   profileTestStatus.dataset.state = "busy";
   profileTestStatus.textContent = "Testing…";
-  setActionBusy("test", undefined, true, "Testing…");
+  setActionBusy("test", undefined, true);
   window.iina?.postMessage(
     "provider:test",
     envelope(
@@ -2253,7 +2210,6 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
       cueCount: number;
     } | null;
     cacheSize?: number;
-    boundedWork?: string;
     profiles?: ProfileView[];
     profileAuthority?: SidebarProfileAuthority;
     sourceIssue?: string | null;
@@ -2313,26 +2269,16 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     targetLanguage.disabled = false;
     targetLanguage.removeAttribute("aria-busy");
   }
-  if (view.status && labels[view.status]) {
-    statusMessage.textContent = labels[view.status];
-    statusDot.dataset.state = view.status;
-    enabled.checked = view.status !== "disabled";
-    if (view.status === "partialFailure" || view.status === "serviceUnavailable") {
-      const detail = safeProviderErrorDetail(view.providerError);
-      if (detail) statusMessage.textContent = `${labels[view.status]} — ${detail}`;
-    }
+  const sessionPresentation = window.subtandemResolveSessionPresentation(view);
+  if (sessionPresentation && sessionPresentation.signature !== lastSessionPresentationSignature) {
+    lastSessionPresentationSignature = sessionPresentation.signature;
+    statusMessage.textContent = sessionPresentation.text;
+    statusDot.dataset.state = sessionPresentation.state;
   }
-  if (
-    view.status === "waitingForSubtitle" &&
-    view.sourceIssue &&
-    sourceIssueLabels[view.sourceIssue]
-  )
-    statusMessage.textContent = sourceIssueLabels[view.sourceIssue]!;
+  if (view.status) enabled.checked = view.status !== "disabled";
   if (view.sourcePreparation && view.sourcePreparation.state !== "ready") {
     subtitleRetryAvailable = view.sourcePreparation.canRetry;
     updateSubtitleRetryControls();
-    statusMessage.textContent = sourcePreparationLabels[view.sourcePreparation.state];
-    statusDot.dataset.state = view.sourcePreparation.state;
   } else {
     subtitleRetryAvailable = false;
     updateSubtitleRetryControls();
@@ -2347,8 +2293,6 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
   }
   if (typeof view.cacheSize === "number")
     document.querySelector<HTMLElement>("#cache-size")!.textContent = `${view.cacheSize} cues`;
-  if (view.boundedWork)
-    document.querySelector<HTMLElement>("#work-bound")!.textContent = view.boundedWork;
   if (view.profiles) {
     const previousTest = sidebarState.snapshot.drawer.test;
     const visibleProfiles = sidebarState.applyProfiles(

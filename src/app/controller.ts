@@ -53,7 +53,8 @@ export class PlaybackController {
   private source: ControllerSource | null = null;
   private readonly translations = new Map<string, string>();
   private readonly terminallyFailedCueIds = new Set<string>();
-  private lastAttemptError: ProviderAttemptError | null = null;
+  private runningSessionEpoch: number | null = null;
+  private visibleFailure: ProviderAttemptError | null = null;
   private readonly pipeline = new TranslationPipeline();
   private readonly cache: SessionTranslationCache;
   private requestSequence = 0;
@@ -72,7 +73,15 @@ export class PlaybackController {
   }
 
   get providerError(): ProviderAttemptError | null {
-    return this.lastAttemptError ? { ...this.lastAttemptError } : null;
+    const error = this.visibleFailure;
+    if (!error) return null;
+    return {
+      category: error.category,
+      retryable: error.retryable,
+      ...(error.statusCode === undefined ? {} : { statusCode: error.statusCode }),
+      ...(error.providerCode === undefined ? {} : { providerCode: error.providerCode }),
+      userAction: error.userAction,
+    };
   }
 
   setSource(source: ControllerSource | null): void {
@@ -80,20 +89,25 @@ export class PlaybackController {
     this.source = source;
     this.translations.clear();
     this.terminallyFailedCueIds.clear();
-    this.lastAttemptError = null;
+    this.resetSessionFeedback();
     this.cache.clear();
     this.clearOverlay();
     this.status = this.nextIdleStatus();
   }
 
   setEnabled(enabled: boolean): void {
+    const changed = this.session.enabled !== enabled;
     this.session.setEnabled(enabled);
+    if (!changed) {
+      this.status = this.currentSessionStatus();
+      return;
+    }
+    this.resetSessionFeedback();
     if (!enabled) {
       this.clearOverlay();
       this.status = "disabled";
     } else {
       this.terminallyFailedCueIds.clear();
-      this.lastAttemptError = null;
       this.status = this.nextIdleStatus();
     }
   }
@@ -103,7 +117,7 @@ export class PlaybackController {
     this.session.onTrackChanged();
     this.translations.clear();
     this.terminallyFailedCueIds.clear();
-    this.lastAttemptError = null;
+    this.resetSessionFeedback();
     this.cache.clear();
     this.clearOverlay();
     this.status = this.nextIdleStatus();
@@ -129,7 +143,7 @@ export class PlaybackController {
     this.session.onTrackChanged();
     this.translations.clear();
     this.terminallyFailedCueIds.clear();
-    this.lastAttemptError = null;
+    this.resetSessionFeedback();
     this.cache.clear();
     this.clearOverlay();
     this.status = this.nextIdleStatus();
@@ -146,7 +160,7 @@ export class PlaybackController {
     this.session.onTrackChanged();
     this.translations.clear();
     this.terminallyFailedCueIds.clear();
-    this.lastAttemptError = null;
+    this.resetSessionFeedback();
     this.cache.clear();
     this.clearOverlay();
     this.status = this.session.enabled ? "waitingForConfiguration" : "disabled";
@@ -161,6 +175,19 @@ export class PlaybackController {
     )
       return "waitingForConfiguration";
     return "preparing";
+  }
+
+  private resetSessionFeedback(): void {
+    this.runningSessionEpoch = null;
+    this.visibleFailure = null;
+  }
+
+  private currentSessionStatus(): SessionStatus {
+    if (!this.session.enabled) return "disabled";
+    if (this.visibleFailure)
+      return this.visibleFailure.retryable ? "serviceUnavailable" : "partialFailure";
+    if (this.runningSessionEpoch === this.session.sessionEpoch) return "running";
+    return this.nextIdleStatus();
   }
 
   tick(positionMs: number | null): void {
@@ -187,7 +214,8 @@ export class PlaybackController {
       (cue) => !this.translations.has(cue.id) && !this.terminallyFailedCueIds.has(cue.id),
     );
     if (pending.length === 0) {
-      if (this.translations.size > 0) this.status = "running";
+      if (this.translations.size > 0 || this.visibleFailure)
+        this.status = this.currentSessionStatus();
       return;
     }
     const batch = batchCues(pending).batches[0] ?? [];
@@ -198,8 +226,7 @@ export class PlaybackController {
     const fingerprint = this.session.fingerprint();
     const requestNumber = ++this.requestSequence;
     const frozenBatch = freezeTranslationTargets({ windowCues: window, targetCues: batch });
-    this.status = "preparing";
-    this.lastAttemptError = null;
+    this.status = this.currentSessionStatus();
     this.pipeline.run(async () => {
       let remaining = [...frozenBatch];
       let terminalError: ProviderAttemptError | null = null;
@@ -225,12 +252,16 @@ export class PlaybackController {
             if (accepted.size === 0) return;
             remaining = remaining.filter((cue) => !accepted.has(cue.id));
             this.syncCurrentOverlay(fingerprint);
-            this.status = "running";
+            this.runningSessionEpoch = fingerprint.sessionEpoch;
+            this.status = this.currentSessionStatus();
           });
           if (!this.session.accepts(fingerprint) || this.source === null) return;
           const accepted = this.acceptResults(remaining, result, identity);
           remaining = remaining.filter((cue) => !accepted.has(cue.id));
-          if (accepted.size > 0) this.syncCurrentOverlay(fingerprint);
+          if (accepted.size > 0) {
+            this.runningSessionEpoch = fingerprint.sessionEpoch;
+            this.syncCurrentOverlay(fingerprint);
+          }
           terminalError = remaining.length
             ? {
                 category: "protocol",
@@ -271,12 +302,14 @@ export class PlaybackController {
         if (!current) return;
       }
       if (!this.session.accepts(fingerprint) || this.source === null) return;
+      if (terminalError?.category === "cancelled") {
+        this.status = this.currentSessionStatus();
+        return;
+      }
       for (const cue of remaining) this.terminallyFailedCueIds.add(cue.id);
-      this.lastAttemptError = remaining.length > 0 ? terminalError : null;
+      if (remaining.length > 0 && terminalError) this.visibleFailure = terminalError;
       if (this.session.accepts(fingerprint)) {
-        if (remaining.length > 0)
-          this.status = terminalError?.retryable ? "serviceUnavailable" : "partialFailure";
-        else if (this.status !== "partialFailure") this.status = "running";
+        this.status = this.currentSessionStatus();
       }
     });
   }
@@ -446,7 +479,7 @@ export class PlaybackController {
   onSeek(positionMs: number | null): void {
     this.session.onSeek(positionMs);
     this.clearOverlay();
-    this.status = this.nextIdleStatus();
+    this.status = this.currentSessionStatus();
   }
 
   endFile(): void {
@@ -454,7 +487,7 @@ export class PlaybackController {
     this.source = null;
     this.translations.clear();
     this.terminallyFailedCueIds.clear();
-    this.lastAttemptError = null;
+    this.resetSessionFeedback();
     this.cache.clear();
     this.clearOverlay();
     this.status = this.nextIdleStatus();
@@ -464,7 +497,7 @@ export class PlaybackController {
     this.session.close();
     this.translations.clear();
     this.terminallyFailedCueIds.clear();
-    this.lastAttemptError = null;
+    this.resetSessionFeedback();
     this.cache.clear();
     this.clearOverlay();
     this.status = "disabled";

@@ -62,6 +62,10 @@ const modelCatalogStatusMessage = (
 
 describe("Sidebar/Main/Global security messages", () => {
   const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
+  const providerStatusSource = readFileSync(
+    new URL("../../ui/provider-status.ts", import.meta.url),
+    "utf8",
+  );
   const profile = {
     profileId: "00000000-0000-4000-8000-000000000001",
     revision: 2,
@@ -229,22 +233,34 @@ describe("Sidebar/Main/Global security messages", () => {
 
   it("uses a Main-owned profile deletion request and preserves only allowlisted provider errors", () => {
     expect(SIDEBAR_MESSAGE_NAMES).toContain("profile:delete-request");
-    expect(
-      normalizeProviderError({
-        category: "authentication",
-        retryable: false,
-        statusCode: 401,
-        providerCode: "invalid_api_key",
-        userAction: "CHECK_CREDENTIALS",
-        privateBody: "must-not-cross-rpc",
-      }),
-    ).toEqual({
+    const providerError = normalizeProviderError({
+      category: "authentication",
+      retryable: false,
+      statusCode: 401,
+      providerCode: "invalid_api_key",
+      userAction: "CHECK_CREDENTIALS",
+      body: "must-not-cross-rpc",
+      credential: "must-not-cross-rpc",
+      subtitle: "must-not-cross-rpc",
+      endpoint: "https://private.example.test/v1",
+      requestId: "private-request-id",
+      logs: ["must-not-cross-rpc"],
+    });
+    expect(providerError).toEqual({
       category: "authentication",
       retryable: false,
       statusCode: 401,
       providerCode: "invalid_api_key",
       userAction: "CHECK_CREDENTIALS",
     });
+    expect(Object.keys(providerError).sort()).toEqual([
+      "category",
+      "providerCode",
+      "retryable",
+      "statusCode",
+      "userAction",
+    ]);
+    expect(JSON.stringify(providerError)).not.toMatch(/must-not-cross|private\.example/i);
     expect(
       normalizeProviderError({
         category: "made-up",
@@ -275,7 +291,9 @@ describe("Sidebar/Main/Global security messages", () => {
     ).toBe(
       "Provider response was incompatible. Check that the selected model supports structured JSON output.",
     );
-    expect(sidebarSource).toContain('protocol: "Provider response was incompatible"');
+    expect(providerStatusSource).toContain(
+      'return "Provider response was incompatible. Check that the selected model supports structured JSON output."',
+    );
     expect(
       providerTestStatusMessage({
         ok: false,

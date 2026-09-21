@@ -159,7 +159,7 @@ SubTandem는 오디오 전사, 이미지 기반 자막 OCR/추출, 원격 미디
 ## 🛠️ 문제 해결
 
 - **Select a supported text subtitle:** 로컬 내장 SubRip/ASS/SSA/`mov_text` 또는 외부 SRT/ASS를 주 자막으로 선택하세요. 이미지 기반 및 원격 내장 자막은 지원하지 않으며, 상태 안내에 따라 다시 선택하거나 준비 실패 후 Retry하세요.
-- **Translation service unavailable:** Profile을 테스트하고 endpoint, 정확한 Model ID, API key, 네트워크 경로 또는 Ollama 프로세스를 확인하세요. Claude는 API root, Messages 호환성, 인증/version, 모델 접근, spend limit, 할당량, rate limit과 거부를 확인하고, DeepSeek는 잔액, 할당량, rate limit과 고정 API route를 확인하세요. 영상과 원본 자막은 계속 재생됩니다.
+- **번역 실패:** Session에 표시되는 구체적인 조치를 따르세요. 원인에 따라 Profile을 테스트하고 endpoint, 정확한 Model ID, API key, 네트워크 경로, 계정 한도 또는 Ollama 프로세스를 확인하세요. 재생과 원본 자막은 정상적으로 계속됩니다.
 - **Credential could not be saved:** 불완전한 개발 사본 대신 Release 패키지를 설치하고 플러그인 데이터 디렉터리가 쓰기 가능한지 확인한 뒤 IINA를 완전히 종료하고 다시 시작하세요.
 - **번역문이 표시되지 않음:** 대상 Profile 스위치와 **Translate**가 모두 켜져 있고 재생 위치가 번역된 cue의 시간 범위 안에 있는지 확인하세요.
 - **프록시가 서비스를 차단함:** 먼저 기본 macOS 프록시 경로를 사용하세요. 프록시가 서비스를 거부하면 해당 Profile을 **Connect directly**로 바꾸고 저장, 테스트한 뒤 새 revision을 활성화하세요.
