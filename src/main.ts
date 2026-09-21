@@ -12,6 +12,8 @@ import {
   classifySubtitleSelection,
   IinaSubtitleSourcePort,
   readSelectedSubtitle,
+  type SubtitleSelectionSnapshot,
+  type SubtitleSourcePort,
 } from "./adapters/iina/subtitle-source.js";
 import {
   IinaFileRpcBridge,
@@ -65,6 +67,7 @@ import {
 import { OverlayRegionRuntime } from "./adapters/iina/overlay-region-runtime.js";
 import { SidebarMessageBuffer } from "./adapters/iina/sidebar-message-buffer.js";
 import { ProfileActivationSync } from "./adapters/iina/profile-activation-sync.js";
+import { TranslationEnabledPreferences } from "./adapters/iina/translation-enabled-preferences.js";
 import { hostTimers, type HostTimeout } from "./adapters/iina/host-timers.js";
 import {
   createMailboxPlayerId,
@@ -96,7 +99,22 @@ interface MainRuntime {
   utils: IINA.API.Utils;
 }
 
+interface MainSubtitleSourcePort extends SubtitleSourcePort {
+  selectionSnapshot(): SubtitleSelectionSnapshot | null;
+}
+
+interface MainPlayerDependencies {
+  createSourcePort?: (mediaEpoch: () => number) => MainSubtitleSourcePort;
+  createPreparationCoordinator?: (
+    readResult: (resultId: string) => Uint8Array | null,
+  ) => Promise<SubtitlePreparationCoordinator>;
+}
+
 function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackController {
+  const dependencies =
+    ((hostRuntime as unknown as Record<PropertyKey, unknown>)[
+      Symbol.for("subtandem.main-player-dependencies")
+    ] as MainPlayerDependencies | undefined) ?? {};
   const globalMailbox = new MainGlobalMailbox(
     new IinaGlobalMailboxFileStore(hostRuntime.file),
     playerId,
@@ -116,14 +134,16 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
   };
   const provider = new GlobalProviderClient(runtime.global);
   let mediaEpoch = 0;
-  const sourcePort = new IinaSubtitleSourcePort(
-    runtime.core.subtitle,
-    runtime.file,
-    runtime.core,
-    runtime.mpv,
-    playerId,
-    () => mediaEpoch,
-  );
+  const sourcePort =
+    dependencies.createSourcePort?.(() => mediaEpoch) ??
+    new IinaSubtitleSourcePort(
+      runtime.core.subtitle,
+      runtime.file,
+      runtime.core,
+      runtime.mpv,
+      playerId,
+      () => mediaEpoch,
+    );
   const translationOverlay = new WebViewTranslationOverlay(
     runtime.overlay,
     runtime.event,
@@ -150,7 +170,8 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     requiresProviderSelection: true,
     translationLog: (message) => runtime.console.log(message),
   });
-  controller.setEnabled(runtime.preferences.get("enabledByDefault") === true);
+  const translationEnabledPreferences = new TranslationEnabledPreferences(runtime.preferences);
+  controller.setEnabled(translationEnabledPreferences.read());
   let currentSelection: {
     profileId: string;
     revision: number;
@@ -164,7 +185,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     cacheSize: controller.cacheSize,
     providerError: controller.providerError,
     source: null,
-    sourceIssue: "unreadable",
+    sourceIssue: controller.session.enabled ? "unreadable" : null,
     sourcePreparation: null,
     targetLanguage: targetLanguageSession.snapshot.targetLanguage,
     targetLanguageRevision: targetLanguageSession.snapshot.revision,
@@ -306,6 +327,19 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     embeddedPreparationKey = null;
   };
 
+  const sourceLoadingAllowed = (): boolean => controller.session.enabled;
+
+  const suspendSourceLoading = (): void => {
+    sourceSelectionTimer?.cancel();
+    sourceSelectionTimer = null;
+    sourceReloadAttempt = 0;
+    invalidatePreparation();
+    selectedSourceTrackId = null;
+    selectedSourceContentHash = null;
+    controller.setSource(null);
+    updateSidebarState({ source: null, sourceIssue: null, sourcePreparation: null });
+  };
+
   const clearSource = (reason: string, invalidateEmbedded = true): void => {
     if (invalidateEmbedded) invalidatePreparation();
     selectedSourceTrackId = runtime.core.subtitle.id;
@@ -322,6 +356,12 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     return preparationBootstrap.run(
       mediaEpoch,
       async () => {
+        if (dependencies.createPreparationCoordinator) {
+          preparation = await dependencies.createPreparationCoordinator((resultId) =>
+            sourcePort.readBinary(`@tmp/subtandem-extraction/${resultId}/output.srt`),
+          );
+          return preparation;
+        }
         const tempDirectory = runtime.utils.resolvePath("@tmp/subtandem-extraction");
         const launcher = new IinaProcessLauncher(runtime.utils);
         const files = new IinaReadyFileStore(runtime.file);
@@ -362,8 +402,15 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     );
   };
 
-  const acceptPrepared = (key: string, prepared: PreparedSubtitleSource | null): void => {
-    if (embeddedPreparationKey !== key) return;
+  const ownsPreparation = (key: string, epoch: number): boolean =>
+    sourceLoadingAllowed() && mediaEpoch === epoch && embeddedPreparationKey === key;
+
+  const acceptPrepared = (
+    key: string,
+    epoch: number,
+    prepared: PreparedSubtitleSource | null,
+  ): void => {
+    if (!ownsPreparation(key, epoch)) return;
     preparationView = preparation?.view ?? null;
     if (!prepared) {
       updateSidebarState({ sourcePreparation: preparationView });
@@ -400,6 +447,11 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     media: Parameters<SubtitlePreparationCoordinator["prepare"]>[0],
     track: Parameters<SubtitlePreparationCoordinator["prepare"]>[1],
   ): void => {
+    if (!sourceLoadingAllowed()) {
+      suspendSourceLoading();
+      return;
+    }
+    const epoch = media.mediaEpoch;
     const key = preparationKey(track, media.mediaEpoch);
     if (
       embeddedPreparationKey === key &&
@@ -420,10 +472,10 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     };
     updateSidebarState({ source: null, sourceIssue: null, sourcePreparation: preparationView });
     void coordinator()
-      .then((value) => value.prepare(media, track))
-      .then((prepared) => acceptPrepared(key, prepared))
+      .then((value) => (ownsPreparation(key, epoch) ? value.prepare(media, track) : null))
+      .then((prepared) => acceptPrepared(key, epoch, prepared))
       .catch(() => {
-        if (embeddedPreparationKey !== key) return;
+        if (!ownsPreparation(key, epoch)) return;
         preparationView = {
           state: "failed",
           origin: "embedded",
@@ -436,6 +488,10 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
   };
 
   const loadSource = (commitFailure = true): boolean => {
+    if (!sourceLoadingAllowed()) {
+      suspendSourceLoading();
+      return true;
+    }
     const snapshot = sourcePort.selectionSnapshot();
     const selection = snapshot ? classifySubtitleSelection(snapshot) : null;
     if (selection?.kind === "embedded") {
@@ -488,6 +544,10 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
 
   const attemptSourceReload = (): void => {
     sourceSelectionTimer = null;
+    if (!sourceLoadingAllowed()) {
+      suspendSourceLoading();
+      return;
+    }
     const finalAttempt = sourceReloadAttempt >= 4;
     if (loadSource(finalAttempt) || finalAttempt) return;
     sourceReloadAttempt += 1;
@@ -495,6 +555,10 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
   };
 
   const scheduleSourceReload = (invalidateChangedSelection = false): void => {
+    if (!sourceLoadingAllowed()) {
+      suspendSourceLoading();
+      return;
+    }
     const selectedId = runtime.core.subtitle.id;
     if (invalidateChangedSelection && selectedId !== selectedSourceTrackId)
       clearSource("unreadable");
@@ -505,7 +569,8 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
 
   runtime.sidebar.loadFile("dist/ui/sidebar.html");
   runtime.sidebar.onMessage("ui:ready", () => {
-    if (!loadSource(false)) scheduleSourceReload();
+    if (sourceLoadingAllowed() && !loadSource(false)) scheduleSourceReload();
+    else if (!sourceLoadingAllowed()) suspendSourceLoading();
     requestProfileActivation();
     requestOverlayPosition();
     requestSubtitleStyle();
@@ -574,10 +639,9 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     const enabled = Boolean((raw as { payload?: { enabled?: unknown } }).payload?.enabled);
     controller.setEnabled(enabled);
     if (!enabled) {
-      clearSource("unreadable");
+      suspendSourceLoading();
     } else if (!loadSource(false)) scheduleSourceReload();
-    runtime.preferences.set("enabledByDefault", enabled);
-    runtime.preferences.sync();
+    translationEnabledPreferences.save(enabled);
     updateSidebarState();
     queueSidebarMessage("operation:result", {
       requestId: (raw as { requestId?: unknown }).requestId,
@@ -591,6 +655,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     try {
       const message = parseRetrySubtitlePreparation(raw);
       requestId = message.requestId;
+      if (!sourceLoadingAllowed()) throw new Error("INVALID_RETRY");
       const snapshot = sourcePort.selectionSnapshot();
       const selection = snapshot ? classifySubtitleSelection(snapshot) : null;
       if (selection?.kind !== "embedded") throw new Error("INVALID_RETRY");
@@ -605,7 +670,8 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
         canReselect: true,
       };
       updateSidebarState({ source: null, sourceIssue: null, sourcePreparation: preparationView });
-      void preparation.retry().then((prepared) => acceptPrepared(key, prepared));
+      const epoch = selection.media.mediaEpoch;
+      void preparation.retry().then((prepared) => acceptPrepared(key, epoch, prepared));
       queueSidebarMessage("operation:result", {
         requestId,
         ok: true,
@@ -932,15 +998,26 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     mediaEpoch += 1;
     invalidatePreparation();
     controller.endFile();
-    clearSource("unreadable");
-    scheduleSourceReload();
+    if (sourceLoadingAllowed()) {
+      clearSource("unreadable");
+      scheduleSourceReload();
+    } else {
+      suspendSourceLoading();
+    }
   });
   runtime.event.on("mpv.sid.changed", () => {
+    if (!sourceLoadingAllowed()) {
+      suspendSourceLoading();
+      return;
+    }
     const selectedId = runtime.core.subtitle.id;
     if (selectedId === selectedSourceTrackId) return;
     scheduleSourceReload(true);
   });
-  runtime.event.on("mpv.track-list.changed", () => scheduleSourceReload());
+  runtime.event.on("mpv.track-list.changed", () => {
+    if (sourceLoadingAllowed()) scheduleSourceReload();
+    else suspendSourceLoading();
+  });
   const overlayRegionListeners = [
     {
       name: "mpv.sub-margin-x.changed",
@@ -1033,7 +1110,11 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     controller.clearProviderSelection();
     updateSidebarState({ source: null, sourceIssue: "unreadable", selection: null });
   });
-  if (!loadSource(false)) scheduleSourceReload();
+  if (sourceLoadingAllowed()) {
+    if (!loadSource(false)) scheduleSourceReload();
+  } else {
+    suspendSourceLoading();
+  }
   translationOverlay.setRegion(overlayRegion.snapshot);
   requestOverlayPosition();
   requestSubtitleStyle();
@@ -1052,5 +1133,7 @@ const scheduleInitializePlayer = (): void => {
   if (initializePlayerTimer !== null) return;
   initializePlayerTimer = hostTimers.setTimeout(initializePlayer, 100);
 };
-iina.event.on("iina.window-loaded", scheduleInitializePlayer);
-scheduleInitializePlayer();
+if (typeof iina !== "undefined") {
+  iina.event.on("iina.window-loaded", scheduleInitializePlayer);
+  scheduleInitializePlayer();
+}

@@ -29,7 +29,11 @@ interface SessionPresentationInput {
   status?: SessionPresentationStatus;
   providerError?: SessionFailureInput | null;
   sourceIssue?: string | null;
-  sourcePreparation?: { state: SessionSourcePreparationState } | null;
+  source?: { format: string; cueCount: number } | null;
+  sourcePreparation?: {
+    state: SessionSourcePreparationState;
+    canRetry?: boolean;
+  } | null;
 }
 
 interface SessionPresentation {
@@ -38,9 +42,16 @@ interface SessionPresentation {
   signature: string;
 }
 
+interface SessionSourceDetails {
+  source: { format: string; cueCount: number } | null;
+  retryAvailable: boolean;
+  detailsVisible: boolean;
+}
+
 interface Window {
   subtandemSessionFailureMessage(error: SessionFailureInput | null | undefined): string | null;
   subtandemResolveSessionPresentation(input: SessionPresentationInput): SessionPresentation | null;
+  subtandemResolveSessionSourceDetails(input: SessionPresentationInput): SessionSourceDetails;
 }
 
 const sessionStatusLabels: Partial<Record<SessionPresentationStatus, string>> = {
@@ -123,6 +134,19 @@ function resolveSessionPresentation(input: SessionPresentationInput): SessionPre
   return null;
 }
 
+function resolveSessionSourceDetails(input: SessionPresentationInput): SessionSourceDetails {
+  if (input.status === "disabled")
+    return { source: null, retryAvailable: false, detailsVisible: false };
+  return {
+    source: input.source ?? null,
+    retryAvailable:
+      input.sourcePreparation?.state !== "ready" && input.sourcePreparation?.canRetry === true,
+    detailsVisible: true,
+  };
+}
+
 (globalThis as typeof globalThis & Window).subtandemSessionFailureMessage = sessionFailureMessage;
 (globalThis as typeof globalThis & Window).subtandemResolveSessionPresentation =
   resolveSessionPresentation;
+(globalThis as typeof globalThis & Window).subtandemResolveSessionSourceDetails =
+  resolveSessionSourceDetails;

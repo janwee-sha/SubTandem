@@ -248,6 +248,7 @@ let targetLanguageHydrated = false;
 let pendingLanguageSaveRequestId: string | null = null;
 let renderedLanguageCatalogSignature = "";
 let subtitleRetryAvailable = false;
+let subtitleDetailsVisible = false;
 let endpointRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 let draftCredentialEpoch = 1;
 let pendingModelRefresh: {
@@ -565,6 +566,11 @@ function setActionBusy(
 }
 
 function updateSubtitleRetryControls(): void {
+  if (!subtitleDetailsVisible) {
+    sourcePreparationControls.hidden = true;
+    retrySubtitleButton.hidden = true;
+    return;
+  }
   const latest = sidebarState.snapshot.latestRequestByRegion["subtitle-retry"];
   const pending = latest ? sidebarState.snapshot.requests[latest.requestId] : undefined;
   const feedback = sidebarState.snapshot.activeFeedback;
@@ -2276,19 +2282,27 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     statusDot.dataset.state = sessionPresentation.state;
   }
   if (view.status) enabled.checked = view.status !== "disabled";
-  if (view.sourcePreparation && view.sourcePreparation.state !== "ready") {
-    subtitleRetryAvailable = view.sourcePreparation.canRetry;
-    updateSubtitleRetryControls();
+  const sourceDetails = window.subtandemResolveSessionSourceDetails(view);
+  subtitleDetailsVisible = sourceDetails.detailsVisible;
+  subtitleRetryAvailable = sourceDetails.retryAvailable;
+  if (!subtitleDetailsVisible) {
+    for (const requestId of sidebarState.clearOperationRegion("subtitle-retry"))
+      pendingOperations.delete(requestId);
+    subtitleRetryStatus.textContent = "";
+    sourcePreparationControls.hidden = true;
+    retrySubtitleButton.hidden = true;
+    sourceSummary.hidden = true;
   } else {
-    subtitleRetryAvailable = false;
     updateSubtitleRetryControls();
   }
-  if (view.source) {
+  if (sourceDetails.source && subtitleDetailsVisible) {
     sourceSummary.hidden = false;
     document.querySelector<HTMLElement>("#source-format")!.textContent =
-      view.source.format.toUpperCase();
-    document.querySelector<HTMLElement>("#source-cues")!.textContent = String(view.source.cueCount);
-  } else if (view.source === null) {
+      sourceDetails.source.format.toUpperCase();
+    document.querySelector<HTMLElement>("#source-cues")!.textContent = String(
+      sourceDetails.source.cueCount,
+    );
+  } else if (view.source === null || !subtitleDetailsVisible) {
     sourceSummary.hidden = true;
   }
   if (typeof view.cacheSize === "number")

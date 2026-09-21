@@ -487,10 +487,36 @@ describe("IINA sidebar lifecycle contract", () => {
     ).toMatchObject({ text: "Translation is off", state: "disabled" });
   });
 
+  it("hides stale subtitle details and Retry whenever the Session is disabled", () => {
+    const state = globalThis.createSubTandemSidebarState();
+    state.beginOperation(
+      { requestId: "stale-retry", regionId: "subtitle-retry", actionId: "retry-preparation" },
+      "Retrying…",
+    );
+    expect(
+      globalThis.subtandemResolveSessionSourceDetails({
+        status: "disabled",
+        source: { format: "srt", cueCount: 42 },
+        sourcePreparation: {
+          state: "failed",
+          canRetry: true,
+          canReselect: true,
+        },
+      }),
+    ).toEqual({ source: null, retryAvailable: false, detailsVisible: false });
+    expect(state.clearOperationRegion("subtitle-retry")).toEqual(["stale-retry"]);
+    expect(state.snapshot.latestRequestByRegion["subtitle-retry"]).toBeUndefined();
+    expect(state.snapshot.activeFeedback).toBeNull();
+    expect(sidebarSource).toContain("subtandemResolveSessionSourceDetails");
+    expect(sidebarSource).toContain('clearOperationRegion("subtitle-retry")');
+    expect(sidebarSource).toContain("sourcePreparationControls.hidden = true");
+    expect(sidebarSource).toContain("sourceSummary.hidden = true");
+  });
+
   it("publishes only the current preparation owner and never revives an invalid coordinator", () => {
     expect(mainSource).not.toContain("preparation?.view ?? preparationView");
     expect(mainSource).toContain("sourcePreparation: preparationView");
-    expect(mainSource).toContain("embeddedPreparationKey !== key");
+    expect(mainSource).toContain("mediaEpoch === epoch && embeddedPreparationKey === key");
     expect(mainSource).toMatch(
       /const invalidatePreparation = \(\): void => \{[\s\S]*?preparationView = null;[\s\S]*?embeddedPreparationKey = null;/,
     );
