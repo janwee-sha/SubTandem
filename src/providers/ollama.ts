@@ -7,7 +7,7 @@ import type {
   WireTranslationTarget,
 } from "./types.js";
 import type { ProviderTransport, ProviderTransportResponse } from "./transport.js";
-import { providerHttpError, protocolError } from "./errors.js";
+import { providerHttpError, providerHttpErrorFromBody, protocolError } from "./errors.js";
 import { normalizeProviderEndpoint } from "./profiles.js";
 import { validateIdOutput } from "./validation.js";
 import { encodeWireItems } from "./wire-items.js";
@@ -223,7 +223,7 @@ export class OllamaProvider implements ConfiguredProvider {
     this.throwIfCancelled(scopeId);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       if (initialCapability !== "json-schema" || !this.isStructuredOutputIncompatibility(response))
-        throw providerHttpError(response.statusCode, response.headers);
+        throw providerHttpErrorFromBody(response.statusCode, response.headers, response.bodyText);
       this.outputCapability = "prompt-json";
       response = await this.chat(
         this.fallbackJobId(jobId),
@@ -234,7 +234,7 @@ export class OllamaProvider implements ConfiguredProvider {
       );
       this.throwIfCancelled(scopeId);
       if (response.statusCode < 200 || response.statusCode >= 300)
-        throw providerHttpError(response.statusCode, response.headers);
+        throw providerHttpErrorFromBody(response.statusCode, response.headers, response.bodyText);
       return this.parse(items, response);
     }
     try {
@@ -251,7 +251,7 @@ export class OllamaProvider implements ConfiguredProvider {
       );
       this.throwIfCancelled(scopeId);
       if (fallback.statusCode < 200 || fallback.statusCode >= 300)
-        throw providerHttpError(fallback.statusCode, fallback.headers);
+        throw providerHttpErrorFromBody(fallback.statusCode, fallback.headers, fallback.bodyText);
       return this.parse(items, fallback);
     }
   }

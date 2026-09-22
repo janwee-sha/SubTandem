@@ -134,7 +134,7 @@ export class DeepSeekProvider implements ConfiguredProvider {
     response: ProviderTransportResponse,
   ): TranslationBatchResult {
     if (response.statusCode < 200 || response.statusCode >= 300)
-      throw deepSeekHttpError(response.statusCode, response.headers);
+      throw deepSeekHttpError(response.statusCode, response.headers, response.bodyText);
     let parsed: Record<string, unknown>;
     try {
       const value: unknown = JSON.parse(response.bodyText);

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { normalizeProviderError } from "../../src/domain/errors.js";
 import { ProviderBroker } from "../../src/providers/broker.js";
 import { ProviderConnectionTests } from "../../src/providers/connection-tests.js";
 import type { ConfiguredProvider } from "../../src/providers/provider.js";
@@ -16,6 +17,29 @@ import {
   authorizedProviderRequest,
   createTestProfileAuthority,
 } from "../helpers/profile-activation-harness.js";
+import "../../ui/service-failure-message.js";
+import "../../ui/session-status.js";
+import "../../ui/provider-status.js";
+
+const providerTestStatusMessage = (
+  globalThis as typeof globalThis & {
+    subtandemProviderTestStatusMessage(result: {
+      category?: string;
+      statusCode?: number;
+      code?: string;
+      userAction?: string;
+    }): string;
+  }
+).subtandemProviderTestStatusMessage;
+const sessionFailureMessage = (
+  globalThis as typeof globalThis & {
+    subtandemSessionFailureMessage(result: {
+      category?: string;
+      statusCode?: number;
+      providerCode?: string;
+    }): string | null;
+  }
+).subtandemSessionFailureMessage;
 
 class DeferredConfiguredProvider implements ConfiguredProvider {
   readonly attemptIds: string[] = [];
@@ -168,6 +192,114 @@ describe("provider connection lifecycle integration", () => {
         .filter((request) => request.body)
         .map((request) => (request.body as { model?: string }).model),
     ).toEqual(["draft-openai", "draft-claude", "draft-deepseek", "draft-ollama"]);
+  });
+
+  it("projects unavailable-model failures from every Provider identically in Test and Session", async () => {
+    const openAIResponse = {
+      statusCode: 400,
+      headers: {},
+      bodyText: JSON.stringify({
+        error: {
+          code: "invalid_request_error",
+          message: "The requested model does not exist: PRIVATE_MODEL_RESPONSE",
+        },
+      }),
+    };
+    const claudeResponse = {
+      statusCode: 400,
+      headers: {},
+      bodyText: JSON.stringify({
+        type: "error",
+        error: {
+          type: "invalid_request_error",
+          message: "The requested model is not supported: PRIVATE_MODEL_RESPONSE",
+        },
+      }),
+    };
+    const deepSeekResponse = {
+      statusCode: 400,
+      headers: {},
+      bodyText: JSON.stringify({
+        error: {
+          type: "invalid_request_error",
+          code: "invalid_request_error",
+          message: "Model Not Exist: PRIVATE_MODEL_RESPONSE",
+        },
+      }),
+    };
+    const providers: ConfiguredProvider[] = [
+      new OpenAICompatibleProvider(
+        {
+          endpoint: "https://openai.example/v1",
+          model: "private-model",
+          capability: "prompt-json",
+          sessionId: "session",
+        },
+        { request: async () => openAIResponse },
+      ),
+      new ClaudeProvider(
+        {
+          endpoint: "https://api.anthropic.com",
+          model: "private-model",
+          apiKey: "fictional-key",
+        },
+        { request: async () => claudeResponse },
+      ),
+      new DeepSeekProvider(
+        { endpoint: "https://api.deepseek.com", model: "private-model" },
+        { request: async () => deepSeekResponse },
+      ),
+      new OllamaProvider(
+        { endpoint: "http://127.0.0.1:11434", model: "private-model" },
+        {
+          request: async (request) => {
+            if (request.url.endsWith("/api/version"))
+              return {
+                statusCode: 200,
+                headers: {},
+                bodyText: '{"version":"0.10"}',
+              };
+            if (request.url.endsWith("/api/tags"))
+              return {
+                statusCode: 200,
+                headers: {},
+                bodyText: '{"models":[]}',
+              };
+            return {
+              statusCode: 404,
+              headers: {},
+              bodyText: JSON.stringify({
+                error: "model 'private-model' not found: PRIVATE_MODEL_RESPONSE",
+              }),
+            };
+          },
+        },
+      ),
+    ];
+    const expected = "The model is unavailable. Check the Profile’s Model ID.";
+
+    for (const [index, provider] of providers.entries()) {
+      const testError = normalizeProviderError(
+        await provider.testConnection(`unavailable-model-${index}`).catch((error) => error),
+      );
+      const sessionError = normalizeProviderError(
+        await provider.attempt(makeProviderRequest()).catch((error) => error),
+      );
+      const testWire = {
+        category: testError.category,
+        ...(testError.statusCode === undefined ? {} : { statusCode: testError.statusCode }),
+        code: testError.category === "model" ? "MODEL_REQUIRED" : "PROVIDER_TEST_FAILED",
+        userAction: testError.userAction,
+      };
+
+      expect(testError.category).toBe("model");
+      expect(sessionError.category).toBe("model");
+      expect(providerTestStatusMessage(testWire)).toBe(expected);
+      expect(sessionFailureMessage(sessionError)).toBe(expected);
+      expect(JSON.stringify({ testWire, sessionError })).not.toMatch(
+        /PRIVATE_MODEL_RESPONSE|invalid_request_error|private-model/,
+      );
+    }
   });
 
   it("runs Claude Save, fresh Test, activation, translation, Update and Delete", async () => {

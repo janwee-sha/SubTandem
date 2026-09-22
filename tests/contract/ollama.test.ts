@@ -975,4 +975,39 @@ describe("Ollama native provider", () => {
       expect(calls.every((call) => call.proxyMode === proxyMode)).toBe(true);
     },
   );
+
+  it("uses the same safe unavailable-model failure for Test and Session", async () => {
+    const provider = new OllamaProvider(
+      { endpoint: "http://127.0.0.1:11434", model: "private-model" },
+      {
+        request: async (request) => {
+          if (request.url.endsWith("/api/version"))
+            return { statusCode: 200, headers: {}, bodyText: '{"version":"0.10"}' };
+          if (request.url.endsWith("/api/tags"))
+            return { statusCode: 200, headers: {}, bodyText: '{"models":[]}' };
+          return {
+            statusCode: 404,
+            headers: {},
+            bodyText: JSON.stringify({
+              error: "model 'private-model' not found: PRIVATE_RESPONSE",
+            }),
+          };
+        },
+      },
+    );
+
+    const testFailure = await provider
+      .testConnection("unavailable-model-test")
+      .catch((error) => error);
+    const sessionFailure = await provider.attempt(makeProviderRequest()).catch((error) => error);
+
+    for (const failure of [testFailure, sessionFailure]) {
+      expect(failure).toMatchObject({
+        category: "model",
+        retryable: false,
+        userAction: "CHECK_MODEL",
+      });
+      expect(JSON.stringify(failure)).not.toMatch(/private-model|PRIVATE_RESPONSE/);
+    }
+  });
 });

@@ -528,7 +528,6 @@ describe("OpenAI-compatible provider", () => {
         bodyText: JSON.stringify({ error: { code: "model_not_found", message: "private" } }),
         expected: {
           category: "model",
-          providerCode: "model_not_found",
           userAction: "CHECK_MODEL",
         },
       },
@@ -732,4 +731,43 @@ describe("OpenAI-compatible provider", () => {
       );
     },
   );
+
+  it("classifies unavailable model responses without retaining Provider diagnostics", async () => {
+    const value = new OpenAICompatibleProvider(
+      {
+        endpoint: "https://example.test/v1",
+        model: "private-model",
+        capability: "prompt-json",
+        sessionId: "session",
+      },
+      {
+        request: async () => ({
+          statusCode: 400,
+          headers: {},
+          bodyText: JSON.stringify({
+            error: {
+              code: "invalid_request_error",
+              message: "The requested model does not exist: PRIVATE_MODEL_RESPONSE",
+            },
+          }),
+        }),
+      },
+    );
+
+    const testFailure = await value
+      .testConnection("unavailable-model-test")
+      .catch((error) => error);
+    const sessionFailure = await value.attempt(makeProviderRequest()).catch((error) => error);
+
+    for (const failure of [testFailure, sessionFailure]) {
+      expect(failure).toMatchObject({
+        category: "model",
+        retryable: false,
+        statusCode: 400,
+        userAction: "CHECK_MODEL",
+      });
+      expect(failure).not.toHaveProperty("providerCode");
+      expect(JSON.stringify(failure)).not.toMatch(/invalid_request_error|PRIVATE_MODEL_RESPONSE/);
+    }
+  });
 });
