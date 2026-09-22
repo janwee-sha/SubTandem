@@ -13,8 +13,7 @@ interface TranslationBatchExecutionOptions {
 }
 
 type WireOutcome =
-  | { status: "fulfilled"; result: TranslationBatchResult }
-  | { status: "rejected"; error: unknown };
+  { status: "fulfilled"; result: TranslationBatchResult } | { status: "rejected"; error: unknown };
 
 export async function runTranslationBatches(
   request: TranslationBatchRequest,
