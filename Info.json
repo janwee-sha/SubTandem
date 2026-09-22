@@ -4,7 +4,7 @@
   "identifier": "io.subtandem.iina",
   "ghRepo": "janwee-sha/SubTandem",
   "ghVersion": 1008,
-  "description": "Translates the selected local embedded text subtitle or external SRT/ASS subtitle and renders translated subtitles itself in IINA.",
+  "description": "A powerful plugin for real-time AI-powered bilingual subtitle translation.",
   "author": {
     "name": "SubTandem Contributors"
   },

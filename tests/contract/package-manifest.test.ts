@@ -18,7 +18,7 @@ describe("IINA package manifest", () => {
     expect(manifest.ghVersion).toBe(1008);
   });
 
-  it("describes self-rendered translations without temporary display files", () => {
+  it("declares the product description without temporary display files", () => {
     const manifest = JSON.parse(rootFile("Info.json")) as {
       description: string;
       minIINAVersion: string;
@@ -27,8 +27,9 @@ describe("IINA package manifest", () => {
       permissionDescriptions: Record<string, string>;
     };
 
-    expect(manifest.description).toContain("renders translated subtitles itself");
-    expect(manifest.description).not.toContain("second subtitle track");
+    expect(manifest.description).toBe(
+      "A powerful plugin for real-time AI-powered bilingual subtitle translation.",
+    );
     expect(manifest.minIINAVersion).toBe("1.4.0");
     expect(manifest.permissions).toEqual(["network-request", "file-system", "video-overlay"]);
     expect(manifest.allowedDomains).toEqual(["127.0.0.1"]);
