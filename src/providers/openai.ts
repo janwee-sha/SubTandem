@@ -133,6 +133,7 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
         },
         () => this.throwIfCancelled(request.requestId),
         onProgress,
+        { maxConcurrentWires: 2 },
       );
     } finally {
       this.activeRequests.delete(request.requestId);

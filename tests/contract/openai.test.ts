@@ -429,12 +429,109 @@ describe("OpenAI-compatible provider", () => {
     ]);
   });
 
+  it("keeps two wires active and publishes each as soon as it completes", async () => {
+    let releaseFirst!: () => void;
+    const firstGate = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    let releaseSecond!: () => void;
+    const secondGate = new Promise<void>((resolve) => {
+      releaseSecond = resolve;
+    });
+    const started: string[] = [];
+    let active = 0;
+    let maxActive = 0;
+    const provider = new OpenAICompatibleProvider(
+      {
+        endpoint: "https://example.test/v1",
+        model: "model",
+        capability: "json-object",
+        sessionId: "session",
+      },
+      {
+        request: async (request) => {
+          started.push(request.jobId);
+          active += 1;
+          maxActive = Math.max(maxActive, active);
+          if (request.jobId === "request-part-1") await firstGate;
+          if (request.jobId === "request-part-2") await secondGate;
+          active -= 1;
+          const messages = (request.body as { messages: Array<{ content: string }> }).messages;
+          const payload = JSON.parse(messages.at(-1)!.content) as {
+            targets: Array<{ id: string; text: string }>;
+          };
+          return {
+            statusCode: 200,
+            headers: {},
+            bodyText: JSON.stringify({
+              choices: [
+                {
+                  finish_reason: "stop",
+                  message: {
+                    content: JSON.stringify({
+                      translations: payload.targets.map((item) => ({
+                        id: item.id,
+                        text: `T:${item.text}`,
+                      })),
+                    }),
+                  },
+                },
+              ],
+            }),
+          };
+        },
+      },
+    );
+    const request = makeProviderRequest();
+    request.items = Array.from({ length: 5 }, (_, index) => ({
+      id: `source-${index + 1}`,
+      text: `text-${index + 1}`,
+    }));
+    const progress: string[][] = [];
+    let firstProgress!: () => void;
+    const firstProgressPublished = new Promise<void>((resolve) => {
+      firstProgress = resolve;
+    });
+    let settled = false;
+
+    const attempt = provider.attempt(request, (part) => {
+      progress.push(part.translations.map((translation) => translation.id));
+      firstProgress();
+    });
+    void attempt.then(
+      () => {
+        settled = true;
+      },
+      () => {
+        settled = true;
+      },
+    );
+    await Promise.resolve();
+    const startedBeforeRelease = [...started];
+    releaseSecond();
+    await firstProgressPublished;
+
+    expect(progress[0]).toEqual(["source-3", "source-4"]);
+    expect(settled).toBe(false);
+
+    releaseFirst();
+    const result = await attempt;
+
+    expect(startedBeforeRelease).toEqual(["request-part-1", "request-part-2"]);
+    expect(maxActive).toBe(2);
+    expect(progress.flat().sort()).toEqual(request.items.map((item) => item.id).sort());
+    expect(result.translations.map((translation) => translation.id)).toEqual(
+      request.items.map((item) => item.id),
+    );
+  });
+
   it("does not publish invalid output or progress after cancellation", async () => {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
     let responseMode: "invalid" | "blocked" = "invalid";
+    const cancelledJobs: string[] = [];
     const provider = new OpenAICompatibleProvider(
       {
         endpoint: "https://example.test/v1",
@@ -463,7 +560,9 @@ describe("OpenAI-compatible provider", () => {
             }),
           };
         },
-        cancel: () => undefined,
+        cancel: (jobId) => {
+          cancelledJobs.push(jobId);
+        },
       },
     );
     const progress: unknown[] = [];
@@ -472,13 +571,21 @@ describe("OpenAI-compatible provider", () => {
       provider.attempt(makeProviderRequest(), (value) => progress.push(value)),
     ).resolves.toMatchObject({ translations: [] });
     responseMode = "blocked";
-    const cancelled = provider.attempt(makeProviderRequest(), (value) => progress.push(value));
+    const cancellationRequest = makeProviderRequest();
+    cancellationRequest.items = [
+      { id: "cancel-1", text: "one" },
+      { id: "cancel-2", text: "two" },
+      { id: "cancel-3", text: "three" },
+      { id: "cancel-4", text: "four" },
+    ];
+    const cancelled = provider.attempt(cancellationRequest, (value) => progress.push(value));
     await Promise.resolve();
     await provider.cancel("request");
     release();
 
     await expect(cancelled).rejects.toMatchObject({ category: "cancelled" });
     expect(progress).toEqual([]);
+    expect(cancelledJobs).toEqual(["request-part-1", "request-part-2"]);
   });
 
   it("treats even a full chat-completions input as an API root", async () => {
