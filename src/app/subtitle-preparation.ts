@@ -26,6 +26,8 @@ interface ActivePreparation {
   media: MediaSessionIdentity;
   track: SubtitleTrackIdentity;
   attempt: SubtitlePreparationAttempt;
+  jobStarted: boolean;
+  timer: HostTimeout | null;
 }
 
 function fallbackUuid(): string {
@@ -63,7 +65,8 @@ export class SubtitlePreparationCoordinator {
   private readonly now: () => number;
   private readonly timers: Pick<HostTimers, "setTimeout">;
   private active: ActivePreparation | null = null;
-  private timer: HostTimeout | null = null;
+  private cancellationBarrier: Promise<void> | null = null;
+  private readonly cancellingJobs = new Set<string>();
   private prepared: PreparedSubtitleSource | null = null;
   private publicView: SourcePreparationView | null = null;
 
@@ -108,9 +111,26 @@ export class SubtitlePreparationCoordinator {
       status: "preparing",
       jobId,
     };
-    this.active = { media: { ...media }, track: { ...track }, attempt };
+    const active: ActivePreparation = {
+      media: { ...media },
+      track: { ...track },
+      attempt,
+      jobStarted: false,
+      timer: null,
+    };
+    this.active = active;
     this.prepared = null;
     this.setState("preparing", track);
+
+    const cancellationBarrier = this.cancellationBarrier;
+    if (cancellationBarrier) {
+      await cancellationBarrier;
+      if (!this.accepts(media, track, attemptId)) return null;
+      const extractionStartedAt = this.now();
+      attempt.startedAt = extractionStartedAt;
+      attempt.deadlineAt = extractionStartedAt + 15_000;
+    }
+    active.jobStarted = true;
 
     const nativeOutcome = this.options.extractor
       .prepare(
@@ -133,12 +153,12 @@ export class SubtitlePreparationCoordinator {
         (error: unknown) => ({ type: "error" as const, error }),
       );
     const timeoutOutcome = new Promise<{ type: "timeout" }>((resolve) => {
-      this.timer = this.timers.setTimeout(() => {
-        this.timer = null;
+      active.timer = this.timers.setTimeout(() => {
+        active.timer = null;
         if (!this.accepts(media, track, attemptId)) return;
         attempt.status = "timedOut";
         this.setState("timedOut", track);
-        void this.options.extractor.cancel(jobId).catch(() => undefined);
+        this.queueCancellation(jobId);
         resolve({ type: "timeout" });
       }, 15_000);
     });
@@ -150,7 +170,7 @@ export class SubtitlePreparationCoordinator {
       });
       return null;
     }
-    this.stopTimer();
+    this.stopTimer(active);
     if (outcome.type === "error") {
       if (this.accepts(media, track, attemptId)) {
         attempt.status = safeState(outcome.error);
@@ -196,14 +216,14 @@ export class SubtitlePreparationCoordinator {
   }
 
   invalidate(state: "invalidated" | "timedOut" = "invalidated"): void {
-    this.stopTimer();
     const previous = this.active;
+    this.stopTimer(previous);
     this.prepared = null;
     if (!previous) return;
     previous.attempt.status = state;
     this.setState(state, previous.track);
-    if (previous.attempt.jobId)
-      void this.options.extractor.cancel(previous.attempt.jobId).catch(() => undefined);
+    if (previous.jobStarted && previous.attempt.jobId)
+      this.queueCancellation(previous.attempt.jobId);
   }
 
   onSeek(): void {}
@@ -211,6 +231,7 @@ export class SubtitlePreparationCoordinator {
   async shutdown(): Promise<void> {
     this.invalidate("invalidated");
     try {
+      await this.cancellationBarrier;
       await this.options.extractor.shutdown();
     } catch {
       return;
@@ -247,10 +268,29 @@ export class SubtitlePreparationCoordinator {
     };
   }
 
-  private stopTimer(): void {
-    if (this.timer === null) return;
-    this.timer.cancel();
-    this.timer = null;
+  private stopTimer(active: ActivePreparation | null): void {
+    if (!active?.timer) return;
+    active.timer.cancel();
+    active.timer = null;
+  }
+
+  private queueCancellation(jobId: string): void {
+    if (this.cancellingJobs.has(jobId)) return;
+    this.cancellingJobs.add(jobId);
+    const cancellation = this.options.extractor.cancel(jobId).then(
+      () => undefined,
+      () => undefined,
+    );
+    const previousBarrier = this.cancellationBarrier;
+    const barrier = (previousBarrier
+      ? Promise.all([previousBarrier, cancellation])
+      : cancellation
+    ).then(() => undefined);
+    this.cancellationBarrier = barrier;
+    void barrier.then(() => {
+      this.cancellingJobs.delete(jobId);
+      if (this.cancellationBarrier === barrier) this.cancellationBarrier = null;
+    });
   }
 
   private async safeRelease(resultId: string): Promise<void> {

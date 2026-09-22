@@ -1,5 +1,11 @@
 import Foundation
 
+func extractorResultRootURL(tempRootURL: URL, rpcSession: String) -> URL {
+    tempRootURL
+        .appendingPathComponent(".results", isDirectory: true)
+        .appendingPathComponent("extractor-\(rpcSession)", isDirectory: true)
+}
+
 final class ExtractionJobs: @unchecked Sendable {
     private let rootURL: URL
     private let extractor: any ExtractionEngine

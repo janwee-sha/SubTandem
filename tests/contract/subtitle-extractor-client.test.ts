@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   parseSubtitleExtractorReadyFrame,
   SubtitleExtractorClient,
@@ -190,6 +190,54 @@ describe("subtitle extractor client contract", () => {
     expect(reads).toHaveLength(1);
   });
 
+  it("gives every helper session its own host-readable result directory", async () => {
+    const files = new Map<string, string>();
+    const store: ReadyFileStore = {
+      exists: (path) => files.has(path),
+      read: (path) => files.get(path) ?? null,
+      delete: (path) => {
+        files.delete(path);
+      },
+    };
+    const launcher = {
+      launch: async (_executable: string, args: string[]) => {
+        const readyFilename = args[4]!.slice(args[4]!.lastIndexOf("/") + 1);
+        files.set(
+          `@tmp/subtandem-extraction/.ready/${readyFilename}`,
+          `${JSON.stringify({
+            type: "ready",
+            port: 49152,
+            token: "abcDEF123_-",
+            protocolVersion: 1,
+            createdAtMs: Date.now(),
+          })}\n`,
+        );
+        return { status: 0 };
+      },
+    };
+
+    const first = await SubtitleExtractorProcess.bootstrap(
+      launcher,
+      store,
+      { tempDirectory: "/private/plugin-tmp", fileDirectory: "@tmp/subtandem-extraction" },
+      "/private/subtandem-subtitle-extractor",
+    );
+    const second = await SubtitleExtractorProcess.bootstrap(
+      launcher,
+      store,
+      { tempDirectory: "/private/plugin-tmp", fileDirectory: "@tmp/subtandem-extraction" },
+      "/private/subtandem-subtitle-extractor",
+    );
+
+    expect(first.resultDirectory).toBe(
+      `@tmp/subtandem-extraction/.results/extractor-${first.rpcSessionId}`,
+    );
+    expect(second.resultDirectory).toBe(
+      `@tmp/subtandem-extraction/.results/extractor-${second.rpcSessionId}`,
+    );
+    expect(second.resultDirectory).not.toBe(first.resultDirectory);
+  });
+
   it("sends the strict prepare body with a bearer token and accepts metadata only", async () => {
     const bridge = new FakeBridge();
     const client = new SubtitleExtractorClient({ port: 49152, token: "session-token" }, bridge);
@@ -305,6 +353,68 @@ describe("subtitle extractor client contract", () => {
     expect(expired.disposeCalls).toBe(1);
     expect(expired.prepareCalls).toBe(0);
     expect(replacement.prepareCalls).toBe(2);
+  });
+
+  it("submits a prepare before cancelling the same job after a delayed helper start", async () => {
+    const events: string[] = [];
+    let rejectPrepare: ((reason: unknown) => void) | null = null;
+    const client = new FakeManagedExtractor();
+    client.health = async () => {
+      events.push("health");
+    };
+    client.prepare = async () => {
+      events.push("prepare");
+      return new Promise<never>((_resolve, reject) => {
+        rejectPrepare = reject;
+      });
+    };
+    client.cancel = async () => {
+      events.push("cancel");
+      rejectPrepare?.(new SubtitleExtractorError("CANCELLED"));
+      return "cancelled";
+    };
+    let finishStart!: () => void;
+    const startGate = new Promise<void>((resolve) => {
+      finishStart = resolve;
+    });
+    const supervisor = new SubtitleExtractorSupervisor(async () => {
+      await startGate;
+      return client;
+    });
+
+    const preparation = supervisor.prepare(prepareRequest, () => false);
+    const cancellation = supervisor.cancel(prepareRequest.jobId);
+    finishStart();
+
+    await expect(cancellation).resolves.toBe("cancelled");
+    await vi.waitFor(() => expect(events).toContain("prepare"));
+    rejectPrepare?.(new SubtitleExtractorError("CANCELLED"));
+    await expect(preparation).rejects.toThrow("CANCELLED");
+    expect(events.indexOf("prepare")).toBeLessThan(events.indexOf("cancel"));
+  });
+
+  it("retries an early unknown cancellation while that prepare remains pending", async () => {
+    let rejectPrepare: ((reason: unknown) => void) | null = null;
+    let cancelCalls = 0;
+    const client = new FakeManagedExtractor();
+    client.prepare = async () =>
+      new Promise<never>((_resolve, reject) => {
+        rejectPrepare = reject;
+      });
+    client.cancel = async () => {
+      cancelCalls += 1;
+      if (cancelCalls === 1) return "unknown";
+      rejectPrepare?.(new SubtitleExtractorError("CANCELLED"));
+      return "cancelled";
+    };
+    const supervisor = new SubtitleExtractorSupervisor(async () => client);
+
+    const preparation = supervisor.prepare(prepareRequest, () => false);
+    await vi.waitFor(() => expect(rejectPrepare).not.toBeNull());
+
+    await expect(supervisor.cancel(prepareRequest.jobId)).resolves.toBe("cancelled");
+    await expect(preparation).rejects.toThrow("CANCELLED");
+    expect(cancelCalls).toBe(2);
   });
 
   it("claims a completed start before exposing its extractor client", async () => {
