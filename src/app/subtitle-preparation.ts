@@ -282,9 +282,8 @@ export class SubtitlePreparationCoordinator {
       () => undefined,
     );
     const previousBarrier = this.cancellationBarrier;
-    const barrier = (previousBarrier
-      ? Promise.all([previousBarrier, cancellation])
-      : cancellation
+    const barrier = (
+      previousBarrier ? Promise.all([previousBarrier, cancellation]) : cancellation
     ).then(() => undefined);
     this.cancellationBarrier = barrier;
     void barrier.then(() => {
