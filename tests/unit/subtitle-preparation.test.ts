@@ -204,6 +204,69 @@ describe("subtitle preparation lifecycle", () => {
     expect(coordinator.source).toBeNull();
   });
 
+  it("waits for the previous native cancellation before starting the replacement job", async () => {
+    const requests: SubtitlePrepareRequest[] = [];
+    const pending = new Map<
+      string,
+      {
+        resolve: (value: ExtractedSubtitleResult) => void;
+        reject: (reason: unknown) => void;
+      }
+    >();
+    let releaseCancel!: () => void;
+    const cancelGate = new Promise<void>((resolve) => {
+      releaseCancel = resolve;
+    });
+    const cancelled: string[] = [];
+    const extractor: SubtitleExtractorRpcClient = {
+      prepare: (request) => {
+        requests.push(request);
+        return new Promise<ExtractedSubtitleResult>((resolve, reject) => {
+          pending.set(request.jobId, { resolve, reject });
+        });
+      },
+      cancel: async (jobId) => {
+        cancelled.push(jobId);
+        await cancelGate;
+        pending.get(jobId)?.reject(new SubtitleExtractorError("CANCELLED"));
+        return "cancelled";
+      },
+      release: async () => undefined,
+      shutdown: async () => undefined,
+    };
+    let sequence = 0;
+    const coordinator = new SubtitlePreparationCoordinator({
+      playerId: "player-A",
+      extractor,
+      readResult: () => bytes,
+      createId: () => ids[sequence++]!,
+    });
+
+    const first = coordinator.prepare(media(1), track(7));
+    expect(requests.map((request) => request.jobId)).toEqual([ids[1]]);
+
+    const replacement = coordinator.prepare(media(2), track(8));
+    expect(cancelled).toEqual([ids[1]]);
+    expect(requests.map((request) => request.jobId)).toEqual([ids[1]]);
+
+    releaseCancel();
+    await vi.waitFor(() => expect(requests).toHaveLength(2));
+    expect(requests[1]?.jobId).toBe(ids[3]);
+    pending.get(ids[3]!)?.resolve({
+      jobId: ids[3]!,
+      state: "ready",
+      resultId: ids[3]!,
+      format: "srt",
+      cueCount: 1,
+      byteCount: bytes.length,
+      sha256: sha256Hex(bytes),
+    });
+
+    await expect(first).resolves.toBeNull();
+    await expect(replacement).resolves.toMatchObject({ trackId: 8 });
+    expect(coordinator.view).toMatchObject({ state: "ready", cueCount: 1 });
+  });
+
   it.each([
     ["EMPTY_OR_UNREADABLE", "emptyOrUnreadable"],
     ["OUTPUT_LIMIT", "emptyOrUnreadable"],

@@ -371,6 +371,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
           list: (path) => runtime.file.list(path, { includeSubDir: false }),
           read: (path) => runtime.file.read(path) ?? null,
         });
+        let extractionResultDirectory: string | null = null;
         const extractor = new SubtitleExtractorSupervisor(async () => {
           const session = await SubtitleExtractorProcess.bootstrap(
             launcher,
@@ -378,6 +379,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
             { tempDirectory, fileDirectory: "@tmp/subtandem-extraction" },
             executable,
           );
+          extractionResultDirectory = session.resultDirectory;
           return new SubtitleExtractorClient(
             session,
             new IinaFileRpcBridge(files, {
@@ -394,7 +396,9 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
           playerId,
           extractor,
           readResult: (resultId) =>
-            sourcePort.readBinary(`@tmp/subtandem-extraction/${resultId}/output.srt`),
+            extractionResultDirectory
+              ? sourcePort.readBinary(`${extractionResultDirectory}/${resultId}/output.srt`)
+              : null,
         });
         return preparation;
       },

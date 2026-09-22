@@ -37,7 +37,12 @@ enum SubTandemSubtitleExtractorMain {
               readyFile.lastPathComponent.hasPrefix("extractor-"),
               readyFile.pathExtension == "json"
         else { throw ExtractorError.invalidRequest }
-        let jobs = try ExtractionJobs(rootURL: rootURL)
+        let resultRootURL = extractorResultRootURL(
+            tempRootURL: rootURL,
+            rpcSession: arguments[7]
+        )
+        let jobs = try ExtractionJobs(rootURL: resultRootURL)
+        defer { try? FileManager.default.removeItem(at: resultRootURL) }
         let rpcDirectory = rootURL
             .appendingPathComponent(".rpc", isDirectory: true)
             .appendingPathComponent("extractor-\(arguments[7])", isDirectory: true)

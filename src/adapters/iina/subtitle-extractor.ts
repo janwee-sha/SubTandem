@@ -21,6 +21,7 @@ export interface SubtitleExtractorSession {
 export interface SubtitleExtractorProcessSession extends SubtitleExtractorSession {
   rpcSessionId: string;
   rpcDirectory: string;
+  resultDirectory: string;
 }
 
 export interface SubtitlePrepareRequest {
@@ -260,6 +261,10 @@ export class SubtitleExtractorSupervisor implements SubtitleExtractorRpcClient {
   private client: ManagedSubtitleExtractorRpcClient | null = null;
   private starting: Promise<ManagedSubtitleExtractorRpcClient> | null = null;
   private checking: Promise<ManagedSubtitleExtractorRpcClient> | null = null;
+  private readonly pendingPrepares = new Map<
+    string,
+    { submitted: Promise<void>; markSubmitted: () => void }
+  >();
 
   constructor(private readonly start: () => Promise<ManagedSubtitleExtractorRpcClient>) {}
 
@@ -322,20 +327,43 @@ export class SubtitleExtractorSupervisor implements SubtitleExtractorRpcClient {
     request: SubtitlePrepareRequest,
     canReplay?: () => boolean,
   ): Promise<ExtractedSubtitleResult> {
-    let client = await this.liveClient();
+    let markSubmitted!: () => void;
+    let submitted = false;
+    const submittedPromise = new Promise<void>((resolve) => {
+      markSubmitted = () => {
+        if (submitted) return;
+        submitted = true;
+        resolve();
+      };
+    });
+    const pending = { submitted: submittedPromise, markSubmitted };
+    this.pendingPrepares.set(request.jobId, pending);
+    const invoke = (client: ManagedSubtitleExtractorRpcClient) => {
+      const outcome = client.prepare(request);
+      markSubmitted();
+      return outcome;
+    };
     try {
-      return await client.prepare(request);
-    } catch (error) {
-      if (!isUnavailableExtractor(error)) throw error;
-      this.retire(client);
-      if (!canReplay?.()) throw error;
+      let client = await this.liveClient();
+      try {
+        return await invoke(client);
+      } catch (error) {
+        if (!isUnavailableExtractor(error)) throw error;
+        this.retire(client);
+        if (!canReplay?.()) throw error;
+      }
+      client = await this.liveClient();
+      if (!canReplay?.()) throw new SubtitleExtractorError("CANCELLED");
+      return await invoke(client);
+    } finally {
+      markSubmitted();
+      if (this.pendingPrepares.get(request.jobId) === pending)
+        this.pendingPrepares.delete(request.jobId);
     }
-    client = await this.liveClient();
-    if (!canReplay?.()) throw new SubtitleExtractorError("CANCELLED");
-    return client.prepare(request);
   }
 
   async cancel(jobId: string): Promise<"cancelled" | "already-completed" | "unknown"> {
+    await this.pendingPrepares.get(jobId)?.submitted;
     let client = this.client;
     if (!client && this.starting) {
       try {
@@ -345,12 +373,20 @@ export class SubtitleExtractorSupervisor implements SubtitleExtractorRpcClient {
       }
     }
     if (!client) return "unknown";
-    try {
-      return await client.cancel(jobId);
-    } catch (error) {
-      if (!isUnavailableExtractor(error)) throw error;
-      this.retire(client);
-      return "unknown";
+    let retryUntil = 0;
+    while (true) {
+      try {
+        const state = await client.cancel(jobId);
+        if (state !== "unknown" || !this.pendingPrepares.has(jobId)) return state;
+        if (retryUntil === 0) retryUntil = Date.now() + extractorControlTimeoutMs;
+        if (Date.now() >= retryUntil) return state;
+        await hostTimers.delay(20);
+        client = this.client ?? client;
+      } catch (error) {
+        if (!isUnavailableExtractor(error)) throw error;
+        this.retire(client);
+        return "unknown";
+      }
     }
   }
 
@@ -398,6 +434,7 @@ export class SubtitleExtractorProcess {
     removeStaleHelperFiles(readyFiles, fileDirectory);
     const rpcSessionId = createRpcSessionId();
     const rpcDirectory = `${fileDirectory.replace(/\/+$/, "")}/.rpc/extractor-${rpcSessionId}`;
+    const resultDirectory = `${fileDirectory.replace(/\/+$/, "")}/.results/extractor-${rpcSessionId}`;
     const readyFile = createReadyFilePath(fileDirectory, "extractor");
     const nativeReadyFile = `${options.tempDirectory.replace(/\/+$/, "")}/.ready/${readyFile.slice(
       readyFile.lastIndexOf("/") + 1,
@@ -437,6 +474,7 @@ export class SubtitleExtractorProcess {
             ...parseSubtitleExtractorReadyFrame(output, startedAtMs, Date.now()),
             rpcSessionId,
             rpcDirectory,
+            resultDirectory,
           };
         if (exitStatus !== null && exitStatus !== 0)
           throw new SubtitleExtractorError("EXTRACTOR_UNAVAILABLE");

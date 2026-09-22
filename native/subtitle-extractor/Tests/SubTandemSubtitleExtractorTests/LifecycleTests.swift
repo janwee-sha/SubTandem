@@ -113,6 +113,34 @@ func runLifecycleTests() async throws {
     try check(FileManager.default.fileExists(atPath: staleRoot.appendingPathComponent("keep").path), "startup must preserve non-job directories")
     try? FileManager.default.removeItem(at: staleRoot)
 
+    let sharedRoot = FileManager.default.temporaryDirectory
+        .appendingPathComponent("subtandem-session-results-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: sharedRoot) }
+    let firstRoot = extractorResultRootURL(
+        tempRootURL: sharedRoot,
+        rpcSession: "abc-1-first"
+    )
+    let secondRoot = extractorResultRootURL(
+        tempRootURL: sharedRoot,
+        rpcSession: "abc-2-second"
+    )
+    let firstJobs = try ExtractionJobs(rootURL: firstRoot)
+    let firstResultID = UUID().uuidString.lowercased()
+    let firstResultURL = firstRoot.appendingPathComponent(firstResultID, isDirectory: true)
+    try FileManager.default.createDirectory(at: firstResultURL, withIntermediateDirectories: false)
+    let secondJobs = try ExtractionJobs(rootURL: secondRoot)
+    try check(firstRoot != secondRoot, "helper sessions must use distinct result roots")
+    try check(
+        FileManager.default.fileExists(atPath: firstResultURL.path),
+        "starting another helper must preserve the first helper result"
+    )
+    await secondJobs.shutdown()
+    try check(
+        FileManager.default.fileExists(atPath: firstResultURL.path),
+        "shutting down another helper must preserve the first helper result"
+    )
+    await firstJobs.shutdown()
+
     let missingParent = LivenessState(parentPID: 999_999, idleTimeout: 300)
     try check(missingParent.shouldExit(activeJobs: 0), "parent process loss must request exit")
 }
