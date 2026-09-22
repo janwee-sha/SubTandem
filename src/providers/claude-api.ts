@@ -43,6 +43,7 @@ export function claudeApiError(
   resource: ClaudeResource,
 ): ProviderAttemptError {
   let providerCode: string | undefined;
+  let providerMessage: string | undefined;
   try {
     const value: unknown = JSON.parse(bodyText);
     if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -50,10 +51,13 @@ export function claudeApiError(
       if (error && typeof error === "object" && !Array.isArray(error)) {
         const type = (error as Record<string, unknown>).type;
         if (typeof type === "string" && CLAUDE_ERROR_TYPES.has(type)) providerCode = type;
+        const message = (error as Record<string, unknown>).message;
+        if (typeof message === "string") providerMessage = message.slice(0, 2_048);
       }
     }
   } catch {
     providerCode = undefined;
+    providerMessage = undefined;
   }
-  return claudeHttpError(statusCode, headers, resource, providerCode);
+  return claudeHttpError(statusCode, headers, resource, providerCode, providerMessage);
 }

@@ -7,7 +7,7 @@ import type {
   WireTranslationTarget,
 } from "./types.js";
 import type { ProviderTransport, ProviderTransportResponse } from "./transport.js";
-import { providerHttpError, protocolError } from "./errors.js";
+import { providerHttpErrorFromBody, protocolError } from "./errors.js";
 import { normalizeProviderEndpoint } from "./profiles.js";
 import { validateIdOutput } from "./validation.js";
 import { buildTranslationTask } from "./translation-task.js";
@@ -59,11 +59,7 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
       );
       this.throwIfCancelled(testId);
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw providerHttpError(
-          response.statusCode,
-          response.headers,
-          this.providerCode(response.bodyText),
-        );
+        throw providerHttpErrorFromBody(response.statusCode, response.headers, response.bodyText);
       }
       this.parseResponse(["probe"], response);
       return capability;
@@ -85,9 +81,13 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
       );
       this.throwIfCancelled(scopeId);
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        const providerCode = this.providerCode(response.bodyText);
-        if (this.isCapabilityIncompatibility(response, providerCode)) continue;
-        throw providerHttpError(response.statusCode, response.headers, providerCode);
+        const failure = providerHttpErrorFromBody(
+          response.statusCode,
+          response.headers,
+          response.bodyText,
+        );
+        if (this.isCapabilityIncompatibility(response, failure)) continue;
+        throw failure;
       }
       try {
         this.parseResponse(["probe"], response);
@@ -121,10 +121,10 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
           );
           this.throwIfCancelled(request.requestId);
           if (response.statusCode < 200 || response.statusCode >= 300)
-            throw providerHttpError(
+            throw providerHttpErrorFromBody(
               response.statusCode,
               response.headers,
-              this.providerCode(response.bodyText),
+              response.bodyText,
             );
           return this.parseResponse(
             items.map((item) => item.id),
@@ -216,27 +216,12 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
     }
   }
 
-  private providerCode(bodyText: string): string | undefined {
-    try {
-      const parsed = JSON.parse(bodyText) as Record<string, unknown>;
-      const error = parsed.error as Record<string, unknown> | undefined;
-      const code = error?.code ?? error?.type;
-      return typeof code === "string" && /^[A-Za-z0-9_.:-]{1,128}$/.test(code) ? code : undefined;
-    } catch {
-      return undefined;
-    }
-  }
-
   private isCapabilityIncompatibility(
     response: ProviderTransportResponse,
-    providerCode?: string,
+    failure: ProviderAttemptError,
   ): boolean {
     if (response.statusCode !== 400 && response.statusCode !== 422) return false;
-    if (
-      providerCode &&
-      /(auth|api.?key|credential|model|deployment|quota|billing|spend)/i.test(providerCode)
-    )
-      return false;
+    if (["authentication", "model", "quota"].includes(failure.category)) return false;
     return /(unsupported|not supported|response[_ -]?format|json[_ -]?schema|structured output)/i.test(
       response.bodyText.slice(0, 16_384),
     );

@@ -456,4 +456,36 @@ describe("Claude provider", () => {
     });
     expect(cancelled).toEqual(["request-part-1"]);
   });
+
+  it("classifies unavailable model responses without retaining Provider diagnostics", async () => {
+    const value = provider({
+      request: async () => ({
+        statusCode: 400,
+        headers: {},
+        bodyText: JSON.stringify({
+          type: "error",
+          error: {
+            type: "invalid_request_error",
+            message: "The requested model is not supported: PRIVATE_MODEL_RESPONSE",
+          },
+        }),
+      }),
+    });
+
+    const testFailure = await value
+      .testConnection("unavailable-model-test")
+      .catch((error) => error);
+    const sessionFailure = await value.attempt(makeProviderRequest()).catch((error) => error);
+
+    for (const failure of [testFailure, sessionFailure]) {
+      expect(failure).toMatchObject({
+        category: "model",
+        retryable: false,
+        statusCode: 400,
+        userAction: "CHECK_MODEL",
+      });
+      expect(failure).not.toHaveProperty("providerCode");
+      expect(JSON.stringify(failure)).not.toMatch(/invalid_request_error|PRIVATE_MODEL_RESPONSE/);
+    }
+  });
 });

@@ -242,4 +242,39 @@ describe("DeepSeek provider", () => {
     ).rejects.toMatchObject({ retryable: false });
     expect(progress).toEqual([]);
   });
+
+  it("classifies unavailable model responses without retaining Provider diagnostics", async () => {
+    const provider = new DeepSeekProvider(
+      { endpoint: "https://api.deepseek.com", model: "private-model" },
+      {
+        request: async () => ({
+          statusCode: 400,
+          headers: {},
+          bodyText: JSON.stringify({
+            error: {
+              type: "invalid_request_error",
+              code: "invalid_request_error",
+              message: "Model Not Exist: PRIVATE_MODEL_RESPONSE",
+            },
+          }),
+        }),
+      },
+    );
+
+    const testFailure = await provider
+      .testConnection("unavailable-model-test")
+      .catch((error) => error);
+    const sessionFailure = await provider.attempt(makeProviderRequest()).catch((error) => error);
+
+    for (const failure of [testFailure, sessionFailure]) {
+      expect(failure).toMatchObject({
+        category: "model",
+        retryable: false,
+        statusCode: 400,
+        userAction: "CHECK_MODEL",
+      });
+      expect(failure).not.toHaveProperty("providerCode");
+      expect(JSON.stringify(failure)).not.toMatch(/invalid_request_error|PRIVATE_MODEL_RESPONSE/);
+    }
+  });
 });
