@@ -33,7 +33,7 @@ SubTandemは元の字幕を表示したまま、選択した位置に翻訳字�
 - **リアルタイム二言語字幕：** 元の字幕はIINAで選択したまま、SubTandemが別の字幕トラックを使わず、選択した垂直位置に翻訳を横方向中央揃えで表示します。
 - **翻訳スタイルを保持：** **Subtitle**でFontの色、Size、フォント、Bold/Italic、Borderの色とWidth、Backgroundの色を調整できます。初期値は白色、Size 40、システムフォント、黒色Width 3の縁取り、透明背景です。3つの色はプリセットとアルファ対応の**Show Colors…**を共有します。保存したフォントが利用できない場合は一時的にシステムフォントを使い、再び利用可能になると自動復元します。
 - **埋め込み・外部テキスト字幕：** ローカルMatroska SubRip/ASS/SSA、MOV/MP4 `mov_text`、外部SRT/ASSに対応します。extractorは同梱され、外部の`ffmpeg`や`ffprobe`は不要です。
-- **翻訳サービスを選択可能：** OpenAI Chat CompletionsまたはClaude Messagesと互換性のあるendpoint、DeepSeek、ローカル/リモートのOllamaサーバーを利用できます。
+- **翻訳サービスを選択可能：** OpenAI、Claude、DeepSeek、Ollamaを利用できます。OpenAIやClaudeと互換性のあるサービスにも接続できます。
 - **再生を優先：** 翻訳処理によって動画が停止したり、元の字幕が非表示になったりすることはありません。
 - **リクエスト範囲を制限：** 再生位置付近のcueだけを翻訳し、プレイヤーウインドウごとに同時処理を制限します。成功した翻訳は現在の動画セッション内でのみキャッシュします。
 - **複数のProfile：** グループ化された一覧でProfileを展開してその場で編集するか、見出し横の**New profile**を使えます。Testは現在のドロワー草稿を検証し、独立したスイッチだけが保存済みの正確なリビジョンを全ウィンドウで有効化します。
@@ -44,11 +44,7 @@ SubTandemは元の字幕を表示したまま、選択した位置に翻訳字�
 - macOS 12以降
 - IINA 1.4.0以降
 - 対応するローカル埋め込みテキスト字幕、または読み取り可能な外部SRT/ASS/SSA字幕
-- 次のいずれかの翻訳サービス：
-  - OpenAI endpoint、Model ID、およびサービスが必要とする場合はAPI key
-  - ClaudeまたはClaude互換API root、API key、正確なModel ID
-  - DeepSeek API keyと正確なDeepSeek Model ID
-  - 対応モデルがインストール済みのOllamaサーバー
+- 利用可能なモデルを持つOpenAI、Claude、DeepSeek、Ollamaのいずれかのサービス。設定方法は以下を参照してください。
 
 SubTandemは翻訳モデルをダウンロードしたり起動したりしません。
 
@@ -113,36 +109,29 @@ Profileの概要を展開するとその場で編集できます。操作行は�
 
 ### OpenAI
 
-- 完全な`/chat/completions` URLではなく、`https://example.com/v1`のようなAPI rootを入力します。
-- SubTandemが`/chat/completions`を追加し、最終的なリクエストURLをサイドバーに表示します。
-- サービスが公開している正確なモデル識別子を入力します。
-- Endpointが認証なしのリクエストを許可する場合に限り、Bearer API keyを省略できます。保存後、key入力欄は書き込み専用となり、再表示されません。
-- リモートendpointはHTTPSを使用する必要があります。
+- デフォルトのAPI rootは`https://api.openai.com/v1`です。OpenAI公式サービスでは、**API key**を入力し、アカウントで利用できるモデルを選びます。
+- モデル一覧を更新してモデルを選ぶか、正確な**Model ID**を入力します。
+- OpenAI互換サービスでは、**Endpoint**をそのサービスのAPI rootに変更します。SubTandemは`/chat/completions`を追加し、リクエストURLをサイドバーに表示します。API keyが不要なサービスでは**API key**を空欄にできます。
 
 ### Claude
 
-- デフォルトAPI rootは`https://api.anthropic.com`です。このrootまたはClaude互換rootを入力し、完全な`/v1/messages`や`/v1/models` URLは入力しないでください。リモートendpointにはHTTPSが必要です。
-- SubTandemは`/v1/messages`で非ストリーミングのネイティブMessagesを使い、`/v1/models`からモデル一覧を取得します。互換サービスには、このrouteとClaudeの認証・version headerが必要です。
-- API keyは必須です。新規Profileでは手動更新の前に入力してください。自動更新が未保存のkeyを送ることはありません。返されたモデルまたは正確なカスタムModel IDを選びます。
-- **Save → Test → Profileスイッチをオン**の順に操作します。SaveとTestは字幕テキストを許可せず、有効化前にendpointへ届く可能性があるのは字幕を含まないモデル一覧だけです。
-- ClaudeはMessagesリクエストを課金し、認証、モデルアクセス、spend limit、クォータ、rate limit、拒否を適用する場合があります。保存後のkeyは書き込み専用です。
+- デフォルトのAPI rootは`https://api.anthropic.com`です。Claude公式サービスでは、Anthropicの**API key**を入力し、アカウントで利用できるモデルを選びます。
+- モデル一覧を更新してモデルを選ぶか、正確な**Model ID**を入力します。
+- Claude互換サービスでは、**Endpoint**をそのサービスのAPI rootに変更します。SubTandemは翻訳に`/v1/messages`、モデル一覧に`/v1/models`を使います。現行バージョンのClaude Profileでは、モデル一覧の更新、テスト、保存、有効化に**API key**が必要です。
 
 ### DeepSeek
 
-- 固定のデフォルトAPI rootは`https://api.deepseek.com`です。翻訳には`/chat/completions`、モデル一覧には`/models`を追加します。
-- モデル一覧を更新するか、正確なカスタムModel IDを入力します。SubTandemはDeepSeekモデルを事前選択、推奨、推測しません。
-- 公式サービスには利用可能なAPI keyが必要です。保存後の入力欄は書き込み専用で、keyは再表示されません。
-- **Save**と**Test**はProfileを有効化せず、字幕テキストの送信も許可しません。Profileスイッチを明示的にオンにしてください。それまでは、字幕を含まないモデル一覧リクエストだけがデフォルトrootへ送信される場合があります。
-- DeepSeekはリクエスト料金を請求し、残高、クォータ、rate limitを適用する場合があります。
+- デフォルトのAPI rootは`https://api.deepseek.com`です。DeepSeek公式サービスでは、**API key**を入力し、アカウントで利用できるモデルを選びます。
+- モデル一覧を更新してモデルを選ぶか、正確な**Model ID**を入力します。SubTandemはDeepSeekモデルを自動選択しません。
+- 別の互換API rootを使うサービスでは、**Endpoint**を変更します。SubTandemは翻訳時に`/chat/completions`を追加します。
 
 ### Ollama
 
-- デフォルトのサーバーrootは`http://127.0.0.1:11434`です。
-- `translategemma:12b`や`qwen3:14b`など、インストール済みモデルの正確なtagを入力します。
-- Ollamaサーバーが未認証リクエストを許可する場合、Bearer API keyは省略でき、保存後は書き込み専用です。
-- 接続テストでは、サーバー、インストール済みtag、structured-output chatの対応状況を確認します。
+- デフォルトのサーバーアドレスは`http://127.0.0.1:11434`で、お使いのコンピューター上のOllamaに接続します。先にOllamaを起動し、対応モデルをインストールしてください。
+- モデル一覧を更新してインストール済みモデルを選ぶか、正確な**Model ID**を入力します。
+- リモートのOllamaサーバーでは、**Endpoint**をそのサーバーのアドレスに変更します。サーバーが要求する場合のみ**API key**を入力します。**Test**で接続、モデル、構造化出力への対応を確認できます。
 
-新しいProfileは**Connect directly**が初期値です。サービスで現在のシステムプロキシ設定を使う場合は**Use macOS proxy settings**を選択します。
+新しいProfileは**Connect directly**が初期値です。ネットワークでプロキシが必要な場合は**Use macOS proxy settings**を選びます。保存したAPI keyは再表示されません。
 
 ## 🔒 プライバシー、認証情報、料金
 
@@ -164,7 +153,7 @@ SubTandemは、音声文字起こし、画像ベース字幕のOCR/抽出、リ�
 - **翻訳に失敗する：** Sessionに表示される具体的な対処方法に従ってください。原因に応じてProfileをテストし、endpoint、正確なModel ID、API key、ネットワーク経路、アカウント上限、Ollamaプロセスを確認します。再生と元字幕は通常どおり継続します。
 - **Credential could not be saved:** 不完全な開発用コピーではなくReleaseパッケージをインストールし、プラグインデータディレクトリが書き込み可能であることを確認してから、IINAを完全に終了して再起動してください。
 - **翻訳が表示されない：** 対象Profileのスイッチと**Translate**が両方オンであり、再生位置が翻訳済みcueの時間範囲内にあることを確認してください。
-- **プロキシがサービスをブロックする：** まずデフォルトのmacOSプロキシ経路を試します。プロキシがサービスを拒否する場合、そのProfileを**Connect directly**に変更し、保存、テスト、新しいリビジョンの有効化を行ってください。
+- **ネットワークやプロキシの問題：** 新しいProfileは直接接続します。ネットワークでプロキシが必要な場合は、そのProfileで**Use macOS proxy settings**を選び、保存、テスト、新しいリビジョンの有効化を行ってください。
 
 ## ☕ SubTandemを支援
 

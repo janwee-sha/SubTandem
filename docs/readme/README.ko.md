@@ -33,7 +33,7 @@ SubTandem는 원본 자막을 그대로 유지하면서 선택한 위치에 번�
 - **실시간 이중 언어 자막:** 원본 자막은 IINA에서 그대로 유지하고 SubTandem가 다른 자막 트랙을 차지하지 않은 채 선택한 세로 위치에 번역문을 가로 중앙 정렬로 표시합니다.
 - **지속되는 번역문 스타일:** **Subtitle**에서 Font 색상, Size, 글꼴, Bold/Italic, Border 색상과 Width, Background 색상을 조정할 수 있습니다. 기본값은 흰색 Size 40 시스템 글꼴, 검은색 Width 3 테두리, 투명 배경입니다. 세 색상은 프리셋과 알파를 지원하는 **Show Colors…**를 공유합니다. 저장한 글꼴을 사용할 수 없으면 시스템 글꼴을 임시 사용하고, 다시 사용할 수 있게 되면 자동 복원합니다.
 - **내장 및 외부 텍스트 자막:** 로컬 Matroska SubRip/ASS/SSA, MOV/MP4 `mov_text`, 외부 SRT/ASS를 지원합니다. extractor가 포함되어 외부 `ffmpeg`나 `ffprobe`가 필요하지 않습니다.
-- **번역 서비스 선택:** OpenAI Chat Completions 또는 Claude Messages와 호환되는 endpoint, DeepSeek, 로컬/원격 Ollama 서버를 사용할 수 있습니다.
+- **번역 서비스 선택:** OpenAI, Claude, DeepSeek 또는 Ollama를 사용할 수 있습니다. OpenAI나 Claude와 호환되는 서비스에도 연결할 수 있습니다.
 - **재생 우선 동작:** 번역 작업 때문에 영상이 일시 정지되거나 원본 자막이 숨겨지지 않습니다.
 - **제한된 요청:** 재생 위치 주변의 자막만 번역하고 플레이어 창마다 동시 작업을 제한하며, 성공한 결과는 현재 영상 세션에만 캐시합니다.
 - **여러 Profile:** 그룹 목록에서 Profile을 펼쳐 바로 편집하거나 제목 옆의 **New profile**을 사용할 수 있습니다. Test는 현재 drawer 초안을 검사하며, 독립 스위치만 저장된 정확한 revision을 모든 창에서 활성화합니다.
@@ -44,11 +44,7 @@ SubTandem는 원본 자막을 그대로 유지하면서 선택한 위치에 번�
 - macOS 12 이상
 - IINA 1.4.0 이상
 - 지원되는 로컬 내장 텍스트 자막 또는 읽을 수 있는 외부 SRT/ASS/SSA 자막
-- 다음 번역 서비스 중 하나:
-  - OpenAI endpoint, Model ID, 그리고 서비스에서 요구하는 경우 API key
-  - Claude 또는 Claude 호환 API root, API key와 정확한 Model ID
-  - DeepSeek API key와 정확한 DeepSeek Model ID
-  - 호환 모델이 이미 설치된 Ollama 서버
+- 사용할 수 있는 모델이 있는 OpenAI, Claude, DeepSeek 또는 Ollama 서비스. 서비스별 설정 방법은 아래를 참조하세요.
 
 SubTandem는 번역 모델을 다운로드하거나 실행하지 않습니다.
 
@@ -113,36 +109,29 @@ Profile 요약을 펼치면 바로 편집할 수 있습니다. 작업 행은 왼
 
 ### OpenAI
 
-- 완전한 `/chat/completions` URL이 아니라 `https://example.com/v1`과 같은 API root를 입력합니다.
-- SubTandem가 `/chat/completions`를 덧붙이고 최종 요청 URL을 사이드바에 미리 표시합니다.
-- 서비스가 제공하는 정확한 모델 식별자를 입력합니다.
-- Endpoint가 인증 없는 요청을 허용하는 경우에만 Bearer API key를 생략할 수 있습니다. 저장 후 key 입력란은 쓰기 전용이며 다시 표시되지 않습니다.
-- 원격 endpoint는 HTTPS를 사용해야 합니다.
+- 기본 API root는 `https://api.openai.com/v1`입니다. OpenAI 공식 서비스를 사용할 때는 **API key**를 입력하고 계정에서 사용할 수 있는 모델을 선택하세요.
+- 모델 목록을 새로 고쳐 모델을 선택하거나 정확한 **Model ID**를 입력하세요.
+- OpenAI 호환 서비스를 사용할 때는 **Endpoint**를 해당 서비스의 API root로 변경하세요. SubTandem가 `/chat/completions`를 추가하고 사이드바에 요청 URL을 표시합니다. 서비스에 API key가 필요하지 않다면 **API key**를 비워 두세요.
 
 ### Claude
 
-- 기본 API root는 `https://api.anthropic.com`입니다. 이 root 또는 Claude 호환 root를 입력하고 완전한 `/v1/messages`나 `/v1/models` URL은 입력하지 마세요. 원격 endpoint는 HTTPS가 필요합니다.
-- SubTandem는 `/v1/messages`의 비스트리밍 네이티브 Messages와 `/v1/models` 모델 목록을 사용합니다. 호환 서비스는 이 route와 Claude 인증/version header를 지원해야 합니다.
-- API key는 필수입니다. 새 Profile은 수동 새로 고침 전에 key를 입력해야 하며 자동 새로 고침은 저장되지 않은 key를 보내지 않습니다. 반환된 모델 또는 정확한 사용자 지정 Model ID를 선택하세요.
-- **Save → Test → Profile 스위치 켜기** 순서로 진행하세요. Save와 Test는 자막 텍스트를 승인하지 않으며 활성화 전에는 자막 없는 모델 목록만 endpoint에 도달할 수 있습니다.
-- Claude는 Messages 요청 요금을 부과하고 인증, 모델 접근, spend limit, 할당량, rate limit 또는 거부를 적용할 수 있습니다. 저장된 key는 쓰기 전용입니다.
+- 기본 API root는 `https://api.anthropic.com`입니다. Claude 공식 서비스를 사용할 때는 Anthropic **API key**를 입력하고 계정에서 사용할 수 있는 모델을 선택하세요.
+- 모델 목록을 새로 고쳐 모델을 선택하거나 정확한 **Model ID**를 입력하세요.
+- Claude 호환 서비스를 사용할 때는 **Endpoint**를 해당 서비스의 API root로 변경하세요. SubTandem는 번역에 `/v1/messages`, 모델 목록에 `/v1/models`를 사용합니다. 현재 버전에서 Claude Profile의 모델 목록 새로 고침, 테스트, 저장, 활성화에는 **API key**가 필요합니다.
 
 ### DeepSeek
 
-- 고정 기본 API root는 `https://api.deepseek.com`입니다. 번역에는 `/chat/completions`, 모델 목록에는 `/models`를 덧붙입니다.
-- 모델 목록을 새로 고치거나 정확한 사용자 지정 Model ID를 입력합니다. SubTandem는 DeepSeek 모델을 미리 선택하거나 추천 또는 추측하지 않습니다.
-- 공식 서비스에는 사용 가능한 API key가 필요합니다. 저장 후 입력란은 쓰기 전용이며 key를 다시 표시하지 않습니다.
-- **Save**와 **Test**는 Profile을 활성화하거나 자막 텍스트 전송을 승인하지 않습니다. Profile 스위치를 명시적으로 켜야 하며, 그전에는 자막 없는 모델 목록 요청만 기본 root에 도달할 수 있습니다.
-- DeepSeek는 요청 요금을 부과하고 잔액, 할당량, rate limit을 적용할 수 있습니다.
+- 기본 API root는 `https://api.deepseek.com`입니다. DeepSeek 공식 서비스를 사용할 때는 **API key**를 입력하고 계정에서 사용할 수 있는 모델을 선택하세요.
+- 모델 목록을 새로 고쳐 모델을 선택하거나 정확한 **Model ID**를 입력하세요. SubTandem는 DeepSeek 모델을 자동으로 선택하지 않습니다.
+- 다른 호환 API root를 사용하는 서비스라면 **Endpoint**를 변경하세요. SubTandem는 번역 요청에 `/chat/completions`를 추가합니다.
 
 ### Ollama
 
-- 기본 서버 root는 `http://127.0.0.1:11434`입니다.
-- `translategemma:12b` 또는 `qwen3:14b`처럼 설치된 모델의 정확한 tag를 입력합니다.
-- Ollama 서버가 인증 없는 요청을 허용하면 Bearer API key는 선택 사항이며 저장 후에는 쓰기 전용입니다.
-- 연결 테스트에서 서버, 설치된 tag, structured-output chat 지원 여부를 확인합니다.
+- 기본 서버 주소는 `http://127.0.0.1:11434`이며 사용 중인 컴퓨터에서 실행 중인 Ollama에 연결합니다. 먼저 Ollama를 실행하고 호환 모델을 설치하세요.
+- 모델 목록을 새로 고쳐 설치된 모델을 선택하거나 정확한 **Model ID**를 입력하세요.
+- 원격 Ollama 서버를 사용하려면 **Endpoint**를 해당 서버 주소로 변경하세요. 서버에서 요구할 때만 **API key**를 입력합니다. **Test**는 연결, 모델, 구조화 출력 지원을 확인합니다.
 
-새 Profile은 **Connect directly**가 기본값입니다. 서비스가 현재 시스템 프록시 구성을 따라야 할 때 **Use macOS proxy settings**를 선택하세요.
+새 Profile은 기본적으로 **Connect directly**를 사용합니다. 네트워크에 프록시가 필요하면 **Use macOS proxy settings**를 선택하세요. 저장한 API key는 다시 표시되지 않습니다.
 
 ## 🔒 개인정보, 자격 증명 및 비용
 
@@ -164,7 +153,7 @@ SubTandem는 오디오 전사, 이미지 기반 자막 OCR/추출, 원격 미디
 - **번역 실패:** Session에 표시되는 구체적인 조치를 따르세요. 원인에 따라 Profile을 테스트하고 endpoint, 정확한 Model ID, API key, 네트워크 경로, 계정 한도 또는 Ollama 프로세스를 확인하세요. 재생과 원본 자막은 정상적으로 계속됩니다.
 - **Credential could not be saved:** 불완전한 개발 사본 대신 Release 패키지를 설치하고 플러그인 데이터 디렉터리가 쓰기 가능한지 확인한 뒤 IINA를 완전히 종료하고 다시 시작하세요.
 - **번역문이 표시되지 않음:** 대상 Profile 스위치와 **Translate**가 모두 켜져 있고 재생 위치가 번역된 cue의 시간 범위 안에 있는지 확인하세요.
-- **프록시가 서비스를 차단함:** 먼저 기본 macOS 프록시 경로를 사용하세요. 프록시가 서비스를 거부하면 해당 Profile을 **Connect directly**로 바꾸고 저장, 테스트한 뒤 새 revision을 활성화하세요.
+- **네트워크 또는 프록시 문제:** 새 Profile은 직접 연결합니다. 네트워크에 프록시가 필요하면 해당 Profile에서 **Use macOS proxy settings**를 선택하고 저장, 테스트한 뒤 새 revision을 활성화하세요.
 
 ## ☕ SubTandem 후원하기
 

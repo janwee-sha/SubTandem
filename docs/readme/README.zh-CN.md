@@ -33,7 +33,7 @@ SubTandem 保留原字幕，同时在你选择的位置独立显示译文。
 - **实时双语字幕：** 原字幕继续由 IINA 显示，SubTandem 在你选择的垂直位置横向居中渲染译文，不占用其他字幕轨。
 - **持久译文样式：** 可在 **Subtitle** 中调整 Font 颜色、Size、字体、Bold/Italic、Border 颜色与 Width，以及 Background 颜色。默认值为白色 Size 40 系统字体、黑色 Width 3 描边和透明背景。三个颜色共用预设与带透明度的 **Show Colors…**；已保存字体不可用时会暂用系统字体，并在字体恢复后自动还原。
 - **支持内嵌与外部文本字幕：** 支持本地 Matroska SubRip/ASS/SSA、本地 MOV/MP4 `mov_text`，以及外部 SRT/ASS；正式包自带提取能力，无需安装 `ffmpeg` 或 `ffprobe`。
-- **自选翻译服务：** 支持兼容 OpenAI Chat Completions 的 endpoint、兼容 Claude Messages 的 endpoint、DeepSeek，以及本地或远程 Ollama 服务。
+- **自选翻译服务：** 可使用 OpenAI、Claude、DeepSeek 或 Ollama，也可连接兼容 OpenAI 或 Claude 的服务。
 - **播放优先：** 翻译工作不会暂停视频，也不会隐藏原字幕。
 - **请求范围受限：** 只翻译播放位置附近的字幕；每个播放器窗口限制并发工作；成功译文只在当前视频会话内缓存。
 - **多个 Profile：** 可在分组列表中展开 Profile 就地编辑，也可使用标题右侧的 **New profile**。Test 测试当前抽屉草稿；独立开关才会在全部窗口与重启后全局启用已保存的确切修订版。
@@ -44,11 +44,7 @@ SubTandem 保留原字幕，同时在你选择的位置独立显示译文。
 - macOS 12 或更高版本
 - IINA 1.4.0 或更高版本
 - 受支持的本地内嵌文本字幕，或可读取的外部 SRT/ASS/SSA 字幕
-- 以下任一翻译服务：
-  - OpenAI endpoint、Model ID，以及服务要求时使用的 API key
-  - Claude 或 Claude-compatible API root、API key 和准确的 Model ID
-  - DeepSeek API key 和准确的 DeepSeek Model ID
-  - 已安装兼容模型的 Ollama 服务，以及服务要求时使用的 API key
+- 可使用的 OpenAI、Claude、DeepSeek 或 Ollama 翻译服务及模型；各服务的配置方法见下文。
 
 SubTandem 不会下载或启动翻译模型。
 
@@ -113,36 +109,29 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 
 ### OpenAI
 
-- 填写 API root，例如 `https://example.com/v1`，不要填写完整的 `/chat/completions` URL。
-- SubTandem 会追加 `/chat/completions`，并在侧边栏预览最终请求地址。
-- 刷新 endpoint 的模型列表并选择返回的标识符，或填写准确的自定义 Model ID。
-- 只有 endpoint 允许匿名请求时才可省略 Bearer API key。保存后密钥输入框为只写状态，不会回显。
-- 远程 endpoint 必须使用 HTTPS。
+- 默认 API root 是 `https://api.openai.com/v1`。使用 OpenAI 官方服务时，填写 **API key**，并选择账号可用的模型。
+- 刷新模型列表并选择模型，或填写准确的 **Model ID**。
+- 使用兼容 OpenAI 的服务时，将 **Endpoint** 改为该服务的 API root。SubTandem 会追加 `/chat/completions`，并在侧边栏显示请求地址。如果该服务无需 API key，可将 **API key** 留空。
 
 ### Claude
 
-- 默认 API root 为 `https://api.anthropic.com`。请填写该 root 或 Claude-compatible root，不要填写完整的 `/v1/messages` 或 `/v1/models` URL；远程 endpoint 必须使用 HTTPS。
-- SubTandem 使用 `/v1/messages` 的原生非流式 Messages 请求，并从 `/v1/models` 获取模型目录。兼容服务必须支持这些路由以及 Claude 认证和版本 header。翻译请求会优先使用 Claude structured JSON output；若兼容服务明确拒绝该能力，SubTandem 会省略该字段重试一次，该额外请求可能产生费用。
-- API key 必填。新建 Profile 时，先填写 Key 再手动刷新模型；自动刷新绝不会发送未保存的 Key。可选择返回的模型或填写准确的自定义 Model ID。
-- 严格按 **Save → Test → 打开 Profile 开关** 操作。Save 和 Test 不授权发送字幕文字；启用前只有不含字幕的模型目录请求可以到达 endpoint。
-- Claude 可能收取 Messages 请求费用，并限制认证、模型访问、spend limit、配额和请求速率，也可能拒绝内容。保存后的 Key 只写且不会再次显示。
+- 默认 API root 是 `https://api.anthropic.com`。使用 Claude 官方服务时，填写 Anthropic **API key**，并选择账号可用的模型。
+- 刷新模型列表并选择模型，或填写准确的 **Model ID**。
+- 使用兼容 Claude 的服务时，将 **Endpoint** 改为该服务的 API root。SubTandem 通过 `/v1/messages` 翻译，并从 `/v1/models` 获取模型列表。当前版本的 Claude Profile 在刷新模型、测试、保存和启用时都需要 **API key**。
 
 ### DeepSeek
 
-- 固定默认 API root 为 `https://api.deepseek.com`；翻译请求会追加 `/chat/completions`，模型目录请求会追加 `/models`。
-- 可刷新模型列表或填写准确的自定义 Model ID。SubTandem 不会预选、推荐或猜测 DeepSeek 模型。
-- 官方服务需要可用的 API key；保存后输入框为只写状态，密钥不会再次显示。
-- **Save** 和 **Test** 不会启用 Profile，也不授权发送字幕文字；必须明确打开 Profile 开关。启用前只有不含字幕的模型目录请求可以到达默认 root。
-- 翻译使用 JSON object 输出并关闭 thinking。DeepSeek 可能按请求收费，并限制余额、配额和请求速率。
+- 默认 API root 是 `https://api.deepseek.com`。使用 DeepSeek 官方服务时，填写 **API key**，并选择账号可用的模型。
+- 刷新模型列表并选择模型，或填写准确的 **Model ID**。SubTandem 不会替你预选 DeepSeek 模型。
+- 如果服务使用其他兼容的 API root，可以修改 **Endpoint**。SubTandem 会追加 `/chat/completions` 发起翻译请求。
 
 ### Ollama
 
-- 默认服务根地址为 `http://127.0.0.1:11434`。
-- 刷新服务的模型列表并选择返回的标签，或填写准确的自定义 Model ID。
-- Ollama 允许匿名请求时可省略 Bearer API key；保存后密钥输入框为只写状态，不会回显。
-- 连接测试会检查服务器、已安装模型标签和 structured-output chat 支持。
+- 默认服务地址是 `http://127.0.0.1:11434`，用于连接你电脑上的 Ollama。请先启动 Ollama 并安装兼容模型。
+- 刷新模型列表并选择已安装的模型，或填写准确的 **Model ID**。
+- 使用远程 Ollama 时，将 **Endpoint** 改为服务器地址。仅当服务器要求时才填写 **API key**。**Test** 会检查连接、模型和结构化输出支持。
 
-新 Profile 默认使用 **Connect directly**。需要让服务遵循当前系统代理配置时，选择 **Use macOS proxy settings**。
+新 Profile 默认使用 **Connect directly**。网络需要代理时，选择 **Use macOS proxy settings**。保存后的 API key 不会再次显示。
 
 ## 🔒 隐私、凭据与费用
 
@@ -165,7 +154,7 @@ SubTandem 不提供音频转写、图形字幕 OCR/提取、远程媒体内嵌�
 - **翻译失败：** 按照 Session 显示的具体操作处理。根据失败原因测试 Profile，并检查 endpoint、准确的 Model ID、API key、网络路由、账户限额或 Ollama 进程。视频和原字幕会继续正常播放。
 - **Credential could not be saved：** 使用正式 Release 安装包，不要使用内容不完整的开发副本；确认插件数据目录可写，并完全退出后重启 IINA。
 - **没有显示译文：** 确认目标 Profile 开关和 **Translate** 均已开启；播放位置还需要处于已有译文的字幕时段内。
-- **代理阻止服务连接：** 先尝试默认的 macOS 代理路由。如果代理拒绝该服务，将 Profile 改为 **Connect directly**，保存、测试并启用新修订版。
+- **网络或代理故障：** 新 Profile 默认直连。若网络需要代理，请为该 Profile 选择 **Use macOS proxy settings**，然后保存、测试并启用新修订版。
 
 ## ☕ 支持 SubTandem
 
