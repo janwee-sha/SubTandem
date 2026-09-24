@@ -505,7 +505,7 @@ actor SecureCredentialStore: CredentialStoreAccess {
               activation.endpointFingerprint == profile.endpointFingerprint
         else { return false }
         let configured = credentials[profile.profileId] != nil
-        return activation.credentialConfigured == configured && (profile.kind != "claude" || configured)
+        return activation.credentialConfigured == configured
     }
 
     private static func validateReceipt(_ receipt: StoredCommitReceipt, storeRevision: Int) throws {

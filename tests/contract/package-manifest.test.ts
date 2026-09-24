@@ -58,6 +58,7 @@ describe("IINA package manifest", () => {
     expect(manifest.permissionDescriptions["network-request"]).toMatch(
       /Claude.*api\.anthropic\.com.*before the Profile is enabled/i,
     );
+    expect(manifest.permissionDescriptions["network-request"]).toMatch(/without an API key/i);
   });
 
   it("declares only the non-interactive translation overlay permission and default position", () => {

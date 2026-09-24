@@ -214,7 +214,7 @@ describe("IINA sidebar bundle contract", () => {
     expect(html).toMatch(/id="provider-model"[\s\S]*?required/);
   });
 
-  it("uses Claude defaults, Messages URL guidance, Custom ID and a required API key", () => {
+  it("uses Claude defaults, Messages URL guidance, Custom ID and an optional API key", () => {
     expect(sidebarSource).toContain(
       'claude: { endpoint: "https://api.anthropic.com", model: "", proxyMode: "direct" }',
     );
@@ -225,8 +225,12 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarSource).toMatch(/exact Claude model ID/i);
     expect(sidebarSource).toContain('custom.textContent = "Custom model ID…"');
     expect(html).toMatch(/id="provider-key"[\s\S]*?type="password"/);
-    expect(sidebarSource).toContain("claudeCredentialRequired");
-    expect(sidebarSource).toContain("Enter an API key before saving this Claude Profile.");
+    expect(sidebarSource).not.toContain("claudeCredentialRequired");
+    expect(sidebarSource).not.toContain("Enter an API key before saving this Claude Profile.");
+    expect(sidebarSource).not.toContain("Enter an API key before testing this Claude Profile.");
+    expect(sidebarSource).toContain(
+      '"Write-only; optional when unauthenticated. Enter a key if the service requires one."',
+    );
   });
 
   it("uses independent DeepSeek defaults without preselecting a model", () => {
@@ -262,7 +266,7 @@ describe("IINA sidebar bundle contract", () => {
       'document.querySelector<HTMLElement>("#credential-row")!.hidden = false',
     );
     expect(html).toContain('maxlength="8192"');
-    expect(html).toMatch(/credential-hint[\s\S]*refresh/i);
+    expect(html).toMatch(/credential-hint[\s\S]*optional when unauthenticated/i);
   });
 
   it("uses entered credentials only for manual model preview and blocks empty-model saves", () => {

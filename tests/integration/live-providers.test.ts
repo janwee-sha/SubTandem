@@ -375,9 +375,8 @@ describe.skipIf(!liveClaude)("authorized Claude-compatible live acceptance", () 
     const apiKey = process.env.SUBTANDEM_CLAUDE_KEY;
     expect(endpoint).toBeTruthy();
     expect(model).toBeTruthy();
-    expect(apiKey).toBeTruthy();
     const provider = new ClaudeProvider(
-      { endpoint: endpoint!, model: model!, apiKey: apiKey! },
+      { endpoint: endpoint!, model: model!, ...(apiKey ? { apiKey } : {}) },
       new FetchTransport(),
     );
 

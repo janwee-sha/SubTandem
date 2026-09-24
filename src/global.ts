@@ -320,18 +320,11 @@ async function buildProvider(profile: ProviderProfileSnapshot): Promise<Configur
           userAction: "CHECK_MODEL",
         };
       const secret = await credentials.getSecret(profile.profileId);
-      if (!secret?.apiKey?.trim())
-        throw {
-          category: "authentication",
-          retryable: false,
-          providerCode: "CREDENTIAL_REQUIRED",
-          userAction: "CHECK_CREDENTIALS",
-        };
       return new ClaudeProvider(
         {
           endpoint: profile.endpoint,
           model: profile.model,
-          apiKey: secret.apiKey,
+          ...(secret?.apiKey ? { apiKey: secret.apiKey } : {}),
           proxyMode: profile.proxyMode ?? "system",
         },
         providerTransport,
@@ -425,18 +418,11 @@ function buildDraftProvider(
         providerTransport,
       );
     case "claude":
-      if (!input.apiKey)
-        throw {
-          category: "authentication",
-          retryable: false,
-          providerCode: "CREDENTIAL_REQUIRED",
-          userAction: "CHECK_CREDENTIALS",
-        };
       return new ClaudeProvider(
         {
           endpoint: input.endpoint,
           model: input.model,
-          apiKey: input.apiKey,
+          ...(input.apiKey ? { apiKey: input.apiKey } : {}),
           proxyMode: input.proxyMode,
         },
         providerTransport,

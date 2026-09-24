@@ -43,6 +43,21 @@ function transport(body: unknown, statusCode = 200): CapturingTransport {
 }
 
 describe("provider model discovery", () => {
+  it("refreshes Claude models without a key and omits the key header", async () => {
+    const client = transport({ data: [{ id: "keyless-model" }], has_more: false });
+    await expect(
+      discoverProviderModels(
+        {
+          jobId: "claude-keyless",
+          kind: "claude",
+          endpoint: "https://compatible.example",
+        },
+        client,
+      ),
+    ).resolves.toEqual(["keyless-model"]);
+    expect(client.requests[0]?.headers).toEqual({ "anthropic-version": "2023-06-01" });
+  });
+
   it("paginates Claude last_id through after_id with per-page guards and atomic deduplication", async () => {
     const client = new SequenceTransport([
       response({
@@ -218,13 +233,7 @@ describe("provider model discovery", () => {
     });
   });
 
-  it("requires a Claude key and rejects an unsupported or malformed catalog safely", async () => {
-    await expect(
-      discoverProviderModels(
-        { jobId: "missing-key", kind: "claude", endpoint: "https://api.anthropic.com" },
-        transport({ data: [], has_more: false }),
-      ),
-    ).rejects.toMatchObject({ category: "authentication", userAction: "CHECK_CREDENTIALS" });
+  it("rejects an unsupported Claude catalog safely", async () => {
     const failure = await discoverProviderModels(
       {
         jobId: "unsupported",

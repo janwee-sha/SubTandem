@@ -117,7 +117,7 @@ Profileの概要を展開するとその場で編集できます。操作行は�
 
 - デフォルトのAPI rootは`https://api.anthropic.com`です。Claude公式サービスでは、Anthropicの**API key**を入力し、アカウントで利用できるモデルを選びます。
 - モデル一覧を更新してモデルを選ぶか、正確な**Model ID**を入力します。
-- Claude互換サービスでは、**Endpoint**をそのサービスのAPI rootに変更します。SubTandemは翻訳に`/v1/messages`、モデル一覧に`/v1/models`を使います。現行バージョンのClaude Profileでは、モデル一覧の更新、テスト、保存、有効化に**API key**が必要です。
+- Claude互換サービスでは、**Endpoint**をそのサービスのAPI rootに変更します。SubTandemは翻訳に`/v1/messages`、モデル一覧に`/v1/models`を使います。サービスがAPI keyを必要としない場合は、**API key**を空欄にできます。キーがなくてもモデル一覧の更新、テスト、保存、有効化ができます。
 
 ### DeepSeek
 

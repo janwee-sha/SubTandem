@@ -859,17 +859,6 @@ function requestModels(trigger: "open" | "endpoint" | "profile" | "credential" |
     editingProfile?.kind === providerKind.value &&
     editingProfile.endpoint === providerEndpoint.value.trim() &&
     editingProfile.proxyMode === providerProxyMode.value;
-  if (
-    providerKind.value === "claude" &&
-    !usesDraftCredential &&
-    !(matchesSaved && editingProfile?.credentialConfigured)
-  ) {
-    pendingModelRefresh = null;
-    if (trigger === "manual")
-      setModelRefreshFeedback("error", "Enter an API key before refreshing Claude models.");
-    else setModelRefreshFeedback("idle");
-    return;
-  }
   pendingModelRefresh = {
     requestId,
     contextSignature,
@@ -984,16 +973,6 @@ function selectedServiceTypeLabel(): string {
   return providerLabels[providerKind.value as ProviderKind];
 }
 
-function claudeCredentialRequired(): boolean {
-  if (providerKind.value !== "claude") return false;
-  return !(
-    editingProfile?.kind === "claude" &&
-    editingProfile.credentialConfigured &&
-    editingProfile.endpoint === providerEndpoint.value.trim() &&
-    editingProfile.proxyMode === providerProxyMode.value
-  );
-}
-
 function applyProviderKind(): void {
   const kind = providerKind.value as ProviderKind;
   activeProviderKind = kind;
@@ -1006,13 +985,10 @@ function applyProviderKind(): void {
     providerUi[kind].endpointHint;
   document.querySelector<HTMLElement>("#model-hint")!.textContent = providerUi[kind].modelHint;
   providerModel.placeholder = providerUi[kind].modelPlaceholder;
-  providerKey.required = claudeCredentialRequired();
   document.querySelector<HTMLElement>("#credential-hint")!.textContent =
-    kind === "claude"
-      ? providerKey.required
-        ? "Required and write-only. Enter a key to refresh models and save this Claude Profile."
-        : "Write-only. Leave blank to keep the saved Claude API key."
-      : "Write-only; optional when unauthenticated. Enter a key and refresh models before saving a protected service.";
+    editingProfile?.kind === kind && editingProfile.credentialConfigured
+      ? "Write-only. Leave blank to keep the saved API key."
+      : "Write-only; optional when unauthenticated. Enter a key if the service requires one.";
   setModelContext(providerDrafts[kind].model);
   updateRequestUrl();
 }
@@ -1030,7 +1006,6 @@ providerKind.addEventListener("change", () => {
 providerEndpoint.addEventListener("input", () => {
   invalidateDrawerTestField();
   cancelPendingProfileSaveForContextChange();
-  providerKey.required = claudeCredentialRequired();
   updateRequestUrl();
   scheduleEndpointModelRefresh();
 });
@@ -1038,7 +1013,6 @@ providerProxyMode.addEventListener("change", () => {
   invalidateDrawerTestField();
   cancelPendingProfileSaveForContextChange();
   invalidatePendingModelRefresh();
-  providerKey.required = claudeCredentialRequired();
   setModelContext(sidebarState.snapshot.modelControl.value);
   requestModels("profile");
 });
@@ -1428,12 +1402,6 @@ testProfileButton.addEventListener("click", () => {
     : canUseSavedDraftCredential()
       ? { source: "saved" as const }
       : { source: "none" as const };
-  if (providerKind.value === "claude" && credential.source === "none") {
-    profileTestStatus.dataset.state = "error";
-    profileTestStatus.textContent = "Enter an API key before testing this Claude Profile.";
-    providerKey.focus();
-    return;
-  }
   const requestId = nextRequestId();
   const started = sidebarState.beginDrawerTest(requestId);
   if (!started) return;
@@ -1467,12 +1435,6 @@ saveProfileButton.addEventListener("click", () => {
     );
     renderModelFeedback();
     providerModel.focus();
-    return;
-  }
-  if (claudeCredentialRequired() && !providerKey.value.trim()) {
-    profileEditorStatus.dataset.state = "error";
-    profileEditorStatus.textContent = "Enter an API key before saving this Claude Profile.";
-    providerKey.focus();
     return;
   }
   cancelActiveDrawerTest();
@@ -1844,11 +1806,8 @@ window.iina?.onMessage("credential:state", (raw: unknown) => {
     if (ready && editingProfile && editingProfile.profileId === pendingProfileSave.profileId) {
       editingProfile = { ...editingProfile, credentialConfigured: true };
       profiles.set(editingProfile.profileId, editingProfile);
-      providerKey.required = false;
       document.querySelector<HTMLElement>("#credential-hint")!.textContent =
-        editingProfile.kind === "claude"
-          ? "Write-only. Leave blank to keep the saved Claude API key."
-          : "Write-only; optional when unauthenticated. Leave blank to keep the saved API key.";
+        "Write-only. Leave blank to keep the saved API key.";
     }
     const saveMessage = sidebarState.completeProfileSave(
       result.requestId,
