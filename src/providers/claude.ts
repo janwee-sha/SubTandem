@@ -28,15 +28,14 @@ export class ClaudeProvider implements ConfiguredProvider {
     private readonly config: {
       endpoint: string;
       model: string;
-      apiKey: string;
+      apiKey?: string;
       proxyMode?: "system" | "direct";
     },
     private readonly transport: ProviderTransport,
   ) {
     this.messagesUrl = claudeApiUrl(config.endpoint, "messages");
-    this.apiKey = config.apiKey.trim();
+    this.apiKey = config.apiKey?.trim() ?? "";
     if (!config.model.trim()) throw new Error("MODEL_REQUIRED");
-    if (!this.apiKey) throw new Error("CREDENTIAL_REQUIRED");
   }
 
   async testConnection(testId: string): Promise<{ model: string }> {

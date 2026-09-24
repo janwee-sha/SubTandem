@@ -91,14 +91,12 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(sidebarStateSource).toContain("snapshot.drawer = closedDrawer()");
   });
 
-  it("keeps the saved-key hint specific to the active provider kind", () => {
+  it("shows the optional-key hint after saving a credential", () => {
     const start = sidebarSource.indexOf('window.iina?.onMessage("credential:state"');
     const end = sidebarSource.indexOf('window.iina?.onMessage("operation:result"', start);
     const credentialHandler = sidebarSource.slice(start, end);
 
-    expect(credentialHandler).toContain('editingProfile.kind === "claude"');
-    expect(credentialHandler).toContain("saved Claude API key");
-    expect(credentialHandler).toContain("optional when unauthenticated");
+    expect(credentialHandler).toContain("Write-only. Leave blank to keep the saved API key.");
   });
 
   it("does not let a late Claude save, Test or deletion replace a newer drawer owner", () => {
@@ -110,11 +108,11 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(sidebarStateSource).toContain("latestRequestByRegion");
   });
 
-  it("gates Claude automatic refresh, sends one manual preview and preserves Custom state", () => {
+  it("refreshes Claude without a key, sends one manual preview and preserves Custom state", () => {
     const requestStart = sidebarSource.indexOf("function requestModels");
     const requestEnd = sidebarSource.indexOf("function scheduleEndpointModelRefresh", requestStart);
     const requestSource = sidebarSource.slice(requestStart, requestEnd);
-    expect(requestSource).toContain('providerKind.value === "claude"');
+    expect(requestSource).not.toContain("Enter an API key before refreshing Claude models.");
     expect(requestSource).toContain("usesDraftCredential");
     expect(requestSource).toContain("editingProfile?.credentialConfigured");
     expect(requestSource).toContain('"provider:models-preview"');
@@ -238,7 +236,7 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(matcher).toContain("editingProfile.kind === kind");
     expect(matcher).toContain("normalizedEndpointForCredential");
     expect(matcher).toContain("editingProfile.proxyMode === providerProxyMode.value");
-    expect(sidebarSource).toContain('credential.source === "none"');
+    expect(sidebarSource).toContain('{ source: "none" as const }');
     expect(sidebarSource).toContain("currentTest.drawerId !== result.drawerId");
     expect(sidebarSource).toContain("currentTest.draftRevision !== result.draftRevision");
   });

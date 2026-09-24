@@ -24,14 +24,13 @@ export function claudeApiUrl(root: string, resource: ClaudeResource): string {
 }
 
 export function claudeRequestHeaders(
-  apiKey: string,
+  apiKey?: string,
   resource: ClaudeResource = "messages",
 ): Record<string, string> {
-  const credential = apiKey.trim();
-  if (!credential) throw new Error("CREDENTIAL_REQUIRED");
+  const credential = apiKey?.trim();
   return {
     ...(resource === "messages" ? { "Content-Type": "application/json" } : {}),
-    "x-api-key": credential,
+    ...(credential ? { "x-api-key": credential } : {}),
     "anthropic-version": "2023-06-01",
   };
 }

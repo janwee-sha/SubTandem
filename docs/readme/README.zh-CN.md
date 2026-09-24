@@ -117,7 +117,7 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 
 - 默认 API root 是 `https://api.anthropic.com`。使用 Claude 官方服务时，填写 Anthropic **API key**，并选择账号可用的模型。
 - 刷新模型列表并选择模型，或填写准确的 **Model ID**。
-- 使用兼容 Claude 的服务时，将 **Endpoint** 改为该服务的 API root。SubTandem 通过 `/v1/messages` 翻译，并从 `/v1/models` 获取模型列表。当前版本的 Claude Profile 在刷新模型、测试、保存和启用时都需要 **API key**。
+- 使用兼容 Claude 的服务时，将 **Endpoint** 改为该服务的 API root。SubTandem 通过 `/v1/messages` 翻译，并从 `/v1/models` 获取模型列表。如果该服务无需 API key，可将 **API key** 留空；仍可刷新模型、测试、保存和启用 Profile。
 
 ### DeepSeek
 

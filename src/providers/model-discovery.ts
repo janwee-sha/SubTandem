@@ -72,14 +72,6 @@ export async function discoverProviderModels(
   transport: ProviderTransport,
 ): Promise<string[]> {
   if (request.kind === "claude") {
-    const apiKey = request.apiKey?.trim();
-    if (!apiKey)
-      throw {
-        category: "authentication",
-        retryable: false,
-        providerCode: "CREDENTIAL_REQUIRED",
-        userAction: "CHECK_CREDENTIALS",
-      };
     const rootUrl = claudeApiUrl(request.endpoint, "models");
     const seenModels = new Set<string>();
     const seenCursors = new Set<string>();
@@ -91,7 +83,7 @@ export async function discoverProviderModels(
         jobId: request.jobId,
         method: "GET",
         url: afterId === undefined ? rootUrl : `${rootUrl}?after_id=${encodeURIComponent(afterId)}`,
-        headers: claudeRequestHeaders(apiKey, "models"),
+        headers: claudeRequestHeaders(request.apiKey, "models"),
         proxyMode: request.proxyMode ?? "system",
         timeoutMs: 10_000,
         maxResponseBytes: 1_048_576,

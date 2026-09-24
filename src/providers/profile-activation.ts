@@ -138,8 +138,7 @@ function validRestoredActivation(
     profile.revision === activation.profileRevision &&
     profile.kind === activation.kind &&
     profile.endpointFingerprint === activation.endpointFingerprint &&
-    activation.credentialConfigured === configured &&
-    (profile.kind !== "claude" || configured),
+    activation.credentialConfigured === configured,
   );
 }
 
@@ -473,13 +472,7 @@ export class ProfileActivationAuthority {
       return { requestId: input.requestId, outcome: "pending", authority: this.snapshot };
     if (input.authorityId !== this.authorityId) return safeError(input.requestId, this.snapshot);
     const profile = this.profiles.get(input.profileId, input.profileRevision);
-    if (
-      !profile ||
-      profile.endpointFingerprint !== input.endpointFingerprint ||
-      (input.enabled &&
-        profile.kind === "claude" &&
-        !this.credentialConfigured.get(profile.profileId))
-    )
+    if (!profile || profile.endpointFingerprint !== input.endpointFingerprint)
       return safeError(input.requestId, this.snapshot);
     let candidate: ActivationReference | null;
     if (input.enabled) {

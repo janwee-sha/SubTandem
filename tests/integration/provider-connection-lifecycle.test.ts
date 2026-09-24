@@ -302,7 +302,7 @@ describe("provider connection lifecycle integration", () => {
     }
   });
 
-  it("runs Claude Save, fresh Test, activation, translation, Update and Delete", async () => {
+  it("runs keyless Claude Save, fresh Test, activation, translation, Update and Delete", async () => {
     const requests: ProviderTransportRequest[] = [];
     const profiles = new ProviderProfiles(() => "claude-profile");
     const created = profiles.save({
@@ -312,7 +312,7 @@ describe("provider connection lifecycle integration", () => {
       model: "exact-model",
     });
     const provider = new ClaudeProvider(
-      { endpoint: created.endpoint, model: created.model!, apiKey: "fictional-key" },
+      { endpoint: created.endpoint, model: created.model! },
       {
         request: async (request) => {
           requests.push(request);
@@ -357,8 +357,9 @@ describe("provider connection lifecycle integration", () => {
     expect(tests.attachProvider(task, provider)).toBe(task);
     await provider.testConnection(task.testId);
     tests.complete(task);
-    const authority = createTestProfileAuthority(profiles);
+    const authority = createTestProfileAuthority(profiles, { [created.profileId]: false });
     await activateTestProfile(authority, created, "window-a");
+    expect(authority.snapshot.activation?.credentialConfigured).toBe(false);
     const broker = new ProviderBroker(profiles, authority, () => provider);
     const request = authorizedProviderRequest(authority, {
       ...makeProviderRequest(),
@@ -388,6 +389,10 @@ describe("provider connection lifecycle integration", () => {
     expect(requests.map((item) => item.url)).toEqual([
       "https://api.anthropic.com/v1/messages",
       "https://api.anthropic.com/v1/messages",
+    ]);
+    expect(requests.map((item) => item.headers)).toEqual([
+      { "Content-Type": "application/json", "anthropic-version": "2023-06-01" },
+      { "Content-Type": "application/json", "anthropic-version": "2023-06-01" },
     ]);
   });
 

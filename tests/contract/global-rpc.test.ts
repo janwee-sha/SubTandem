@@ -43,17 +43,20 @@ describe("authoritative global RPC routing", () => {
     expect(source).not.toContain('onMessage("claude:');
   });
 
-  it("requires saved Claude credentials before activation, Test and translation construction", () => {
+  it("builds saved and draft Claude providers without requiring an API key", () => {
     const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
     const builderStart = source.indexOf("async function buildProvider");
-    const builderEnd = source.indexOf("const providerCache", builderStart);
+    const builderEnd = source.indexOf("function assertActiveDraftTestOwner", builderStart);
     expect(source.slice(builderStart, builderEnd)).toMatch(/claude[\s\S]*credentials\.getSecret/);
-    expect(source.slice(builderStart, builderEnd)).toContain("CREDENTIAL_REQUIRED");
+    expect(source.slice(builderStart, builderEnd)).not.toContain("CREDENTIAL_REQUIRED");
+    const draftStart = source.indexOf("function buildDraftProvider");
+    const draftEnd = source.indexOf("function providerTestCode", draftStart);
+    expect(source.slice(draftStart, draftEnd)).not.toContain("CREDENTIAL_REQUIRED");
     expect(source).toContain('onMessage("profile-activation:set"');
     expect(source).toContain("restoreProfileActivationAuthority");
     expect(
       readFileSync(new URL("../../src/providers/profile-activation.ts", import.meta.url), "utf8"),
-    ).toMatch(/profile\.kind === "claude"[\s\S]*credentialConfigured/);
+    ).not.toContain('profile.kind === "claude" &&');
   });
 
   it("cancels obsolete Provider work before publishing a changed activation", () => {

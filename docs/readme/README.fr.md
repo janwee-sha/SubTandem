@@ -117,7 +117,7 @@ Développez le résumé d'un Profile pour le modifier sur place. La ligne d'acti
 
 - L’API root par défaut est `https://api.anthropic.com`. Pour Claude, renseignez votre **API key** Anthropic et choisissez un modèle accessible à votre compte.
 - Actualisez la liste des modèles et choisissez-en un, ou saisissez son **Model ID** exact.
-- Pour un service compatible avec Claude, remplacez **Endpoint** par son API root. SubTandem utilise `/v1/messages` pour traduire et `/v1/models` pour la liste des modèles. Dans cette version, un Profile Claude a besoin d’une **API key** pour actualiser les modèles, être testé, enregistré et activé.
+- Pour un service compatible avec Claude, remplacez **Endpoint** par son API root. SubTandem utilise `/v1/messages` pour traduire et `/v1/models` pour la liste des modèles. Laissez **API key** vide si le service accepte les requêtes sans clé. Vous pouvez alors actualiser les modèles, tester, enregistrer et activer le Profile sans clé.
 
 ### DeepSeek
 

@@ -120,6 +120,46 @@ function profiles(): ProviderProfiles {
 }
 
 describe("Profile activation restoration", () => {
+  it("restores an enabled Claude Profile without a saved API key", async () => {
+    const claude = {
+      ...profile,
+      kind: "claude" as const,
+      endpoint: "https://compatible.example",
+      endpointFingerprint: identityHash({
+        kind: "claude",
+        endpoint: "https://compatible.example",
+        proxyMode: "direct",
+      }),
+    };
+    const store = new RestorationStore({
+      revision: 2,
+      initialized: true,
+      state: {
+        profiles: [claude],
+        activation: {
+          profileId: claude.profileId,
+          profileRevision: claude.revision,
+          kind: "claude",
+          endpointFingerprint: claude.endpointFingerprint,
+          credentialConfigured: false,
+        },
+      },
+      configured: { [claude.profileId]: false },
+    });
+    const authority = await restoreProfileActivationAuthority({
+      authorityId: "authority-keyless-claude",
+      profiles: profiles(),
+      store,
+      createCommitId: () => "00000000-0000-4000-8000-000000000007",
+    });
+
+    expect(authority.snapshot.activation).toMatchObject({
+      profileId: claude.profileId,
+      credentialConfigured: false,
+    });
+    expect(authority.acceptsTranslations).toBe(true);
+  });
+
   it("restores four persisted Profiles and their activation on cold start", async () => {
     const restoredProfiles = [0, 1, 2, 3].map((index) => ({
       ...profile,

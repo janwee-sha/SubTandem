@@ -192,6 +192,45 @@ func runServerTests() async throws {
     let openedProfileState = openedProfileJSON?["profileState"] as? [String: Any]
     try check(openedProfile.statusCode == 200, "Profile state open must succeed")
     try check(openedProfileState?["activation"] is NSNull, "open must encode disabled activation as null")
+
+    let keylessDirectory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("subtandem-keyless-claude-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: keylessDirectory) }
+    let keylessStore = try SecureCredentialStore(directory: keylessDirectory)
+    let keylessProfile = StoredProviderProfile(
+        profileId: "7a90a4e6-cc4f-4f59-99b7-8ff522f887af",
+        revision: 1,
+        displayName: "Keyless Claude",
+        kind: "claude",
+        endpoint: "https://compatible.example",
+        endpointFingerprint: "keyless-claude-fingerprint",
+        proxyMode: "direct",
+        model: "exact-model",
+        capability: nil
+    )
+    let keylessInitialized = try await keylessStore.initializeProfileState(
+        commitID: "00000000-0000-4000-8000-000000000005",
+        expectedStoreRevision: 0,
+        profiles: [keylessProfile]
+    )
+    let keylessActivation = StoredActivationReference(
+        profileId: keylessProfile.profileId,
+        profileRevision: keylessProfile.revision,
+        kind: keylessProfile.kind,
+        endpointFingerprint: keylessProfile.endpointFingerprint,
+        credentialConfigured: false
+    )
+    let keylessCommitted = try await keylessStore.commitProfileState(
+        commitID: "00000000-0000-4000-8000-000000000006",
+        expectedStoreRevision: keylessInitialized.storeRevision,
+        profileState: StoredProfileState(profiles: [keylessProfile], activation: keylessActivation)
+    )
+    try check(keylessCommitted.profileState?.activation == keylessActivation, "keyless Claude activation must commit")
+    let reopenedKeylessStore = try SecureCredentialStore(directory: keylessDirectory)
+    let restoredKeyless = try await reopenedKeylessStore.readProfileState()
+    try check(restoredKeyless.profileState?.activation == keylessActivation, "keyless Claude activation must survive restart")
+    try check(restoredKeyless.invalidActivation != true, "keyless Claude activation must remain valid")
+
     let oldDeleteCredential = await handler.handle(
         path: "/v1/credentials",
         authorization: "Bearer correct-token",
