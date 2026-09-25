@@ -149,10 +149,14 @@ export class TransportSupervisor implements TransportRpcClient {
     );
   }
 
-  async request(request: TransportRequest): Promise<TransportResponse> {
+  async request(request: TransportRequest, assertActive?: () => void): Promise<TransportResponse> {
+    assertActive?.();
     const client = await this.liveClient();
+    assertActive?.();
     try {
-      return await client.request(request);
+      const response = await client.request(request, assertActive);
+      assertActive?.();
+      return response;
     } catch (error) {
       if (isExpiredSession(error)) this.retireExpiredClient(client);
       throw error;

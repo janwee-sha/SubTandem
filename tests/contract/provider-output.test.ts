@@ -258,3 +258,19 @@ describe("Claude-compatible output normalization", () => {
     ).toThrow(/MALFORMED_PROVIDER_OUTPUT/);
   });
 });
+
+describe("fixed probe target preconditions", () => {
+  it.each([[], ["probe", "probe"]])(
+    "rejects an empty or repeated request target collection",
+    (ids) => {
+      expect(() =>
+        validateStrictIdOutput(ids, { translations: ids.map((id) => ({ id, text: "hello" })) }),
+      ).toThrow();
+    },
+  );
+  it("retains original characters and accepts the same input text", () => {
+    expect(
+      validateStrictIdOutput(["probe"], { translations: [{ id: "probe", text: " hello \n" }] }),
+    ).toEqual({ translations: [{ id: "probe", text: " hello \n" }] });
+  });
+});

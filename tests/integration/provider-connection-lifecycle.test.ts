@@ -570,3 +570,82 @@ describe("provider connection lifecycle integration", () => {
     expect(tests.activeCount()).toBe(0);
   });
 });
+
+describe.each(["openai", "claude", "deepseek", "ollama"] as const)(
+  "%s Global fixed Test ownership",
+  (kind) => {
+    it("does not send after preparation cancellation or revive a stale Profile result", async () => {
+      const { globalProviderHarness } = await import("../helpers/global-provider-harness.js");
+      const payload = {
+        drawerId: "drawer",
+        draftRevision: 1,
+        kind,
+        endpoint: "https://fixture.test",
+        model: "model",
+        proxyMode: "direct",
+        credential: { source: "none" },
+      };
+      const preparing = await globalProviderHarness([], true);
+      const pending = preparing.send("provider:test", payload, "window", "test");
+      await preparing.send("provider:test-cancel", { testRequestId: "test" }, "window", "cancel");
+      preparing.ready.releaseNext();
+      await pending;
+      expect(preparing.transport.calls).toHaveLength(0);
+      expect(preparing.replies).toHaveLength(0);
+
+      const source = new ProviderProfiles(() => "saved");
+      const saved = source.save({
+        kind,
+        endpoint: payload.endpoint,
+        model: "model",
+        displayName: "Profile",
+        proxyMode: "direct",
+      });
+      const h = await globalProviderHarness([saved]);
+      const request = h.send(
+        "provider:test",
+        {
+          ...payload,
+          sourceProfile: {
+            profileId: saved.profileId,
+            profileRevision: saved.revision,
+            endpointFingerprint: saved.endpointFingerprint,
+          },
+        },
+        "window",
+        "test",
+      );
+      await h.transport.responses.waitForPending();
+      h.profiles.delete(saved.profileId);
+      h.transport.responses.releaseNext({
+        statusCode: 200,
+        headers: {},
+        bodyText: JSON.stringify(
+          kind === "ollama"
+            ? { version: "fixture" }
+            : kind === "claude"
+              ? {
+                  type: "message",
+                  role: "assistant",
+                  stop_reason: "end_turn",
+                  content: [{ type: "text", text: '{"translations":[{"id":"c1","text":"hola"}]}' }],
+                }
+              : {
+                  choices: [
+                    {
+                      finish_reason: "stop",
+                      message: { content: '{"translations":[{"id":"probe","text":"hola"}]}' },
+                    },
+                  ],
+                },
+        ),
+      });
+      await request;
+      expect(h.transport.calls).toHaveLength(1);
+      expect(h.reads).toEqual([]);
+      expect(h.replies.some((reply) => reply.data.ok === true)).toBe(false);
+      expect(h.profiles.listLatest()).toEqual([]);
+      expect(JSON.stringify(h.transport.calls)).not.toContain("currently-playing-private-subtitle");
+    });
+  },
+);

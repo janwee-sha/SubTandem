@@ -841,3 +841,61 @@ describe("transport helper client", () => {
     expect(files.files.size).toBe(0);
   });
 });
+
+it("rechecks cancellation after a file RPC queue slot becomes available", async () => {
+  const timerApi = new RetainingTimerApi();
+  const files = new MemoryReadyFiles();
+  const sent: string[] = [];
+  let firstStem = "";
+  const respond = (stem: string) =>
+    files.files.set(
+      `${stem}.response.json`,
+      JSON.stringify({
+        type: "response",
+        protocolVersion: 1,
+        createdAtMs: Date.now(),
+        statusCode: 200,
+        body: { state: "ok" },
+      }),
+    );
+  files.onWrite = (path) => {
+    if (!path.endsWith(".request.ready")) return;
+    const stem = path.slice(0, -".request.ready".length);
+    const frame = JSON.parse(files.files.get(`${stem}.request.json`)!);
+    sent.push(frame.path);
+    if (!firstStem) firstStem = stem;
+    else respond(stem);
+  };
+  const bridge = new IinaFileRpcBridge(files, {
+    helper: "transport",
+    fileDirectory: "@data/.rpc/generation",
+    maxRequestBytes: 65536,
+    maxResponseBytes: 65536,
+    maxConcurrentRequests: 1,
+    timers: new HostTimers(timerApi),
+  });
+  const first = bridge.post(49152, "secret-token", "/v1/health", {});
+  let allowed = true;
+  const queued = bridge
+    .post(
+      49152,
+      "secret-token",
+      "/v1/request",
+      { private: "queued-subtitle" },
+      {
+        assertActive: () => {
+          if (!allowed) throw { category: "cancelled" };
+        },
+      },
+    )
+    .catch((error) => error);
+  await Promise.resolve();
+  allowed = false;
+  respond(firstStem);
+  timerApi.fireIntervals();
+  await first;
+  expect(await queued).toMatchObject({ category: "cancelled" });
+  expect(sent).toEqual(["/v1/health"]);
+  expect(files.files.size).toBe(0);
+  expect(timerApi.intervals.size).toBe(0);
+});

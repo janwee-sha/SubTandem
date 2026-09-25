@@ -149,10 +149,12 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
     bearerToken: string,
     path: string,
     body: unknown,
-    options?: { timeoutMs?: number },
+    options?: { timeoutMs?: number; assertActive?: () => void },
   ): Promise<T> {
+    options?.assertActive?.();
     await this.acquire();
     try {
+      options?.assertActive?.();
       if (this.closed) throw new Error("HELPER_RPC_CLOSED");
       return await this.execute<T>(port, bearerToken, path, body, options?.timeoutMs);
     } finally {
@@ -282,6 +284,10 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
       return;
     }
     this.activeRequests -= 1;
+    if (this.activeRequests === 0) {
+      this.poller?.cancel();
+      this.poller = null;
+    }
   }
 
   close(error: unknown = new Error("HELPER_RPC_CLOSED")): void {
@@ -335,10 +341,18 @@ export class HelperProviderTransport implements ProviderTransport {
   ) {}
 
   async request(request: ProviderTransportRequest): Promise<ProviderTransportResponse> {
+    const { assertActive, ...wireRequest } = request;
+    assertActive?.();
     const helperJobId = this.createHelperJobId();
     this.helperJobs.set(request.jobId, helperJobId);
+    const guard = () => {
+      if (this.helperJobs.get(request.jobId) !== helperJobId)
+        throw { category: "cancelled", retryable: false, userAction: "NONE" };
+      assertActive?.();
+    };
     try {
-      const response = await this.client.request({ ...request, jobId: helperJobId });
+      const response = await this.client.request({ ...wireRequest, jobId: helperJobId }, guard);
+      guard();
       return {
         statusCode: response.statusCode,
         headers: response.headers,
@@ -351,6 +365,7 @@ export class HelperProviderTransport implements ProviderTransport {
 
   async cancel(jobId: string): Promise<void> {
     const helperJobId = this.helperJobs.get(jobId);
+    this.helperJobs.delete(jobId);
     if (helperJobId) await this.client.cancel(helperJobId);
   }
 }

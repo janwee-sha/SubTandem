@@ -229,16 +229,13 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(sidebarHtml.match(/id="profile-test-status"/g)).toHaveLength(1);
   });
 
-  it("reuses saved credentials only for the same normalized service identity", () => {
-    const start = sidebarSource.indexOf("function canUseSavedDraftCredential");
-    const end = sidebarSource.indexOf("function modelRefreshPayload", start);
-    const matcher = sidebarSource.slice(start, end);
-    expect(matcher).toContain("editingProfile.kind === kind");
-    expect(matcher).toContain("normalizedEndpointForCredential");
-    expect(matcher).toContain("editingProfile.proxyMode === providerProxyMode.value");
-    expect(sidebarSource).toContain('{ source: "none" as const }');
-    expect(sidebarSource).toContain("currentTest.drawerId !== result.drawerId");
-    expect(sidebarSource).toContain("currentTest.draftRevision !== result.draftRevision");
+  it("does not reuse saved credentials from an invalidated editing baseline", async () => {
+    const { sidebarHarness } = await import("../helpers/sidebar-harness.js");
+    const h = sidebarHarness();
+    h.evaluate(
+      'editingProfile = {profileId: "saved", revision: 1, endpointFingerprint: "same", kind: "openai", endpoint: "https://example.test", proxyMode: "system", credentialConfigured: true}; providerEndpoint.value = "https://example.test";',
+    );
+    expect(h.evaluate("canUseSavedDraftCredential()")).toBe(false);
   });
 
   it("binds DeepSeek save and credential feedback to the current editor context", () => {

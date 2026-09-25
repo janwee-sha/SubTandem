@@ -90,3 +90,18 @@ describe("credential-scoped Provider cache", () => {
     expect(build).toHaveBeenCalledTimes(3);
   });
 });
+
+it("does not return a Provider cleared during construction even if its credential epoch is unchanged", async () => {
+  let resolve!: (provider: ConfiguredProvider) => void;
+  const cache = new CredentialScopedProviderCache(
+    () => 0,
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      }),
+  );
+  const work = cache.get(profile);
+  cache.clearProfile(profile.profileId);
+  resolve({} as ConfiguredProvider);
+  await expect(work).rejects.toMatchObject({ category: "cancelled" });
+});

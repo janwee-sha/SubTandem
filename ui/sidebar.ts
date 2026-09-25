@@ -763,6 +763,7 @@ function reconcileDrawerAfterAuthority(previousTest: SidebarDrawerTestState | nu
     clearDrawerTestFeedback();
   }
   if (drawer.validity === "conflict") {
+    invalidatePendingModelRefresh();
     providerKey.value = "";
     draftCredentialEpoch += 1;
   }
@@ -775,75 +776,47 @@ function reconcileDrawerAfterAuthority(previousTest: SidebarDrawerTestState | nu
 }
 
 function validModelEndpoint(): boolean {
-  const value = providerEndpoint.value.trim();
   try {
-    const parsed = new URL(value);
-    return (
-      (parsed.protocol === "http:" || parsed.protocol === "https:") &&
-      Boolean(parsed.hostname) &&
-      !parsed.username &&
-      !parsed.password &&
-      !parsed.search &&
-      !parsed.hash
-    );
+    normalizeProviderEndpoint(providerKind.value as ProviderKind, providerEndpoint.value);
+    return true;
   } catch {
     return false;
   }
 }
 
-function normalizedEndpointForCredential(kind: ProviderKind, value: string): string | null {
-  const trimmed = value.trim();
-  if (kind === "openai") return trimmed;
-  try {
-    const parsed = new URL(trimmed);
-    if (
-      (parsed.protocol !== "http:" && parsed.protocol !== "https:") ||
-      parsed.username ||
-      parsed.password ||
-      parsed.search ||
-      parsed.hash
-    )
-      return null;
-    return `${parsed.protocol}//${parsed.host.toLowerCase()}${parsed.pathname.replace(/\/+$/, "")}`;
-  } catch {
-    return null;
-  }
-}
-
 function canUseSavedDraftCredential(): boolean {
-  if (!editingProfile?.credentialConfigured) return false;
-  const kind = providerKind.value as ProviderKind;
-  return (
-    editingProfile.kind === kind &&
-    normalizedEndpointForCredential(kind, editingProfile.endpoint) ===
-      normalizedEndpointForCredential(kind, providerEndpoint.value) &&
-    editingProfile.proxyMode === providerProxyMode.value
-  );
+  const drawer = sidebarState.snapshot.drawer;
+  const source = drawer.sourceProfile;
+  if (
+    !editingProfile?.credentialConfigured ||
+    drawer.validity !== "current" ||
+    !source ||
+    source.profileId !== editingProfile.profileId ||
+    source.profileRevision !== editingProfile.revision ||
+    source.endpointFingerprint !== editingProfile.endpointFingerprint
+  )
+    return false;
+  return sameProviderService(editingProfile, {
+    kind: providerKind.value as ProviderKind,
+    endpoint: providerEndpoint.value,
+    proxyMode: providerProxyMode.value === "direct" ? "direct" : "system",
+  });
 }
 
 function modelRefreshPayload(trigger: "open" | "endpoint" | "profile" | "credential" | "manual") {
   const endpoint = providerEndpoint.value.trim();
-  const matchesSaved =
-    editingProfile?.kind === providerKind.value &&
-    editingProfile.endpoint === endpoint &&
-    editingProfile.proxyMode === providerProxyMode.value;
+  const source = sidebarState.snapshot.drawer.sourceProfile;
   return {
     trigger,
     kind: providerKind.value,
     endpoint,
     proxyMode: providerProxyMode.value,
-    ...(matchesSaved && editingProfile
-      ? {
-          profileId: editingProfile.profileId,
-          profileRevision: editingProfile.revision,
-          endpointFingerprint: editingProfile.endpointFingerprint,
-        }
-      : {}),
+    ...(source ? { ...source } : {}),
   };
 }
 
 function requestModels(trigger: "open" | "endpoint" | "profile" | "credential" | "manual"): void {
-  if (!validModelEndpoint()) return;
+  if (!validModelEndpoint() || sidebarState.snapshot.drawer.validity !== "current") return;
   const contextSignature = modelContextKey();
   if (
     trigger !== "manual" &&
@@ -852,13 +825,11 @@ function requestModels(trigger: "open" | "endpoint" | "profile" | "credential" |
     pendingModelRefresh.trigger !== "manual"
   )
     return;
+  invalidatePendingModelRefresh();
   const requestId = nextRequestId();
   const enteredApiKey = providerKey.value;
   const usesDraftCredential = trigger === "manual" && Boolean(enteredApiKey.trim());
-  const matchesSaved =
-    editingProfile?.kind === providerKind.value &&
-    editingProfile.endpoint === providerEndpoint.value.trim() &&
-    editingProfile.proxyMode === providerProxyMode.value;
+  const matchesSaved = canUseSavedDraftCredential();
   pendingModelRefresh = {
     requestId,
     contextSignature,
@@ -885,6 +856,9 @@ function requestModels(trigger: "open" | "endpoint" | "profile" | "credential" |
           proxyMode: providerProxyMode.value,
           draftCredentialEpoch,
           credential: { apiKey: enteredApiKey },
+          ...(sidebarState.snapshot.drawer.sourceProfile
+            ? { sourceProfile: sidebarState.snapshot.drawer.sourceProfile }
+            : {}),
         },
         requestId,
       ),
@@ -899,15 +873,9 @@ function invalidatePendingModelRefresh(): void {
   pendingModelRefresh = null;
   if (!pending) return;
   setModelRefreshFeedback("idle");
-  if (pending.kind !== "claude") return;
   window.iina?.postMessage(
-    "provider:models",
-    envelope({
-      trigger: "credential",
-      kind: "claude",
-      endpoint: pending.endpoint,
-      proxyMode: pending.proxyMode,
-    }),
+    "provider:models-cancel",
+    envelope({ modelRequestId: pending.requestId }),
   );
 }
 
@@ -2303,6 +2271,8 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
 window.iina?.postMessage("ui:ready", envelope({}));
 window.setInterval(() => window.iina?.postMessage("ui:poll", envelope({})), 750);
 window.addEventListener("pagehide", () => {
+  if (endpointRefreshTimer !== null) clearTimeout(endpointRefreshTimer);
+  invalidatePendingModelRefresh();
   const requestId = sidebarState.cancelDrawerTest();
   if (!requestId) return;
   window.iina?.postMessage("provider:test-cancel", envelope({ testRequestId: requestId }));

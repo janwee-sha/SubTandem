@@ -17,7 +17,10 @@ export class CredentialScopedProviderCache {
     const cached = this.providers.get(key);
     if (cached) return cached;
     const created = this.build(profile).then((provider) => {
-      if (this.credentialEpochFor(profile.profileId) !== credentialEpoch)
+      if (
+        this.providers.get(key) !== created ||
+        this.credentialEpochFor(profile.profileId) !== credentialEpoch
+      )
         throw {
           category: "cancelled",
           retryable: false,

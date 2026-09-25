@@ -12,7 +12,7 @@ export interface LocalRpcBridge {
     bearerToken: string,
     path: string,
     body: unknown,
-    options?: { timeoutMs?: number },
+    options?: { timeoutMs?: number; assertActive?: () => void },
   ): Promise<T>;
   close?(error?: unknown): void;
 }
@@ -145,7 +145,7 @@ export interface TransportRpcClient {
     expectedStoreRevision: number,
     profileState: ProfileState,
   ): Promise<ProfileStateCommitResult>;
-  request(request: TransportRequest): Promise<TransportResponse>;
+  request(request: TransportRequest, assertActive?: () => void): Promise<TransportResponse>;
   cancel(jobId: string): Promise<"cancelled" | "already-completed" | "unknown">;
   shutdown(): Promise<void>;
   dispose?(): void;
@@ -165,12 +165,19 @@ export class TransportClient implements TransportRpcClient {
     if (!/^[A-Za-z0-9_-]{8,512}$/.test(session.token)) throw new Error("Invalid helper token");
   }
 
-  private async post<T>(path: string, body: unknown, timeoutMs = controlRpcTimeoutMs): Promise<T> {
+  private async post<T>(
+    path: string,
+    body: unknown,
+    timeoutMs = controlRpcTimeoutMs,
+    assertActive?: () => void,
+  ): Promise<T> {
     try {
       return await this.bridge.post<T>(this.session.port, this.session.token, path, body, {
         timeoutMs,
+        ...(assertActive ? { assertActive } : {}),
       });
     } catch (error) {
+      assertActive?.();
       if (error instanceof SubTandemError) throw error;
       if (error instanceof TransportRpcError) throw rpcError(error);
       if (error instanceof LocalRpcResponseError) {
@@ -255,8 +262,9 @@ export class TransportClient implements TransportRpcClient {
     );
   }
 
-  request(request: TransportRequest): Promise<TransportResponse> {
-    return this.post("/v1/request", request, providerRpcTimeoutMs);
+  request(request: TransportRequest, assertActive?: () => void): Promise<TransportResponse> {
+    assertActive?.();
+    return this.post("/v1/request", request, providerRpcTimeoutMs, assertActive);
   }
 
   async cancel(jobId: string): Promise<"cancelled" | "already-completed" | "unknown"> {

@@ -1,6 +1,6 @@
+import { RequestLifecycle, type RequestOwner } from "./request-lifecycle.js";
 import type { ConfiguredProvider } from "./provider.js";
 import type {
-  ProviderAttemptError,
   TranslationBatchRequest,
   TranslationBatchResult,
   TranslationProgressHandler,
@@ -18,9 +18,7 @@ const REQUEST_TIMEOUT_MS = 60_000;
 export class ClaudeProvider implements ConfiguredProvider {
   private readonly messagesUrl: string;
   private readonly apiKey: string;
-  private readonly activeJobs = new Set<string>();
-  private readonly activeRequests = new Set<string>();
-  private readonly cancelledRequests = new Set<string>();
+  private readonly requests = new RequestLifecycle<undefined>();
   private thinkingCapability: "disabled" | "omitted" = "disabled";
   private structuredOutputCapability: "json-schema" | "omitted" = "json-schema";
 
@@ -39,77 +37,74 @@ export class ClaudeProvider implements ConfiguredProvider {
   }
 
   async testConnection(testId: string): Promise<{ model: string }> {
-    this.cancelledRequests.delete(testId);
-    this.activeRequests.add(testId);
+    const owner = this.requests.beginRequired({
+      senderId: "provider",
+      operation: "test",
+      requestId: testId,
+      context: undefined,
+    });
     try {
       const response = await this.send(
-        testId,
+        owner,
         testId,
         [{ id: "c1", text: "hello" }],
         "es",
         REQUEST_TIMEOUT_MS,
       );
-      this.throwIfCancelled(testId);
+      this.requests.assertActive(owner);
       this.parseResponse(["c1"], response);
       return { model: this.config.model };
     } finally {
-      this.activeRequests.delete(testId);
-      this.cancelledRequests.delete(testId);
+      this.requests.finish(owner);
     }
   }
 
   async attempt(
     request: TranslationBatchRequest,
     onProgress?: TranslationProgressHandler,
+    assertAuthorized?: () => void,
   ): Promise<TranslationBatchResult> {
-    this.cancelledRequests.delete(request.requestId);
-    this.activeRequests.add(request.requestId);
+    const owner = this.requests.beginRequired({
+      senderId: "provider",
+      operation: "translation",
+      requestId: request.requestId,
+      context: undefined,
+      assertAuthorized,
+    });
     try {
       return await runTranslationBatches(
         request,
         async (jobId, items) => {
           const response = await this.send(
-            request.requestId,
+            owner,
             jobId,
             items,
             request.targetLanguage,
             REQUEST_TIMEOUT_MS,
           );
-          this.throwIfCancelled(request.requestId);
+          this.requests.assertActive(owner);
           return this.parseResponse(
             items.map((item) => item.id),
             response,
           );
         },
-        () => this.throwIfCancelled(request.requestId),
+        () => this.requests.assertActive(owner),
         onProgress,
       );
     } finally {
-      this.activeRequests.delete(request.requestId);
-      this.cancelledRequests.delete(request.requestId);
+      this.requests.finish(owner);
     }
   }
 
   async cancel(requestId: string): Promise<void> {
-    if (this.activeRequests.has(requestId)) this.cancelledRequests.add(requestId);
-    const jobs = [...this.activeJobs].filter(
-      (jobId) => jobId === requestId || jobId.startsWith(`${requestId}-`),
-    );
-    await Promise.allSettled(jobs.map((jobId) => this.transport.cancel?.(jobId)));
-  }
-
-  private throwIfCancelled(requestId: string): void {
-    if (!this.cancelledRequests.has(requestId)) return;
-    throw {
-      category: "cancelled",
-      retryable: false,
-      providerCode: "REQUEST_CANCELLED",
-      userAction: "RETRY",
-    } satisfies ProviderAttemptError;
+    await Promise.allSettled([
+      this.requests.cancel("provider", "test", requestId),
+      this.requests.cancel("provider", "translation", requestId),
+    ]);
   }
 
   private async send(
-    scopeId: string,
+    owner: RequestOwner<undefined>,
     jobId: string,
     items: WireTranslationTarget[],
     targetLanguage: string,
@@ -123,13 +118,14 @@ export class ClaudeProvider implements ConfiguredProvider {
       const activeJobId =
         fallbackNames.length === 0 ? jobId : `${jobId}-${fallbackNames.join("-")}`;
       const response = await this.sendRequest(
+        owner,
         activeJobId,
         task,
         timeoutMs,
         thinkingCapability,
         structuredOutputCapability,
       );
-      this.throwIfCancelled(scopeId);
+      this.requests.assertActive(owner);
       if (
         structuredOutputCapability === "json-schema" &&
         this.isStructuredOutputIncompatibility(response)
@@ -150,41 +146,37 @@ export class ClaudeProvider implements ConfiguredProvider {
   }
 
   private async sendRequest(
+    owner: RequestOwner<undefined>,
     jobId: string,
     task: ReturnType<typeof buildClaudeTranslationTask>,
     timeoutMs: number,
     thinkingCapability: "disabled" | "omitted",
     structuredOutputCapability: "json-schema" | "omitted",
   ): Promise<ProviderTransportResponse> {
-    this.activeJobs.add(jobId);
-    try {
-      return await this.transport.request({
-        jobId,
-        method: "POST",
-        url: this.messagesUrl,
-        headers: claudeRequestHeaders(this.apiKey),
-        proxyMode: this.config.proxyMode ?? "system",
-        body: {
-          model: this.config.model,
-          max_tokens: 8192,
-          stream: false,
-          ...(thinkingCapability === "disabled" ? { thinking: { type: "disabled" } } : {}),
-          ...(structuredOutputCapability === "json-schema"
-            ? {
-                output_config: {
-                  format: { type: "json_schema", schema: task.outputSchema },
-                },
-              }
-            : {}),
-          system: task.systemMessage,
-          messages: [{ role: "user", content: task.userMessage }],
-        },
-        timeoutMs,
-        maxResponseBytes: 1_048_576,
-      });
-    } finally {
-      this.activeJobs.delete(jobId);
-    }
+    return this.requests.transport(owner, this.transport).request({
+      jobId,
+      method: "POST",
+      url: this.messagesUrl,
+      headers: claudeRequestHeaders(this.apiKey),
+      proxyMode: this.config.proxyMode ?? "system",
+      body: {
+        model: this.config.model,
+        max_tokens: 8192,
+        stream: false,
+        ...(thinkingCapability === "disabled" ? { thinking: { type: "disabled" } } : {}),
+        ...(structuredOutputCapability === "json-schema"
+          ? {
+              output_config: {
+                format: { type: "json_schema", schema: task.outputSchema },
+              },
+            }
+          : {}),
+        system: task.systemMessage,
+        messages: [{ role: "user", content: task.userMessage }],
+      },
+      timeoutMs,
+      maxResponseBytes: 1_048_576,
+    });
   }
 
   private isThinkingIncompatibility(response: ProviderTransportResponse): boolean {
@@ -241,7 +233,7 @@ export class ClaudeProvider implements ConfiguredProvider {
     if (
       parsed.type !== "message" ||
       parsed.role !== "assistant" ||
-      parsed.stop_reason !== "end_turn" ||
+      (parsed.stop_reason !== undefined && parsed.stop_reason !== "end_turn") ||
       !Array.isArray(content)
     )
       throw protocolError("CLAUDE_MALFORMED_OUTPUT");

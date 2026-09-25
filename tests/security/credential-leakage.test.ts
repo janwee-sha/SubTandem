@@ -226,30 +226,23 @@ describe("credential and content leakage boundaries", () => {
     }
   });
 
-  it("reads a saved Test credential only after service identity checks and never persists the draft", () => {
-    const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
-    const start = globalSource.indexOf('onMessage("provider:test"');
-    const end = globalSource.indexOf('onMessage("provider:test-cancel"', start);
-    const handler = globalSource.slice(start, end);
-    const savedBranch = handler.indexOf('credential.source === "saved"');
-    const kindCheck = handler.indexOf("current.kind !== message.payload.kind", savedBranch);
-    const endpointCheck = handler.indexOf("current.endpoint !== endpoint", savedBranch);
-    const routeCheck = handler.indexOf("current.proxyMode", savedBranch);
-    const secretRead = handler.indexOf("credentials.getSecret(source.profileId)", savedBranch);
-    const ownerRecheck = handler.indexOf("assertDraftTestOwner(owner)", secretRead);
-
-    expect(start).toBeGreaterThan(-1);
-    expect(kindCheck).toBeGreaterThan(savedBranch);
-    expect(endpointCheck).toBeGreaterThan(kindCheck);
-    expect(routeCheck).toBeGreaterThan(endpointCheck);
-    expect(secretRead).toBeGreaterThan(routeCheck);
-    expect(ownerRecheck).toBeGreaterThan(secretRead);
-    expect(handler).toContain("buildDraftProvider");
-    expect(handler).not.toContain("providerCache.get");
-    expect(handler).not.toContain("profiles.save");
-    expect(handler).not.toContain("writeCredential");
-    expect(handler).not.toContain("broker.attempt");
-    expect(handler).not.toContain("result,");
+  it("rejects an unrelated saved Test baseline before reading credentials", async () => {
+    const { globalProviderHarness } = await import("../helpers/global-provider-harness.js");
+    const h = await globalProviderHarness();
+    await h.send("provider:test", {
+      kind: "openai",
+      endpoint: "https://private.example",
+      model: "model",
+      proxyMode: "direct",
+      sourceProfile: { profileId: "missing", profileRevision: 1, endpointFingerprint: "private" },
+      drawerId: "drawer",
+      draftRevision: 1,
+      credential: { source: "saved" },
+    });
+    expect(h.reads).toEqual([]);
+    expect(h.transport.calls).toEqual([]);
+    expect(h.profiles.listLatest()).toEqual([]);
+    expect(JSON.stringify(h.replies)).not.toContain("private.example");
   });
 
   it("keeps draft credentials out of reusable model contexts and result messages", () => {

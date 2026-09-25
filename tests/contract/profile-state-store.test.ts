@@ -233,3 +233,16 @@ describe("versioned Profile state transport", () => {
     ]);
   });
 });
+
+it.each(["openai", "claude", "deepseek", "ollama"] as const)(
+  "preserves %s endpoint spelling and credential reference on the wire",
+  async (kind) => {
+    const saved = { ...profile, kind, endpoint: "HTTPS://Example.test:443/Root/%41///" };
+    const state = { ...snapshot(), profileState: { profiles: [saved], activation: null } };
+    const client = new TransportClient(
+      { port: 49152, token: "opaque-token" },
+      new ProfileStateBridge(state),
+    );
+    expect(await client.profileStateRead()).toEqual(state);
+  },
+);

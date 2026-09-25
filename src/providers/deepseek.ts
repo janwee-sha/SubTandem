@@ -1,6 +1,6 @@
+import { RequestLifecycle, type RequestOwner } from "./request-lifecycle.js";
 import type { ConfiguredProvider } from "./provider.js";
 import type {
-  ProviderAttemptError,
   TranslationBatchRequest,
   TranslationBatchResult,
   TranslationProgressHandler,
@@ -15,9 +15,7 @@ import { runTranslationBatches } from "./translation-batches.js";
 
 export class DeepSeekProvider implements ConfiguredProvider {
   private readonly endpoint: string;
-  private readonly activeJobs = new Set<string>();
-  private readonly activeRequests = new Set<string>();
-  private readonly cancelledRequests = new Set<string>();
+  private readonly requests = new RequestLifecycle<undefined>();
 
   constructor(
     private readonly config: {
@@ -33,100 +31,99 @@ export class DeepSeekProvider implements ConfiguredProvider {
   }
 
   async testConnection(testId: string): Promise<{ model: string }> {
-    this.cancelledRequests.delete(testId);
-    this.activeRequests.add(testId);
+    const owner = this.requests.beginRequired({
+      senderId: "provider",
+      operation: "test",
+      requestId: testId,
+      context: undefined,
+    });
     try {
-      const response = await this.send(testId, [{ id: "probe", text: "hello" }], "es", 10_000);
-      this.throwIfCancelled(testId);
+      const response = await this.send(
+        owner,
+        testId,
+        [{ id: "probe", text: "hello" }],
+        "es",
+        10_000,
+      );
+      this.requests.assertActive(owner);
       this.parseResponse(["probe"], response);
       return { model: this.config.model };
     } finally {
-      this.activeRequests.delete(testId);
-      this.cancelledRequests.delete(testId);
+      this.requests.finish(owner);
     }
   }
 
   async attempt(
     request: TranslationBatchRequest,
     onProgress?: TranslationProgressHandler,
+    assertAuthorized?: () => void,
   ): Promise<TranslationBatchResult> {
-    this.cancelledRequests.delete(request.requestId);
-    this.activeRequests.add(request.requestId);
+    const owner = this.requests.beginRequired({
+      senderId: "provider",
+      operation: "translation",
+      requestId: request.requestId,
+      context: undefined,
+      assertAuthorized,
+    });
     try {
       return await runTranslationBatches(
         request,
         async (jobId, items) => {
-          const response = await this.send(jobId, items, request.targetLanguage, 30_000);
-          this.throwIfCancelled(request.requestId);
+          const response = await this.send(owner, jobId, items, request.targetLanguage, 30_000);
+          this.requests.assertActive(owner);
           return this.parseResponse(
             items.map((item) => item.id),
             response,
           );
         },
-        () => this.throwIfCancelled(request.requestId),
+        () => this.requests.assertActive(owner),
         onProgress,
       );
     } finally {
-      this.activeRequests.delete(request.requestId);
-      this.cancelledRequests.delete(request.requestId);
+      this.requests.finish(owner);
     }
   }
 
   async cancel(requestId: string): Promise<void> {
-    if (this.activeRequests.has(requestId)) this.cancelledRequests.add(requestId);
-    const jobs = [...this.activeJobs].filter(
-      (jobId) => jobId === requestId || jobId.startsWith(`${requestId}-`),
-    );
-    await Promise.allSettled(jobs.map((jobId) => this.transport.cancel?.(jobId)));
-  }
-
-  private throwIfCancelled(requestId: string): void {
-    if (!this.cancelledRequests.has(requestId)) return;
-    throw {
-      category: "cancelled",
-      retryable: false,
-      providerCode: "REQUEST_CANCELLED",
-      userAction: "RETRY",
-    } satisfies ProviderAttemptError;
+    await Promise.allSettled([
+      this.requests.cancel("provider", "test", requestId),
+      this.requests.cancel("provider", "translation", requestId),
+    ]);
   }
 
   private async send(
+    owner: RequestOwner<undefined>,
     jobId: string,
     items: WireTranslationTarget[],
     targetLanguage: string,
     timeoutMs: number,
   ): Promise<ProviderTransportResponse> {
     const task = buildDeepSeekTranslationTask({ targetLanguage, targets: items });
-    this.activeJobs.add(jobId);
-    try {
-      return await this.transport.request({
-        jobId,
-        method: "POST",
-        url: `${this.endpoint.replace(/\/+$/, "")}/chat/completions`,
-        headers: {
-          "Content-Type": "application/json",
-          ...(this.config.apiKey?.trim()
-            ? { Authorization: `Bearer ${this.config.apiKey.trim()}` }
-            : {}),
-        },
-        proxyMode: this.config.proxyMode ?? "system",
-        body: {
-          model: this.config.model,
-          stream: false,
-          temperature: 0,
-          thinking: { type: "disabled" },
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: task.systemMessage },
-            { role: "user", content: task.userMessage },
-          ],
-        },
-        timeoutMs,
-        maxResponseBytes: 1_048_576,
-      });
-    } finally {
-      this.activeJobs.delete(jobId);
-    }
+    return this.requests.transport(owner, this.transport).request({
+      jobId,
+      method: "POST",
+      url: `${this.endpoint.replace(/\/+$/, "")}/chat/completions`,
+      headers: {
+        "Content-Type": "application/json",
+        ...(this.config.apiKey?.trim()
+          ? { Authorization: `Bearer ${this.config.apiKey.trim()}` }
+          : {}),
+      },
+      proxyMode: this.config.proxyMode ?? "system",
+      body: {
+        model: this.config.model,
+        stream: false,
+        temperature: 0,
+        thinking: { type: "disabled" },
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: task.systemMessage },
+          { role: "user", content: task.userMessage },
+        ],
+      },
+      timeoutMs,
+      maxResponseBytes: 1_048_576,
+    });
   }
 
   private parseResponse(
@@ -150,12 +147,15 @@ export class DeepSeekProvider implements ConfiguredProvider {
     if (!choice || typeof choice !== "object" || Array.isArray(choice))
       throw protocolError("DEEPSEEK_MALFORMED_OUTPUT");
     const finishReason = choice?.finish_reason;
-    if (finishReason === "content_filter") throw protocolError("DEEPSEEK_REFUSAL", "refusal");
-    if (finishReason === "length") throw protocolError("DEEPSEEK_LENGTH");
-    if (finishReason !== "stop") throw protocolError("DEEPSEEK_FINISH_REASON");
     const message = choice?.message as Record<string, unknown> | undefined;
-    if (typeof message?.refusal === "string" && message.refusal)
+    if (
+      finishReason === "content_filter" ||
+      (typeof message?.refusal === "string" && message.refusal)
+    )
       throw protocolError("DEEPSEEK_REFUSAL", "refusal");
+    if (finishReason === "length") throw protocolError("DEEPSEEK_LENGTH");
+    if (finishReason !== undefined && finishReason !== "stop")
+      throw protocolError("DEEPSEEK_FINISH_REASON");
     if (typeof message?.content !== "string" || !message.content.trim())
       throw protocolError("DEEPSEEK_EMPTY_OUTPUT");
     let output: unknown;

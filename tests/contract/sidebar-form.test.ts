@@ -672,3 +672,56 @@ describe("Shared subtitle color palette contract", () => {
     expect(css).toContain("@media (prefers-contrast: more)");
   });
 });
+
+describe.each(["openai", "claude", "deepseek", "ollama"])(
+  "%s Sidebar credential identity",
+  (kind) => {
+    it("shares equivalence between Test and model refresh without sending an automatic draft Key", async () => {
+      const { sidebarHarness } = await import("../helpers/sidebar-harness.js");
+      const h = sidebarHarness();
+      const profile = {
+        profileId: "saved",
+        revision: 1,
+        endpointFingerprint: "fingerprint",
+        displayName: "Saved",
+        kind,
+        endpoint: "https://Example.test:443/Root",
+        model: "model",
+        proxyMode: "direct",
+        credentialConfigured: true,
+      };
+      h.evaluate(
+        `sidebarState.applyProfiles([${JSON.stringify(profile)}]); sidebarState.openProfileDrawer("saved"); editingProfile = ${JSON.stringify(profile)}; providerKind.value = ${JSON.stringify(kind)}; providerProxyMode.value = "direct"; providerEndpoint.value = " HTTPS://EXAMPLE.TEST:443/Root/// "; sidebarState.setModelContext("fixture", "changed-model");`,
+      );
+      expect(h.evaluate("canUseSavedDraftCredential()")).toBe(true);
+      h.element("#test-profile").dispatch("click");
+      expect(h.messages.at(-1)).toMatchObject({
+        name: "provider:test",
+        data: { payload: { credential: { source: "saved" }, model: "changed-model" } },
+      });
+      h.element("#provider-key").value = "new-key";
+      h.evaluate('requestModels("endpoint")');
+      expect(h.messages.at(-1)).toMatchObject({
+        name: "provider:models",
+        data: { payload: { profileId: "saved" } },
+      });
+      expect(JSON.stringify(h.messages.at(-1))).not.toContain("new-key");
+      h.evaluate('requestModels("manual")');
+      expect(h.messages.at(-1)).toMatchObject({
+        name: "provider:models-preview",
+        data: {
+          payload: {
+            credential: { apiKey: "new-key" },
+            sourceProfile: {
+              profileId: "saved",
+              profileRevision: 1,
+              endpointFingerprint: "fingerprint",
+            },
+          },
+        },
+      });
+      h.element("#provider-endpoint").value = "https://other.test";
+      expect(h.evaluate("canUseSavedDraftCredential()")).toBe(false);
+    });
+  },
+);

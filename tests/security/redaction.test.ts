@@ -328,3 +328,27 @@ describe("allowlist-only diagnostics", () => {
     ).toThrow(/INVALID_TARGET_LANGUAGE/);
   });
 });
+
+it("releases lifecycle authorization callbacks and jobs at both terminal boundaries", async () => {
+  const { RequestLifecycle } = await import("../../src/providers/request-lifecycle.js");
+  const life = new RequestLifecycle();
+  for (const requestId of ["complete", "cancel"]) {
+    const privateKey = "private-owner-key";
+    const owner = life.beginRequired({
+      senderId: "window",
+      requestId,
+      operation: "test",
+      context: { profileId: "profile", revision: 1 },
+      assertAuthorized: () => {
+        if (!privateKey) throw new Error();
+      },
+    });
+    life.track(owner, "job", () => undefined);
+    expect(JSON.stringify(owner)).not.toContain(privateKey);
+    if (requestId === "complete") life.finish(owner);
+    else await life.invalidate(owner);
+    expect(owner.assertAuthorized).toBeUndefined();
+    expect(owner.jobs.size).toBe(0);
+    expect(life.activeCount()).toBe(0);
+  }
+});

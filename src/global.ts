@@ -1,3 +1,4 @@
+import { RequestLifecycle, type RequestOwner } from "./providers/request-lifecycle.js";
 import { identityHash, sha256Hex } from "./domain/identity.js";
 import { normalizeProviderError } from "./domain/errors.js";
 import {
@@ -9,6 +10,9 @@ import {
   parseSubtitleStylePickerOpen,
   parseProviderModelsPreviewRequest,
   parseProviderModelsRequest,
+  parseProviderModelsCancelRequest,
+  type ProviderModelsRequest,
+  type ProviderModelsPreviewRequest,
   parseProviderTestCancelRequest,
   parseProviderTestRequest,
   parseProviderAttempt,
@@ -43,7 +47,7 @@ import { ClaudeProvider } from "./providers/claude.js";
 import { ProviderProfiles } from "./providers/profiles.js";
 import { restoreProfileActivationAuthority } from "./providers/profile-activation.js";
 import type { ProfileActivationAuthority } from "./providers/profile-activation.js";
-import { normalizeProviderEndpoint } from "./providers/profiles.js";
+import { normalizeProviderEndpoint, sameProviderService } from "./providers/profiles.js";
 import { discoverProviderModels } from "./providers/model-discovery.js";
 import type { ConfiguredProvider } from "./providers/provider.js";
 import type { ProviderTransport } from "./providers/transport.js";
@@ -179,8 +183,7 @@ const transport = new TransportSupervisor(async () => {
 const credentials = new HelperCredentialStore(transport);
 const profileStateStore = new HelperProfileStateStore(transport);
 const modelTransport = new ProviderTransportAdapter(transport, localUuid);
-interface ActiveModelRequest {
-  requestId: string;
+interface ModelRequestContext {
   jobId: string;
   contextKey: string;
   kind: "openai" | "claude" | "deepseek" | "ollama";
@@ -190,33 +193,23 @@ interface ActiveModelRequest {
   profileRevision?: number;
   endpointFingerprint?: string;
   credentialEpoch: number;
-  draftCredentialEpoch?: number;
 }
-const activeModelRequests = new Map<string, ActiveModelRequest>();
+type ActiveModelRequest = RequestOwner<ModelRequestContext>;
+const modelRequests = new RequestLifecycle<ModelRequestContext>();
 
-function cancelledModelRequest(): never {
-  throw {
-    category: "cancelled",
-    retryable: false,
-    providerCode: "MODEL_REQUEST_SUPERSEDED",
-    userAction: "RETRY",
-  };
-}
-
-function assertSavedModelOwner(ownerKey: string, owner: ActiveModelRequest): void {
-  if (activeModelRequests.get(ownerKey) !== owner) cancelledModelRequest();
-  if (!owner.profileId) return;
-  const current = profiles.get(owner.profileId);
+function assertSavedModelOwner(owner: ActiveModelRequest): void {
+  modelRequests.assertActive(owner);
+  const context = owner.context;
+  if (!context.profileId) return;
+  const current = profiles.get(context.profileId);
   if (
     !current ||
-    current.kind !== owner.kind ||
-    current.endpoint !== owner.endpoint ||
-    (current.proxyMode ?? "system") !== owner.proxyMode ||
-    current.revision !== owner.profileRevision ||
-    current.endpointFingerprint !== owner.endpointFingerprint ||
-    (modelCredentialEpochs.get(owner.profileId) ?? 0) !== owner.credentialEpoch
-  )
-    cancelledModelRequest();
+    current.revision !== context.profileRevision ||
+    current.endpointFingerprint !== context.endpointFingerprint ||
+    (modelCredentialEpochs.get(context.profileId) ?? 0) !== context.credentialEpoch
+  ) {
+    throw { category: "cancelled", retryable: false, userAction: "RETRY" };
+  }
 }
 
 function clearProfileProviderCache(profileId: string): void {
@@ -229,11 +222,7 @@ function clearProfileModelCatalogs(profileId: string): void {
 }
 
 async function cancelProfileModelRequests(profileId: string): Promise<void> {
-  const matching = [...activeModelRequests].filter(
-    ([, request]) => request.profileId === profileId,
-  );
-  for (const [playerId] of matching) activeModelRequests.delete(playerId);
-  await Promise.allSettled(matching.map(([, request]) => modelTransport.cancel?.(request.jobId)));
+  await modelRequests.cancelWhere((owner) => owner.context.profileId === profileId);
 }
 
 function recordProfileModelCatalog(profileId: string, contextKey: string, models: string[]): void {
@@ -268,17 +257,35 @@ function profileModelContextKey(profile: ProviderProfileSnapshot): string {
 }
 
 async function buildProvider(profile: ProviderProfileSnapshot): Promise<ConfiguredProvider> {
+  if (!profile.model)
+    throw {
+      category: "model",
+      retryable: false,
+      providerCode: "MODEL_REQUIRED",
+      userAction: "CHECK_MODEL",
+    };
+  const epoch = modelCredentialEpochs.get(profile.profileId) ?? 0;
+  const guard = () => {
+    const current = profiles.get(profile.profileId);
+    if (
+      !current ||
+      current.revision !== profile.revision ||
+      current.endpointFingerprint !== profile.endpointFingerprint ||
+      (modelCredentialEpochs.get(profile.profileId) ?? 0) !== epoch
+    )
+      throw {
+        category: "cancelled",
+        retryable: false,
+        providerCode: "CREDENTIAL_CONTEXT_CHANGED",
+        userAction: "NONE",
+      };
+  };
+  guard();
+  const secret = await credentials.getSecret(profile.profileId);
+  guard();
   const providerTransport = new ProviderTransportAdapter(transport, localUuid);
   switch (profile.kind) {
     case "openai": {
-      if (!profile.model)
-        throw {
-          category: "model",
-          retryable: false,
-          providerCode: "MODEL_REQUIRED",
-          userAction: "CHECK_MODEL",
-        };
-      const secret = await credentials.getSecret(profile.profileId);
       const openai = new OpenAICompatibleProvider(
         {
           endpoint: profile.endpoint,
@@ -293,14 +300,6 @@ async function buildProvider(profile: ProviderProfileSnapshot): Promise<Configur
       return openai;
     }
     case "ollama": {
-      if (!profile.model)
-        throw {
-          category: "model",
-          retryable: false,
-          providerCode: "MODEL_REQUIRED",
-          userAction: "CHECK_MODEL",
-        };
-      const secret = await credentials.getSecret(profile.profileId);
       return new OllamaProvider(
         {
           endpoint: profile.endpoint,
@@ -312,14 +311,6 @@ async function buildProvider(profile: ProviderProfileSnapshot): Promise<Configur
       );
     }
     case "claude": {
-      if (!profile.model)
-        throw {
-          category: "model",
-          retryable: false,
-          providerCode: "MODEL_REQUIRED",
-          userAction: "CHECK_MODEL",
-        };
-      const secret = await credentials.getSecret(profile.profileId);
       return new ClaudeProvider(
         {
           endpoint: profile.endpoint,
@@ -331,14 +322,6 @@ async function buildProvider(profile: ProviderProfileSnapshot): Promise<Configur
       );
     }
     case "deepseek": {
-      if (!profile.model)
-        throw {
-          category: "model",
-          retryable: false,
-          providerCode: "MODEL_REQUIRED",
-          userAction: "CHECK_MODEL",
-        };
-      const secret = await credentials.getSecret(profile.profileId);
       return new DeepSeekProvider(
         {
           endpoint: profile.endpoint,
@@ -387,7 +370,13 @@ function draftTestTransport(owner: ProviderConnectionTestTask): ProviderTranspor
   return {
     request: async (request) => {
       assertDraftTestOwner(owner);
-      const response = await base.request(request);
+      const response = await base.request({
+        ...request,
+        assertActive: () => {
+          assertDraftTestOwner(owner);
+          request.assertActive?.();
+        },
+      });
       assertDraftTestOwner(owner);
       return response;
     },
@@ -499,6 +488,13 @@ function providerFor(profile: ProviderProfileSnapshot): Promise<ConfiguredProvid
 let profileAuthority!: ProfileActivationAuthority;
 let broker!: ProviderBroker;
 const profilePlayers = new Set<string>();
+interface TranslationContext {
+  sessionId: string;
+  sessionEpoch: number;
+  windowEpoch: number;
+}
+const translationRequests = new RequestLifecycle<TranslationContext>();
+const translationSessions = new Map<string, TranslationContext>();
 
 const profileReady = (async () => {
   profileAuthority = await restoreProfileActivationAuthority({
@@ -563,7 +559,14 @@ function supportedProviderKind(value: unknown): "openai" | "claude" | "deepseek"
 }
 
 const globalMailbox = new GlobalMailbox(new IinaGlobalMailboxFileStore(iina.file));
-globalMailbox.onSessionClose((playerId) => profilePlayers.delete(playerId));
+globalMailbox.onSessionClose((playerId) => {
+  profilePlayers.delete(playerId);
+  translationSessions.delete(playerId);
+  void translationRequests.releaseSender(playerId);
+  void broker?.releaseSender(playerId);
+  void modelRequests.releaseSender(playerId);
+  void providerConnectionTests.releaseSender(playerId);
+});
 const postToPlayer = (playerId: null | number | string, name: string, data: unknown): void =>
   globalMailbox.postMessage(playerId, name, data);
 
@@ -1090,180 +1093,160 @@ globalMailbox.onMessage("profile-activation:set", async (raw: unknown, playerId?
   }
 });
 
-globalMailbox.onMessage("provider:models", async (raw: unknown, playerId?: string) => {
-  if (!playerId) return;
-  await profileReady;
-  let externalRequestId = requestId(raw);
-  let contextKey = "invalid";
-  let owner: ActiveModelRequest | null = null;
+async function runModelRequest(
+  message: ProviderModelsRequest | ProviderModelsPreviewRequest,
+  playerId: string,
+): Promise<void> {
+  const values = message.payload;
+  const preview = "credential" in values;
+  const sourceProfile = "sourceProfile" in values ? values.sourceProfile : undefined;
+  const profileId =
+    sourceProfile?.profileId ?? ("profileId" in values ? values.profileId : undefined);
+  const owner = modelRequests.begin(
+    {
+      operation: "models",
+      senderId: playerId,
+      requestId: message.requestId,
+      context: {
+        jobId: `models-${localUuid()}`,
+        contextKey: "invalid",
+        kind: values.kind,
+        endpoint: values.endpoint,
+        proxyMode: values.proxyMode,
+        ...(sourceProfile ? { ...sourceProfile } : {}),
+        ...(profileId && "profileRevision" in values
+          ? {
+              profileId,
+              profileRevision: values.profileRevision!,
+              endpointFingerprint: values.endpointFingerprint!,
+            }
+          : {}),
+        credentialEpoch: profileId ? (modelCredentialEpochs.get(profileId) ?? 0) : 0,
+      },
+    },
+    true,
+  );
+  if (!owner) return;
+  const context = owner.context;
   try {
-    const message = parseProviderModelsRequest(raw);
-    externalRequestId = message.requestId;
-    const values = message.payload;
+    await profileReady;
+    assertSavedModelOwner(owner);
     const endpoint = normalizeProviderEndpoint(values.kind, values.endpoint);
-    const profile = values.profileId
-      ? profiles.get(values.profileId, values.profileRevision)
-      : null;
+    const profile = profileId ? profiles.get(profileId) : null;
     const authorized = Boolean(
       profile &&
-      profile!.revision === values.profileRevision &&
-      profile!.kind === values.kind &&
-      profile!.endpoint === endpoint &&
-      (profile!.proxyMode ?? "system") === values.proxyMode &&
-      profile!.endpointFingerprint === values.endpointFingerprint,
+      sameProviderService({ ...profile, proxyMode: profile.proxyMode ?? "system" }, values),
     );
-    const credentialEpoch =
-      authorized && profile ? (modelCredentialEpochs.get(profile.profileId) ?? 0) : 0;
-    contextKey = modelContextKey({
-      kind: values.kind,
-      endpoint,
-      proxyMode: values.proxyMode,
-      ...(authorized && profile
-        ? {
-            profileId: profile.profileId,
-            profileRevision: profile.revision,
-            endpointFingerprint: profile.endpointFingerprint,
-          }
-        : {}),
-      credentialEpoch,
-    });
-    const jobId = `models-${localUuid()}`;
-    owner = {
-      requestId: message.requestId,
-      jobId,
-      contextKey,
-      kind: values.kind,
-      endpoint,
-      proxyMode: values.proxyMode,
-      ...(authorized && profile ? { profileId: profile.profileId } : {}),
-      ...(authorized && profile
-        ? {
-            profileRevision: profile.revision,
-            endpointFingerprint: profile.endpointFingerprint,
-          }
-        : {}),
-      credentialEpoch,
-    };
-    const previous = activeModelRequests.get(playerId);
-    activeModelRequests.set(playerId, owner);
-    if (previous) await modelTransport.cancel?.(previous.jobId);
+    context.contextKey = preview
+      ? identityHash({
+          playerId,
+          requestId: message.requestId,
+          kind: values.kind,
+          endpoint,
+          proxyMode: values.proxyMode,
+          draftCredentialEpoch: values.draftCredentialEpoch,
+        })
+      : modelContextKey({
+          kind: context.kind,
+          endpoint,
+          proxyMode: context.proxyMode,
+          ...(profile && authorized
+            ? {
+                profileId: profile.profileId,
+                profileRevision: profile.revision,
+                endpointFingerprint: profile.endpointFingerprint,
+              }
+            : {}),
+          credentialEpoch: context.credentialEpoch,
+        });
     let apiKey: string | undefined;
-    if (authorized && profile) {
-      const secret = await credentials.getSecret(profile.profileId);
-      apiKey = secret?.apiKey;
+    if (preview) apiKey = values.credential.apiKey;
+    else if (authorized && profile) {
+      assertSavedModelOwner(owner);
+      apiKey = (await credentials.getSecret(profile.profileId))?.apiKey;
+      assertSavedModelOwner(owner);
     }
     const models = await discoverProviderModels(
       {
-        jobId,
+        jobId: context.jobId,
         kind: values.kind,
         endpoint,
-        ...(apiKey ? { apiKey } : {}),
         proxyMode: values.proxyMode,
-        assertActive: () => assertSavedModelOwner(playerId, owner!),
+        ...(apiKey ? { apiKey } : {}),
+        assertActive: () => assertSavedModelOwner(owner),
       },
-      modelTransport,
+      modelRequests.transport(owner, modelTransport, () => {
+        assertSavedModelOwner(owner);
+        return true;
+      }),
     );
-    if (activeModelRequests.get(playerId) !== owner) return;
-    activeModelRequests.delete(playerId);
-    if (authorized && profile) recordProfileModelCatalog(profile.profileId, contextKey, models);
-    else modelCatalogs.set(contextKey, models);
+    assertSavedModelOwner(owner);
+    if (!preview) {
+      if (authorized && profile)
+        recordProfileModelCatalog(profile.profileId, context.contextKey, models);
+      else modelCatalogs.set(context.contextKey, models);
+    }
     postToPlayer(playerId, "provider:models-result", {
       requestId: message.requestId,
       ok: true,
-      contextKey,
+      contextKey: context.contextKey,
       models,
     });
   } catch (error) {
-    const active = activeModelRequests.get(playerId);
-    if (owner && active !== owner) return;
-    if (active && active.requestId !== externalRequestId) return;
-    if (active?.requestId === externalRequestId) activeModelRequests.delete(playerId);
+    if (!modelRequests.isActive(owner)) return;
     const safe = normalizeProviderError(error);
+    if (safe.category === "cancelled") return;
     postToPlayer(playerId, "provider:models-result", {
-      requestId: externalRequestId,
+      requestId: message.requestId,
       ok: false,
-      contextKey,
+      contextKey: context.contextKey,
       category: safe.category,
       retryable: safe.retryable,
       ...(safe.statusCode === undefined ? {} : { statusCode: safe.statusCode }),
       ...(safe.providerCode ? { code: safe.providerCode } : {}),
       ...(safe.retryAfterMs === undefined ? {} : { retryAfterMs: safe.retryAfterMs }),
       userAction: safe.userAction,
+    });
+  } finally {
+    modelRequests.finish(owner);
+  }
+}
+
+globalMailbox.onMessage("provider:models", (raw: unknown, playerId?: string) => {
+  if (!playerId) return;
+  try {
+    return runModelRequest(parseProviderModelsRequest(raw), playerId);
+  } catch {
+    postToPlayer(playerId, "operation:error", {
+      requestId: requestId(raw),
+      code: "INVALID_MESSAGE",
+      userAction: "NONE",
     });
   }
 });
 
-globalMailbox.onMessage("provider:models-preview", async (raw: unknown, playerId?: string) => {
+globalMailbox.onMessage("provider:models-preview", (raw: unknown, playerId?: string) => {
   if (!playerId) return;
-  await profileReady;
-  let externalRequestId = requestId(raw);
-  let contextKey = "invalid";
-  let owner: ActiveModelRequest | null = null;
   try {
-    const message = parseProviderModelsPreviewRequest(raw);
-    externalRequestId = message.requestId;
-    const values = message.payload;
-    const endpoint = normalizeProviderEndpoint(values.kind, values.endpoint);
-    contextKey = identityHash({
-      playerId,
-      requestId: message.requestId,
-      kind: values.kind,
-      endpoint,
-      proxyMode: values.proxyMode,
-      draftCredentialEpoch: values.draftCredentialEpoch,
+    return runModelRequest(parseProviderModelsPreviewRequest(raw), playerId);
+  } catch {
+    postToPlayer(playerId, "operation:error", {
+      requestId: requestId(raw),
+      code: "INVALID_MESSAGE",
+      userAction: "NONE",
     });
-    const jobId = `models-${localUuid()}`;
-    owner = {
-      requestId: message.requestId,
-      jobId,
-      contextKey,
-      kind: values.kind,
-      endpoint,
-      proxyMode: values.proxyMode,
-      credentialEpoch: 0,
-      draftCredentialEpoch: values.draftCredentialEpoch,
-    };
-    const previous = activeModelRequests.get(playerId);
-    activeModelRequests.set(playerId, owner);
-    if (previous) await modelTransport.cancel?.(previous.jobId);
-    const models = await discoverProviderModels(
-      {
-        jobId,
-        kind: values.kind,
-        endpoint,
-        apiKey: values.credential.apiKey,
-        proxyMode: values.proxyMode,
-        assertActive: () => {
-          if (activeModelRequests.get(playerId) !== owner) cancelledModelRequest();
-        },
-      },
-      modelTransport,
-    );
-    if (activeModelRequests.get(playerId) !== owner) return;
-    activeModelRequests.delete(playerId);
-    postToPlayer(playerId, "provider:models-result", {
-      requestId: message.requestId,
-      ok: true,
-      contextKey,
-      models,
-    });
-  } catch (error) {
-    const active = activeModelRequests.get(playerId);
-    if (owner && active !== owner) return;
-    if (active && active.requestId !== externalRequestId) return;
-    if (active?.requestId === externalRequestId) activeModelRequests.delete(playerId);
-    const safe = normalizeProviderError(error);
-    postToPlayer(playerId, "provider:models-result", {
-      requestId: externalRequestId,
-      ok: false,
-      contextKey,
-      category: safe.category,
-      retryable: safe.retryable,
-      ...(safe.statusCode === undefined ? {} : { statusCode: safe.statusCode }),
-      ...(safe.providerCode ? { code: safe.providerCode } : {}),
-      ...(safe.retryAfterMs === undefined ? {} : { retryAfterMs: safe.retryAfterMs }),
-      userAction: safe.userAction,
-    });
+  }
+});
+
+globalMailbox.onMessage("provider:models-cancel", async (raw: unknown, playerId?: string) => {
+  if (!playerId) return;
+  try {
+    const message = parseProviderModelsCancelRequest(raw);
+    if ("modelRequestId" in message.payload)
+      await modelRequests.cancel(playerId, "models", message.payload.modelRequestId);
+    else await modelRequests.releaseSender(playerId);
+  } catch {
+    return;
   }
 });
 
@@ -1409,7 +1392,6 @@ globalMailbox.onMessage("provider:test", async (raw: unknown, senderId?: string)
     });
     if (!started) return;
     owner = started.owner;
-    if (started.replaced) await providerConnectionTests.cancelTask(started.replaced);
     assertActiveDraftTestOwner(owner);
     await profileReady;
     assertDraftTestOwner(owner);
@@ -1443,9 +1425,10 @@ globalMailbox.onMessage("provider:test", async (raw: unknown, senderId?: string)
       const current = profiles.get(source.profileId);
       if (
         !current ||
-        current.kind !== message.payload.kind ||
-        current.endpoint !== endpoint ||
-        (current.proxyMode ?? "system") !== message.payload.proxyMode
+        !sameProviderService(
+          { ...current, proxyMode: current.proxyMode ?? "system" },
+          message.payload,
+        )
       )
         throw {
           category: "configuration",
@@ -1513,81 +1496,136 @@ globalMailbox.onMessage("provider:test-cancel", async (raw: unknown, senderId?: 
 
 globalMailbox.onMessage("provider:attempt", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
-  await profileReady;
   const id = requestId(raw);
+  let owner: RequestOwner<TranslationContext> | null = null;
   try {
     const parsed = parseProviderAttempt(raw);
-    const result = await broker.attempt(playerId, parsed.payload, (progress) => {
-      try {
+    const request = parsed.payload;
+    const previous = translationSessions.get(playerId);
+    if (
+      previous &&
+      (request.sessionId !== previous.sessionId ||
+        request.sessionEpoch < previous.sessionEpoch ||
+        (request.sessionEpoch === previous.sessionEpoch &&
+          request.windowEpoch < previous.windowEpoch))
+    )
+      return;
+    const sameSession =
+      previous &&
+      request.sessionEpoch === previous.sessionEpoch &&
+      request.windowEpoch === previous.windowEpoch;
+    const context = sameSession
+      ? previous
+      : {
+          sessionId: request.sessionId,
+          sessionEpoch: request.sessionEpoch,
+          windowEpoch: request.windowEpoch,
+        };
+    owner = translationRequests.begin({
+      senderId: playerId,
+      operation: "translation",
+      requestId: parsed.requestId,
+      context,
+    });
+    if (!owner) return;
+    translationSessions.set(playerId, context);
+    if (!sameSession)
+      void translationRequests.cancelWhere(
+        (candidate) => candidate.senderId === playerId && candidate.context !== context,
+      );
+    const current = owner;
+    const guard = () =>
+      translationRequests.assertActive(
+        current,
+        () => translationSessions.get(playerId) === context,
+      );
+    await profileReady;
+    guard();
+    translationRequests.track(owner, id, () => broker.cancel(playerId, id));
+    const result = await broker.attempt(
+      playerId,
+      request,
+      (progress) => {
+        guard();
         postToPlayer(playerId, "provider:attempt-progress", {
           requestId: id,
           progress: parseTranslationBatchProgress(progress),
         });
-      } catch {
-        return;
-      }
-    });
+      },
+      guard,
+    );
+    guard();
     postToPlayer(playerId, "provider:attempt-result", { requestId: id, result });
   } catch (error) {
+    if (owner && !translationRequests.isActive(owner)) return;
     const safe = normalizeProviderError(error);
-    postToPlayer(playerId, "provider:attempt-error", {
-      requestId: id,
-      error: safe,
-    });
+    postToPlayer(playerId, "provider:attempt-error", { requestId: id, error: safe });
+  } finally {
+    if (owner) translationRequests.finish(owner);
   }
 });
 
 globalMailbox.onMessage("provider:cancel", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
-  await profileReady;
   const values = payload(raw);
-  await broker.cancel(playerId, String(values.requestId ?? requestId(raw)));
+  const id = String(values.requestId ?? requestId(raw));
+  await Promise.allSettled([
+    translationRequests.cancel(playerId, "translation", id),
+    broker?.cancel(playerId, id),
+  ]);
   postToPlayer(playerId, "provider:cancelled", { requestId: requestId(raw) });
 });
 
 async function prefetchProfileModels(profile: ProviderProfileSnapshot): Promise<void> {
-  const credentialEpoch = modelCredentialEpochs.get(profile.profileId) ?? 0;
-  const contextKey = profileModelContextKey(profile);
-  const ownerKey = `startup:${profile.profileId}`;
   const jobId = `models-startup-${localUuid()}`;
-  const owner: ActiveModelRequest = {
-    requestId: jobId,
-    jobId,
-    contextKey,
-    kind: profile.kind,
-    endpoint: profile.endpoint,
-    proxyMode: profile.proxyMode ?? "system",
-    profileId: profile.profileId,
-    profileRevision: profile.revision,
-    endpointFingerprint: profile.endpointFingerprint,
-    credentialEpoch,
-  };
-  const previous = activeModelRequests.get(ownerKey);
-  activeModelRequests.set(ownerKey, owner);
-  if (previous) await modelTransport.cancel?.(previous.jobId);
-  let apiKey: string | undefined;
+  const contextKey = profileModelContextKey(profile);
+  const owner = modelRequests.begin(
+    {
+      operation: "models",
+      senderId: `startup:${profile.profileId}`,
+      requestId: jobId,
+      context: {
+        jobId,
+        contextKey,
+        kind: profile.kind,
+        endpoint: profile.endpoint,
+        proxyMode: profile.proxyMode ?? "system",
+        profileId: profile.profileId,
+        profileRevision: profile.revision,
+        endpointFingerprint: profile.endpointFingerprint,
+        credentialEpoch: modelCredentialEpochs.get(profile.profileId) ?? 0,
+      },
+    },
+    true,
+  );
+  if (!owner) return;
   try {
+    assertSavedModelOwner(owner);
+    let apiKey: string | undefined;
     try {
-      const secret = await credentials.getSecret(profile.profileId);
-      apiKey = secret?.apiKey;
+      apiKey = (await credentials.getSecret(profile.profileId))?.apiKey;
     } catch {
       apiKey = undefined;
     }
+    assertSavedModelOwner(owner);
     const models = await discoverProviderModels(
       {
         jobId,
         kind: profile.kind,
         endpoint: profile.endpoint,
-        ...(apiKey ? { apiKey } : {}),
         proxyMode: profile.proxyMode ?? "system",
-        assertActive: () => assertSavedModelOwner(ownerKey, owner),
+        ...(apiKey ? { apiKey } : {}),
+        assertActive: () => assertSavedModelOwner(owner),
       },
-      modelTransport,
+      modelRequests.transport(owner, modelTransport, () => {
+        assertSavedModelOwner(owner);
+        return true;
+      }),
     );
-    assertSavedModelOwner(ownerKey, owner);
+    assertSavedModelOwner(owner);
     recordProfileModelCatalog(profile.profileId, contextKey, models);
   } finally {
-    if (activeModelRequests.get(ownerKey) === owner) activeModelRequests.delete(ownerKey);
+    modelRequests.finish(owner);
   }
 }
 

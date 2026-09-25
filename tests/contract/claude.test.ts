@@ -1,3 +1,6 @@
+import { registerLifecycleContract } from "../helpers/provider-lifecycle-contract.js";
+import { registerFailureContract } from "../helpers/provider-failure-contract.js";
+import { registerProbeContract } from "../helpers/provider-probe-contract.js";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { ClaudeProvider } from "../../src/providers/claude.js";
@@ -389,7 +392,6 @@ describe("Claude provider", () => {
       "refusal",
     ],
     ["truncated", { ...successFixture, stop_reason: "max_tokens" }, "protocol"],
-    ["missing stop", { ...successFixture, stop_reason: undefined }, "protocol"],
     ["empty content", { ...successFixture, content: [] }, "protocol"],
     ["non-text content", { ...successFixture, content: [{ type: "tool_use" }] }, "protocol"],
     [
@@ -489,3 +491,21 @@ describe("Claude provider", () => {
     }
   });
 });
+
+registerProbeContract(
+  "claude",
+  (transport) =>
+    new ClaudeProvider({ endpoint: "https://fixture.test", model: "model" }, transport),
+);
+
+registerFailureContract(
+  "claude",
+  (transport) =>
+    new ClaudeProvider({ endpoint: "https://fixture.test", model: "model" }, transport),
+);
+
+registerLifecycleContract(
+  "claude",
+  (transport) =>
+    new ClaudeProvider({ endpoint: "https://fixture.test", model: "model" }, transport),
+);

@@ -1,5 +1,6 @@
 export interface ProviderTransportRequest {
   jobId: string;
+  assertActive?: () => void;
   method: "GET" | "POST";
   url: string;
   headers: Record<string, string>;

@@ -505,6 +505,7 @@ export const SIDEBAR_MESSAGE_NAMES = [
   "provider:test-cancel",
   "provider:models",
   "provider:models-preview",
+  "provider:models-cancel",
   "translation:set-enabled",
   "subtitle:retry-preparation",
 ] as const;
@@ -551,6 +552,7 @@ export const GLOBAL_MESSAGE_NAMES = [
   "provider:test-cancel",
   "provider:models",
   "provider:models-preview",
+  "provider:models-cancel",
   "provider:attempt",
   "provider:cancel",
 ] as const;
@@ -778,6 +780,24 @@ const providerTestCodes = new Set([
 const providerTestIdentity = (value: unknown): value is string =>
   typeof value === "string" && /^[A-Za-z0-9_.-]{1,128}$/.test(value);
 
+function validateDraftSourceProfile(value: unknown): void {
+  if (value !== undefined) {
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      throw new Error("INVALID_MESSAGE");
+    const source = value as Record<string, unknown>;
+    if (
+      !exactKeys(source, ["profileId", "profileRevision", "endpointFingerprint"]) ||
+      !providerTestIdentity(source.profileId) ||
+      !Number.isSafeInteger(source.profileRevision) ||
+      (source.profileRevision as number) < 1 ||
+      typeof source.endpointFingerprint !== "string" ||
+      !source.endpointFingerprint ||
+      source.endpointFingerprint.length > 256
+    )
+      throw new Error("INVALID_MESSAGE");
+  }
+}
+
 export function parseProviderTestRequest(value: unknown): ProviderTestRequest {
   const envelope = parseEnvelope(value);
   const payload = envelope.payload as Record<string, unknown>;
@@ -803,25 +823,7 @@ export function parseProviderTestRequest(value: unknown): ProviderTestRequest {
     !payload.model.trim()
   )
     throw new Error("INVALID_MESSAGE");
-  if (payload.sourceProfile !== undefined) {
-    if (
-      !payload.sourceProfile ||
-      typeof payload.sourceProfile !== "object" ||
-      Array.isArray(payload.sourceProfile)
-    )
-      throw new Error("INVALID_MESSAGE");
-    const source = payload.sourceProfile as Record<string, unknown>;
-    if (
-      !exactKeys(source, ["profileId", "profileRevision", "endpointFingerprint"]) ||
-      !providerTestIdentity(source.profileId) ||
-      !Number.isSafeInteger(source.profileRevision) ||
-      (source.profileRevision as number) < 1 ||
-      typeof source.endpointFingerprint !== "string" ||
-      !source.endpointFingerprint ||
-      source.endpointFingerprint.length > 256
-    )
-      throw new Error("INVALID_MESSAGE");
-  }
+  validateDraftSourceProfile(payload.sourceProfile);
   if (
     !payload.credential ||
     typeof payload.credential !== "object" ||
@@ -900,6 +902,21 @@ export function parseProviderTestResult(value: unknown): ProviderTestResult {
   return result as ProviderTestResult;
 }
 
+export type ProviderModelsCancelRequest = RpcEnvelope<
+  { modelRequestId: string } | Record<string, never>
+>;
+
+export function parseProviderModelsCancelRequest(value: unknown): ProviderModelsCancelRequest {
+  const envelope = parseEnvelope(value);
+  const payload = envelope.payload as Record<string, unknown>;
+  if (
+    !exactKeys(payload, payload.modelRequestId === undefined ? [] : ["modelRequestId"]) ||
+    (payload.modelRequestId !== undefined && !providerTestIdentity(payload.modelRequestId))
+  )
+    throw new Error("INVALID_MESSAGE");
+  return envelope as ProviderModelsCancelRequest;
+}
+
 export interface ProviderModelsRequestPayload {
   trigger: "open" | "endpoint" | "profile" | "credential" | "manual";
   kind: "openai" | "claude" | "deepseek" | "ollama";
@@ -918,6 +935,7 @@ export interface ProviderModelsPreviewRequestPayload {
   endpoint: string;
   proxyMode: "system" | "direct";
   draftCredentialEpoch: number;
+  sourceProfile?: ProviderDraftSourceProfile;
   credential: { apiKey: string };
 }
 
@@ -964,8 +982,15 @@ export function parseProviderModelsPreviewRequest(value: unknown): ProviderModel
   const payload = envelope.payload as Record<string, unknown>;
   const credential = payload.credential as Record<string, unknown> | undefined;
   if (
-    Object.keys(payload).sort().join(",") !==
-      "credential,draftCredentialEpoch,endpoint,kind,proxyMode,trigger" ||
+    !exactKeys(payload, [
+      "credential",
+      "draftCredentialEpoch",
+      "endpoint",
+      "kind",
+      "proxyMode",
+      "trigger",
+      ...(payload.sourceProfile === undefined ? [] : ["sourceProfile"]),
+    ]) ||
     payload.trigger !== "manual" ||
     (payload.kind !== "openai" &&
       payload.kind !== "claude" &&
@@ -985,6 +1010,7 @@ export function parseProviderModelsPreviewRequest(value: unknown): ProviderModel
     credential.apiKey.length > 8_192
   )
     throw new Error("INVALID_MESSAGE");
+  validateDraftSourceProfile(payload.sourceProfile);
   return envelope as ProviderModelsPreviewRequest;
 }
 

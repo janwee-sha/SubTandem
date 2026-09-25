@@ -1,3 +1,4 @@
+import { RequestLifecycle, type RequestOwner } from "./request-lifecycle.js";
 import type { ConfiguredProvider } from "./provider.js";
 import type {
   ProviderAttemptError,
@@ -9,7 +10,7 @@ import type {
 import type { ProviderTransport, ProviderTransportResponse } from "./transport.js";
 import { providerHttpErrorFromBody, protocolError } from "./errors.js";
 import { normalizeProviderEndpoint } from "./profiles.js";
-import { validateIdOutput } from "./validation.js";
+import { validateIdOutput, validateStrictIdOutput } from "./validation.js";
 import { buildTranslationTask } from "./translation-task.js";
 import { runTranslationBatches } from "./translation-batches.js";
 
@@ -18,9 +19,8 @@ type Capability = "strict-json-schema" | "json-object" | "prompt-json";
 export class OpenAICompatibleProvider implements ConfiguredProvider {
   private readonly endpoint: string;
   private capability: Capability | undefined;
-  private readonly activeJobs = new Set<string>();
-  private readonly activeRequests = new Set<string>();
-  private readonly cancelledRequests = new Set<string>();
+  private readonly requests = new RequestLifecycle<undefined>();
+  private probeSequence = 0;
 
   constructor(
     private readonly config: {
@@ -40,46 +40,51 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
 
   async probe(): Promise<Capability> {
     if (this.capability) return this.capability;
-    return this.runProbe("probe");
+    return this.testConnection(`probe-${++this.probeSequence}`);
   }
 
   async testConnection(testId: string): Promise<Capability> {
-    this.cancelledRequests.delete(testId);
-    this.activeRequests.add(testId);
+    const owner = this.requests.beginRequired({
+      senderId: "provider",
+      operation: "test",
+      requestId: testId,
+      context: undefined,
+    });
     try {
       const capability = this.capability;
-      if (!capability) return await this.runProbe(testId);
-      this.throwIfCancelled(testId);
+      if (!capability) return await this.runProbe(owner);
+      this.requests.assertActive(owner);
       const response = await this.send(
+        owner,
         `${testId}-probe-${capability}`,
         [{ id: "probe", text: "hello" }],
         "es",
         capability,
         10_000,
       );
-      this.throwIfCancelled(testId);
+      this.requests.assertActive(owner);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw providerHttpErrorFromBody(response.statusCode, response.headers, response.bodyText);
       }
-      this.parseResponse(["probe"], response);
+      this.parseResponse(["probe"], response, true);
       return capability;
     } finally {
-      this.activeRequests.delete(testId);
-      this.cancelledRequests.delete(testId);
+      this.requests.finish(owner);
     }
   }
 
-  private async runProbe(scopeId: string): Promise<Capability> {
+  private async runProbe(owner: RequestOwner<undefined>): Promise<Capability> {
     for (const capability of ["strict-json-schema", "json-object", "prompt-json"] as const) {
-      this.throwIfCancelled(scopeId);
+      this.requests.assertActive(owner);
       const response = await this.send(
-        `${scopeId}-probe-${capability}`,
+        owner,
+        `${owner.requestId}-probe-${capability}`,
         [{ id: "probe", text: "hello" }],
         "es",
         capability,
         10_000,
       );
-      this.throwIfCancelled(scopeId);
+      this.requests.assertActive(owner);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         const failure = providerHttpErrorFromBody(
           response.statusCode,
@@ -89,13 +94,9 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
         if (this.isCapabilityIncompatibility(response, failure)) continue;
         throw failure;
       }
-      try {
-        this.parseResponse(["probe"], response);
-        this.capability = capability;
-        return capability;
-      } catch {
-        continue;
-      }
+      this.parseResponse(["probe"], response, true);
+      this.capability = capability;
+      return capability;
     }
     throw protocolError("OPENAI_CAPABILITY_PROBE_FAILED", "configuration");
   }
@@ -103,23 +104,30 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
   async attempt(
     request: TranslationBatchRequest,
     onProgress?: TranslationProgressHandler,
+    assertAuthorized?: () => void,
   ): Promise<TranslationBatchResult> {
-    this.cancelledRequests.delete(request.requestId);
-    this.activeRequests.add(request.requestId);
+    const owner = this.requests.beginRequired({
+      senderId: "provider",
+      operation: "translation",
+      requestId: request.requestId,
+      context: undefined,
+      assertAuthorized,
+    });
     try {
-      const capability = this.capability ?? (await this.runProbe(request.requestId));
-      this.throwIfCancelled(request.requestId);
+      const capability = this.capability ?? (await this.runProbe(owner));
+      this.requests.assertActive(owner);
       return await runTranslationBatches(
         request,
         async (jobId, items) => {
           const response = await this.send(
+            owner,
             jobId,
             items,
             request.targetLanguage,
             capability,
             30_000,
           );
-          this.throwIfCancelled(request.requestId);
+          this.requests.assertActive(owner);
           if (response.statusCode < 200 || response.statusCode >= 300)
             throw providerHttpErrorFromBody(
               response.statusCode,
@@ -131,35 +139,24 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
             response,
           );
         },
-        () => this.throwIfCancelled(request.requestId),
+        () => this.requests.assertActive(owner),
         onProgress,
         { maxConcurrentWires: 2 },
       );
     } finally {
-      this.activeRequests.delete(request.requestId);
-      this.cancelledRequests.delete(request.requestId);
+      this.requests.finish(owner);
     }
   }
 
   async cancel(requestId: string): Promise<void> {
-    if (this.activeRequests.has(requestId)) this.cancelledRequests.add(requestId);
-    const jobs = [...this.activeJobs].filter(
-      (jobId) => jobId === requestId || jobId.startsWith(`${requestId}-`),
-    );
-    await Promise.allSettled(jobs.map((jobId) => this.transport.cancel?.(jobId)));
-  }
-
-  private throwIfCancelled(requestId: string): void {
-    if (!this.cancelledRequests.has(requestId)) return;
-    throw {
-      category: "cancelled",
-      retryable: false,
-      providerCode: "REQUEST_CANCELLED",
-      userAction: "RETRY",
-    } satisfies ProviderAttemptError;
+    await Promise.allSettled([
+      this.requests.cancel("provider", "test", requestId),
+      this.requests.cancel("provider", "translation", requestId),
+    ]);
   }
 
   private async send(
+    owner: RequestOwner<undefined>,
     jobId: string,
     items: WireTranslationTarget[],
     targetLanguage: string,
@@ -181,40 +178,35 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
         : capability === "json-object"
           ? { type: "json_object" }
           : undefined;
-    this.activeJobs.add(jobId);
-    try {
-      return await this.transport.request({
-        jobId,
-        method: "POST",
-        url: `${apiRoot}/chat/completions`,
-        headers: {
-          "Content-Type": "application/json",
-          ...(this.config.apiKey ? { Authorization: `Bearer ${this.config.apiKey}` } : {}),
-          "X-Session-Id": this.config.sessionId,
-        },
-        proxyMode: this.config.proxyMode ?? "system",
-        body: {
-          model: this.config.model,
-          stream: false,
-          temperature: 0,
-          ...(responseFormat ? { response_format: responseFormat } : {}),
-          messages: [
-            {
-              role: "system",
-              content:
-                capability === "prompt-json"
-                  ? `${task.systemMessage} The response must validate against this exact JSON Schema: ${JSON.stringify(task.outputSchema)}`
-                  : task.systemMessage,
-            },
-            { role: "user", content: task.userMessage },
-          ],
-        },
-        timeoutMs,
-        maxResponseBytes: 1_048_576,
-      });
-    } finally {
-      this.activeJobs.delete(jobId);
-    }
+    return this.requests.transport(owner, this.transport).request({
+      jobId,
+      method: "POST",
+      url: `${apiRoot}/chat/completions`,
+      headers: {
+        "Content-Type": "application/json",
+        ...(this.config.apiKey ? { Authorization: `Bearer ${this.config.apiKey}` } : {}),
+        "X-Session-Id": this.config.sessionId,
+      },
+      proxyMode: this.config.proxyMode ?? "system",
+      body: {
+        model: this.config.model,
+        stream: false,
+        temperature: 0,
+        ...(responseFormat ? { response_format: responseFormat } : {}),
+        messages: [
+          {
+            role: "system",
+            content:
+              capability === "prompt-json"
+                ? `${task.systemMessage} The response must validate against this exact JSON Schema: ${JSON.stringify(task.outputSchema)}`
+                : task.systemMessage,
+          },
+          { role: "user", content: task.userMessage },
+        ],
+      },
+      timeoutMs,
+      maxResponseBytes: 1_048_576,
+    });
   }
 
   private isCapabilityIncompatibility(
@@ -231,10 +223,13 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
   private parseResponse(
     requestedIds: string[],
     response: ProviderTransportResponse,
+    strictProbe = false,
   ): TranslationBatchResult {
     let parsed: Record<string, unknown>;
     try {
-      parsed = JSON.parse(response.bodyText) as Record<string, unknown>;
+      const value: unknown = JSON.parse(response.bodyText);
+      if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error();
+      parsed = value as Record<string, unknown>;
     } catch {
       throw protocolError("OPENAI_MALFORMED_JSON");
     }
@@ -242,11 +237,14 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
       ? (parsed.choices[0] as Record<string, unknown> | undefined)
       : undefined;
     const finishReason = choice?.finish_reason;
-    if (finishReason === "content_filter" || finishReason === "length")
-      throw protocolError(`OPENAI_${String(finishReason).toUpperCase()}`, "refusal");
     const message = choice?.message as Record<string, unknown> | undefined;
-    if (typeof message?.refusal === "string" && message.refusal)
+    if (
+      finishReason === "content_filter" ||
+      (typeof message?.refusal === "string" && message.refusal)
+    )
       throw protocolError("OPENAI_REFUSAL", "refusal");
+    if (finishReason !== undefined && finishReason !== "stop")
+      throw protocolError("OPENAI_INCOMPLETE_OUTPUT");
     if (typeof message?.content !== "string") throw protocolError("OPENAI_MALFORMED_OUTPUT");
     let output: Record<string, unknown>;
     try {
@@ -254,16 +252,28 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
     } catch {
       throw protocolError("OPENAI_MALFORMED_OUTPUT");
     }
+    if (strictProbe) {
+      try {
+        validateStrictIdOutput(requestedIds, output);
+      } catch {
+        throw protocolError("OPENAI_MALFORMED_OUTPUT");
+      }
+    }
     const usage = parsed.usage as Record<string, unknown> | undefined;
-    const validated = validateIdOutput(requestedIds, {
-      ...output,
-      usage: {
-        ...(typeof usage?.prompt_tokens === "number" ? { input: usage.prompt_tokens } : {}),
-        ...(typeof usage?.completion_tokens === "number"
-          ? { output: usage.completion_tokens }
-          : {}),
-      },
-    });
+    let validated: TranslationBatchResult;
+    try {
+      validated = validateIdOutput(requestedIds, {
+        ...output,
+        usage: {
+          ...(typeof usage?.prompt_tokens === "number" ? { input: usage.prompt_tokens } : {}),
+          ...(typeof usage?.completion_tokens === "number"
+            ? { output: usage.completion_tokens }
+            : {}),
+        },
+      });
+    } catch {
+      throw protocolError("OPENAI_MALFORMED_OUTPUT");
+    }
     return {
       translations: validated.translations,
       ...(validated.usage ? { usage: validated.usage } : {}),

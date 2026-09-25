@@ -330,3 +330,65 @@ describe("Profile activation restoration", () => {
     expect(authority.acceptsTranslations).toBe(false);
   });
 });
+
+for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
+  it(`preserves ${kind} saved identity and Key association through edit and restart`, async () => {
+    const saved = {
+      ...profile,
+      kind,
+      endpoint: "https://Example.test:443/Root/%41",
+      endpointFingerprint: identityHash({
+        kind,
+        endpoint: "https://Example.test:443/Root/%41",
+        proxyMode: "direct",
+      }),
+    };
+    const active = { ...activation(), kind, endpointFingerprint: saved.endpointFingerprint };
+    const store = new RestorationStore({
+      revision: 7,
+      initialized: true,
+      state: { profiles: [saved], activation: active },
+      configured: { [saved.profileId]: true },
+    });
+    const options = {
+      authorityId: "first",
+      profiles: profiles(),
+      store,
+      createCommitId: () => "00000000-0000-4000-8000-000000000007",
+    };
+    const first = await restoreProfileActivationAuthority(options);
+    expect(first.snapshot.profiles[0]).toMatchObject({ ...saved, credentialConfigured: true });
+    expect(first.snapshot.activation).toEqual(active);
+    const edited = await first.saveProfile({
+      ...saved,
+      expectedRevision: saved.revision,
+      endpoint: " HTTPS://EXAMPLE.TEST:443/Root/%41/// ",
+    });
+    expect(edited.outcome).toBe("changed");
+    expect(edited.profile).toMatchObject({
+      revision: saved.revision + 1,
+      endpoint: "HTTPS://EXAMPLE.TEST:443/Root/%41///",
+    });
+    expect(edited.profile!.endpointFingerprint).not.toBe(saved.endpointFingerprint);
+    expect(edited.authority.activation).toBeNull();
+    await first.set({
+      senderId: "window",
+      requestId: "enable-edited",
+      authorityId: first.snapshot.authorityId,
+      profileId: saved.profileId,
+      profileRevision: edited.profile!.revision,
+      endpointFingerprint: edited.profile!.endpointFingerprint,
+      enabled: true,
+    });
+    const restarted = await restoreProfileActivationAuthority({
+      ...options,
+      authorityId: "second",
+      profiles: profiles(),
+    });
+    expect(restarted.snapshot.profiles[0]).toMatchObject({
+      ...edited.profile,
+      credentialConfigured: true,
+    });
+    expect(restarted.snapshot.activation?.profileRevision).toBe(saved.revision + 1);
+  });
+}

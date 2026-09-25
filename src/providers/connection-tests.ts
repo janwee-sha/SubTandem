@@ -1,3 +1,4 @@
+import { RequestLifecycle, type RequestOwner } from "./request-lifecycle.js";
 import type { ConfiguredProvider } from "./provider.js";
 
 export interface ProviderConnectionTestSourceProfile {
@@ -24,8 +25,15 @@ export interface ProviderConnectionTestTask extends ProviderConnectionTestIdenti
 export type ProviderConnectionTestInput = Omit<ProviderConnectionTestIdentity, "testId">;
 
 export class ProviderConnectionTests {
-  private readonly activeBySender = new Map<string, ProviderConnectionTestTask>();
-  private readonly seenBySender = new Map<string, Set<string>>();
+  private readonly requests = new RequestLifecycle<ProviderConnectionTestIdentity>();
+  private readonly scopes = new WeakMap<
+    ProviderConnectionTestTask,
+    RequestOwner<ProviderConnectionTestIdentity>
+  >();
+  private readonly tasks = new WeakMap<
+    RequestOwner<ProviderConnectionTestIdentity>,
+    ProviderConnectionTestTask
+  >();
   private readonly lastBySender = new Map<string, ProviderConnectionTestIdentity>();
 
   constructor(private readonly createId: () => string) {}
@@ -33,26 +41,29 @@ export class ProviderConnectionTests {
   begin(
     input: ProviderConnectionTestInput,
   ): { owner: ProviderConnectionTestTask; replaced: ProviderConnectionTestTask | null } | null {
-    const seen = this.seenBySender.get(input.senderId) ?? new Set<string>();
-    this.seenBySender.set(input.senderId, seen);
-    if (seen.has(input.requestId)) return null;
-    seen.add(input.requestId);
-    const replaced = this.activeBySender.get(input.senderId) ?? null;
-    if (replaced) this.activeBySender.delete(input.senderId);
+    const previous = this.requests.owners().find((owner) => owner.senderId === input.senderId);
+    const identity = this.identity({ ...input, testId: "" });
+    const scope = this.requests.begin(
+      {
+        senderId: input.senderId,
+        operation: "test",
+        requestId: input.requestId,
+        context: identity,
+      },
+      true,
+    );
+    if (!scope) return null;
+    identity.testId = this.createId();
     this.lastBySender.delete(input.senderId);
-    const owner: ProviderConnectionTestTask = {
-      testId: this.createId(),
-      ...input,
-      ...(input.sourceProfile ? { sourceProfile: { ...input.sourceProfile } } : {}),
-      phase: "preparing",
-      provider: null,
-    };
-    this.activeBySender.set(input.senderId, owner);
-    return { owner, replaced };
+    const owner: ProviderConnectionTestTask = { ...identity, phase: "preparing", provider: null };
+    this.scopes.set(owner, scope);
+    this.tasks.set(scope, owner);
+    return { owner, replaced: previous ? (this.tasks.get(previous) ?? null) : null };
   }
 
   isActive(owner: ProviderConnectionTestTask): boolean {
-    return this.activeBySender.get(owner.senderId) === owner;
+    const scope = this.scopes.get(owner);
+    return Boolean(scope && this.requests.isActive(scope));
   }
 
   attachProvider(
@@ -62,54 +73,51 @@ export class ProviderConnectionTests {
     if (!this.isActive(owner) || owner.phase !== "preparing") return null;
     owner.provider = provider;
     owner.phase = "running";
+    this.requests.track(this.scopes.get(owner)!, owner.testId, () => {
+      owner.provider = null;
+      return provider.cancel?.(owner.testId);
+    });
     return owner;
   }
 
   complete(owner: ProviderConnectionTestTask): ProviderConnectionTestTask | null {
     if (!this.isActive(owner)) return null;
-    this.activeBySender.delete(owner.senderId);
+    this.requests.finish(this.scopes.get(owner)!);
+    owner.provider = null;
     this.lastBySender.set(owner.senderId, this.identity(owner));
     return owner;
   }
 
   async cancelTask(owner: ProviderConnectionTestTask): Promise<void> {
-    await owner.provider?.cancel?.(owner.testId);
+    const scope = this.scopes.get(owner);
+    if (scope) await this.requests.invalidate(scope);
     owner.provider = null;
   }
 
   async cancel(senderId: string, requestId: string): Promise<boolean> {
-    const active = this.activeBySender.get(senderId);
-    if (active?.requestId === requestId) {
-      this.activeBySender.delete(senderId);
-      await this.cancelTask(active);
-      return true;
-    }
-    const last = this.lastBySender.get(senderId);
-    if (last?.requestId !== requestId) return false;
-    this.lastBySender.delete(senderId);
-    return true;
+    const active = this.requests
+      .owners()
+      .some((owner) => owner.senderId === senderId && owner.requestId === requestId);
+    const last = this.lastBySender.get(senderId)?.requestId === requestId;
+    if (last) this.lastBySender.delete(senderId);
+    await this.requests.cancel(senderId, "test", requestId);
+    return active || last;
   }
 
   async releaseSender(senderId: string): Promise<void> {
-    const active = this.activeBySender.get(senderId);
-    this.activeBySender.delete(senderId);
     this.lastBySender.delete(senderId);
-    this.seenBySender.delete(senderId);
-    if (active) await this.cancelTask(active);
+    await this.requests.releaseSender(senderId);
   }
 
   async invalidateProfile(
     profileId: string,
     onInvalidated?: (identities: ProviderConnectionTestIdentity[]) => void,
   ): Promise<ProviderConnectionTestIdentity[]> {
-    const invalidated: ProviderConnectionTestIdentity[] = [];
-    const cancellations: Promise<void>[] = [];
-    for (const [senderId, active] of this.activeBySender) {
-      if (active.sourceProfile?.profileId !== profileId) continue;
-      this.activeBySender.delete(senderId);
-      invalidated.push(this.identity(active));
-      cancellations.push(this.cancelTask(active));
-    }
+    const active = this.requests
+      .owners()
+      .filter((owner) => owner.context.sourceProfile?.profileId === profileId);
+    const invalidated = active.map((owner) => this.identity(owner.context));
+    const cancellations = active.map((owner) => this.requests.invalidate(owner));
     for (const [senderId, last] of this.lastBySender) {
       if (last.sourceProfile?.profileId !== profileId) continue;
       this.lastBySender.delete(senderId);
@@ -121,15 +129,12 @@ export class ProviderConnectionTests {
   }
 
   async cancelAll(): Promise<void> {
-    const owners = [...this.activeBySender.values()];
-    this.activeBySender.clear();
     this.lastBySender.clear();
-    this.seenBySender.clear();
-    await Promise.allSettled(owners.map((owner) => this.cancelTask(owner)));
+    await this.requests.cancelWhere(() => true);
   }
 
   activeCount(): number {
-    return this.activeBySender.size;
+    return this.requests.activeCount();
   }
 
   private identity(owner: ProviderConnectionTestIdentity): ProviderConnectionTestIdentity {

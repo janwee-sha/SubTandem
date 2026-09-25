@@ -19,7 +19,7 @@
     "test:watch": "vitest",
     "test:native": "./scripts/test-native.sh",
     "typecheck": "tsc -p tsconfig.plugin.json --noEmit && tsc -p tsconfig.webview.json --noEmit",
-    "lint": "eslint src ui tests scripts vitest.config.mts",
+    "lint": "eslint src ui shared tests scripts vitest.config.mts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "verify:package": "./scripts/verify-package.sh"

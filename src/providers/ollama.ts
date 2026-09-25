@@ -1,6 +1,6 @@
+import { RequestLifecycle, type RequestOwner } from "./request-lifecycle.js";
 import type { ConfiguredProvider } from "./provider.js";
 import type {
-  ProviderAttemptError,
   TranslationBatchRequest,
   TranslationBatchResult,
   TranslationProgressHandler,
@@ -9,7 +9,7 @@ import type {
 import type { ProviderTransport, ProviderTransportResponse } from "./transport.js";
 import { providerHttpError, providerHttpErrorFromBody, protocolError } from "./errors.js";
 import { normalizeProviderEndpoint } from "./profiles.js";
-import { validateIdOutput } from "./validation.js";
+import { validateIdOutput, validateStrictIdOutput } from "./validation.js";
 import { encodeWireItems } from "./wire-items.js";
 import { buildOllamaTranslationTask } from "./translation-task.js";
 
@@ -18,9 +18,8 @@ type OllamaOutputCapability = "json-schema" | "prompt-json";
 
 export class OllamaProvider implements ConfiguredProvider {
   private readonly endpoint: string;
-  private readonly activeJobs = new Set<string>();
-  private readonly activeRequests = new Set<string>();
-  private readonly cancelledRequests = new Set<string>();
+  private readonly requests = new RequestLifecycle<undefined>();
+  private probeSequence = 0;
   private outputCapability: OllamaOutputCapability;
   constructor(
     private readonly config: {
@@ -31,9 +30,9 @@ export class OllamaProvider implements ConfiguredProvider {
     },
     private readonly transport: ProviderTransport,
   ) {
-    this.endpoint = normalizeProviderEndpoint("ollama", config.endpoint);
+    this.endpoint = normalizeProviderEndpoint("ollama", config.endpoint).replace(/\/+$/, "");
     if (!config.model.trim()) throw new Error("MODEL_REQUIRED");
-    const authority = this.endpoint.match(/^https?:\/\/([^/]+)/i)?.[1] ?? "";
+    const authority = this.endpoint.match(/^https?:\/\/([^/]+)/i)?.[1]?.toLowerCase() ?? "";
     this.outputCapability =
       authority === "ollama.com" || authority.startsWith("ollama.com:")
         ? "prompt-json"
@@ -41,29 +40,34 @@ export class OllamaProvider implements ConfiguredProvider {
   }
 
   async probe(): Promise<{ version: string; model: string }> {
-    return this.runProbe("probe");
+    return this.testConnection(`probe-${++this.probeSequence}`);
   }
 
   async testConnection(testId: string): Promise<{ version: string; model: string }> {
-    this.cancelledRequests.delete(testId);
-    this.activeRequests.add(testId);
+    const owner = this.requests.beginRequired({
+      senderId: "provider",
+      operation: "test",
+      requestId: testId,
+      context: undefined,
+    });
     try {
-      return await this.runProbe(testId);
+      return await this.runProbe(owner);
     } finally {
-      this.activeRequests.delete(testId);
-      this.cancelledRequests.delete(testId);
+      this.requests.finish(owner);
     }
   }
 
-  private async runProbe(scopeId: string): Promise<{ version: string; model: string }> {
-    this.throwIfCancelled(scopeId);
-    const versionResponse = await this.get(`${scopeId}-version`, "/api/version");
-    this.throwIfCancelled(scopeId);
+  private async runProbe(
+    owner: RequestOwner<undefined>,
+  ): Promise<{ version: string; model: string }> {
+    this.requests.assertActive(owner);
+    const versionResponse = await this.get(owner, `${owner.requestId}-version`, "/api/version");
+    this.requests.assertActive(owner);
     if (versionResponse.statusCode !== 200)
       throw providerHttpError(versionResponse.statusCode, versionResponse.headers);
     const version = this.json(versionResponse.bodyText).version;
-    const tagsResponse = await this.get(`${scopeId}-tags`, "/api/tags");
-    this.throwIfCancelled(scopeId);
+    const tagsResponse = await this.get(owner, `${owner.requestId}-tags`, "/api/tags");
+    this.requests.assertActive(owner);
     if (tagsResponse.statusCode !== 200)
       throw providerHttpError(tagsResponse.statusCode, tagsResponse.headers);
     const models = this.json(tagsResponse.bodyText).models;
@@ -79,34 +83,41 @@ export class OllamaProvider implements ConfiguredProvider {
       throw protocolError("OLLAMA_MODEL_MISSING", "model");
     }
     await this.validatedChat(
-      scopeId,
-      `${scopeId}-schema`,
+      owner,
+      `${owner.requestId}-schema`,
       [{ id: "probe", text: "hello" }],
       "es",
       15_000,
+      true,
     );
-    this.throwIfCancelled(scopeId);
+    this.requests.assertActive(owner);
     return { version: typeof version === "string" ? version : "unknown", model: this.config.model };
   }
 
   async attempt(
     request: TranslationBatchRequest,
     onProgress?: TranslationProgressHandler,
+    assertAuthorized?: () => void,
   ): Promise<TranslationBatchResult> {
-    this.cancelledRequests.delete(request.requestId);
-    this.activeRequests.add(request.requestId);
+    const owner = this.requests.beginRequired({
+      senderId: "provider",
+      operation: "translation",
+      requestId: request.requestId,
+      context: undefined,
+      assertAuthorized,
+    });
     try {
       const wire = encodeWireItems(request.items);
       const combined: TranslationBatchResult = { translations: [] };
       let isolatedFailure: unknown;
       for (let offset = 0; offset < wire.items.length; offset += MAX_ITEMS_PER_CHAT_REQUEST) {
-        this.throwIfCancelled(request.requestId);
+        this.requests.assertActive(owner);
         const items = wire.items.slice(offset, offset + MAX_ITEMS_PER_CHAT_REQUEST);
         const part = Math.floor(offset / MAX_ITEMS_PER_CHAT_REQUEST) + 1;
         let parsed: TranslationBatchResult;
         try {
           parsed = await this.validatedChat(
-            request.requestId,
+            owner,
             `${request.requestId}-part-${part}`,
             items,
             request.targetLanguage,
@@ -117,7 +128,7 @@ export class OllamaProvider implements ConfiguredProvider {
           isolatedFailure = error;
           continue;
         }
-        this.throwIfCancelled(request.requestId);
+        this.requests.assertActive(owner);
         const progress = wire.restore(parsed);
         if (progress.translations.length > 0) onProgress?.(progress);
         combined.translations.push(...parsed.translations);
@@ -128,53 +139,41 @@ export class OllamaProvider implements ConfiguredProvider {
           combined.usage[key] = (combined.usage[key] ?? 0) + value;
         }
       }
-      this.throwIfCancelled(request.requestId);
+      this.requests.assertActive(owner);
       if (combined.translations.length === 0 && isolatedFailure) throw isolatedFailure;
       return wire.restore(combined);
     } finally {
-      this.activeRequests.delete(request.requestId);
-      this.cancelledRequests.delete(request.requestId);
+      this.requests.finish(owner);
     }
   }
 
   async cancel(requestId: string): Promise<void> {
-    if (this.activeRequests.has(requestId)) this.cancelledRequests.add(requestId);
-    const jobs = [...this.activeJobs].filter(
-      (jobId) => jobId === requestId || jobId.startsWith(`${requestId}-`),
-    );
-    await Promise.allSettled(jobs.map((jobId) => this.transport.cancel?.(jobId)));
+    await Promise.allSettled([
+      this.requests.cancel("provider", "test", requestId),
+      this.requests.cancel("provider", "translation", requestId),
+    ]);
   }
 
-  private throwIfCancelled(requestId: string): void {
-    if (!this.cancelledRequests.has(requestId)) return;
-    throw {
-      category: "cancelled",
-      retryable: false,
-      providerCode: "REQUEST_CANCELLED",
-      userAction: "RETRY",
-    } satisfies ProviderAttemptError;
-  }
-
-  private async get(jobId: string, path: string): Promise<ProviderTransportResponse> {
-    this.activeJobs.add(jobId);
-    try {
-      return await this.transport.request({
-        jobId,
-        method: "GET",
-        url: `${this.endpoint}${path}`,
-        headers: this.config.apiKey?.trim()
-          ? { Authorization: `Bearer ${this.config.apiKey.trim()}` }
-          : {},
-        proxyMode: this.config.proxyMode ?? "system",
-        timeoutMs: 10_000,
-        maxResponseBytes: 1_048_576,
-      });
-    } finally {
-      this.activeJobs.delete(jobId);
-    }
+  private async get(
+    owner: RequestOwner<undefined>,
+    jobId: string,
+    path: string,
+  ): Promise<ProviderTransportResponse> {
+    return this.requests.transport(owner, this.transport).request({
+      jobId,
+      method: "GET",
+      url: `${this.endpoint}${path}`,
+      headers: this.config.apiKey?.trim()
+        ? { Authorization: `Bearer ${this.config.apiKey.trim()}` }
+        : {},
+      proxyMode: this.config.proxyMode ?? "system",
+      timeoutMs: 10_000,
+      maxResponseBytes: 1_048_576,
+    });
   }
 
   private async chat(
+    owner: RequestOwner<undefined>,
     jobId: string,
     items: WireTranslationTarget[],
     targetLanguage: string,
@@ -182,78 +181,66 @@ export class OllamaProvider implements ConfiguredProvider {
     capability = this.outputCapability,
   ): Promise<ProviderTransportResponse> {
     const task = buildOllamaTranslationTask({ targetLanguage, targets: items });
-    this.activeJobs.add(jobId);
-    try {
-      return await this.transport.request({
-        jobId,
-        method: "POST",
-        url: `${this.endpoint}/api/chat`,
-        headers: {
-          "Content-Type": "application/json",
-          ...(this.config.apiKey?.trim()
-            ? { Authorization: `Bearer ${this.config.apiKey.trim()}` }
-            : {}),
-        },
-        proxyMode: this.config.proxyMode ?? "system",
-        body: {
-          model: this.config.model,
-          stream: false,
-          think: false,
-          ...(capability === "json-schema" ? { format: task.outputSchema } : {}),
-          options: { temperature: 0 },
-          messages: [{ role: "user", content: task.userMessage }],
-        },
-        timeoutMs,
-        maxResponseBytes: 1_048_576,
-      });
-    } finally {
-      this.activeJobs.delete(jobId);
-    }
+    return this.requests.transport(owner, this.transport).request({
+      jobId,
+      method: "POST",
+      url: `${this.endpoint}/api/chat`,
+      headers: {
+        "Content-Type": "application/json",
+        ...(this.config.apiKey?.trim()
+          ? { Authorization: `Bearer ${this.config.apiKey.trim()}` }
+          : {}),
+      },
+      proxyMode: this.config.proxyMode ?? "system",
+      body: {
+        model: this.config.model,
+        stream: false,
+        think: false,
+        ...(capability === "json-schema" ? { format: task.outputSchema } : {}),
+        options: { temperature: 0 },
+        messages: [{ role: "user", content: task.userMessage }],
+      },
+      timeoutMs,
+      maxResponseBytes: 1_048_576,
+    });
   }
 
   private async validatedChat(
-    scopeId: string,
+    owner: RequestOwner<undefined>,
     jobId: string,
     items: WireTranslationTarget[],
     targetLanguage: string,
     timeoutMs: number,
+    strictProbe = false,
   ): Promise<TranslationBatchResult> {
     const initialCapability = this.outputCapability;
-    let response = await this.chat(jobId, items, targetLanguage, timeoutMs, initialCapability);
-    this.throwIfCancelled(scopeId);
+    let response = await this.chat(
+      owner,
+      jobId,
+      items,
+      targetLanguage,
+      timeoutMs,
+      initialCapability,
+    );
+    this.requests.assertActive(owner);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       if (initialCapability !== "json-schema" || !this.isStructuredOutputIncompatibility(response))
         throw providerHttpErrorFromBody(response.statusCode, response.headers, response.bodyText);
       this.outputCapability = "prompt-json";
       response = await this.chat(
+        owner,
         this.fallbackJobId(jobId),
         items,
         targetLanguage,
         timeoutMs,
         "prompt-json",
       );
-      this.throwIfCancelled(scopeId);
+      this.requests.assertActive(owner);
       if (response.statusCode < 200 || response.statusCode >= 300)
         throw providerHttpErrorFromBody(response.statusCode, response.headers, response.bodyText);
-      return this.parse(items, response);
+      return this.parse(items, response, strictProbe);
     }
-    try {
-      return this.parse(items, response);
-    } catch (error) {
-      if (initialCapability !== "json-schema") throw error;
-      this.outputCapability = "prompt-json";
-      const fallback = await this.chat(
-        this.fallbackJobId(jobId),
-        items,
-        targetLanguage,
-        timeoutMs,
-        "prompt-json",
-      );
-      this.throwIfCancelled(scopeId);
-      if (fallback.statusCode < 200 || fallback.statusCode >= 300)
-        throw providerHttpErrorFromBody(fallback.statusCode, fallback.headers, fallback.bodyText);
-      return this.parse(items, fallback);
-    }
+    return this.parse(items, response, strictProbe);
   }
 
   private fallbackJobId(jobId: string): string {
@@ -290,31 +277,44 @@ export class OllamaProvider implements ConfiguredProvider {
   private parse(
     items: WireTranslationTarget[],
     response: ProviderTransportResponse,
+    strictProbe = false,
   ): TranslationBatchResult {
     const requestedIds = items.map((item) => item.id);
     const parsed = this.json(response.bodyText);
     const message = parsed.message as Record<string, unknown> | undefined;
+    if (
+      parsed.done_reason === "content_filter" ||
+      parsed.done_reason === "refusal" ||
+      (typeof message?.refusal === "string" && message.refusal)
+    )
+      throw protocolError("OLLAMA_REFUSAL", "refusal");
+    if (parsed.done_reason !== undefined && parsed.done_reason !== "stop")
+      throw protocolError("OLLAMA_INCOMPLETE_OUTPUT");
     if (typeof message?.content !== "string") throw protocolError("OLLAMA_MALFORMED_OUTPUT");
     const content = message.content.trim();
     const fenced = content.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/i);
     let validated: TranslationBatchResult;
     try {
-      validated = validateIdOutput(requestedIds, fenced ? fenced[1]!.trim() : content);
+      const output = fenced ? fenced[1]!.trim() : content;
+      if (strictProbe) validateStrictIdOutput(requestedIds, output);
+      validated = validateIdOutput(requestedIds, output);
     } catch {
       throw protocolError("OLLAMA_MALFORMED_OUTPUT");
     }
     const targets = new Map(items.map((item) => [item.id, item]));
+    const translations = validated.translations.filter((translation) => {
+      const target = targets.get(translation.id);
+      return target && !this.isContaminatedText(target, translation.text);
+    });
+    if (strictProbe) {
+      try {
+        validateStrictIdOutput(requestedIds, { translations });
+      } catch {
+        throw protocolError("OLLAMA_MALFORMED_OUTPUT");
+      }
+    }
     return {
-      translations: validated.translations.flatMap((translation) => {
-        const target = targets.get(translation.id);
-        if (!target || this.isContaminatedText(target, translation.text)) return [];
-        return [
-          {
-            ...translation,
-            text: translation.text,
-          },
-        ];
-      }),
+      translations,
       usage: {
         ...(typeof parsed.prompt_eval_count === "number"
           ? { input: parsed.prompt_eval_count }

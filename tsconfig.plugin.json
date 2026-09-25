@@ -6,8 +6,8 @@
     "moduleResolution": "Bundler",
     "lib": ["ES2020"],
     "types": ["iina-plugin-definition"],
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "build/plugin"
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "shared/**/*.ts"]
 }
