@@ -244,7 +244,11 @@ interface SidebarStateSnapshot {
   profileAuthority: SidebarProfileAuthority | null;
   profileActivationRequests: Record<
     string,
-    { requestId: string; profileId: string; enabled: boolean }
+    { requestId: string; profileId: string; enabled: boolean; stateVersion: number }
+  >;
+  expiredProfileActivationRequests: Record<
+    string,
+    { profileId: string; enabled: boolean; stateVersion: number }
   >;
   profileActivationErrors: Record<string, string>;
   credentialDisplayProfileId: string | null;
@@ -457,6 +461,7 @@ function createSubTandemSidebarState(
     selectedProfileId: null,
     profileAuthority: null,
     profileActivationRequests: {},
+    expiredProfileActivationRequests: {},
     profileActivationErrors: {},
     credentialDisplayProfileId: null,
     profileTests: {},
@@ -693,6 +698,31 @@ function createSubTandemSidebarState(
     }
     snapshot.profileAuthority = cloneProfileAuthority(authority);
     applyProfiles(authority.profiles);
+    const activationMatches = (profileId: string, enabled: boolean): boolean => {
+      const active = authority.activation;
+      const profile = authority.profiles.find((candidate) => candidate.profileId === profileId);
+      return enabled
+        ? active?.profileId === profileId && active.profileRevision === profile?.revision
+        : active?.profileId !== profileId;
+    };
+    if (authority.ready) {
+      for (const [requestId, request] of Object.entries(snapshot.profileActivationRequests)) {
+        if (
+          authority.stateVersion > request.stateVersion &&
+          activationMatches(request.profileId, request.enabled)
+        )
+          delete snapshot.profileActivationRequests[requestId];
+      }
+      for (const [requestId, request] of Object.entries(snapshot.expiredProfileActivationRequests)) {
+        if (
+          authority.stateVersion > request.stateVersion &&
+          activationMatches(request.profileId, request.enabled)
+        ) {
+          delete snapshot.expiredProfileActivationRequests[requestId];
+          delete snapshot.profileActivationErrors[request.profileId];
+        }
+      }
+    }
     return true;
   };
 
@@ -730,16 +760,33 @@ function createSubTandemSidebarState(
       !authority.profiles.some((profile) => profile.profileId === profileId)
     )
       return false;
-    snapshot.profileActivationRequests[requestId] = { requestId, profileId, enabled };
+    snapshot.profileActivationRequests[requestId] = {
+      requestId,
+      profileId,
+      enabled,
+      stateVersion: authority.stateVersion,
+    };
     delete snapshot.profileActivationErrors[profileId];
+    for (const [expiredRequestId, request] of Object.entries(
+      snapshot.expiredProfileActivationRequests,
+    )) {
+      if (request.profileId === profileId)
+        delete snapshot.expiredProfileActivationRequests[expiredRequestId];
+    }
     return true;
   };
 
   const finishProfileActivation = (result: SidebarProfileActivationResult) => {
     const request = snapshot.profileActivationRequests[result.requestId];
-    if (!request) return { accepted: false, authorityAccepted: false, announce: false };
+    if (!request)
+      return {
+        accepted: false,
+        authorityAccepted: applyProfileAuthority(result.authority),
+        announce: false,
+      };
     delete snapshot.profileActivationRequests[result.requestId];
     const authorityAccepted = applyProfileAuthority(result.authority);
+    delete snapshot.expiredProfileActivationRequests[result.requestId];
     if (result.outcome === "failed")
       snapshot.profileActivationErrors[request.profileId] =
         "Profile activation could not be changed. Try again.";
@@ -754,6 +801,11 @@ function createSubTandemSidebarState(
     const request = snapshot.profileActivationRequests[requestId];
     if (!request) return false;
     delete snapshot.profileActivationRequests[requestId];
+    snapshot.expiredProfileActivationRequests[requestId] = {
+      profileId: request.profileId,
+      enabled: request.enabled,
+      stateVersion: request.stateVersion,
+    };
     snapshot.profileActivationErrors[request.profileId] =
       "Profile activation timed out. Try again.";
     return true;

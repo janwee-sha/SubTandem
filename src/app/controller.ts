@@ -253,6 +253,7 @@ export class PlaybackController {
             remaining = remaining.filter((cue) => !accepted.has(cue.id));
             this.syncCurrentOverlay(fingerprint);
             this.runningSessionEpoch = fingerprint.sessionEpoch;
+            this.visibleFailure = null;
             this.status = this.currentSessionStatus();
           });
           if (!this.session.accepts(fingerprint) || this.source === null) return;
@@ -260,6 +261,7 @@ export class PlaybackController {
           remaining = remaining.filter((cue) => !accepted.has(cue.id));
           if (accepted.size > 0) {
             this.runningSessionEpoch = fingerprint.sessionEpoch;
+            this.visibleFailure = null;
             this.syncCurrentOverlay(fingerprint);
           }
           terminalError = remaining.length

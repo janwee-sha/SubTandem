@@ -1078,10 +1078,11 @@ globalMailbox.onMessage("profile-activation:set", async (raw: unknown, playerId?
       requestId: message.requestId,
       ...message.payload,
     });
-    if (result.outcome === "changed") await broker.cancelAll();
+    const cancellation = result.outcome === "changed" ? broker.cancelAll() : null;
     postToPlayer(playerId, "profile-activation:result", result);
     if (result.outcome === "changed") publishProfileAuthority();
     else if (result.outcome === "unchanged") publishProfileAuthority(playerId);
+    await cancellation;
   } catch {
     await profileReady;
     postToPlayer(playerId, "profile-activation:result", {

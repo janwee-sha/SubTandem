@@ -1289,6 +1289,59 @@ describe("Sidebar confirmed Profile activation", () => {
     });
   });
 
+  it("clears a timed-out enable when a newer authority confirms it", () => {
+    const state = createState();
+    state.applyProfileAuthority(authority(1));
+    state.beginProfileActivation("late-enable", "profile-b", true);
+    state.expireProfileActivation("late-enable");
+
+    expect(state.applyProfileAuthority(authority(1))).toBe(true);
+    expect(state.profileActivationView("profile-b").error).toMatch(/timed out/i);
+    expect(state.applyProfileAuthority(authority(2, "profile-b"))).toBe(true);
+    expect(state.profileActivationView("profile-b")).toMatchObject({
+      checked: true,
+      busy: false,
+      error: null,
+    });
+  });
+
+  it("reconciles a pending enable before its deadline and ignores its late receipt", () => {
+    const state = createState();
+    state.applyProfileAuthority(authority(1));
+    state.beginProfileActivation("broadcast-first", "profile-b", true);
+
+    state.applyProfileAuthority(authority(2, "profile-b"));
+    expect(state.expireProfileActivation("broadcast-first")).toBe(false);
+    expect(state.profileActivationView("profile-b")).toMatchObject({
+      checked: true,
+      disabled: false,
+      busy: false,
+      error: null,
+    });
+    expect(
+      state.finishProfileActivation({
+        requestId: "broadcast-first",
+        outcome: "changed",
+        authority: authority(2, "profile-b"),
+      }),
+    ).toMatchObject({ accepted: false, authorityAccepted: true });
+  });
+
+  it("clears a timed-out disable only after a newer authority confirms it", () => {
+    const state = createState();
+    state.applyProfileAuthority(authority(1));
+    state.beginProfileActivation("late-disable", "profile-a", false);
+    state.expireProfileActivation("late-disable");
+
+    state.applyProfileAuthority(authority(2));
+    expect(state.profileActivationView("profile-a").error).toMatch(/timed out/i);
+    state.applyProfileAuthority(authority(3, null));
+    expect(state.profileActivationView("profile-a")).toMatchObject({
+      checked: false,
+      error: null,
+    });
+  });
+
   it("reports restoration readiness without allowing activation requests", () => {
     const state = createState();
     state.applyProfileAuthority({ ...authority(1, null), ready: false });

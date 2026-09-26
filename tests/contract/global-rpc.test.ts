@@ -74,16 +74,19 @@ describe("authoritative global RPC routing", () => {
     expect(h.replies.at(-1)).toMatchObject({ name: "provider:test-result", data: { ok: true } });
   });
 
-  it("cancels obsolete Provider work before publishing a changed activation", () => {
+  it("invalidates obsolete Provider work before publishing without waiting for slow cancellation", () => {
     const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
     const start = source.indexOf('onMessage("profile-activation:set"');
     const end = source.indexOf('onMessage("provider:models"', start);
     const handler = source.slice(start, end);
-    expect(handler).toContain('if (result.outcome === "changed") await broker.cancelAll()');
-    expect(handler.indexOf("await broker.cancelAll()")).toBeLessThan(
+    expect(handler).toContain('result.outcome === "changed" ? broker.cancelAll() : null');
+    expect(handler.indexOf("broker.cancelAll()")).toBeLessThan(
       handler.indexOf('postToPlayer(playerId, "profile-activation:result"'),
     );
-    expect(handler.indexOf("await broker.cancelAll()")).toBeLessThan(
+    expect(handler.indexOf("broker.cancelAll()")).toBeLessThan(
+      handler.indexOf("publishProfileAuthority()"),
+    );
+    expect(handler.indexOf("await cancellation")).toBeGreaterThan(
       handler.indexOf("publishProfileAuthority()"),
     );
   });

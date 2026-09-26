@@ -229,6 +229,13 @@ const profileRows = new Map<string, HTMLElement>();
 let newProfileRow: HTMLElement | null = null;
 const pendingOperations = new Set<string>();
 const profileActivationTimeouts = new Map<string, number>();
+const clearConfirmedProfileActivationTimeouts = (): void => {
+  for (const [requestId, timeout] of profileActivationTimeouts) {
+    if (sidebarState.snapshot.profileActivationRequests[requestId]) continue;
+    window.clearTimeout(timeout);
+    profileActivationTimeouts.delete(requestId);
+  }
+};
 let activeProviderKind: ProviderKind = "openai";
 let editingProfile: ProfileView | null = null;
 let pendingProfileSave: {
@@ -1624,6 +1631,7 @@ window.iina?.onMessage("profile:revision-created", (raw: unknown) => {
 
 window.iina?.onMessage("profile-activation:state", (raw: unknown) => {
   if (!sidebarState.applyProfileAuthority(raw as SidebarProfileAuthority)) return;
+  clearConfirmedProfileActivationTimeouts();
   renderedProfilesSignature = "";
   renderProfiles(sidebarState.snapshot.profiles as unknown as ProfileView[]);
 });
@@ -1636,7 +1644,8 @@ window.iina?.onMessage("profile-activation:result", (raw: unknown) => {
     profileActivationTimeouts.delete(value.requestId);
   }
   const result = sidebarState.finishProfileActivation(value);
-  if (!result.accepted) return;
+  if (!result.accepted && !result.authorityAccepted) return;
+  clearConfirmedProfileActivationTimeouts();
   renderedProfilesSignature = "";
   renderProfiles(sidebarState.snapshot.profiles as unknown as ProfileView[]);
 });
@@ -2163,6 +2172,7 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
   if (view.profileAuthority) {
     const previousTest = sidebarState.snapshot.drawer.test;
     sidebarState.applyProfileAuthority(view.profileAuthority);
+    clearConfirmedProfileActivationTimeouts();
     reconcileDrawerAfterAuthority(previousTest);
   }
   if (view.targetLanguages) {
