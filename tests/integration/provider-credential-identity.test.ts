@@ -2,18 +2,18 @@ import { describe, expect, it } from "vitest";
 import { ProviderProfiles } from "../../src/providers/profiles.js";
 import { globalProviderHarness } from "../helpers/global-provider-harness.js";
 
-const variants: Array<[string, boolean]> = [
-  ["  HTTPS://EXAMPLE.TEST:443/Root/%41///  ", true],
-  ["https://example.test:443/Root/%41", true],
-  ["http://example.test:443/Root/%41", false],
-  ["https://other.test:443/Root/%41", false],
-  ["https://example.test/Root/%41", false],
-  ["https://example.test:0443/Root/%41", false],
-  ["https://example.test:443/root/%41", false],
-  ["https://example.test:443/Root/A", false],
-  ["https://example.test:443//Root/%41", false],
-  ["https://example.test:443/./Root/%41", false],
-  ["https://example.test:443/v1/Root/%41", false],
+const variants = [
+  "  HTTPS://EXAMPLE.TEST:443/Root/%41///  ",
+  "https://example.test:443/Root/%41",
+  "http://example.test:443/Root/%41",
+  "https://other.test:443/Root/%41",
+  "https://example.test/Root/%41",
+  "https://example.test:0443/Root/%41",
+  "https://example.test:443/root/%41",
+  "https://example.test:443/Root/A",
+  "https://example.test:443//Root/%41",
+  "https://example.test:443/./Root/%41",
+  "https://example.test:443/v1/Root/%41",
 ];
 const flush = async () => {
   for (let i = 0; i < 8; i++) await Promise.resolve();
@@ -35,7 +35,7 @@ for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
   };
   describe(`${kind} saved credential boundary`, () => {
     for (const operation of ["test", "automatic", "manual"] as const) {
-      it.each(variants)(`${operation} compares %s`, async (endpoint, equivalent) => {
+      it.each(variants)(`${operation} uses the saved Key at %s`, async (endpoint) => {
         const h = await globalProviderHarness([saved]);
         const payload =
           operation === "test"
@@ -47,7 +47,7 @@ for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
                 sourceProfile,
                 drawerId: "drawer",
                 draftRevision: 1,
-                credential: { source: equivalent ? "saved" : "none" },
+                credential: { source: "saved" },
               }
             : {
                 kind,
@@ -58,17 +58,59 @@ for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
               };
         const work = h.send(operation === "test" ? "provider:test" : "provider:models", payload);
         await flush();
-        expect(h.reads).toEqual(equivalent ? ["saved"] : []);
-        if (equivalent) h.secrets.releaseNext({ apiKey: "saved-key" });
+        expect(h.reads).toEqual(["saved"]);
+        h.secrets.releaseNext({ apiKey: "saved-key" });
         await flush();
         expect(h.transport.calls).toHaveLength(1);
         const header = kind === "claude" ? "x-api-key" : "Authorization";
         expect(h.transport.calls[0]!.headers[header]).toBe(
-          equivalent ? (kind === "claude" ? "saved-key" : "Bearer saved-key") : undefined,
+          kind === "claude" ? "saved-key" : "Bearer saved-key",
         );
+        expect(h.transport.calls[0]!.url).toContain(endpoint.trim().replace(/\/+$/, ""));
         const cancelName = operation === "test" ? "provider:test-cancel" : "provider:models-cancel";
         await h.send(
           cancelName,
+          operation === "test" ? { testRequestId: "request" } : { modelRequestId: "request" },
+          "window",
+          "cancel",
+        );
+        h.transport.responses.releaseNext({ statusCode: 200, headers: {}, bodyText: "{}" });
+        await work;
+      });
+    }
+    for (const operation of ["test", "automatic", "manual"] as const) {
+      it(`${operation} uses the saved Key on a changed route`, async () => {
+        const h = await globalProviderHarness([saved]);
+        const payload =
+          operation === "test"
+            ? {
+                kind,
+                endpoint: "https://other.test:443/Root/%41",
+                proxyMode: "system",
+                model: "model",
+                sourceProfile,
+                drawerId: "drawer",
+                draftRevision: 1,
+                credential: { source: "saved" },
+              }
+            : {
+                kind,
+                endpoint: "https://other.test:443/Root/%41",
+                proxyMode: "system",
+                trigger: operation === "manual" ? "manual" : "endpoint",
+                ...sourceProfile,
+              };
+        const work = h.send(operation === "test" ? "provider:test" : "provider:models", payload);
+        await h.secrets.waitForPending();
+        h.secrets.releaseNext({ apiKey: "saved-key" });
+        await flush();
+        expect(h.transport.calls[0]).toMatchObject({ proxyMode: "system" });
+        expect(h.transport.calls[0]!.url).toContain("https://other.test:443/Root/%41");
+        expect(
+          h.transport.calls[0]!.headers[kind === "claude" ? "x-api-key" : "Authorization"],
+        ).toContain("saved-key");
+        await h.send(
+          operation === "test" ? "provider:test-cancel" : "provider:models-cancel",
           operation === "test" ? { testRequestId: "request" } : { modelRequestId: "request" },
           "window",
           "cancel",
@@ -151,14 +193,14 @@ for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
         expect(h.replies.some((reply) => reply.data.ok === true)).toBe(false);
       },
     );
-    it.each(["kind", "route", "revision", "fingerprint", "profile"] as const)(
+    it.each(["kind", "revision", "fingerprint", "profile"] as const)(
       "rejects saved Test with changed %s before reading credentials",
       async (field) => {
         const h = await globalProviderHarness([saved]);
         await h.send("provider:test", {
           kind: field === "kind" ? (kind === "ollama" ? "openai" : "ollama") : kind,
           endpoint: saved.endpoint,
-          proxyMode: field === "route" ? "system" : "direct",
+          proxyMode: "direct",
           model: "model",
           sourceProfile: {
             ...sourceProfile,
@@ -174,12 +216,30 @@ for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
         expect(h.transport.calls).toHaveLength(0);
       },
     );
+    it("does not use the saved Key after a draft Service type switch", async () => {
+      const h = await globalProviderHarness([saved]);
+      const nextKind = kind === "ollama" ? "openai" : "ollama";
+      const work = h.send("provider:models", {
+        kind: nextKind,
+        endpoint: "https://other.test:443/Root/%41",
+        proxyMode: "system",
+        trigger: "manual",
+        ...sourceProfile,
+      });
+      await flush();
+      expect(h.reads).toEqual([]);
+      expect(h.transport.calls).toHaveLength(1);
+      expect(h.transport.calls[0]!.headers["Authorization"]).toBeUndefined();
+      await h.send("provider:models-cancel", { modelRequestId: "request" }, "window", "cancel");
+      h.transport.responses.releaseNext({ statusCode: 200, headers: {}, bodyText: "{}" });
+      await work;
+    });
     it("uses a manual entered Key without reading the saved Key", async () => {
       const h = await globalProviderHarness([saved]);
       const work = h.send("provider:models-preview", {
         kind,
-        endpoint: saved.endpoint,
-        proxyMode: "direct",
+        endpoint: "https://other.test:443/Root/%41",
+        proxyMode: "system",
         trigger: "manual",
         draftCredentialEpoch: 1,
         credential: { apiKey: "entered-key" },
@@ -191,7 +251,33 @@ for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
       expect(
         h.transport.calls[0]!.headers[kind === "claude" ? "x-api-key" : "Authorization"],
       ).toContain("entered-key");
+      expect(h.transport.calls[0]).toMatchObject({ proxyMode: "system" });
+      expect(h.transport.calls[0]!.url).toContain("https://other.test:443/Root/%41");
       await h.send("provider:models-cancel", { modelRequestId: "request" }, "window", "cancel");
+      h.transport.responses.releaseNext({ statusCode: 200, headers: {}, bodyText: "{}" });
+      await work;
+    });
+    it("prefers the entered Test Key at the selected Endpoint and route", async () => {
+      const h = await globalProviderHarness([saved]);
+      const work = h.send("provider:test", {
+        kind,
+        endpoint: "https://other.test:443/Root/%41",
+        proxyMode: "system",
+        model: "model",
+        sourceProfile,
+        drawerId: "drawer",
+        draftRevision: 1,
+        credential: { source: "entered", apiKey: "entered-key" },
+      });
+      await flush();
+      expect(h.reads).toEqual([]);
+      expect(h.transport.calls).toHaveLength(1);
+      expect(h.transport.calls[0]).toMatchObject({ proxyMode: "system" });
+      expect(h.transport.calls[0]!.url).toContain("https://other.test:443/Root/%41");
+      expect(
+        h.transport.calls[0]!.headers[kind === "claude" ? "x-api-key" : "Authorization"],
+      ).toContain("entered-key");
+      await h.send("provider:test-cancel", { testRequestId: "request" }, "window", "cancel");
       h.transport.responses.releaseNext({ statusCode: 200, headers: {}, bodyText: "{}" });
       await work;
     });

@@ -332,7 +332,7 @@ describe("Profile activation restoration", () => {
 });
 
 for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
-  it(`preserves ${kind} saved identity and Key association through edit and restart`, async () => {
+  it(`preserves ${kind} saved Key through non-equivalent Endpoint and route changes after restart`, async () => {
     const saved = {
       ...profile,
       kind,
@@ -362,12 +362,18 @@ for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
     const edited = await first.saveProfile({
       ...saved,
       expectedRevision: saved.revision,
-      endpoint: " HTTPS://EXAMPLE.TEST:443/Root/%41/// ",
+      displayName: "Changed name",
+      endpoint: " https://other.test:8443/Changed/Root ",
+      proxyMode: "system",
+      model: "changed-model",
     });
     expect(edited.outcome).toBe("changed");
     expect(edited.profile).toMatchObject({
       revision: saved.revision + 1,
-      endpoint: "HTTPS://EXAMPLE.TEST:443/Root/%41///",
+      endpoint: "https://other.test:8443/Changed/Root",
+      proxyMode: "system",
+      model: "changed-model",
+      displayName: "Changed name",
     });
     expect(edited.profile!.endpointFingerprint).not.toBe(saved.endpointFingerprint);
     expect(edited.authority.activation).toBeNull();

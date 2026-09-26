@@ -796,11 +796,7 @@ function canUseSavedDraftCredential(): boolean {
     source.endpointFingerprint !== editingProfile.endpointFingerprint
   )
     return false;
-  return sameProviderService(editingProfile, {
-    kind: providerKind.value as ProviderKind,
-    endpoint: providerEndpoint.value,
-    proxyMode: providerProxyMode.value === "direct" ? "direct" : "system",
-  });
+  return editingProfile.kind === providerKind.value;
 }
 
 function modelRefreshPayload(trigger: "open" | "endpoint" | "profile" | "credential" | "manual") {

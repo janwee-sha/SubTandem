@@ -676,7 +676,7 @@ describe("Shared subtitle color palette contract", () => {
 describe.each(["openai", "claude", "deepseek", "ollama"])(
   "%s Sidebar credential identity",
   (kind) => {
-    it("shares equivalence between Test and model refresh without sending an automatic draft Key", async () => {
+    it("uses the saved Key for a changed Endpoint and route without sending an automatic draft Key", async () => {
       const { sidebarHarness } = await import("../helpers/sidebar-harness.js");
       const h = sidebarHarness();
       const profile = {
@@ -721,6 +721,26 @@ describe.each(["openai", "claude", "deepseek", "ollama"])(
         },
       });
       h.element("#provider-endpoint").value = "https://other.test";
+      h.element("#provider-proxy-mode").value = "system";
+      expect(h.evaluate("canUseSavedDraftCredential()")).toBe(true);
+      h.element("#provider-key").value = "";
+      h.element("#test-profile").dispatch("click");
+      expect(h.messages.at(-1)).toMatchObject({
+        name: "provider:test",
+        data: {
+          payload: {
+            credential: { source: "saved" },
+            endpoint: "https://other.test",
+            proxyMode: "system",
+          },
+        },
+      });
+      h.evaluate('requestModels("endpoint")');
+      expect(h.messages.at(-1)).toMatchObject({
+        name: "provider:models",
+        data: { payload: { endpoint: "https://other.test", proxyMode: "system" } },
+      });
+      h.element("#provider-kind").value = kind === "ollama" ? "openai" : "ollama";
       expect(h.evaluate("canUseSavedDraftCredential()")).toBe(false);
     });
   },

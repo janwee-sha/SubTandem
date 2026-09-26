@@ -1133,10 +1133,11 @@ async function runModelRequest(
     assertSavedModelOwner(owner);
     const endpoint = normalizeProviderEndpoint(values.kind, values.endpoint);
     const profile = profileId ? profiles.get(profileId) : null;
-    const authorized = Boolean(
+    const matchingService = Boolean(
       profile &&
       sameProviderService({ ...profile, proxyMode: profile.proxyMode ?? "system" }, values),
     );
+    const savedCredentialEligible = Boolean(profile && profile.kind === values.kind);
     context.contextKey = preview
       ? identityHash({
           playerId,
@@ -1150,7 +1151,7 @@ async function runModelRequest(
           kind: context.kind,
           endpoint,
           proxyMode: context.proxyMode,
-          ...(profile && authorized
+          ...(profile && matchingService
             ? {
                 profileId: profile.profileId,
                 profileRevision: profile.revision,
@@ -1161,7 +1162,7 @@ async function runModelRequest(
         });
     let apiKey: string | undefined;
     if (preview) apiKey = values.credential.apiKey;
-    else if (authorized && profile) {
+    else if (savedCredentialEligible && profile) {
       assertSavedModelOwner(owner);
       apiKey = (await credentials.getSecret(profile.profileId))?.apiKey;
       assertSavedModelOwner(owner);
@@ -1182,7 +1183,7 @@ async function runModelRequest(
     );
     assertSavedModelOwner(owner);
     if (!preview) {
-      if (authorized && profile)
+      if (matchingService && profile)
         recordProfileModelCatalog(profile.profileId, context.contextKey, models);
       else modelCatalogs.set(context.contextKey, models);
     }
@@ -1423,13 +1424,7 @@ globalMailbox.onMessage("provider:test", async (raw: unknown, senderId?: string)
           userAction: "RETRY",
         };
       const current = profiles.get(source.profileId);
-      if (
-        !current ||
-        !sameProviderService(
-          { ...current, proxyMode: current.proxyMode ?? "system" },
-          message.payload,
-        )
-      )
+      if (!current || current.kind !== message.payload.kind)
         throw {
           category: "configuration",
           retryable: false,
