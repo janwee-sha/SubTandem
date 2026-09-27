@@ -6,8 +6,8 @@
     "moduleResolution": "Bundler",
     "lib": ["ES2020", "DOM"],
     "types": [],
-    "rootDir": "ui",
+    "rootDir": ".",
     "outDir": "build/webview"
   },
-  "include": ["ui/**/*.ts"]
+  "include": ["ui/**/*.ts", "shared/**/*.ts"]
 }

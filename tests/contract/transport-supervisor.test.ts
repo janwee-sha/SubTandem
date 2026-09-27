@@ -413,3 +413,19 @@ describe("transport supervisor", () => {
     expect(starts).toBe(1);
   });
 });
+
+it("blocks a provider send cancelled while its helper is starting", async () => {
+  const { CompletionQueue } = await import("../helpers/profile-activation-harness.js");
+  const { HelperProviderTransport } = await import("../../src/adapters/iina/provider-transport.js");
+  const queue = new CompletionQueue<void, TransportRpcClient>();
+  const client = new FakeTransportClient();
+  const supervisor = new TransportSupervisor(() => queue.hold().promise);
+  const adapter = new HelperProviderTransport(supervisor, () => providerRequest.jobId);
+  const work = adapter.request(providerRequest).catch((error) => error);
+  await queue.waitForPending();
+  const cancellation = adapter.cancel(providerRequest.jobId);
+  queue.releaseNext(client);
+  await cancellation;
+  expect(await work).toMatchObject({ category: "cancelled" });
+  expect(client.requestCalls).toBe(0);
+});

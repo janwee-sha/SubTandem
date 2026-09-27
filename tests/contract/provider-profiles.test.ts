@@ -21,7 +21,7 @@ describe("latest provider Profiles", () => {
       proxyMode: "direct",
     });
 
-    expect(first).toMatchObject({ revision: 1, endpoint: "https://api.anthropic.com" });
+    expect(first).toMatchObject({ revision: 1, endpoint: "https://API.Anthropic.com/" });
     expect(latest).toMatchObject({ revision: 2, proxyMode: "direct" });
     expect(latest.endpointFingerprint).not.toBe(first.endpointFingerprint);
     expect(profiles.get(first.profileId, 1)).toBeNull();
@@ -170,8 +170,8 @@ describe("latest provider Profiles", () => {
   it.each([
     ["openai", "https://api.example.test/v1", "https://api.example.test/v1"],
     ["openai", "http://127.0.0.1:8080/v1", "http://127.0.0.1:8080/v1"],
-    ["ollama", "https://ollama.example.test/", "https://ollama.example.test"],
-    ["ollama", "http://localhost:11434/", "http://localhost:11434"],
+    ["ollama", "https://ollama.example.test/", "https://ollama.example.test/"],
+    ["ollama", "http://localhost:11434/", "http://localhost:11434/"],
   ] as const)("normalizes valid %s endpoints", (kind, endpoint, normalized) => {
     expect(normalizeProviderEndpoint(kind, endpoint)).toBe(normalized);
   });

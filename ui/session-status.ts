@@ -53,6 +53,19 @@ interface Window {
   subtandemSessionFailureMessage(error: SessionFailureInput | null | undefined): string | null;
   subtandemResolveSessionPresentation(input: SessionPresentationInput): SessionPresentation | null;
   subtandemResolveSessionSourceDetails(input: SessionPresentationInput): SessionSourceDetails;
+  subtandemSubtitleFormatLabel(format: string): string;
+}
+
+const subtitleFormatLabels: Record<string, string> = {
+  srt: "SRT (SubRip)",
+  subrip: "SRT (SubRip)",
+  ass: "ASS (Advanced SubStation Alpha)",
+  ssa: "SSA (SubStation Alpha)",
+  mov_text: "MP4 timed text",
+};
+
+function subtitleFormatLabel(format: string): string {
+  return subtitleFormatLabels[format] ?? "Unknown subtitle format";
 }
 
 const sessionStatusLabels: Partial<Record<SessionPresentationStatus, string>> = {
@@ -111,7 +124,10 @@ function resolveSessionPresentation(input: SessionPresentationInput): SessionPre
 }
 
 function resolveSessionSourceDetails(input: SessionPresentationInput): SessionSourceDetails {
-  if (input.status === "disabled")
+  if (
+    input.status === "disabled" ||
+    (input.sourcePreparation && input.sourcePreparation.state !== "ready")
+  )
     return { source: null, retryAvailable: false, detailsVisible: false };
   return {
     source: input.source ?? null,
@@ -128,3 +144,4 @@ function resolveSessionSourceDetails(input: SessionPresentationInput): SessionSo
   resolveSessionPresentation;
 (globalThis as typeof globalThis & Window).subtandemResolveSessionSourceDetails =
   resolveSessionSourceDetails;
+(globalThis as typeof globalThis & Window).subtandemSubtitleFormatLabel = subtitleFormatLabel;

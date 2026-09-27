@@ -25,6 +25,7 @@ import { SubtitlePreparationCoordinator } from "./app/subtitle-preparation.js";
 import { EpochBootstrapGate } from "./app/epoch-bootstrap-gate.js";
 import {
   parseProviderModelsRequest,
+  parseProviderModelsCancelRequest,
   parseProviderModelsPreviewRequest,
   parseProviderModelsResult,
   parseProviderTestCancelRequest,
@@ -438,7 +439,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     });
     updateSidebarState({
       source: {
-        format: prepared.codec,
+        format: prepared.displayFormat,
         cueCount: prepared.cues.length,
         warnings: [],
       },
@@ -760,6 +761,17 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
         code: "INVALID_MESSAGE",
         userAction: "NONE",
       });
+    }
+  });
+  runtime.sidebar.onMessage("provider:models-cancel", (raw: unknown) => {
+    try {
+      const message = parseProviderModelsCancelRequest(raw);
+      if ("modelRequestId" in message.payload)
+        modelCatalogSync.cancel(playerId, message.payload.modelRequestId);
+      else modelCatalogSync.remove(playerId);
+      runtime.global.postMessage("provider:models-cancel", message);
+    } catch {
+      return;
     }
   });
   runtime.sidebar.onMessage("provider:models", (raw: unknown) => {
@@ -1106,6 +1118,11 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     });
     runtime.global.postMessage("provider:test-cancel", {
       requestId: `provider-test.close.${playerId}`,
+      revision: 1,
+      payload: {},
+    });
+    runtime.global.postMessage("provider:models-cancel", {
+      requestId: `provider-models.close.${playerId}`,
       revision: 1,
       payload: {},
     });

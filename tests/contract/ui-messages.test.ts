@@ -867,3 +867,23 @@ describe("Sidebar/Main/Global security messages", () => {
     }
   });
 });
+
+describe("precise model cancellation", () => {
+  it("accepts only an exact model ID or the window close payload", async () => {
+    const { parseProviderModelsCancelRequest } = await import("../../src/domain/messages.js");
+    for (const payload of [{}, { modelRequestId: "model.1-a_b" }])
+      expect(
+        parseProviderModelsCancelRequest({ requestId: "cancel", revision: 1, payload }).payload,
+      ).toEqual(payload);
+    for (const payload of [
+      { playerId: "other" },
+      { modelRequestId: "" },
+      { modelRequestId: "a".repeat(129) },
+      { modelRequestId: "a/b" },
+      { modelRequestId: "valid", unknown: "secret" },
+    ])
+      expect(() =>
+        parseProviderModelsCancelRequest({ requestId: "cancel", revision: 1, payload }),
+      ).toThrow("INVALID_MESSAGE");
+  });
+});

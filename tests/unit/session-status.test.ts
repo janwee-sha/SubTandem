@@ -43,6 +43,17 @@ function presentation(input: {
 
 describe("Session failure presentation", () => {
   it.each([
+    ["srt", "SRT (SubRip)"],
+    ["subrip", "SRT (SubRip)"],
+    ["ass", "ASS (Advanced SubStation Alpha)"],
+    ["ssa", "SSA (SubStation Alpha)"],
+    ["mov_text", "MP4 timed text"],
+    ["unknown", "Unknown subtitle format"],
+  ])("maps subtitle format %s to %s", (format, expected) => {
+    expect(globalThis.subtandemSubtitleFormatLabel(format)).toBe(expected);
+  });
+
+  it.each([
     [{ category: "authentication" }, "Authentication failed. Check the Profile’s API key."],
     [
       { category: "authentication", statusCode: 403 },

@@ -180,6 +180,79 @@ func runServerTests() async throws {
     let credentialAfterDelete = try await credentialStore.read(profileID: profileID)
     try check(credentialAfterDelete == nil, "Profile transaction must delete its credential")
 
+    for kind in ["openai", "claude", "deepseek", "ollama"] {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("subtandem-profile-key-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = try SecureCredentialStore(directory: directory)
+        let original = StoredProviderProfile(
+            profileId: profileID,
+            revision: 1,
+            displayName: "Original",
+            kind: kind,
+            endpoint: "https://example.test/v1",
+            endpointFingerprint: "original-fingerprint",
+            proxyMode: "direct",
+            model: "original-model",
+            capability: nil
+        )
+        let initialized = try await store.initializeProfileState(
+            commitID: UUID().uuidString,
+            expectedStoreRevision: 0,
+            profiles: [original]
+        )
+        let written = try await store.write(
+            profileID: profileID,
+            fields: ["apiKey": "saved-key"],
+            commitID: UUID().uuidString,
+            expectedStoreRevision: initialized.storeRevision,
+            expectedProfileRevision: 1
+        )
+        let updated = StoredProviderProfile(
+            profileId: profileID,
+            revision: 2,
+            displayName: "Changed name",
+            kind: kind,
+            endpoint: "https://other.test/v2",
+            endpointFingerprint: "changed-fingerprint",
+            proxyMode: "system",
+            model: "changed-model",
+            capability: nil
+        )
+        let retained = try await store.commitProfileState(
+            commitID: UUID().uuidString,
+            expectedStoreRevision: written.storeRevision,
+            profileState: StoredProfileState(profiles: [updated], activation: nil)
+        )
+        let reopened = try SecureCredentialStore(directory: directory)
+        let retainedKey = try await reopened.read(profileID: profileID)
+        try check(
+            retainedKey == ["apiKey": "saved-key"],
+            "\(kind) non-type Profile changes must retain the saved Key after reopening"
+        )
+        let changedType = StoredProviderProfile(
+            profileId: profileID,
+            revision: 3,
+            displayName: "Changed type",
+            kind: kind == "ollama" ? "openai" : "ollama",
+            endpoint: "https://other.test/v2",
+            endpointFingerprint: "new-type-fingerprint",
+            proxyMode: "system",
+            model: "changed-model",
+            capability: nil
+        )
+        _ = try await reopened.commitProfileState(
+            commitID: UUID().uuidString,
+            expectedStoreRevision: retained.storeRevision,
+            profileState: StoredProfileState(profiles: [changedType], activation: nil)
+        )
+        let clearedKey = try await reopened.read(profileID: profileID)
+        try check(
+            clearedKey == nil,
+            "\(kind) Service type changes must clear the saved Key"
+        )
+    }
+
     let openedProfile = await handler.handle(
         path: "/v1/profile-state",
         authorization: "Bearer correct-token",

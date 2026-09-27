@@ -21,6 +21,7 @@ class FakeBridge implements SubtitleExtractorRpcBridge {
       state: "ready",
       resultId: "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae",
       format: "srt",
+      sourceFormat: null,
       cueCount: 1,
       byteCount: 44,
       sha256: "a".repeat(64),
@@ -47,6 +48,7 @@ class FakeManagedExtractor implements ManagedSubtitleExtractorRpcClient {
       state: "ready" as const,
       resultId: request.jobId,
       format: "srt" as const,
+      sourceFormat: null,
       cueCount: 1,
       byteCount: 44,
       sha256: "a".repeat(64),
@@ -270,6 +272,7 @@ describe("subtitle extractor client contract", () => {
       state: "ready",
       resultId: "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae",
       format: "srt",
+      sourceFormat: null,
       cueCount: 1,
       byteCount: 44,
       sha256: "a".repeat(64),
@@ -301,6 +304,37 @@ describe("subtitle extractor client contract", () => {
         maxCueCount: 20_000,
         maxOutputBytes: 16_777_216,
       }),
+    ).rejects.toThrow("EXTRACTOR_PROTOCOL");
+  });
+
+  it("accepts only a selected Matroska ASS or SSA raw format with a source identity", async () => {
+    const response = {
+      jobId: prepareRequest.jobId,
+      state: "ready",
+      resultId: prepareRequest.jobId,
+      format: "srt",
+      sourceFormat: "ssa",
+      cueCount: 1,
+      byteCount: 44,
+      sha256: "a".repeat(64),
+    };
+    const client = new SubtitleExtractorClient(
+      { port: 49152, token: "session-token" },
+      { post: async () => response },
+    );
+    await expect(client.prepare(prepareRequest)).resolves.toMatchObject({ sourceFormat: "ssa" });
+    for (const invalid of [
+      { ...response, sourceFormat: "subrip" },
+      { ...response, subtitle: "private text" },
+    ]) {
+      const invalidClient = new SubtitleExtractorClient(
+        { port: 49152, token: "session-token" },
+        { post: async () => invalid },
+      );
+      await expect(invalidClient.prepare(prepareRequest)).rejects.toThrow("EXTRACTOR_PROTOCOL");
+    }
+    await expect(
+      client.prepare({ ...prepareRequest, stream: { ...prepareRequest.stream, sourceId: null } }),
     ).rejects.toThrow("EXTRACTOR_PROTOCOL");
   });
 

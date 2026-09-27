@@ -102,7 +102,7 @@ function providerRequest(
 ): TranslationBatchRequest {
   return {
     playerId: "main-lifecycle-1" as TranslationBatchRequest["playerId"],
-    requestId: "request-1" as TranslationBatchRequest["requestId"],
+    requestId: `request-${activationGeneration}` as TranslationBatchRequest["requestId"],
     batchId: "batch-1" as TranslationBatchRequest["batchId"],
     sessionId: "session-1" as TranslationBatchRequest["sessionId"],
     sessionEpoch: 1,

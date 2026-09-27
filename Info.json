@@ -1,9 +1,9 @@
 {
   "name": "SubTandem",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "identifier": "io.subtandem.iina",
   "ghRepo": "janwee-sha/SubTandem",
-  "ghVersion": 1008,
+  "ghVersion": 1009,
   "description": "A powerful plugin for real-time AI-powered bilingual subtitle translation.",
   "author": {
     "name": "SubTandem Contributors"

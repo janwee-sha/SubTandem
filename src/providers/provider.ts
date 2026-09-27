@@ -8,6 +8,7 @@ export interface TranslationProvider {
   attempt(
     request: TranslationBatchRequest,
     onProgress?: TranslationProgressHandler,
+    assertAuthorized?: () => void,
   ): Promise<TranslationBatchResult>;
   cancel?(requestId: string): Promise<void> | void;
 }

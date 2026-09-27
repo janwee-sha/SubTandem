@@ -1,3 +1,6 @@
+import { registerLifecycleContract } from "../helpers/provider-lifecycle-contract.js";
+import { registerFailureContract } from "../helpers/provider-failure-contract.js";
+import { registerProbeContract } from "../helpers/provider-probe-contract.js";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { OllamaProvider } from "../../src/providers/ollama.js";
@@ -1011,3 +1014,21 @@ describe("Ollama native provider", () => {
     }
   });
 });
+
+registerProbeContract(
+  "ollama",
+  (transport) =>
+    new OllamaProvider({ endpoint: "https://fixture.test", model: "model" }, transport),
+);
+
+registerFailureContract(
+  "ollama",
+  (transport) =>
+    new OllamaProvider({ endpoint: "https://fixture.test", model: "model" }, transport),
+);
+
+registerLifecycleContract(
+  "ollama",
+  (transport) =>
+    new OllamaProvider({ endpoint: "https://fixture.test", model: "model" }, transport),
+);

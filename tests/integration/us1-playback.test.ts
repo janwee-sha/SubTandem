@@ -285,7 +285,7 @@ describe("US1 playback acceptance", () => {
     expect(overlay.frames.at(-1)).toEqual(["ZH:World"]);
   });
 
-  it("latches a real failure through ordinary success and accepts a newer failure", async () => {
+  it("clears an earlier failure after success and shows a newer failure", async () => {
     const spacedCues = Array.from({ length: 4 }, (_, index) => ({
       id: `spaced-${index + 1}`,
       index,
@@ -324,13 +324,65 @@ describe("US1 playback acceptance", () => {
 
     controller.tick(400_000);
     await controller.whenIdle();
-    expect(controller.status).toBe("partialFailure");
-    expect(controller.providerError).toMatchObject({ category: "authentication" });
+    expect(controller.status).toBe("running");
+    expect(controller.providerError).toBeNull();
 
     controller.tick(600_000);
     await controller.whenIdle();
     expect(controller.status).toBe("partialFailure");
     expect(controller.providerError).toMatchObject({ category: "model" });
+  });
+
+  it("clears an earlier failure as soon as new translation progress arrives", async () => {
+    const spacedCues = [
+      {
+        id: "first",
+        index: 0,
+        startMs: 0,
+        endMs: 1_000,
+        sourceText: "first",
+        normalizedText: "first",
+      },
+      {
+        id: "second",
+        index: 1,
+        startMs: 200_000,
+        endMs: 201_000,
+        sourceText: "second",
+        normalizedText: "second",
+      },
+    ];
+    let release!: (value: { translations: Array<{ id: string; text: string }> }) => void;
+    let publish!: (value: { translations: Array<{ id: string; text: string }> }) => void;
+    let attempt = 0;
+    const controller = new PlaybackController({
+      playerId: "failure-then-progress",
+      provider: {
+        attempt: (request, onProgress) => {
+          attempt += 1;
+          if (attempt === 1)
+            return Promise.reject({ category: "authentication", retryable: false });
+          publish = onProgress;
+          return new Promise((resolve) => {
+            release = resolve;
+          });
+        },
+      },
+      overlay: new RecordingOverlay(),
+      targetLanguage: "zh-Hans",
+    });
+    controller.setSource({ cues: spacedCues, contentHash: "progress", format: "srt" });
+    controller.tick(0);
+    await controller.whenIdle();
+    expect(controller.providerError).toMatchObject({ category: "authentication" });
+
+    controller.tick(200_000);
+    publish({ translations: [{ id: "second", text: "translated" }] });
+    expect(controller.status).toBe("running");
+    expect(controller.providerError).toBeNull();
+    release({ translations: [{ id: "second", text: "translated" }] });
+    await controller.whenIdle();
+    expect(controller.status).toBe("running");
   });
 
   it("does not commit a current-session cancellation as a failure", async () => {

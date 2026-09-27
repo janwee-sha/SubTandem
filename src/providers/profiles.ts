@@ -1,3 +1,7 @@
+import "../../shared/provider-endpoint.js";
+export const { normalizeProviderEndpoint, sameProviderService } = (
+  globalThis as typeof globalThis & { subtandemProviderEndpoint: SubtandemProviderEndpointApi }
+).subtandemProviderEndpoint;
 import { identityHash } from "../domain/identity.js";
 import type { EndpointFingerprint, PersistentProviderProfile, ProfileId } from "../domain/types.js";
 import type { ProviderProfileSnapshot } from "./types.js";
@@ -14,58 +18,6 @@ export interface SaveProfileInput {
   proxyMode?: "system" | "direct";
   model?: string;
   capability?: "strict-json-schema" | "json-object" | "prompt-json";
-}
-
-function invalidEndpoint(): never {
-  throw new Error("INVALID_ENDPOINT");
-}
-
-function validatePort(value: string): void {
-  if (!/^\d+$/.test(value)) invalidEndpoint();
-  const port = Number(value);
-  if (!Number.isInteger(port) || port < 1 || port > 65_535) invalidEndpoint();
-}
-
-function validateIpv6Host(value: string): void {
-  if (!value.includes(":") || !/^[0-9a-f:.]+$/i.test(value)) invalidEndpoint();
-  const compression = value.indexOf("::");
-  if (compression !== value.lastIndexOf("::")) invalidEndpoint();
-  const groups = value.split(":").filter(Boolean);
-  if (groups.some((group) => group.length > 4)) invalidEndpoint();
-  if ((compression === -1 && groups.length !== 8) || (compression !== -1 && groups.length >= 8))
-    invalidEndpoint();
-}
-
-function validateAuthority(authority: string): void {
-  if (!authority || /\s|@/.test(authority)) invalidEndpoint();
-  if (authority.startsWith("[")) {
-    const close = authority.indexOf("]");
-    if (close < 2 || authority.indexOf("]", close + 1) !== -1) invalidEndpoint();
-    validateIpv6Host(authority.slice(1, close));
-    const suffix = authority.slice(close + 1);
-    if (!suffix) return;
-    if (!suffix.startsWith(":")) invalidEndpoint();
-    validatePort(suffix.slice(1));
-    return;
-  }
-  if (authority.includes("[") || authority.includes("]")) invalidEndpoint();
-  const separator = authority.lastIndexOf(":");
-  const host = separator === -1 ? authority : authority.slice(0, separator);
-  if (!host || host.includes(":")) invalidEndpoint();
-  if (separator !== -1) validatePort(authority.slice(separator + 1));
-}
-
-export function normalizeProviderEndpoint(kind: Kind, value: string): string {
-  const trimmed = value.trim();
-  const match = trimmed.match(/^(https?):\/\/([^/?#]+)(\/[^?#]*)?$/i);
-  if (!match || /[?#]/.test(trimmed)) invalidEndpoint();
-  const scheme = match[1]!.toLowerCase();
-  const authority = match[2]!;
-  validateAuthority(authority);
-  if (kind === "openai") return trimmed;
-  const path = (match[3] ?? "").replace(/\/+$/, "");
-  if (kind === "claude" && /\/v1\/(?:messages|models)$/i.test(path)) invalidEndpoint();
-  return `${scheme}://${authority.toLowerCase()}${path}`;
 }
 
 function fingerprint(

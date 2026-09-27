@@ -246,3 +246,29 @@ describe("per-window model catalog synchronization", () => {
     expect(sync.snapshot("window-b").catalog?.models).toEqual(["model-b"]);
   });
 });
+
+describe("exact catalog cancellation", () => {
+  it("preserves a newer owner and the previous catalog", () => {
+    const sync = new ModelCatalogSync();
+    sync.begin("window", { requestId: "first", contextToken: "context", trigger: "manual" });
+    sync.commit("window", {
+      requestId: "first",
+      ok: true,
+      contextKey: "context",
+      models: ["retained"],
+    });
+    sync.begin("window", { requestId: "second", contextToken: "context", trigger: "manual" });
+    sync.cancel("window", "first");
+    expect(sync.snapshot("window").ownerRequestId).toBe("second");
+    sync.cancel("window", "second");
+    expect(sync.snapshot("window").catalog?.models).toEqual(["retained"]);
+    expect(
+      sync.commit("window", {
+        requestId: "second",
+        ok: true,
+        contextKey: "context",
+        models: ["late"],
+      }),
+    ).toBe(false);
+  });
+});

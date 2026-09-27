@@ -93,6 +93,13 @@ export class ModelCatalogSync {
     return true;
   }
 
+  cancel(windowId: string, requestId: string): void {
+    const state = this.windows.get(windowId);
+    if (!state) return;
+    if (state.owner?.requestId === requestId) state.owner = null;
+    if (state.lastResult?.requestId === requestId) state.lastResult = null;
+  }
+
   invalidate(windowId: string, contextToken = ""): void {
     const state = this.state(windowId);
     state.owner = null;

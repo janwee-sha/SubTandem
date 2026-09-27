@@ -1,3 +1,6 @@
+import { registerLifecycleContract } from "../helpers/provider-lifecycle-contract.js";
+import { registerFailureContract } from "../helpers/provider-failure-contract.js";
+import { registerProbeContract } from "../helpers/provider-probe-contract.js";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { OpenAICompatibleProvider } from "../../src/providers/openai.js";
@@ -572,6 +575,7 @@ describe("OpenAI-compatible provider", () => {
     ).resolves.toMatchObject({ translations: [] });
     responseMode = "blocked";
     const cancellationRequest = makeProviderRequest();
+    cancellationRequest.requestId = "cancellation" as typeof cancellationRequest.requestId;
     cancellationRequest.items = [
       { id: "cancel-1", text: "one" },
       { id: "cancel-2", text: "two" },
@@ -580,12 +584,12 @@ describe("OpenAI-compatible provider", () => {
     ];
     const cancelled = provider.attempt(cancellationRequest, (value) => progress.push(value));
     await Promise.resolve();
-    await provider.cancel("request");
+    await provider.cancel("cancellation");
     release();
 
     await expect(cancelled).rejects.toMatchObject({ category: "cancelled" });
     expect(progress).toEqual([]);
-    expect(cancelledJobs).toEqual(["request-part-1", "request-part-2"]);
+    expect(cancelledJobs).toEqual(["cancellation-part-1", "cancellation-part-2"]);
   });
 
   it("treats even a full chat-completions input as an API root", async () => {
@@ -878,3 +882,40 @@ describe("OpenAI-compatible provider", () => {
     }
   });
 });
+
+registerProbeContract(
+  "openai",
+  (transport) =>
+    new OpenAICompatibleProvider(
+      { endpoint: "https://fixture.test", model: "model", sessionId: "fixed-session" },
+      transport,
+    ),
+);
+
+registerFailureContract(
+  "openai",
+  (transport) =>
+    new OpenAICompatibleProvider(
+      {
+        endpoint: "https://fixture.test",
+        model: "model",
+        capability: "strict-json-schema",
+        sessionId: "test",
+      },
+      transport,
+    ),
+);
+
+registerLifecycleContract(
+  "openai",
+  (transport) =>
+    new OpenAICompatibleProvider(
+      {
+        endpoint: "https://fixture.test",
+        model: "model",
+        capability: "strict-json-schema",
+        sessionId: "test",
+      },
+      transport,
+    ),
+);

@@ -1,3 +1,6 @@
+import { registerLifecycleContract } from "../helpers/provider-lifecycle-contract.js";
+import { registerFailureContract } from "../helpers/provider-failure-contract.js";
+import { registerProbeContract } from "../helpers/provider-probe-contract.js";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { DeepSeekProvider } from "../../src/providers/deepseek.js";
@@ -278,3 +281,21 @@ describe("DeepSeek provider", () => {
     }
   });
 });
+
+registerProbeContract(
+  "deepseek",
+  (transport) =>
+    new DeepSeekProvider({ endpoint: "https://fixture.test", model: "model" }, transport),
+);
+
+registerFailureContract(
+  "deepseek",
+  (transport) =>
+    new DeepSeekProvider({ endpoint: "https://fixture.test", model: "model" }, transport),
+);
+
+registerLifecycleContract(
+  "deepseek",
+  (transport) =>
+    new DeepSeekProvider({ endpoint: "https://fixture.test", model: "model" }, transport),
+);

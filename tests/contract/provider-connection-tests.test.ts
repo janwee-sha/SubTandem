@@ -86,7 +86,7 @@ describe("provider connection Test coordinator", () => {
     await registry.releaseSender("window-a");
     expect(cancelled).toEqual([first.testId]);
     expect(registry.isActive(second)).toBe(true);
-    expect(registry.begin(input("window-a", "same"))).not.toBeNull();
+    expect(registry.begin(input("window-a", "same"))).toBeNull();
   });
 
   it("retains only safe terminal identity and invalidates active or displayed Profile results", async () => {
@@ -128,4 +128,15 @@ describe("provider connection Test coordinator", () => {
     resolveCancellation?.();
     await expect(invalidation).resolves.toHaveLength(1);
   });
+});
+
+it("remembers early cancellation and releases completed provider references", async () => {
+  const registry = new ProviderConnectionTests(() => "test-1");
+  await registry.cancel("window", "early");
+  expect(registry.begin(input("window", "early"))).toBeNull();
+  const owner = registry.begin(input("window", "work"))!.owner;
+  registry.attachProvider(owner, configuredProvider([]));
+  registry.complete(owner);
+  expect(owner.provider).toBeNull();
+  expect(registry.activeCount()).toBe(0);
 });

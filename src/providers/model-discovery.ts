@@ -123,6 +123,7 @@ export async function discoverProviderModels(
     }
   }
   const endpoint = normalizeProviderEndpoint(request.kind, request.endpoint).replace(/\/+$/, "");
+  await request.assertActive?.();
   const response = await transport.request({
     jobId: request.jobId,
     method: "GET",
@@ -132,6 +133,7 @@ export async function discoverProviderModels(
     timeoutMs: 10_000,
     maxResponseBytes: 1_048_576,
   });
+  await request.assertActive?.();
   if (response.statusCode < 200 || response.statusCode >= 300)
     throw providerHttpError(response.statusCode, response.headers);
   return parseModelResponse(request.kind, response.bodyText);

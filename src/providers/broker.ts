@@ -1,3 +1,4 @@
+import { RequestLifecycle } from "./request-lifecycle.js";
 import { SubTandemError } from "../domain/errors.js";
 import type { TranslationProvider } from "./provider.js";
 import type { ProfileActivationAuthority } from "./profile-activation.js";
@@ -17,15 +18,8 @@ export class ProviderBrokerError extends SubTandemError {
   }
 }
 
-interface ActiveProviderRequest {
-  provider: TranslationProvider | null;
-  providerRequestId: string;
-  profileId: string;
-}
-
 export class ProviderBroker {
-  private readonly active = new Map<string, ActiveProviderRequest>();
-  private cancellationEpoch = 0;
+  private readonly requests = new RequestLifecycle<{ profileId: string }>();
 
   constructor(
     private readonly profiles: ProviderProfiles,
@@ -39,71 +33,70 @@ export class ProviderBroker {
     authoritativePlayerId: string,
     request: TranslationBatchRequest,
     onProgress?: TranslationProgressHandler,
+    assertAuthorized?: () => void,
   ): Promise<TranslationBatchResult> {
     if (!this.authority.isAuthorized(request)) throw new ProviderBrokerError("PROFILE_NOT_ACTIVE");
     const profile = this.profiles.get(request.profileId, request.profileRevision);
     if (!profile || profile.endpointFingerprint !== request.endpointFingerprint)
       throw new ProviderBrokerError("PROFILE_NOT_FOUND");
-    const key = `${authoritativePlayerId}\u0000${request.requestId}`;
-    if (this.active.has(key)) throw new ProviderBrokerError("DUPLICATE_REQUEST");
+    const owner = this.requests.begin({
+      senderId: authoritativePlayerId,
+      operation: "translation",
+      requestId: request.requestId,
+      context: { profileId: profile.profileId },
+      assertAuthorized,
+    });
+    if (!owner) throw new ProviderBrokerError("DUPLICATE_REQUEST");
     const providerRequestId = `${authoritativePlayerId.length}:${authoritativePlayerId}${request.requestId}`;
-    const active: ActiveProviderRequest = {
-      provider: null,
-      providerRequestId,
-      profileId: profile.profileId,
+    const guard = () => {
+      try {
+        this.requests.assertActive(
+          owner,
+          () =>
+            this.authority.isAuthorized(request) &&
+            this.profiles.get(request.profileId)?.revision === request.profileRevision,
+        );
+      } catch {
+        throw new ProviderBrokerError("REQUEST_CANCELLED");
+      }
     };
-    const epoch = this.cancellationEpoch;
-    this.active.set(key, active);
     try {
+      guard();
       const provider = await this.createProvider(profile);
-      active.provider = provider;
-      if (
-        this.active.get(key) !== active ||
-        epoch !== this.cancellationEpoch ||
-        !this.authority.isAuthorized(request)
-      )
-        throw new ProviderBrokerError("REQUEST_CANCELLED");
+      guard();
+      this.requests.track(owner, providerRequestId, () => provider.cancel?.(providerRequestId));
       const result = await provider.attempt(
-        {
-          ...request,
-          requestId: providerRequestId as TranslationBatchRequest["requestId"],
-        },
+        { ...request, requestId: providerRequestId as TranslationBatchRequest["requestId"] },
         (progress) => {
-          if (this.active.get(key) === active && this.authority.isAuthorized(request))
-            onProgress?.(progress);
+          try {
+            guard();
+          } catch {
+            return;
+          }
+          onProgress?.(progress);
         },
+        guard,
       );
-      if (this.active.get(key) !== active || !this.authority.isAuthorized(request))
-        throw new ProviderBrokerError("REQUEST_CANCELLED");
+      guard();
       return result;
     } finally {
-      if (this.active.get(key) === active) this.active.delete(key);
+      this.requests.finish(owner);
     }
   }
 
   async cancel(authoritativePlayerId: string, requestId: string): Promise<void> {
-    const key = `${authoritativePlayerId}\u0000${requestId}`;
-    const active = this.active.get(key);
-    this.active.delete(key);
-    await active?.provider?.cancel?.(active.providerRequestId);
+    await this.requests.cancel(authoritativePlayerId, "translation", requestId);
   }
 
   async cancelAll(): Promise<void> {
-    this.cancellationEpoch += 1;
-    const active = [...this.active.values()];
-    this.active.clear();
-    await Promise.allSettled(
-      active.map((request) => request.provider?.cancel?.(request.providerRequestId)),
-    );
+    await this.requests.cancelWhere(() => true);
   }
 
   async cancelProfile(profileId: string): Promise<void> {
-    const active = [...this.active.entries()].filter(
-      ([, request]) => request.profileId === profileId,
-    );
-    for (const [key] of active) this.active.delete(key);
-    await Promise.allSettled(
-      active.map(([, request]) => request.provider?.cancel?.(request.providerRequestId)),
-    );
+    await this.requests.cancelWhere((owner) => owner.context.profileId === profileId);
+  }
+
+  async releaseSender(senderId: string): Promise<void> {
+    await this.requests.releaseSender(senderId);
   }
 }

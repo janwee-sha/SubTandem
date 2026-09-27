@@ -36,3 +36,25 @@
 | X004 | 外挂回归         | 内嵌↔外挂      | 无额外步骤       |
 
 仓库内 `generated/` 只保存覆盖 SubRip、ASS、SSA 与 `mov_text` 的最小合成媒体；它们由 `source/` 中的短文本生成，且不依赖真实影片。其余 ID 用于正式包实机矩阵，未实际执行前不得标记通过。
+
+`generated/matroska-real-ssa.mkv` is a reproducible fixture with an original `S_TEXT/SSA` Codec ID. FFmpeg writes `S_TEXT/ASS` when muxing the SSA source, so the command below replaces that ID with the equal-length SSA ID and checks the resulting file and its two cues:
+
+```sh
+ffmpeg -nostdin -y -v error -f lavfi -i color=c=black:s=32x32:r=1:d=5 -i tests/fixtures/media/source/sample.ssa -map 0:v:0 -map 1:s:0 -c:v mpeg4 -c:s copy -t 5 tests/fixtures/media/generated/matroska-real-ssa.mkv
+python3 - <<'PY'
+from pathlib import Path
+p = Path('tests/fixtures/media/generated/matroska-real-ssa.mkv')
+data = p.read_bytes()
+assert data.count(b'S_TEXT/ASS') == 1
+p.write_bytes(data.replace(b'S_TEXT/ASS', b'S_TEXT/SSA', 1))
+PY
+python3 - <<'PY'
+from pathlib import Path
+data = Path('tests/fixtures/media/generated/matroska-real-ssa.mkv').read_bytes()
+assert data.count(b'S_TEXT/SSA') == 1
+assert b'S_TEXT/ASS' not in data
+PY
+ffmpeg -nostdin -v error -i tests/fixtures/media/generated/matroska-real-ssa.mkv -f srt -
+```
+
+The final checks verify the sole `S_TEXT/SSA` ID and decode two cues with FFmpeg.

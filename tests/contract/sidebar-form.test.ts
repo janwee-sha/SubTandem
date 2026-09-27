@@ -387,7 +387,7 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarSource).not.toContain("Profile selected for translation.");
     expect(sidebarSource).toContain("window.subtandemCredentialStatusMessage");
     expect(html).toContain("private local file (mode 0600)");
-    expect(sidebarSource).toContain('" · no key saved"');
+    expect(sidebarSource).not.toContain('" · no key saved"');
     expect(html).toContain('id="profile-test-status"');
     expect(sidebarSource).toContain('postMessage(\n    "provider:test"');
     expect(sidebarSource).not.toContain('className = "profile-test-state"');
@@ -672,3 +672,76 @@ describe("Shared subtitle color palette contract", () => {
     expect(css).toContain("@media (prefers-contrast: more)");
   });
 });
+
+describe.each(["openai", "claude", "deepseek", "ollama"])(
+  "%s Sidebar credential identity",
+  (kind) => {
+    it("uses the saved Key for a changed Endpoint and route without sending an automatic draft Key", async () => {
+      const { sidebarHarness } = await import("../helpers/sidebar-harness.js");
+      const h = sidebarHarness();
+      const profile = {
+        profileId: "saved",
+        revision: 1,
+        endpointFingerprint: "fingerprint",
+        displayName: "Saved",
+        kind,
+        endpoint: "https://Example.test:443/Root",
+        model: "model",
+        proxyMode: "direct",
+        credentialConfigured: true,
+      };
+      h.evaluate(
+        `sidebarState.applyProfiles([${JSON.stringify(profile)}]); sidebarState.openProfileDrawer("saved"); editingProfile = ${JSON.stringify(profile)}; providerKind.value = ${JSON.stringify(kind)}; providerProxyMode.value = "direct"; providerEndpoint.value = " HTTPS://EXAMPLE.TEST:443/Root/// "; sidebarState.setModelContext("fixture", "changed-model");`,
+      );
+      expect(h.evaluate("canUseSavedDraftCredential()")).toBe(true);
+      h.element("#test-profile").dispatch("click");
+      expect(h.messages.at(-1)).toMatchObject({
+        name: "provider:test",
+        data: { payload: { credential: { source: "saved" }, model: "changed-model" } },
+      });
+      h.element("#provider-key").value = "new-key";
+      h.evaluate('requestModels("endpoint")');
+      expect(h.messages.at(-1)).toMatchObject({
+        name: "provider:models",
+        data: { payload: { profileId: "saved" } },
+      });
+      expect(JSON.stringify(h.messages.at(-1))).not.toContain("new-key");
+      h.evaluate('requestModels("manual")');
+      expect(h.messages.at(-1)).toMatchObject({
+        name: "provider:models-preview",
+        data: {
+          payload: {
+            credential: { apiKey: "new-key" },
+            sourceProfile: {
+              profileId: "saved",
+              profileRevision: 1,
+              endpointFingerprint: "fingerprint",
+            },
+          },
+        },
+      });
+      h.element("#provider-endpoint").value = "https://other.test";
+      h.element("#provider-proxy-mode").value = "system";
+      expect(h.evaluate("canUseSavedDraftCredential()")).toBe(true);
+      h.element("#provider-key").value = "";
+      h.element("#test-profile").dispatch("click");
+      expect(h.messages.at(-1)).toMatchObject({
+        name: "provider:test",
+        data: {
+          payload: {
+            credential: { source: "saved" },
+            endpoint: "https://other.test",
+            proxyMode: "system",
+          },
+        },
+      });
+      h.evaluate('requestModels("endpoint")');
+      expect(h.messages.at(-1)).toMatchObject({
+        name: "provider:models",
+        data: { payload: { endpoint: "https://other.test", proxyMode: "system" } },
+      });
+      h.element("#provider-kind").value = kind === "ollama" ? "openai" : "ollama";
+      expect(h.evaluate("canUseSavedDraftCredential()")).toBe(false);
+    });
+  },
+);

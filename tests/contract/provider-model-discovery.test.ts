@@ -277,7 +277,7 @@ describe("provider model discovery", () => {
     expect(client.requests[0]).toEqual({
       jobId: "models-deepseek",
       method: "GET",
-      url: "https://api.deepseek.com/models",
+      url: "https://API.DeepSeek.com/models",
       headers: { Authorization: "Bearer deepseek-secret" },
       proxyMode: "system",
       timeoutMs: 10_000,
@@ -412,5 +412,28 @@ describe("provider model discovery", () => {
       statusCode: 401,
       userAction: "CHECK_CREDENTIALS",
     });
+  });
+});
+
+describe.each(["openai", "deepseek", "ollama"] as const)("%s model guards", (kind) => {
+  it.each([1, 2])("checks ownership at access boundary %s", async (failAt) => {
+    let guards = 0;
+    const client = new CapturingTransport(
+      response(kind === "ollama" ? { models: [] } : { data: [] }),
+    );
+    await expect(
+      discoverProviderModels(
+        {
+          kind,
+          endpoint: "https://fixture.test",
+          jobId: "job",
+          assertActive: () => {
+            if (++guards === failAt) throw { category: "cancelled" };
+          },
+        },
+        client,
+      ),
+    ).rejects.toMatchObject({ category: "cancelled" });
+    expect(client.requests).toHaveLength(failAt - 1);
   });
 });

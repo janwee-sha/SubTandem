@@ -77,6 +77,28 @@ func runSecurityTests() async throws {
     )
     try jobs.release(result.resultID)
 
+    let rawJobID = UUID()
+    let rawRequest = try JSONSerialization.data(withJSONObject: [
+        "jobId": rawJobID.uuidString.lowercased(),
+        "mediaPath": securityFixtureURL("matroska-real-ssa.mkv").path,
+        "stream": ["ffIndex": 1, "sourceId": 2, "codec": "ass"],
+        "deadlineMs": ProtocolLimits.deadlineMilliseconds,
+        "maxCueCount": ProtocolLimits.maxCueCount,
+        "maxOutputBytes": ProtocolLimits.maxOutputBytes,
+    ])
+    let rawHandler = ProtocolHandler(token: "correct-token", jobs: jobs, shutdownRequest: {})
+    let rawResponse = await rawHandler.handle(
+        path: "/v1/prepare",
+        authorization: "Bearer correct-token",
+        body: rawRequest
+    )
+    let rawBody = try JSONSerialization.jsonObject(with: rawResponse.body) as? [String: Any]
+    try check(rawResponse.statusCode == 200, "SSA preparation must succeed")
+    try check(rawBody?["sourceFormat"] as? String == "ssa", "response must retain selected SSA format")
+    try check(rawBody?["format"] as? String == "srt", "extracted content format must stay SRT")
+    try check(rawBody?["subtitle"] == nil, "response must not expose subtitle text")
+    try jobs.release(rawJobID)
+
     let response = ProtocolResponse.error(.extractionFailed)
     try check(
         String(decoding: response.body, as: UTF8.self) == #"{"error":"EXTRACTION_FAILED"}"#,
