@@ -713,7 +713,9 @@ function createSubTandemSidebarState(
         )
           delete snapshot.profileActivationRequests[requestId];
       }
-      for (const [requestId, request] of Object.entries(snapshot.expiredProfileActivationRequests)) {
+      for (const [requestId, request] of Object.entries(
+        snapshot.expiredProfileActivationRequests,
+      )) {
         if (
           authority.stateVersion > request.stateVersion &&
           activationMatches(request.profileId, request.enabled)
