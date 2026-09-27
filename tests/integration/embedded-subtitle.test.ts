@@ -25,6 +25,57 @@ class RecordingOverlay implements TranslationOverlaySink {
 
 describe("embedded subtitle translation", () => {
   const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
+  it("uses only the current selected Matroska track's raw format for display", async () => {
+    const bytes = utf8Encode(subtitle);
+    let sourceFormat: "ssa" | "ass" | null = "ssa";
+    const requests: Array<{ stream: { sourceId: number | null; ffIndex: number } }> = [];
+    const coordinator = new SubtitlePreparationCoordinator({
+      playerId: "player-A",
+      extractor: {
+        prepare: async (request) => {
+          requests.push(request);
+          return {
+            jobId: request.jobId,
+            state: "ready",
+            resultId: request.jobId,
+            format: "srt",
+            sourceFormat,
+            cueCount: 1,
+            byteCount: bytes.length,
+            sha256: sha256Hex(bytes),
+          };
+        },
+        cancel: async () => "unknown",
+        release: async () => undefined,
+        shutdown: async () => undefined,
+      },
+      readResult: () => bytes,
+      createId: () => jobId,
+    });
+    const media = (mediaEpoch: number) => ({
+      playerId: "player-A",
+      mediaEpoch,
+      localPath: "/private/media/selected.mkv",
+      isNetworkResource: false,
+    });
+    const track = {
+      trackId: 1,
+      origin: "embedded" as const,
+      codec: "ass" as const,
+      ffIndex: 1,
+      sourceId: 2,
+    };
+    expect((await coordinator.prepare(media(1), track))?.displayFormat).toBe("ssa");
+    expect(requests[0]?.stream).toMatchObject({ sourceId: 2, ffIndex: 1 });
+    sourceFormat = "ass";
+    expect((await coordinator.prepare(media(2), track))?.displayFormat).toBe("ass");
+    sourceFormat = null;
+    expect(
+      (await coordinator.prepare(media(3), { ...track, sourceId: undefined }))?.displayFormat,
+    ).toBe("ass");
+    expect(requests[2]?.stream.sourceId).toBeNull();
+  });
+
   it("prepares the exact supported track and enters the existing finite translation path", async () => {
     const bytes = utf8Encode(subtitle);
     const released: string[] = [];
@@ -36,6 +87,7 @@ describe("embedded subtitle translation", () => {
           state: "ready",
           resultId: jobId,
           format: "srt",
+          sourceFormat: null,
           cueCount: 1,
           byteCount: bytes.length,
           sha256: sha256Hex(bytes),
@@ -159,6 +211,7 @@ describe("embedded subtitle translation", () => {
             state: "ready",
             resultId: request.jobId,
             format: "srt",
+            sourceFormat: null,
             cueCount: 1,
             byteCount: resultBytes.length,
             sha256: sha256Hex(resultBytes),

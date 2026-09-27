@@ -1920,6 +1920,51 @@ window.iina?.onMessage("operation:error", (raw: unknown) => {
   renderDrawerAvailability();
 });
 
+const profileOverflow = new Map<
+  HTMLElement,
+  { observer: ResizeObserver; description: HTMLElement }
+>();
+
+document.fonts?.addEventListener("loadingdone", () => {
+  for (const article of profileRows.values()) syncProfileOverflow(article);
+});
+
+function profileDisplayLines(article: HTMLElement): HTMLElement[] {
+  return [
+    article.querySelector<HTMLElement>("strong")!,
+    article.querySelector<HTMLElement>(".profile-summary")!,
+    article.querySelector<HTMLElement>("code")!,
+  ];
+}
+
+function syncProfileOverflow(article: HTMLElement): void {
+  const state = profileOverflow.get(article);
+  if (!state) return;
+  const disclosure = article.querySelector<HTMLElement>(".profile-disclosure")!;
+  const descriptions = profileDisplayLines(article).flatMap((line, index) => {
+    if (line.scrollWidth <= line.clientWidth) {
+      line.removeAttribute("title");
+      return [];
+    }
+    const fullText = line.textContent ?? "";
+    line.setAttribute("title", fullText);
+    return [`${["Name", "Service and model", "Endpoint"][index]}: ${fullText}`];
+  });
+  state.description.textContent = descriptions.join("; ");
+  if (descriptions.length) disclosure.setAttribute("aria-describedby", state.description.id);
+  else disclosure.removeAttribute("aria-describedby");
+}
+
+function clearProfileOverflow(article: HTMLElement): void {
+  const state = profileOverflow.get(article);
+  if (!state) return;
+  state.observer.disconnect();
+  state.description.textContent = "";
+  article.querySelector<HTMLElement>(".profile-disclosure")!.removeAttribute("aria-describedby");
+  for (const line of profileDisplayLines(article)) line.removeAttribute("title");
+  profileOverflow.delete(article);
+}
+
 function createProfileRow(profile: ProfileView): HTMLElement {
   const article = document.createElement("article");
   article.className = "profile";
@@ -1933,6 +1978,14 @@ function createProfileRow(profile: ProfileView): HTMLElement {
   activation.role = "switch";
   activation.dataset.action = "activation";
   updateProfileRow(article, profile);
+  const description = document.createElement("span");
+  description.className = "assistive-only profile-overflow-description";
+  description.id = `profile-summary-description-${profile.profileId}`;
+  disclosure.append(description);
+  const observer = new ResizeObserver(() => syncProfileOverflow(article));
+  for (const line of profileDisplayLines(article)) observer.observe(line);
+  observer.observe(disclosure);
+  profileOverflow.set(article, { observer, description });
   return article;
 }
 
@@ -1946,15 +1999,14 @@ function updateProfileRow(article: HTMLElement, profile: ProfileView): void {
   disclosure.setAttribute("aria-controls", panelId);
   article.querySelector("strong")!.textContent = profile.displayName;
   article.querySelector<HTMLElement>(".profile-summary")!.textContent =
-    `${providerLabels[profile.kind]}${profile.model ? ` · ${profile.model}` : ""}` +
-    `${profile.proxyMode === "direct" ? " · direct" : " · macOS proxy"}` +
-    `${profile.credentialConfigured ? " · key saved" : " · no key saved"}`;
+    `${providerLabels[profile.kind]}${profile.model ? ` · ${profile.model}` : ""}`;
   article.querySelector("code")!.textContent = profile.endpoint;
   const activation = article.querySelector<HTMLInputElement>(".profile-activation input")!;
   activation.dataset.profileId = profile.profileId;
   activation.setAttribute("aria-label", `Enable ${profile.displayName}`);
   const status = article.querySelector<HTMLParagraphElement>(".profile-operation-status")!;
   status.dataset.profileId = profile.profileId;
+  syncProfileOverflow(article);
 }
 
 function createNewProfileRow(): HTMLElement {
@@ -2045,7 +2097,11 @@ function renderProfileActivationControls(): void {
     const view = sidebarState.profileActivationView(profileId);
     input.checked = view.checked;
     input.disabled = view.disabled;
-    input.setAttribute("aria-label", view.accessibleName);
+    const profile = profiles.get(profileId);
+    input.setAttribute(
+      "aria-label",
+      profile ? `Enable ${profile.displayName}` : view.accessibleName,
+    );
     input.setAttribute("aria-checked", String(view.checked));
     if (view.busy) input.setAttribute("aria-busy", "true");
     else input.removeAttribute("aria-busy");
@@ -2066,6 +2122,7 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
   const nextIds = new Set(viewProfiles.map((profile) => profile.profileId));
   for (const [profileId, article] of profileRows) {
     if (nextIds.has(profileId)) continue;
+    clearProfileOverflow(article);
     article.remove();
     profileRows.delete(profileId);
   }
@@ -2084,6 +2141,7 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
     profileRows.set(profile.profileId, article);
     updateProfileRow(article, profile);
     profilesElement.append(article);
+    syncProfileOverflow(article);
   }
   const existingEmpty = profilesElement.querySelector<HTMLElement>(":scope > .empty");
   if (!viewProfiles.length && drawer.mode !== "new") {
@@ -2233,15 +2291,21 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
   if (sourceDetails.source && subtitleDetailsVisible) {
     sourceSummary.hidden = false;
     document.querySelector<HTMLElement>("#source-format")!.textContent =
-      sourceDetails.source.format.toUpperCase();
-    document.querySelector<HTMLElement>("#source-cues")!.textContent = String(
-      sourceDetails.source.cueCount,
-    );
-  } else if (view.source === null || !subtitleDetailsVisible) {
+      window.subtandemSubtitleFormatLabel(sourceDetails.source.format);
+    document.querySelector<HTMLElement>("#cache-size")!.textContent =
+      Number.isSafeInteger(view.cacheSize) && (view.cacheSize ?? -1) >= 0
+        ? String(view.cacheSize)
+        : "—";
+    document.querySelector<HTMLElement>("#source-cues")!.textContent =
+      Number.isSafeInteger(sourceDetails.source.cueCount) && sourceDetails.source.cueCount >= 0
+        ? String(sourceDetails.source.cueCount)
+        : "—";
+  } else {
     sourceSummary.hidden = true;
+    document.querySelector<HTMLElement>("#source-format")!.textContent = "";
+    document.querySelector<HTMLElement>("#cache-size")!.textContent = "";
+    document.querySelector<HTMLElement>("#source-cues")!.textContent = "";
   }
-  if (typeof view.cacheSize === "number")
-    document.querySelector<HTMLElement>("#cache-size")!.textContent = `${view.cacheSize} cues`;
   if (view.profiles) {
     const previousTest = sidebarState.snapshot.drawer.test;
     const visibleProfiles = sidebarState.applyProfiles(
@@ -2277,6 +2341,7 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
 window.iina?.postMessage("ui:ready", envelope({}));
 window.setInterval(() => window.iina?.postMessage("ui:poll", envelope({})), 750);
 window.addEventListener("pagehide", () => {
+  for (const article of profileRows.values()) clearProfileOverflow(article);
   if (endpointRefreshTimer !== null) clearTimeout(endpointRefreshTimer);
   invalidatePendingModelRefresh();
   const requestId = sidebarState.cancelDrawerTest();

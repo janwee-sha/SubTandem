@@ -387,7 +387,7 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarSource).not.toContain("Profile selected for translation.");
     expect(sidebarSource).toContain("window.subtandemCredentialStatusMessage");
     expect(html).toContain("private local file (mode 0600)");
-    expect(sidebarSource).toContain('" · no key saved"');
+    expect(sidebarSource).not.toContain('" · no key saved"');
     expect(html).toContain('id="profile-test-status"');
     expect(sidebarSource).toContain('postMessage(\n    "provider:test"');
     expect(sidebarSource).not.toContain('className = "profile-test-state"');

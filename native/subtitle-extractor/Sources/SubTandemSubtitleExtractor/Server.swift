@@ -62,11 +62,13 @@ actor ProtocolHandler {
             case "/v1/prepare":
                 let request = try ProtocolDecoder.prepare(body)
                 let result = try await jobs.prepare(request)
+                let sourceFormat: Any = result.metadata.sourceFormat.map { $0.rawValue as Any } ?? NSNull()
                 return .json(statusCode: 200, [
                     "jobId": result.jobID.uuidString.lowercased(),
                     "state": "ready",
                     "resultId": result.resultID.uuidString.lowercased(),
                     "format": "srt",
+                    "sourceFormat": sourceFormat,
                     "cueCount": result.metadata.cueCount,
                     "byteCount": result.metadata.byteCount,
                     "sha256": result.metadata.sha256,

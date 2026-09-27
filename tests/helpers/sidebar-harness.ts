@@ -12,6 +12,10 @@ class Element {
   innerHTML = "";
   tabIndex = 0;
   scrollTop = 0;
+  clientWidth = 0;
+  scrollWidth = 0;
+  className = "";
+  id = "";
   dataset: Record<string, string> = {};
   style = { setProperty() {}, removeProperty() {} };
   classList = { add() {}, remove() {}, toggle() {}, contains: () => false };
@@ -20,13 +24,40 @@ class Element {
   readonly attributes = new Map<string, string>();
   readonly events = new Map<string, Array<(event: any) => void>>();
   readonly elements = new Map<string, Element>();
-  constructor(readonly id = "") {}
+  constructor(
+    id = "",
+    private readonly focusElement: (element: Element) => void = () => {},
+  ) {
+    this.id = id;
+  }
   querySelector(selector: string): Element {
-    if (!this.elements.has(selector)) this.elements.set(selector, new Element(selector));
+    if (!this.elements.has(selector)) {
+      const element = new Element(selector, this.focusElement);
+      element.parentElement = this;
+      this.elements.set(selector, element);
+    }
     return this.elements.get(selector)!;
   }
-  querySelectorAll(): Element[] {
-    return [];
+  querySelectorAll(selector: string): Element[] {
+    const descendants: Element[] = [];
+    const visit = (element: Element) => {
+      for (const child of [...element.elements.values(), ...element.children]) {
+        if (descendants.includes(child)) continue;
+        descendants.push(child);
+        visit(child);
+      }
+    };
+    visit(this);
+    const matches = descendants.filter((element) =>
+      selector === 'input[data-action="activation"]'
+        ? element.dataset.action === "activation"
+        : selector.startsWith("#")
+          ? element.id === selector.slice(1)
+          : selector.startsWith(".")
+            ? element.className.split(" ").includes(selector.slice(1))
+            : false,
+    );
+    return [...new Set(matches)];
   }
   setAttribute(name: string, value: string) {
     this.attributes.set(name, value);
@@ -40,9 +71,9 @@ class Element {
   addEventListener(name: string, callback: (event: any) => void) {
     this.events.set(name, [...(this.events.get(name) ?? []), callback]);
   }
-  dispatch(name: string) {
+  dispatch(name: string, target: Element = this) {
     for (const callback of this.events.get(name) ?? [])
-      callback({ target: this, currentTarget: this, preventDefault() {}, stopPropagation() {} });
+      callback({ target, currentTarget: this, preventDefault() {}, stopPropagation() {} });
   }
   append(...items: Element[]) {
     for (const item of items) {
@@ -55,6 +86,7 @@ class Element {
     return item;
   }
   replaceChildren(...items: Element[]) {
+    for (const child of this.children) child.parentElement = null;
     this.children = [];
     this.append(...items);
   }
@@ -62,11 +94,24 @@ class Element {
     this.append(item);
   }
   remove() {
+    if (this.parentElement)
+      this.parentElement.children = this.parentElement.children.filter((child) => child !== this);
     this.parentElement = null;
+    this.dispatch("remove");
   }
-  focus() {}
-  closest() {
-    return null;
+  after(item: Element) {
+    this.parentElement?.append(item);
+  }
+  focus() {
+    this.focusElement(this);
+    this.dispatch("focus");
+  }
+  closest(selector: string): Element | null {
+    if (selector === 'input[data-action="activation"]' && this.dataset.action === "activation")
+      return this;
+    if (selector === ".profile-details" && this.className.split(" ").includes("profile-details"))
+      return this;
+    return this.parentElement?.closest(selector) ?? null;
   }
   contains(item: Element) {
     return item === this || this.children.includes(item);
@@ -81,17 +126,29 @@ class Element {
 }
 
 export function sidebarHarness() {
-  const document = new Element();
+  let activeElement: Element | null = null;
+  const document = new Element("", (element) => {
+    activeElement = element;
+  });
   const messages: Array<{ name: string; data: any }> = [];
   const listeners = new Map<string, (data: unknown) => void>();
   const timers = new Map<number, () => void>();
   const windowEvents = new Map<string, () => void>();
   let timerId = 0;
+  const resizeObservers: Array<{
+    callback: () => void;
+    targets: Set<Element>;
+  }> = [];
   const context = createContext({
     document: Object.assign(document, {
-      createElement: (tag: string) => new Element(tag),
+      createElement: (tag: string) =>
+        new Element(tag, (element) => {
+          activeElement = element;
+        }),
       documentElement: new Element(),
-      activeElement: null,
+      get activeElement() {
+        return activeElement;
+      },
     }),
     console,
     URL,
@@ -99,6 +156,22 @@ export function sidebarHarness() {
     HTMLElement: Element,
     HTMLInputElement: Element,
     HTMLSelectElement: Element,
+    ResizeObserver: class {
+      private readonly record = { callback: () => {}, targets: new Set<Element>() };
+      constructor(callback: () => void) {
+        this.record.callback = callback;
+        resizeObservers.push(this.record);
+      }
+      observe(element: Element) {
+        this.record.targets.add(element);
+      }
+      unobserve(element: Element) {
+        this.record.targets.delete(element);
+      }
+      disconnect() {
+        this.record.targets.clear();
+      }
+    },
     setTimeout: (callback: () => void) => {
       timers.set(++timerId, callback);
       return timerId;
@@ -139,6 +212,12 @@ export function sidebarHarness() {
     receive: (name: string, data: unknown) => listeners.get(name)?.(data),
     evaluate: (source: string) => runInContext(source, context),
     event: (name: string) => windowEvents.get(name)?.(),
+    resize: (element: Element, clientWidth: number, scrollWidth: number) => {
+      element.clientWidth = clientWidth;
+      element.scrollWidth = scrollWidth;
+      for (const observer of resizeObservers)
+        if (observer.targets.has(element)) observer.callback();
+    },
     flush: () => {
       const callbacks = [...timers.values()];
       timers.clear();

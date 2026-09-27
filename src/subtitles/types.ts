@@ -60,6 +60,7 @@ export interface ExtractedSubtitleResult {
   state: "ready";
   resultId: string;
   format: "srt";
+  sourceFormat: "ass" | "ssa" | null;
   cueCount: number;
   byteCount: number;
   sha256: Sha256Hex;
@@ -69,6 +70,7 @@ export interface PreparedSubtitleSource {
   trackId: number;
   origin: "embedded";
   codec: EmbeddedSubtitleCodec;
+  displayFormat: EmbeddedSubtitleCodec;
   contentHash: Sha256Hex;
   cues: SubtitleCue[];
 }

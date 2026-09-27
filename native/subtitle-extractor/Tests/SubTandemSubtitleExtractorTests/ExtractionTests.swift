@@ -52,6 +52,74 @@ func runExtractionTests() throws {
     } catch {
         try check(error as? ExtractorError == .trackIdentityMismatch, "mismatched stream must use safe identity error")
     }
+
+    for fixture in [
+        ("matroska-real-ssa.mkv", EmbeddedSubtitleCodec.ssa, 1, 2),
+        ("matroska-ass.mkv", EmbeddedSubtitleCodec.ass, 0, 1),
+    ] {
+        let output = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("srt")
+        defer { try? FileManager.default.removeItem(at: output) }
+        let metadata: ExtractionMetadata
+        do {
+            metadata = try SubtitleExtractor().extract(
+                request: ExtractionRequest(
+                    mediaURL: fixtureURL(fixture.0),
+                    stream: StreamIdentity(ffIndex: fixture.2, sourceID: fixture.3, codec: .ass),
+                    maxCueCount: 20_000,
+                    maxOutputBytes: 16_777_216
+                ),
+                outputURL: output,
+                isCancelled: { false }
+            )
+        } catch {
+            throw SubtitleExtractorTestFailure(description: "\(fixture.0) raw format lookup failed: \(error)")
+        }
+        try check(metadata.sourceFormat == fixture.1, "\(fixture.0) must retain selected raw format")
+        try check(metadata.cueCount == 2, "\(fixture.0) must retain both cues")
+    }
+
+    for identity in [
+        StreamIdentity(ffIndex: 1, sourceID: 1, codec: .ass),
+        StreamIdentity(ffIndex: 0, sourceID: 2, codec: .ass),
+    ] {
+        let output = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("srt")
+        defer { try? FileManager.default.removeItem(at: output) }
+        do {
+            _ = try SubtitleExtractor().extract(
+                request: ExtractionRequest(
+                    mediaURL: fixtureURL("matroska-real-ssa.mkv"),
+                    stream: identity,
+                    maxCueCount: 20_000,
+                    maxOutputBytes: 16_777_216
+                ),
+                outputURL: output,
+                isCancelled: { false }
+            )
+            throw SubtitleExtractorTestFailure(description: "conflicting selected track must fail")
+        } catch {
+            try check(error as? ExtractorError == .trackIdentityMismatch, "conflicting selected track must fail safely")
+        }
+    }
+
+    let missingIdentityOutput = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString)
+        .appendingPathExtension("srt")
+    defer { try? FileManager.default.removeItem(at: missingIdentityOutput) }
+    let missingIdentity = try SubtitleExtractor().extract(
+        request: ExtractionRequest(
+            mediaURL: fixtureURL("matroska-real-ssa.mkv"),
+            stream: StreamIdentity(ffIndex: 1, sourceID: nil, codec: .ass),
+            maxCueCount: 20_000,
+            maxOutputBytes: 16_777_216
+        ),
+        outputURL: missingIdentityOutput,
+        isCancelled: { false }
+    )
+    try check(missingIdentity.sourceFormat == nil, "missing source ID must not infer SSA")
 }
 
 private func fixtureURL(_ name: String) -> URL {

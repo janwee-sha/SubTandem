@@ -42,6 +42,7 @@ struct ExtractionMetadata: Sendable, Equatable {
     let cueCount: Int
     let byteCount: Int
     let sha256: String
+    let sourceFormat: EmbeddedSubtitleCodec?
 }
 
 struct ExtractedResult: Sendable, Equatable {

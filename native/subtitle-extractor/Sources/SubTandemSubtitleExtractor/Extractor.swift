@@ -9,6 +9,12 @@ struct SubtitleCue: Sendable, Equatable {
     let order: Int
 }
 
+private struct MatroskaElement {
+    let id: UInt64
+    let dataOffset: UInt64
+    let endOffset: UInt64
+}
+
 protocol ExtractionEngine: Sendable {
     func extract(
         request: ExtractionRequest,
@@ -38,10 +44,23 @@ final class SubtitleExtractor: ExtractionEngine, @unchecked Sendable {
               let stream = formatContext.pointee.streams[request.stream.ffIndex]
         else { throw ExtractorError.trackIdentityMismatch }
         let parameters = stream.pointee.codecpar.pointee
+        let needsMatroskaFormat = request.mediaURL.pathExtension.lowercased() == "mkv" &&
+            [.ass, .ssa].contains(request.stream.codec)
         guard parameters.codec_type == AVMEDIA_TYPE_SUBTITLE,
               codecMatches(parameters.codec_id, request.stream.codec),
-              request.stream.sourceID == nil || request.stream.sourceID == Int(stream.pointee.id)
+              request.stream.sourceID == nil || needsMatroskaFormat ||
+                request.stream.sourceID == Int(stream.pointee.id)
         else { throw ExtractorError.trackIdentityMismatch }
+        var sourceFormat: EmbeddedSubtitleCodec?
+        if needsMatroskaFormat, let sourceID = request.stream.sourceID {
+            guard let extra = parameters.extradata, parameters.extradata_size > 0
+            else { throw ExtractorError.trackIdentityMismatch }
+            sourceFormat = try matroskaSubtitleFormat(
+                request.mediaURL,
+                trackNumber: sourceID,
+                codecPrivate: Data(bytes: extra, count: Int(parameters.extradata_size))
+            )
+        }
         guard let decoder = avcodec_find_decoder(parameters.codec_id),
               let codecContext = avcodec_alloc_context3(decoder)
         else { throw ExtractorError.unsupportedCodec }
@@ -124,7 +143,153 @@ final class SubtitleExtractor: ExtractionEngine, @unchecked Sendable {
             throw ExtractorError.extractionFailed
         }
         let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
-        return ExtractionMetadata(cueCount: cues.count, byteCount: data.count, sha256: digest)
+        return ExtractionMetadata(
+            cueCount: cues.count,
+            byteCount: data.count,
+            sha256: digest,
+            sourceFormat: sourceFormat
+        )
+    }
+
+    private func matroskaSubtitleFormat(
+        _ url: URL,
+        trackNumber: Int,
+        codecPrivate: Data
+    ) throws -> EmbeddedSubtitleCodec {
+        guard trackNumber > 0,
+              let fileSize = (try FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.uint64Value,
+              fileSize > 0
+        else { throw ExtractorError.trackIdentityMismatch }
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        guard let segment = try findMatroskaElement(0x18538067, in: 0..<fileSize, handle: handle),
+              let tracks = try findMatroskaElement(
+                0x1654AE6B,
+                in: segment.dataOffset..<segment.endOffset,
+                handle: handle
+              )
+        else { throw ExtractorError.trackIdentityMismatch }
+        var offset = tracks.dataOffset
+        var matched: EmbeddedSubtitleCodec?
+        var matches = 0
+        var matchingTrackNumbers = 0
+        while offset < tracks.endOffset {
+            let entry = try matroskaElement(at: offset, within: tracks.endOffset, handle: handle)
+            if entry.id == 0xAE,
+               let candidate = try matroskaTrackData(entry, handle: handle) {
+                if candidate.number == UInt64(trackNumber) { matchingTrackNumbers += 1 }
+                if candidate.codecPrivate == codecPrivate {
+                    matches += 1
+                    guard candidate.number == UInt64(trackNumber),
+                          candidate.type == 0x11
+                    else { throw ExtractorError.trackIdentityMismatch }
+                    switch candidate.codecID {
+                    case "S_TEXT/SSA", "S_SSA": matched = .ssa
+                    case "S_TEXT/ASS", "S_ASS": matched = .ass
+                    default: throw ExtractorError.trackIdentityMismatch
+                    }
+                }
+            }
+            offset = entry.endOffset
+        }
+        guard matches == 1, matchingTrackNumbers == 1, let matched
+        else { throw ExtractorError.trackIdentityMismatch }
+        return matched
+    }
+
+    private func matroskaTrackData(
+        _ entry: MatroskaElement,
+        handle: FileHandle
+    ) throws -> (number: UInt64, type: UInt64, codecID: String, codecPrivate: Data)? {
+        var offset = entry.dataOffset
+        var trackNumber: UInt64?
+        var trackType: UInt64?
+        var codecID: String?
+        var codecPrivate: Data?
+        while offset < entry.endOffset {
+            let element = try matroskaElement(at: offset, within: entry.endOffset, handle: handle)
+            let length = element.endOffset - element.dataOffset
+            if element.id == 0xD7 || element.id == 0x83 {
+                guard length > 0, length <= 8 else { throw ExtractorError.trackIdentityMismatch }
+                let bytes = try matroskaBytes(handle, at: element.dataOffset, count: Int(length))
+                let value = bytes.reduce(UInt64(0)) { ($0 << 8) | UInt64($1) }
+                if element.id == 0xD7 {
+                    guard trackNumber == nil else { throw ExtractorError.trackIdentityMismatch }
+                    trackNumber = value
+                } else {
+                    guard trackType == nil else { throw ExtractorError.trackIdentityMismatch }
+                    trackType = value
+                }
+            } else if element.id == 0x86 {
+                guard codecID == nil, length > 0, length <= 64,
+                      let value = String(
+                        data: try matroskaBytes(handle, at: element.dataOffset, count: Int(length)),
+                        encoding: .utf8
+                      )
+                else { throw ExtractorError.trackIdentityMismatch }
+                codecID = value
+            } else if element.id == 0x63A2 {
+                guard codecPrivate == nil, length > 0, length <= 1_048_576
+                else { throw ExtractorError.trackIdentityMismatch }
+                codecPrivate = try matroskaBytes(handle, at: element.dataOffset, count: Int(length))
+            }
+            offset = element.endOffset
+        }
+        guard let trackNumber, let trackType, let codecID, let codecPrivate else { return nil }
+        return (trackNumber, trackType, codecID, codecPrivate)
+    }
+
+    private func findMatroskaElement(
+        _ id: UInt64,
+        in range: Range<UInt64>,
+        handle: FileHandle
+    ) throws -> MatroskaElement? {
+        var offset = range.lowerBound
+        while offset < range.upperBound {
+            let element = try matroskaElement(at: offset, within: range.upperBound, handle: handle)
+            if element.id == id { return element }
+            offset = element.endOffset
+        }
+        return nil
+    }
+
+    private func matroskaElement(
+        at offset: UInt64,
+        within end: UInt64,
+        handle: FileHandle
+    ) throws -> MatroskaElement {
+        guard offset < end else { throw ExtractorError.trackIdentityMismatch }
+        let firstID = try matroskaBytes(handle, at: offset, count: 1)[0]
+        let idWidth = firstID.leadingZeroBitCount + 1
+        guard idWidth <= 4, UInt64(idWidth) <= end - offset
+        else { throw ExtractorError.trackIdentityMismatch }
+        let idBytes = try matroskaBytes(handle, at: offset, count: idWidth)
+        let id = idBytes.reduce(UInt64(0)) { ($0 << 8) | UInt64($1) }
+        let sizeOffset = offset + UInt64(idWidth)
+        guard sizeOffset < end else { throw ExtractorError.trackIdentityMismatch }
+        let firstSize = try matroskaBytes(handle, at: sizeOffset, count: 1)[0]
+        let sizeWidth = firstSize.leadingZeroBitCount + 1
+        guard sizeWidth <= 8, UInt64(sizeWidth) <= end - sizeOffset
+        else { throw ExtractorError.trackIdentityMismatch }
+        let sizeBytes = try matroskaBytes(handle, at: sizeOffset, count: sizeWidth)
+        let size = sizeBytes.dropFirst().reduce(UInt64(firstSize & (0xff >> sizeWidth))) {
+            ($0 << 8) | UInt64($1)
+        }
+        let dataOffset = sizeOffset + UInt64(sizeWidth)
+        let unknownSize = (UInt64(1) << (7 * sizeWidth)) - 1
+        if size == unknownSize, id == 0x18538067 {
+            return MatroskaElement(id: id, dataOffset: dataOffset, endOffset: end)
+        }
+        guard size != unknownSize, size <= end - dataOffset
+        else { throw ExtractorError.trackIdentityMismatch }
+        return MatroskaElement(id: id, dataOffset: dataOffset, endOffset: dataOffset + size)
+    }
+
+    private func matroskaBytes(_ handle: FileHandle, at offset: UInt64, count: Int) throws -> Data {
+        try handle.seek(toOffset: offset)
+        guard let data = try handle.read(upToCount: count), data.count == count
+        else { throw ExtractorError.trackIdentityMismatch }
+        return data
     }
 
     private func validateInput(_ request: ExtractionRequest) throws {

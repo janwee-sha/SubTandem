@@ -114,12 +114,24 @@ function validatePrepareRequest(request: SubtitlePrepareRequest): void {
     throw new SubtitleExtractorError("INVALID_REQUEST");
 }
 
+function validSourceFormat(sourceFormat: unknown, request: SubtitlePrepareRequest): boolean {
+  if (sourceFormat === null) return true;
+  return (
+    (sourceFormat === "ass" || sourceFormat === "ssa") &&
+    request.mediaPath.toLowerCase().endsWith(".mkv") &&
+    (request.stream.codec === "ass" || request.stream.codec === "ssa") &&
+    request.stream.sourceId !== null &&
+    request.stream.sourceId > 0
+  );
+}
+
 function validateResult(value: unknown, request: SubtitlePrepareRequest): ExtractedSubtitleResult {
   const result = exactObject(value, [
     "jobId",
     "state",
     "resultId",
     "format",
+    "sourceFormat",
     "cueCount",
     "byteCount",
     "sha256",
@@ -129,6 +141,7 @@ function validateResult(value: unknown, request: SubtitlePrepareRequest): Extrac
     result.state !== "ready" ||
     result.resultId !== request.jobId ||
     result.format !== "srt" ||
+    !validSourceFormat(result.sourceFormat, request) ||
     !Number.isInteger(result.cueCount) ||
     (result.cueCount as number) < 1 ||
     (result.cueCount as number) > request.maxCueCount ||

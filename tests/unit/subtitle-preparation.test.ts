@@ -47,6 +47,7 @@ class DeferredExtractor implements SubtitleExtractorRpcClient {
       state: "ready",
       resultId: jobId,
       format: "srt",
+      sourceFormat: null,
       cueCount: 1,
       byteCount: bytes.length,
       sha256: sha256Hex(bytes),
@@ -73,7 +74,7 @@ afterEach(() => vi.useRealTimers());
 
 describe("subtitle preparation lifecycle", () => {
   it.each(["subrip", "ass", "ssa"] as const)(
-    "keeps the mpv Matroska source ID in session identity without comparing it to libavformat for %s",
+    "forwards the Matroska source ID only for raw ASS/SSA identity checks for %s",
     async (codec) => {
       const extractor = new DeferredExtractor();
       let sequence = 0;
@@ -93,7 +94,11 @@ describe("subtitle preparation lifecycle", () => {
       };
 
       const pending = coordinator.prepare(media(), selectedTrack);
-      expect(extractor.requests[0]?.stream).toEqual({ ffIndex: 3, sourceId: null, codec });
+      expect(extractor.requests[0]?.stream).toEqual({
+        ffIndex: 3,
+        sourceId: codec === "subrip" ? null : 12,
+        codec,
+      });
       extractor.resolve(ids[1]);
       await expect(pending).resolves.toMatchObject({ trackId: 7, codec });
     },
@@ -257,6 +262,7 @@ describe("subtitle preparation lifecycle", () => {
       state: "ready",
       resultId: ids[3]!,
       format: "srt",
+      sourceFormat: null,
       cueCount: 1,
       byteCount: bytes.length,
       sha256: sha256Hex(bytes),

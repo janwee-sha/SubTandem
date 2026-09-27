@@ -81,6 +81,12 @@ export function loadPreparedSubtitleSource(
     trackId: track.trackId,
     origin: "embedded",
     codec: track.codec,
+    displayFormat:
+      (track.codec === "ass" || track.codec === "ssa") &&
+      track.sourceId !== undefined &&
+      (result.sourceFormat === "ass" || result.sourceFormat === "ssa")
+        ? result.sourceFormat
+        : track.codec,
     contentHash: result.sha256,
     cues: parsed.cues,
   };

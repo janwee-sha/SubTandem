@@ -439,7 +439,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     });
     updateSidebarState({
       source: {
-        format: prepared.codec,
+        format: prepared.displayFormat,
         cueCount: prepared.cues.length,
         warnings: [],
       },
