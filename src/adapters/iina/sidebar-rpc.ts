@@ -1,4 +1,16 @@
-import { parseEnvelope, SIDEBAR_MESSAGE_NAMES, type RpcEnvelope } from "../../domain/messages.js";
+import {
+  credentialAssert,
+  credentialRecord,
+  parseCredentialOpen,
+  parseCredentialHandshake,
+  parseCredentialEnvelope,
+} from "../../../shared/credential-protocol.js";
+import {
+  parseEnvelope,
+  parseProfileSaveRequest,
+  SIDEBAR_MESSAGE_NAMES,
+  type RpcEnvelope,
+} from "../../domain/messages.js";
 
 export interface SidebarPort {
   onMessage(name: string, callback: (data: unknown) => void): void;
@@ -28,4 +40,88 @@ export class SidebarRpc {
   update(view: unknown): void {
     this.port.postMessage("state:update", view);
   }
+}
+
+export function installCredentialMainRelay(sidebar: SidebarPort, global: SidebarPort): void {
+  let current: { sidebarInstanceId: string; drawerId: string } | null = null;
+  const requests = new Set<string>();
+  for (const name of ["open", "confirm", "operation", "close"] as const) {
+    const event = `credential-channel:${name}`;
+    sidebar.onMessage(event, (raw) => {
+      try {
+        const message = parseEnvelope(raw);
+        let payload: unknown = message.payload;
+        if (name === "open") {
+          const record = { ...(payload as Record<string, unknown>) };
+          delete record.senderId;
+          const opening = parseCredentialOpen(record);
+          current = { sidebarInstanceId: opening.sidebarInstanceId, drawerId: opening.drawerId };
+          requests.clear();
+          payload = opening;
+        } else if (name === "confirm") payload = parseCredentialHandshake(payload);
+        else if (name === "operation") payload = parseCredentialEnvelope(payload);
+        else {
+          const closing = credentialRecord(payload, ["sidebarInstanceId", "drawerId"]);
+          credentialAssert(
+            current &&
+              closing.sidebarInstanceId === current.sidebarInstanceId &&
+              closing.drawerId === current.drawerId,
+          );
+          current = null;
+          requests.clear();
+        }
+        if (name !== "close") {
+          credentialAssert(current && requests.size < 128 && !requests.has(message.requestId));
+          requests.add(message.requestId);
+        }
+        global.postMessage(event, { ...message, payload });
+      } catch {
+        sidebar.postMessage("credential-channel:result", {
+          requestId: (raw as { requestId?: unknown })?.requestId,
+          ok: false,
+          error: "invalid-credential-message",
+        });
+      }
+    });
+  }
+  for (const stage of ["prepare", "commit"] as const) {
+    const event = `profile:save-${stage}`;
+    sidebar.onMessage(event, (raw) => {
+      try {
+        const message = parseProfileSaveRequest(raw, stage);
+        credentialAssert(
+          current &&
+            message.payload.sidebarInstanceId === current.sidebarInstanceId &&
+            message.payload.drawerId === current.drawerId,
+        );
+        global.postMessage(event, message);
+      } catch {
+        sidebar.postMessage("profile:save-result", {
+          requestId: (raw as { requestId?: unknown })?.requestId,
+          ok: false,
+        });
+      }
+    });
+  }
+  global.onMessage("profile:save-result", (raw) => {
+    const response = raw as { sidebarInstanceId?: string; drawerId?: string };
+    if (
+      current &&
+      response?.sidebarInstanceId === current.sidebarInstanceId &&
+      response.drawerId === current.drawerId
+    )
+      sidebar.postMessage("profile:save-result", raw);
+  });
+  global.onMessage("credential-channel:result", (raw) => {
+    if (!raw || typeof raw !== "object" || !current) return;
+    const response = raw as Record<string, unknown>;
+    if (typeof response.requestId !== "string" || !requests.delete(response.requestId)) return;
+    if (
+      response.ok === true &&
+      (response.sidebarInstanceId !== current.sidebarInstanceId ||
+        response.drawerId !== current.drawerId)
+    )
+      return;
+    sidebar.postMessage("credential-channel:result", raw);
+  });
 }

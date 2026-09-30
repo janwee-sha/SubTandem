@@ -5,7 +5,14 @@ import {
 } from "../../src/providers/profile-activation.js";
 import { ProviderProfiles } from "../../src/providers/profiles.js";
 import {
+  encryptedSaveFrame,
+  encryptedSaveOwner,
+  saveTestProfile,
+} from "../helpers/encrypted-profile-fixture.js";
+import {
   TransportClient,
+  profileSaveRequestDigest,
+  validateProfileSave,
   parseProfileStateStoreSnapshot,
   type LocalRpcBridge,
   type ProfileStateStoreSnapshot,
@@ -50,24 +57,25 @@ class NativeSortedProfileStateBridge implements LocalRpcBridge {
   async post<T>(_port: number, _bearerToken: string, _path: string, body: unknown): Promise<T> {
     const request = body as {
       action: string;
-      commitId: string;
-      expectedStoreRevision: number;
-      profileState: NonNullable<ProfileStateStoreSnapshot["profileState"]>;
+      owner: typeof encryptedSaveOwner;
+      frame: ReturnType<typeof encryptedSaveFrame>;
     };
-    if (request.action !== "commit") throw new Error("UNEXPECTED_PROFILE_STATE_ACTION");
+    if (request.action !== "save") throw new Error("UNEXPECTED_PROFILE_STATE_ACTION");
+    const snapshot = validateProfileSave(request.owner, request.frame);
+    const save = snapshot.save!;
     return sortedKeysClone({
       state: "committed",
       initialized: true,
-      storeRevision: request.expectedStoreRevision + 1,
+      storeRevision: save.expectedStoreRevision + 1,
       lastCommit: {
-        commitId: request.commitId,
-        operation: "commit",
-        baseRevision: request.expectedStoreRevision,
-        requestDigest: "safe",
+        commitId: save.commitId,
+        operation: "save-profile",
+        baseRevision: save.expectedStoreRevision,
+        requestDigest: profileSaveRequestDigest(request.owner, request.frame),
       },
-      profileState: request.profileState,
+      profileState: save.profileState,
       credentialConfigured: Object.fromEntries(
-        request.profileState.profiles.map((entry) => [entry.profileId, false]),
+        save.profileState.profiles.map((entry) => [entry.profileId, false]),
       ),
     }) as T;
   }
@@ -84,6 +92,50 @@ function snapshot(): ProfileStateStoreSnapshot {
 }
 
 describe("versioned Profile state transport", () => {
+  it("sends one encrypted atomic Save without duplicating the reserved configuration", async () => {
+    const frame = encryptedSaveFrame({ profiles: [{ ...profile, revision: 4 }], activation: null });
+    const response = {
+      ...snapshot(),
+      profileState: { profiles: [{ ...profile, revision: 4 }], activation: null },
+      state: "committed",
+      storeRevision: 8,
+      lastCommit: {
+        commitId: "00000000-0000-4000-8000-000000000098",
+        operation: "save-profile",
+        baseRevision: 7,
+        requestDigest: profileSaveRequestDigest(encryptedSaveOwner, frame),
+      },
+    };
+    const bridge = new ProfileStateBridge(response);
+    const client = new TransportClient({ port: 49152, token: "opaque-token" }, bridge);
+    await expect(client.profileStateSave(encryptedSaveOwner, frame)).resolves.toEqual(response);
+    expect(bridge.requests).toEqual([
+      {
+        port: 49152,
+        path: "/v2/profile-state",
+        body: {
+          action: "save",
+          owner: encryptedSaveOwner,
+          frame,
+        },
+      },
+    ]);
+    expect(JSON.stringify(bridge.requests)).not.toContain("synthetic-store-key");
+    expect((bridge.requests[0]!.body as Record<string, unknown>).profileState).toBeUndefined();
+  });
+
+  it("rejects credential-bearing or mismatched Save results", async () => {
+    const frame = encryptedSaveFrame({ profiles: [{ ...profile, revision: 4 }], activation: null });
+    const bridge = new ProfileStateBridge({
+      ...snapshot(),
+      state: "committed",
+      apiKey: "must-not-escape",
+    });
+    const client = new TransportClient({ port: 49152, token: "opaque-token" }, bridge);
+    await expect(client.profileStateSave(encryptedSaveOwner, frame)).rejects.toMatchObject({
+      code: "HELPER_PROTOCOL",
+    });
+  });
   it("keeps a missing disabled activation as a strict protocol failure and blocks restoration saves", async () => {
     const swiftCodableOmission = {
       ...snapshot(),
@@ -110,14 +162,14 @@ describe("versioned Profile state transport", () => {
 
     expect(authority.snapshot).toMatchObject({ ready: false, profiles: [] });
     await expect(
-      authority.saveProfile({
+      saveTestProfile(authority, {
         displayName: "Blocked",
         kind: "ollama",
         endpoint: "http://127.0.0.1:11434",
         proxyMode: "system",
         model: "model-a",
       }),
-    ).resolves.toMatchObject({ outcome: "pending", authority: { ready: false } });
+    ).rejects.toThrow("PROFILE_SAVE_UNAVAILABLE");
   });
 
   it("creates and updates Profiles through a native sorted-key commit response", async () => {
@@ -138,28 +190,36 @@ describe("versioned Profile state transport", () => {
       createCommitId: () => `00000000-0000-4000-8000-${String(++commitSequence).padStart(12, "0")}`,
     });
 
-    const created = await authority.saveProfile({
-      displayName: "A",
-      kind: "ollama",
-      endpoint: "http://127.0.0.1:11434",
-      proxyMode: "system",
-      model: "model-a",
-    });
+    const created = await saveTestProfile(
+      authority,
+      {
+        displayName: "A",
+        kind: "ollama",
+        endpoint: "http://127.0.0.1:11434",
+        proxyMode: "system",
+        model: "model-a",
+      },
+      (_reservation, frame) => client.profileStateSave(encryptedSaveOwner, frame),
+    );
     expect(created).toMatchObject({
       outcome: "changed",
       profile: { revision: 1, displayName: "A" },
       authority: { ready: true },
     });
 
-    const updated = await authority.saveProfile({
-      profileId: created.profile!.profileId,
-      expectedRevision: created.profile!.revision,
-      displayName: "A updated",
-      kind: "ollama",
-      endpoint: "http://127.0.0.1:11434",
-      proxyMode: "system",
-      model: "model-b",
-    });
+    const updated = await saveTestProfile(
+      authority,
+      {
+        profileId: created.profile!.profileId,
+        expectedRevision: created.profile!.revision,
+        displayName: "A updated",
+        kind: "ollama",
+        endpoint: "http://127.0.0.1:11434",
+        proxyMode: "system",
+        model: "model-b",
+      },
+      (_reservation, frame) => client.profileStateSave(encryptedSaveOwner, frame),
+    );
     expect(updated).toMatchObject({
       outcome: "changed",
       profile: { revision: 2, displayName: "A updated", model: "model-b" },
@@ -175,7 +235,7 @@ describe("versioned Profile state transport", () => {
     expect(bridge.requests).toEqual([
       {
         port: 49152,
-        path: "/v1/profile-state",
+        path: "/v2/profile-state",
         body: { action: "read" },
       },
     ]);

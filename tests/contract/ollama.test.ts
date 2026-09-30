@@ -1,3 +1,4 @@
+import { testSavedCredential } from "./provider-test-helpers.js";
 import { registerLifecycleContract } from "../helpers/provider-lifecycle-contract.js";
 import { registerFailureContract } from "../helpers/provider-failure-contract.js";
 import { registerProbeContract } from "../helpers/provider-probe-contract.js";
@@ -119,10 +120,14 @@ describe("Ollama native provider", () => {
     expect(progress).toEqual([[{ id: "same-language", text: "hello" }]]);
   });
 
-  it("uses the same optional Bearer for version, tags and chat", async () => {
+  it("keeps authentication out of version, tags and chat headers", async () => {
     const headers: Array<Record<string, string>> = [];
     const provider = new OllamaProvider(
-      { endpoint: "https://ollama.example.test", model: "qwen", apiKey: "remote-secret" },
+      {
+        endpoint: "https://ollama.example.test",
+        model: "qwen",
+        credential: testSavedCredential("ollama"),
+      },
       {
         request: async (request) => {
           headers.push(request.headers);
@@ -151,7 +156,7 @@ describe("Ollama native provider", () => {
     await provider.testConnection("authenticated-test");
     await provider.attempt(makeProviderRequest());
     expect(headers).toHaveLength(5);
-    expect(headers.every((value) => value.Authorization === "Bearer remote-secret")).toBe(true);
+    expect(headers.every((value) => value.Authorization === undefined)).toBe(true);
   });
 
   it("probes version/tags/schema and diagnoses missing model", async () => {
@@ -641,7 +646,11 @@ describe("Ollama native provider", () => {
   it("uses prompt-only JSON for Ollama Cloud and accepts one complete JSON code block", async () => {
     const bodies: Array<Record<string, unknown>> = [];
     const provider = new OllamaProvider(
-      { endpoint: "https://ollama.com", model: "cloud-model", apiKey: "cloud-secret" },
+      {
+        endpoint: "https://ollama.com",
+        model: "cloud-model",
+        credential: testSavedCredential("ollama"),
+      },
       {
         request: async (request) => {
           if (request.url.endsWith("/api/version"))

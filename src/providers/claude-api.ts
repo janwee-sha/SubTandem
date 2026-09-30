@@ -24,13 +24,10 @@ export function claudeApiUrl(root: string, resource: ClaudeResource): string {
 }
 
 export function claudeRequestHeaders(
-  apiKey?: string,
   resource: ClaudeResource = "messages",
 ): Record<string, string> {
-  const credential = apiKey?.trim();
   return {
     ...(resource === "messages" ? { "Content-Type": "application/json" } : {}),
-    ...(credential ? { "x-api-key": credential } : {}),
     "anthropic-version": "2023-06-01",
   };
 }

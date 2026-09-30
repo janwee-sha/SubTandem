@@ -26,6 +26,7 @@ export class ProviderBroker {
     private readonly authority: ProfileActivationAuthority,
     private readonly createProvider: (
       profile: ProviderProfileSnapshot,
+      senderId: string,
     ) => TranslationProvider | Promise<TranslationProvider>,
   ) {}
 
@@ -62,7 +63,7 @@ export class ProviderBroker {
     };
     try {
       guard();
-      const provider = await this.createProvider(profile);
+      const provider = await this.createProvider(profile, authoritativePlayerId);
       guard();
       this.requests.track(owner, providerRequestId, () => provider.cancel?.(providerRequestId));
       const result = await provider.attempt(

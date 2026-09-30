@@ -88,3 +88,5 @@ export function normalizeProviderError(value: unknown): ProviderAttemptError {
     userAction: "CHECK_ENDPOINT",
   };
 }
+
+export { CREDENTIAL_ERRORS, CredentialProtocolError } from "../../shared/credential-protocol.js";

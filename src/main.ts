@@ -1,3 +1,4 @@
+import { installCredentialMainRelay } from "./adapters/iina/sidebar-rpc.js";
 import { PlaybackController } from "./app/controller.js";
 import { GlobalProviderClient } from "./adapters/iina/global-provider-client.js";
 import { finitePosition } from "./adapters/iina/runtime.js";
@@ -582,6 +583,13 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
   };
 
   runtime.sidebar.loadFile("dist/ui/sidebar.html");
+  installCredentialMainRelay(
+    {
+      onMessage: (name, callback) => runtime.sidebar.onMessage(name, callback),
+      postMessage: queueSidebarMessage,
+    },
+    runtime.global,
+  );
   runtime.sidebar.onMessage("ui:ready", () => {
     if (sourceLoadingAllowed()) scheduleSourceReload();
     else if (!sourceLoadingAllowed()) suspendSourceLoading();
@@ -725,15 +733,6 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     flushSidebar();
   });
 
-  const forward: Array<[string, string]> = [
-    ["profile:save", "profile:create-revision"],
-    ["secret:set", "credential:set"],
-  ];
-  for (const [sidebarName, globalName] of forward) {
-    runtime.sidebar.onMessage(sidebarName, (raw: unknown) =>
-      runtime.global.postMessage(globalName, raw),
-    );
-  }
   runtime.sidebar.onMessage("provider:test", (raw: unknown) => {
     try {
       runtime.global.postMessage("provider:test", parseProviderTestRequest(raw));
@@ -954,15 +953,6 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
       return;
     }
   });
-  runtime.global.onMessage("profile:revision-created", (raw: unknown) => {
-    queueSidebarMessage("profile:revision-created", raw);
-  });
-  runtime.global.onMessage("credential:result", (raw: unknown) => {
-    queueSidebarMessage("credential:state", raw);
-  });
-  runtime.global.onMessage("credential:state", (raw: unknown) =>
-    queueSidebarMessage("credential:state", raw),
-  );
   runtime.global.onMessage("provider:test-result", (raw: unknown) => {
     try {
       queueSidebarMessage("provider:test-result", parseProviderTestResult(raw));

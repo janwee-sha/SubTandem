@@ -1,7 +1,10 @@
 import type { ConfiguredProvider } from "./provider.js";
 import type { ProviderAttemptError, ProviderProfileSnapshot } from "./types.js";
 
-type ProviderBuilder = (profile: ProviderProfileSnapshot) => Promise<ConfiguredProvider>;
+type ProviderBuilder = (
+  profile: ProviderProfileSnapshot,
+  senderId: string,
+) => Promise<ConfiguredProvider>;
 
 export class CredentialScopedProviderCache {
   private readonly providers = new Map<string, Promise<ConfiguredProvider>>();
@@ -11,12 +14,12 @@ export class CredentialScopedProviderCache {
     private readonly build: ProviderBuilder,
   ) {}
 
-  get(profile: ProviderProfileSnapshot): Promise<ConfiguredProvider> {
+  get(profile: ProviderProfileSnapshot, senderId = "provider"): Promise<ConfiguredProvider> {
     const credentialEpoch = this.credentialEpochFor(profile.profileId);
-    const key = `${profile.profileId}\u0000${profile.revision}\u0000${credentialEpoch}`;
+    const key = `${profile.profileId}\u0000${profile.revision}\u0000${credentialEpoch}\u0000${senderId}`;
     const cached = this.providers.get(key);
     if (cached) return cached;
-    const created = this.build(profile).then((provider) => {
+    const created = this.build(profile, senderId).then((provider) => {
       if (
         this.providers.get(key) !== created ||
         this.credentialEpochFor(profile.profileId) !== credentialEpoch

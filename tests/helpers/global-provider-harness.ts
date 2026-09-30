@@ -1,3 +1,9 @@
+import type * as SupervisorModule from "../../src/transport/supervisor.js";
+import { CredentialPeer } from "./credential-peer.js";
+import { CredentialEditor } from "../../ui/credential-editor.js";
+import { validateProfileSave, profileSaveRequestDigest } from "../../src/transport/client.js";
+import type { CredentialEnvelope, CredentialOwner } from "../../shared/credential-protocol.js";
+import type { SaveProfileInput } from "../../src/providers/profiles.js";
 import { vi } from "vitest";
 import {
   CompletionQueue,
@@ -17,11 +23,13 @@ export async function globalProviderHarness(
   const handlers = new Map<string, (data: unknown, sender?: string) => unknown>();
   const closed: Array<(sender: string) => void> = [];
   const startup: Array<() => unknown> = [];
+  const editors = new Map<string, Map<string, (value: unknown) => void>>();
+  const peer = new CredentialPeer();
+  const saveCalls: Array<{ owner: CredentialOwner; frame: CredentialEnvelope }> = [];
   const replies: Array<{ sender: unknown; name: string; data: any }> = [];
   const ready = new CompletionQueue<string, void>();
   const readyGate = pauseReady ? ready.hold("ready").promise : Promise.resolve();
   const transport = new RequestLifecycleHarness();
-  const secrets = new CompletionQueue<string, Record<string, string> | null>();
   const reads: string[] = [];
   let profiles!: ProviderProfiles;
   let authority!: ReturnType<typeof createTestProfileAuthority>;
@@ -39,6 +47,7 @@ export async function globalProviderHarness(
       }
       postMessage(sender: unknown, name: string, data: unknown) {
         replies.push({ sender, name, data });
+        if (typeof sender === "string") editors.get(sender)?.get(name)?.(data);
       }
     },
     IinaGlobalMailboxFileStore: class {},
@@ -61,26 +70,52 @@ export async function globalProviderHarness(
   }));
   vi.doMock("../../src/credentials/store.js", async (original) => ({
     ...(await original<Record<string, unknown>>()),
-    HelperProfileStateStore: class {},
-    HelperCredentialStore: class {
-      async setSecret(_id: string, _fields: unknown, options: { expectedStoreRevision: number }) {
+    HelperProfileStateStore: class {
+      async save(owner: CredentialOwner, frame: CredentialEnvelope) {
+        saveCalls.push({ owner, frame });
+        const snapshot = validateProfileSave(owner, frame);
+        const submission = snapshot.save!;
+        const value = peer.open(owner, frame);
+        const previous = authority.snapshot.profiles;
+        const target =
+          snapshot.sourceProfile?.profileId ??
+          submission.profileState.profiles.find(
+            (profile) => !previous.some((old) => old.profileId === profile.profileId),
+          )!.profileId;
         return {
           state: "committed",
           initialized: true,
-          storeRevision: options.expectedStoreRevision + 1,
-          lastCommit: null,
-          profileState: { profiles: profiles.listLatest(), activation: null },
+          storeRevision: submission.expectedStoreRevision + 1,
+          profileState: structuredClone(submission.profileState),
           credentialConfigured: Object.fromEntries(
-            profiles.listLatest().map((profile) => [profile.profileId, true]),
+            submission.profileState.profiles.map((profile) => [
+              profile.profileId,
+              profile.profileId === target
+                ? Boolean(value)
+                : (previous.find((old) => old.profileId === profile.profileId)
+                    ?.credentialConfigured ?? false),
+            ]),
           ),
+          lastCommit: {
+            commitId: submission.commitId,
+            operation: "save-profile",
+            baseRevision: submission.expectedStoreRevision,
+            requestDigest: profileSaveRequestDigest(owner, frame),
+          },
         };
-      }
-      getSecret(id: string) {
-        reads.push(id);
-        return secrets.hold(id).promise;
       }
     },
   }));
+  vi.doMock("../../src/transport/supervisor.js", async (original) => {
+    const { TransportSupervisor } = await original<typeof SupervisorModule>();
+    return {
+      TransportSupervisor: class extends TransportSupervisor {
+        credentialChannel(action: string, payload: unknown) {
+          return peer.call(action, payload);
+        }
+      },
+    };
+  });
   vi.doMock("../../src/providers/profile-activation.js", async (original) => ({
     ...(await original<Record<string, unknown>>()),
     restoreProfileActivationAuthority: async (options: { profiles: ProviderProfiles }) => {
@@ -95,12 +130,55 @@ export async function globalProviderHarness(
   await import("../../src/global.js");
   return {
     transport,
+    saveCalls,
+    async save(input: SaveProfileInput, value = "", sender = "editor-window") {
+      const listeners = new Map<string, (data: unknown) => void>();
+      editors.set(sender, listeners);
+      const editor = new CredentialEditor({
+        onMessage: (name, callback) => listeners.set(name, callback),
+        postMessage: (name, data) => {
+          void handlers.get(name)?.(data, sender);
+        },
+      });
+      const previous = input.profileId ? profiles.get(input.profileId) : undefined;
+      try {
+        return await editor.save(
+          value,
+          {
+            ...(input.profileId
+              ? { profileId: input.profileId, expectedRevision: input.expectedRevision }
+              : {}),
+            displayName: input.displayName,
+            kind: input.kind,
+            endpoint: input.endpoint,
+            model: input.model ?? "",
+            proxyMode: input.proxyMode ?? "system",
+          },
+          {
+            drawerId: "synthetic-drawer",
+            sourceProfile: previous
+              ? {
+                  profileId: previous.profileId,
+                  profileRevision: previous.revision,
+                  endpointFingerprint: previous.endpointFingerprint,
+                }
+              : null,
+            draftRevision: 1,
+            keyEditEpoch: 1,
+            submitEpoch: 1,
+          },
+          "synthetic-save-request",
+        );
+      } finally {
+        editor.close();
+        editors.delete(sender);
+      }
+    },
     get authority() {
       return authority;
     },
     replies,
     ready,
-    secrets,
     reads,
     startup,
     get profiles() {

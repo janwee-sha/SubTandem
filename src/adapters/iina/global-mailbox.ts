@@ -16,7 +16,6 @@ export interface GlobalMailboxOptions {
   heartbeatIntervalMs?: number;
   sessionTtlMs?: number;
   maxFrameBytes?: number;
-  maxSecretBytes?: number;
   maxQueueDepth?: number;
   maxMessagesPerTick?: number;
   now?: () => number;
@@ -30,14 +29,13 @@ type MailboxHandler = (data: unknown, playerId?: string) => unknown;
 
 interface MailboxFrame {
   type: "subtandem-global-mailbox";
-  protocolVersion: 1;
+  protocolVersion: 2;
   direction: MailboxDirection;
   sourceId: string;
   targetId: string;
   name: string;
   createdAtMs: number;
   expiresAtMs: number;
-  hasSecrets: boolean;
   data: unknown;
 }
 
@@ -57,7 +55,6 @@ interface MailboxLimits {
   heartbeatIntervalMs: number;
   sessionTtlMs: number;
   maxFrameBytes: number;
-  maxSecretBytes: number;
   maxQueueDepth: number;
   maxMessagesPerTick: number;
 }
@@ -67,15 +64,13 @@ const FRAME_KEYS = [
   "data",
   "direction",
   "expiresAtMs",
-  "hasSecrets",
   "name",
   "protocolVersion",
   "sourceId",
   "targetId",
   "type",
 ].join(",");
-const SECRET_MARKER = "__subtandemMailboxSecret";
-const PREFIX = "subtandem-mailbox-v1";
+const PREFIX = "subtandem-mailbox-v2";
 const GLOBAL_ID = "global";
 const REGISTER_MESSAGE = "mailbox:register";
 const HEARTBEAT_MESSAGE = "mailbox:heartbeat";
@@ -88,8 +83,7 @@ const DEFAULT_LIMITS: MailboxLimits = {
   staleAfterMs: 300_000,
   heartbeatIntervalMs: 30_000,
   sessionTtlMs: 90_000,
-  maxFrameBytes: 524_288,
-  maxSecretBytes: 32_768,
+  maxFrameBytes: 2_097_152,
   maxQueueDepth: 128,
   maxMessagesPerTick: 16,
 };
@@ -146,7 +140,6 @@ function resolveLimits(options: GlobalMailboxOptions): MailboxLimits {
     heartbeatIntervalMs: options.heartbeatIntervalMs ?? DEFAULT_LIMITS.heartbeatIntervalMs,
     sessionTtlMs: options.sessionTtlMs ?? DEFAULT_LIMITS.sessionTtlMs,
     maxFrameBytes: options.maxFrameBytes ?? DEFAULT_LIMITS.maxFrameBytes,
-    maxSecretBytes: options.maxSecretBytes ?? DEFAULT_LIMITS.maxSecretBytes,
     maxQueueDepth: options.maxQueueDepth ?? DEFAULT_LIMITS.maxQueueDepth,
     maxMessagesPerTick: options.maxMessagesPerTick ?? DEFAULT_LIMITS.maxMessagesPerTick,
   };
@@ -156,13 +149,12 @@ function framePaths(root: string, stem: string) {
   return {
     payload: `${root}/${stem}.json`,
     ready: `${root}/${stem}.ready`,
-    secrets: `${root}/${stem}.secrets.json`,
   };
 }
 
 function parseStem(filename: string): ParsedStem | null {
   const match = filename.match(
-    /^subtandem-mailbox-v1-(request|response)-([0-9a-f]+)-([0-9a-z]+)-([0-9a-z]+)-([0-9a-z]{6,20})\.(?:json|ready|secrets\.json)$/,
+    /^subtandem-mailbox-v2-(request|response)-([0-9a-f]+)-([0-9a-z]+)-([0-9a-z]+)-([0-9a-z]{6,20})\.(?:json|ready)$/,
   );
   if (!match) return null;
   const playerId = decodeIdentity(match[2]!);
@@ -172,7 +164,7 @@ function parseStem(filename: string): ParsedStem | null {
     return null;
   }
   return {
-    stem: filename.replace(/\.(?:json|ready|secrets\.json)$/, ""),
+    stem: filename.replace(/\.(?:json|ready)$/, ""),
     direction: match[1] as MailboxDirection,
     playerId,
     createdAtMs,
@@ -180,79 +172,27 @@ function parseStem(filename: string): ParsedStem | null {
   };
 }
 
-function detachSecrets(value: unknown): { data: unknown; secrets: string[] } {
-  const secrets: string[] = [];
+function assertMailboxMetadata(value: unknown): void {
   let nodes = 0;
-  const visit = (current: unknown, depth: number): unknown => {
+  const visit = (current: unknown, depth: number): void => {
     nodes += 1;
     if (depth > 16 || nodes > 5_000) throw new Error("MAILBOX_STRUCTURE_INVALID");
     if (Array.isArray(current)) {
       if (current.length > 2_000) throw new Error("MAILBOX_STRUCTURE_INVALID");
-      return current.map((item) => visit(item, depth + 1));
-    }
-    if (!isRecord(current)) return current;
-    const clone: Record<string, unknown> = {};
-    for (const [key, item] of Object.entries(current)) {
-      if (key === "apiKey" && typeof item === "string") {
-        if (secrets.length >= 8) throw new Error("MAILBOX_SECRET_LIMIT");
-        const secretIndex = secrets.push(item) - 1;
-        clone[key] = { [SECRET_MARKER]: secretIndex };
-      } else {
-        clone[key] = visit(item, depth + 1);
+      for (const item of current) visit(item, depth + 1);
+    } else if (isRecord(current)) {
+      for (const [key, item] of Object.entries(current)) {
+        if (
+          ["apikey", "authorization", "x-api-key", "__subtandemmailboxsecret"].includes(
+            key.toLowerCase(),
+          )
+        )
+          throw new Error("MAILBOX_PLAINTEXT_FORBIDDEN");
+        visit(item, depth + 1);
       }
     }
-    return clone;
   };
-  return { data: visit(value, 0), secrets };
-}
-
-function restoreSecrets(value: unknown, secrets: string[]): unknown {
-  const used = new Set<number>();
-  let nodes = 0;
-  const visit = (current: unknown, depth: number): unknown => {
-    nodes += 1;
-    if (depth > 16 || nodes > 5_000) throw new Error("MAILBOX_STRUCTURE_INVALID");
-    if (Array.isArray(current)) return current.map((item) => visit(item, depth + 1));
-    if (!isRecord(current)) return current;
-    const keys = Object.keys(current);
-    if (keys.length === 1 && keys[0] === SECRET_MARKER) {
-      const index = current[SECRET_MARKER];
-      if (
-        !Number.isInteger(index) ||
-        (index as number) < 0 ||
-        (index as number) >= secrets.length
-      ) {
-        throw new Error("MAILBOX_SECRET_INVALID");
-      }
-      used.add(index as number);
-      return secrets[index as number];
-    }
-    const clone: Record<string, unknown> = {};
-    for (const [key, item] of Object.entries(current)) clone[key] = visit(item, depth + 1);
-    return clone;
-  };
-  const restored = visit(value, 0);
-  if (used.size !== secrets.length) throw new Error("MAILBOX_SECRET_INVALID");
-  return restored;
-}
-
-function parseSecrets(value: string, maxBytes: number): string[] {
-  if (utf8Length(value) > maxBytes) throw new Error("MAILBOX_SECRET_LIMIT");
-  const parsed: unknown = JSON.parse(value);
-  if (!isRecord(parsed)) throw new Error("MAILBOX_SECRET_INVALID");
-  if (Object.keys(parsed).sort().join(",") !== "protocolVersion,type,values") {
-    throw new Error("MAILBOX_SECRET_INVALID");
-  }
-  if (parsed.type !== "subtandem-secret-handoff" || parsed.protocolVersion !== 1) {
-    throw new Error("MAILBOX_SECRET_INVALID");
-  }
-  if (!Array.isArray(parsed.values) || parsed.values.length === 0 || parsed.values.length > 8) {
-    throw new Error("MAILBOX_SECRET_INVALID");
-  }
-  if (!parsed.values.every((item) => typeof item === "string")) {
-    throw new Error("MAILBOX_SECRET_INVALID");
-  }
-  return parsed.values as string[];
+  visit(value, 0);
 }
 
 function parseFrame(value: string, stem: ParsedStem, limits: MailboxLimits): MailboxFrame {
@@ -263,7 +203,7 @@ function parseFrame(value: string, stem: ParsedStem, limits: MailboxLimits): Mai
   }
   if (
     parsed.type !== "subtandem-global-mailbox" ||
-    parsed.protocolVersion !== 1 ||
+    parsed.protocolVersion !== 2 ||
     (parsed.direction !== "request" && parsed.direction !== "response") ||
     parsed.direction !== stem.direction ||
     !validIdentity(parsed.sourceId) ||
@@ -273,8 +213,7 @@ function parseFrame(value: string, stem: ParsedStem, limits: MailboxLimits): Mai
     typeof parsed.createdAtMs !== "number" ||
     !Number.isSafeInteger(parsed.createdAtMs) ||
     typeof parsed.expiresAtMs !== "number" ||
-    !Number.isSafeInteger(parsed.expiresAtMs) ||
-    typeof parsed.hasSecrets !== "boolean"
+    !Number.isSafeInteger(parsed.expiresAtMs)
   ) {
     throw new Error("MAILBOX_FRAME_INVALID");
   }
@@ -288,8 +227,7 @@ function parseFrame(value: string, stem: ParsedStem, limits: MailboxLimits): Mai
   }
   if (
     (stem.direction === "request" && parsed.targetId !== GLOBAL_ID) ||
-    (stem.direction === "response" && parsed.sourceId !== GLOBAL_ID) ||
-    (stem.direction === "response" && parsed.hasSecrets)
+    (stem.direction === "response" && parsed.sourceId !== GLOBAL_ID)
   ) {
     throw new Error("MAILBOX_FRAME_INVALID");
   }
@@ -385,39 +323,23 @@ abstract class FileGlobalMailbox {
       this.nonce(),
     ].join("-");
     const paths = framePaths(this.limits.root, stem);
-    const detached = detachSecrets(data);
-    if (direction === "response" && detached.secrets.length > 0) {
-      throw new Error("MAILBOX_SECRET_DIRECTION_INVALID");
-    }
+    assertMailboxMetadata(data);
     const frame: MailboxFrame = {
       type: "subtandem-global-mailbox",
-      protocolVersion: 1,
+      protocolVersion: 2,
       direction,
       sourceId: direction === "request" ? playerId : GLOBAL_ID,
       targetId: direction === "request" ? GLOBAL_ID : playerId,
       name,
       createdAtMs,
       expiresAtMs: createdAtMs + this.limits.messageTtlMs,
-      hasSecrets: detached.secrets.length > 0,
-      data: detached.data,
+      data,
     };
     const serialized = JSON.stringify(frame);
     if (utf8Length(serialized) > this.limits.maxFrameBytes) {
       throw new Error("MAILBOX_FRAME_LIMIT");
     }
-    let secretSerialized: string | null = null;
-    if (detached.secrets.length > 0) {
-      secretSerialized = JSON.stringify({
-        type: "subtandem-secret-handoff",
-        protocolVersion: 1,
-        values: detached.secrets,
-      });
-      if (utf8Length(secretSerialized) > this.limits.maxSecretBytes) {
-        throw new Error("MAILBOX_SECRET_LIMIT");
-      }
-    }
     try {
-      if (secretSerialized !== null) this.files.write(paths.secrets, secretSerialized);
       this.files.write(paths.payload, serialized);
       this.files.write(paths.ready, "ready");
     } catch (error) {
@@ -446,12 +368,7 @@ abstract class FileGlobalMailbox {
         this.remove(stem.stem);
         return null;
       }
-      if (frame.hasSecrets) {
-        const secretSerialized = this.files.read(paths.secrets);
-        if (secretSerialized === null) throw new Error("MAILBOX_SECRET_INVALID");
-        const secrets = parseSecrets(secretSerialized, this.limits.maxSecretBytes);
-        frame.data = restoreSecrets(frame.data, secrets);
-      }
+      assertMailboxMetadata(frame.data);
       this.remove(stem.stem);
       return frame;
     } catch {
@@ -463,7 +380,7 @@ abstract class FileGlobalMailbox {
 
   protected remove(stem: string): void {
     const paths = framePaths(this.limits.root, stem);
-    for (const path of [paths.ready, paths.payload, paths.secrets]) {
+    for (const path of [paths.ready, paths.payload]) {
       try {
         if (this.files.exists(path)) this.files.delete(path);
       } catch {

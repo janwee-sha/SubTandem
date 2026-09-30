@@ -6,11 +6,16 @@ export interface ReadyFrame {
   type: "ready";
   port: number;
   token: string;
-  protocolVersion: 1;
+  protocolVersion: 1 | 2;
   createdAtMs: number;
 }
 
-export function parseReadyFrame(output: string, notBeforeMs = 0, nowMs = Date.now()): ReadyFrame {
+export function parseReadyFrame<Version extends 1 | 2 = 1>(
+  output: string,
+  notBeforeMs = 0,
+  nowMs = Date.now(),
+  expectedVersion: Version = 1 as Version,
+): ReadyFrame & { protocolVersion: Version } {
   if (output.length > 2_048) throw new Error("Unexpected helper output");
   if (output.split("\n").filter(Boolean).length !== 1) throw new Error("Unexpected helper output");
   let value: unknown;
@@ -25,7 +30,7 @@ export function parseReadyFrame(output: string, notBeforeMs = 0, nowMs = Date.no
   if (
     Object.keys(frame).sort().join(",") !== "createdAtMs,port,protocolVersion,token,type" ||
     frame.type !== "ready" ||
-    frame.protocolVersion !== 1 ||
+    frame.protocolVersion !== expectedVersion ||
     !Number.isInteger(frame.port) ||
     (frame.port as number) < 1024 ||
     (frame.port as number) > 65535 ||
@@ -37,7 +42,7 @@ export function parseReadyFrame(output: string, notBeforeMs = 0, nowMs = Date.no
   ) {
     throw new Error("Invalid helper ready frame");
   }
-  return frame as unknown as ReadyFrame;
+  return frame as unknown as ReadyFrame & { protocolVersion: Version };
 }
 
 export interface ProcessLauncher {
@@ -122,7 +127,7 @@ export class TransportProcess {
     const fileDirectory = options.fileDirectory ?? options.dataDirectory;
     removeStaleHelperFiles(readyFiles, fileDirectory);
     const rpcSessionId = createRpcSessionId();
-    const rpcDirectory = `${fileDirectory.replace(/\/+$/, "")}/.rpc/transport-${rpcSessionId}`;
+    const rpcDirectory = `${fileDirectory.replace(/\/+$/, "")}/.rpc/transport-v2-${rpcSessionId}`;
     const readyFile = createReadyFilePath(fileDirectory, "transport");
     const nativeReadyFile = `${options.dataDirectory.replace(/\/+$/, "")}/.ready/${readyFile.slice(
       readyFile.lastIndexOf("/") + 1,
@@ -155,7 +160,7 @@ export class TransportProcess {
         const output = readyFiles.exists(readyFile) ? readyFiles.read(readyFile) : null;
         if (output !== null) {
           try {
-            const frame = parseReadyFrame(output, startedAtMs);
+            const frame = parseReadyFrame(output, startedAtMs, Date.now(), 2);
             return { port: frame.port, token: frame.token, rpcSessionId, rpcDirectory };
           } catch {
             throw new SubTandemError("HELPER_PROTOCOL", "protocol", "RESTART_IINA");

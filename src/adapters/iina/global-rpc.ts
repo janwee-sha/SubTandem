@@ -1,3 +1,19 @@
+import {
+  credentialAssert,
+  credentialSourceArray,
+  credentialIdentity,
+  credentialRecord,
+  parseCredentialOpen,
+  parseCredentialOffer,
+  parseCredentialHandshake,
+  parseCredentialEnvelope,
+} from "../../../shared/credential-protocol.js";
+import type {
+  CredentialChannelOpen,
+  CredentialChannelOffer,
+  CredentialOwner,
+  CredentialEnvelope,
+} from "../../../shared/credential-protocol.js";
 import { parseEnvelope, type RpcEnvelope } from "../../domain/messages.js";
 
 type Handler = (message: RpcEnvelope, context: { playerId: string }) => Promise<unknown> | unknown;
@@ -47,5 +63,163 @@ export class GlobalRpcRouter {
     } finally {
       this.active.delete(key);
     }
+  }
+}
+
+export interface CredentialRelayOptions {
+  send(senderId: string, name: string, data: unknown): void;
+  call(action: string, payload: unknown): Promise<unknown>;
+  authorizeSource(source: unknown): Promise<void>;
+  onClose?(owner: CredentialOwner): void;
+}
+export class CredentialChannelRelay {
+  private readonly owners = new Map<
+    string,
+    { opening: CredentialChannelOpen; offer?: CredentialChannelOffer; confirmed: boolean }
+  >();
+  constructor(private readonly options: CredentialRelayOptions) {}
+  async receive(senderId: string, name: string, raw: unknown): Promise<void> {
+    let requestId = "";
+    let owner = this.owners.get(senderId);
+    try {
+      credentialAssert(credentialIdentity(senderId));
+      const message = parseEnvelope(raw);
+      requestId = message.requestId;
+      if (name === "credential-channel:open") {
+        const opening = parseCredentialOpen(message.payload);
+        this.close(senderId);
+        owner = { opening: JSON.parse(JSON.stringify(opening)), confirmed: false };
+        this.owners.set(senderId, owner);
+        await this.options.authorizeSource(opening.sourceProfile);
+        if (this.owners.get(senderId) !== owner) return;
+        const rawOffer = await this.options.call("open", { ...opening, senderId });
+        if (this.owners.get(senderId) !== owner) return;
+        const offer = parseCredentialOffer(rawOffer);
+        credentialAssert(
+          offer.senderId === senderId &&
+            offer.sidebarInstanceId === opening.sidebarInstanceId &&
+            offer.drawerId === opening.drawerId &&
+            offer.clientPublicKey === opening.clientPublicKey &&
+            JSON.stringify(credentialSourceArray(offer.sourceProfile)) ===
+              JSON.stringify(credentialSourceArray(opening.sourceProfile)),
+        );
+        owner.offer = offer;
+        this.reply(senderId, requestId, offer, owner.opening);
+        return;
+      }
+      credentialAssert(owner && owner.offer);
+      if (name === "credential-channel:close") {
+        const closing = credentialRecord(message.payload, ["sidebarInstanceId", "drawerId"]);
+        credentialAssert(
+          closing.sidebarInstanceId === owner.opening.sidebarInstanceId &&
+            closing.drawerId === owner.opening.drawerId,
+        );
+        this.close(senderId);
+        return;
+      }
+      const frame =
+        name === "credential-channel:confirm"
+          ? parseCredentialHandshake(message.payload)
+          : parseCredentialEnvelope(message.payload);
+      credentialAssert(
+        frame.channelId === owner.offer.channelId &&
+          frame.helperSessionId === owner.offer.helperSessionId,
+      );
+      credentialAssert(
+        name === "credential-channel:confirm"
+          ? !owner.confirmed
+          : name === "credential-channel:operation" && owner.confirmed,
+      );
+      const identity = {
+        senderId,
+        sidebarInstanceId: owner.opening.sidebarInstanceId,
+        drawerId: owner.opening.drawerId,
+      };
+      const response = await this.options.call(
+        name === "credential-channel:confirm" ? "confirm" : "operation",
+        { owner: identity, frame },
+      );
+      if (this.owners.get(senderId) !== owner) return;
+      const parsed =
+        name === "credential-channel:confirm"
+          ? parseCredentialHandshake(response)
+          : parseCredentialEnvelope(response);
+      credentialAssert(
+        parsed.channelId === owner.offer.channelId &&
+          parsed.helperSessionId === owner.offer.helperSessionId,
+      );
+      if (name === "credential-channel:confirm") owner.confirmed = true;
+      this.reply(senderId, requestId, parsed, owner.opening);
+    } catch {
+      if (owner && this.owners.get(senderId) !== owner) return;
+      if (name === "credential-channel:open" || name === "credential-channel:confirm")
+        this.close(senderId);
+      this.options.send(senderId, "credential-channel:result", {
+        requestId,
+        ok: false,
+        error: "credential-channel-unavailable",
+      });
+    }
+  }
+  ownerFor(
+    senderId: string,
+    identity: { sidebarInstanceId: string; drawerId: string },
+    frame?: CredentialEnvelope,
+  ): CredentialOwner {
+    const owner = this.owners.get(senderId);
+    credentialAssert(
+      owner?.confirmed &&
+        owner.offer &&
+        owner.opening.sidebarInstanceId === identity.sidebarInstanceId &&
+        owner.opening.drawerId === identity.drawerId,
+    );
+    if (frame)
+      credentialAssert(
+        frame.channelId === owner.offer.channelId &&
+          frame.helperSessionId === owner.offer.helperSessionId,
+      );
+    return {
+      senderId,
+      sidebarInstanceId: owner.opening.sidebarInstanceId,
+      drawerId: owner.opening.drawerId,
+    };
+  }
+  closeProfile(profileId: string): void {
+    for (const [senderId, owner] of this.owners)
+      if (owner.opening.sourceProfile?.profileId === profileId) this.close(senderId);
+  }
+  close(senderId: string): void {
+    const owner = this.owners.get(senderId);
+    this.owners.delete(senderId);
+    if (owner)
+      this.options.onClose?.({
+        senderId,
+        sidebarInstanceId: owner.opening.sidebarInstanceId,
+        drawerId: owner.opening.drawerId,
+      });
+    if (owner)
+      void this.options
+        .call("close", {
+          owner: {
+            senderId,
+            sidebarInstanceId: owner.opening.sidebarInstanceId,
+            drawerId: owner.opening.drawerId,
+          },
+        })
+        .catch(() => undefined);
+  }
+  private reply(
+    senderId: string,
+    requestId: string,
+    payload: unknown,
+    opening: CredentialChannelOpen,
+  ): void {
+    this.options.send(senderId, "credential-channel:result", {
+      requestId,
+      ok: true,
+      sidebarInstanceId: opening.sidebarInstanceId,
+      drawerId: opening.drawerId,
+      payload,
+    });
   }
 }

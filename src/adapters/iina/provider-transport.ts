@@ -20,7 +20,7 @@ export interface RpcFileStore {
 
 interface FileRpcFrame {
   type: "response";
-  protocolVersion: 1;
+  protocolVersion: 1 | 2;
   createdAtMs: number;
   statusCode: number;
   body: unknown;
@@ -65,7 +65,7 @@ function privateRpcPaths(
   processingFile: string;
 } {
   const stem = [
-    helper,
+    helper === "transport" ? "transport-v2" : helper,
     Date.now().toString(36),
     (++rpcSequence).toString(36),
     Math.random().toString(36).slice(2, 14),
@@ -82,6 +82,7 @@ function parseFileRpcFrame(
   value: string,
   startedAtMs: number,
   maxResponseBytes: number,
+  expectedVersion: 1 | 2,
 ): FileRpcFrame {
   if (utf8Length(value) > maxResponseBytes) throw new Error("HELPER_RPC_MALFORMED");
   let parsed: unknown;
@@ -96,7 +97,7 @@ function parseFileRpcFrame(
   if (
     Object.keys(frame).sort().join(",") !== "body,createdAtMs,protocolVersion,statusCode,type" ||
     frame.type !== "response" ||
-    frame.protocolVersion !== 1 ||
+    frame.protocolVersion !== expectedVersion ||
     !Number.isInteger(frame.createdAtMs) ||
     (frame.createdAtMs as number) < startedAtMs - 1_000 ||
     (frame.createdAtMs as number) > Date.now() + 1_000 ||
@@ -176,7 +177,7 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
     const startedAtMs = Date.now();
     const request = JSON.stringify({
       type: "request",
-      protocolVersion: 1,
+      protocolVersion: this.options.helper === "transport" ? 2 : 1,
       createdAtMs: startedAtMs,
       port,
       token: bearerToken,
@@ -226,6 +227,7 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
             response,
             pending.startedAtMs,
             this.options.maxResponseBytes,
+            this.options.helper === "transport" ? 2 : 1,
           );
           if (frame.statusCode < 200 || frame.statusCode >= 300) {
             const error =

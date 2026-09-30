@@ -20,3 +20,13 @@ export function makeProviderRequest(): TranslationBatchRequest {
     ],
   };
 }
+
+export function testSavedCredential(kind: "openai" | "claude" | "deepseek" | "ollama") {
+  return {
+    source: "saved" as const,
+    profileId: "10000000-0000-4000-8000-000000000001",
+    profileRevision: 3,
+    kind,
+    endpointFingerprint: `synthetic-${kind}-fingerprint`,
+  };
+}

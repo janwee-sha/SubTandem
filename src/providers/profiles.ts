@@ -30,8 +30,15 @@ function fingerprint(
 
 function cloneProfile(profile: PersistentProviderProfile): ProviderProfileSnapshot {
   return {
-    ...profile,
+    profileId: profile.profileId,
+    revision: profile.revision,
+    displayName: profile.displayName,
+    kind: profile.kind,
+    endpoint: profile.endpoint,
+    endpointFingerprint: profile.endpointFingerprint,
     proxyMode: profile.proxyMode ?? "system",
+    ...(profile.model === undefined ? {} : { model: profile.model }),
+    ...(profile.capability === undefined ? {} : { capability: profile.capability }),
   };
 }
 

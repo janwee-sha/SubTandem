@@ -107,6 +107,8 @@ interface SidebarProfileDrawerState {
   sourceProfile: SidebarDrawerSourceProfile | null;
   draftRevision: number;
   credentialEpoch: number;
+  keyEditEpoch: number;
+  submitEpoch: number;
   validity: "current" | "conflict";
   test: SidebarDrawerTestState | null;
   savePhase: "profile" | "credential" | null;
@@ -491,6 +493,8 @@ function createSubTandemSidebarState(
       sourceProfile: null,
       draftRevision: 0,
       credentialEpoch: 0,
+      keyEditEpoch: 0,
+      submitEpoch: 0,
       validity: "current",
       test: null,
       savePhase: null,
@@ -556,6 +560,8 @@ function createSubTandemSidebarState(
           sourceProfile: null,
           draftRevision: 0,
           credentialEpoch: 0,
+          keyEditEpoch: 0,
+          submitEpoch: 0,
           validity: "current",
           test: null,
           savePhase: null,
@@ -571,6 +577,7 @@ function createSubTandemSidebarState(
         snapshot.drawer.validity = "conflict";
         snapshot.drawer.test = null;
         snapshot.drawer.credentialEpoch += 1;
+        snapshot.drawer.keyEditEpoch += 1;
       }
     }
     const confirmation = snapshot.deleteConfirmation;
@@ -874,6 +881,8 @@ function createSubTandemSidebarState(
         sourceProfile: null,
         draftRevision: 0,
         credentialEpoch: 0,
+        keyEditEpoch: 0,
+        submitEpoch: 0,
         validity: "current",
         test: null,
         savePhase: null,
@@ -930,6 +939,7 @@ function createSubTandemSidebarState(
   };
 
   const beginProfileSave = (requestId: string, credentialPending: boolean): void => {
+    snapshot.drawer.submitEpoch += 1;
     snapshot.pendingProfileSave = {
       requestId,
       profileId: null,
@@ -1020,6 +1030,8 @@ function createSubTandemSidebarState(
     sourceProfile: null,
     draftRevision: 0,
     credentialEpoch: 0,
+    keyEditEpoch: 0,
+    submitEpoch: 0,
     validity: "current",
     test: null,
     savePhase: null,
@@ -1088,6 +1100,8 @@ function createSubTandemSidebarState(
       },
       draftRevision: 1,
       credentialEpoch: 1,
+      keyEditEpoch: 0,
+      submitEpoch: 0,
       validity: "current",
       test: null,
       savePhase: null,
@@ -1117,6 +1131,8 @@ function createSubTandemSidebarState(
       sourceProfile: null,
       draftRevision: 1,
       credentialEpoch: 1,
+      keyEditEpoch: 0,
+      submitEpoch: 0,
       validity: "current",
       test: null,
       savePhase: null,
@@ -1138,6 +1154,7 @@ function createSubTandemSidebarState(
   const changeDrawerCredential = (): boolean => {
     if (!changeDrawerTestField()) return false;
     snapshot.drawer.credentialEpoch += 1;
+    snapshot.drawer.keyEditEpoch += 1;
     return true;
   };
 

@@ -1,3 +1,4 @@
+import { testSavedCredential } from "./provider-test-helpers.js";
 import { describe, expect, it } from "vitest";
 import { discoverProviderModels } from "../../src/providers/model-discovery.js";
 import type {
@@ -75,7 +76,7 @@ describe("provider model discovery", () => {
           jobId: "claude-pages",
           kind: "claude",
           endpoint: "https://api.anthropic.com",
-          apiKey: "fictional-key",
+          credential: testSavedCredential("claude"),
           assertActive: () => {
             guardCalls += 1;
           },
@@ -88,8 +89,8 @@ describe("provider model discovery", () => {
       "https://api.anthropic.com/v1/models?after_id=cursor%20%2F%20one",
     ]);
     expect(client.requests.map((request) => request.headers)).toEqual([
-      { "x-api-key": "fictional-key", "anthropic-version": "2023-06-01" },
-      { "x-api-key": "fictional-key", "anthropic-version": "2023-06-01" },
+      { "anthropic-version": "2023-06-01" },
+      { "anthropic-version": "2023-06-01" },
     ]);
     expect(guardCalls).toBe(4);
   });
@@ -112,7 +113,7 @@ describe("provider model discovery", () => {
           jobId: "claude-invalid-pages",
           kind: "claude",
           endpoint: "https://api.anthropic.com",
-          apiKey: "fictional-key",
+          credential: testSavedCredential("claude"),
         },
         client,
       ),
@@ -129,7 +130,7 @@ describe("provider model discovery", () => {
         jobId: "claude-late-failure",
         kind: "claude",
         endpoint: "https://api.anthropic.com",
-        apiKey: "fictional-key",
+        credential: testSavedCredential("claude"),
       },
       client,
     ).catch((error) => error);
@@ -149,7 +150,7 @@ describe("provider model discovery", () => {
           jobId: "claude-stale",
           kind: "claude",
           endpoint: "https://api.anthropic.com",
-          apiKey: "fictional-key",
+          credential: testSavedCredential("claude"),
           assertActive: () => {
             guardCalls += 1;
             if (guardCalls === 2)
@@ -180,18 +181,26 @@ describe("provider model discovery", () => {
           jobId: "models-claude",
           kind: "claude",
           endpoint: "https://host.example/base/v1/",
-          apiKey: "claude-key",
+          credential: testSavedCredential("claude"),
           proxyMode: "direct",
         },
         client,
       ),
     ).resolves.toEqual(["model-a", "Model-A", "custom/model:v2"]);
     expect(client.requests[0]).toEqual({
+      credential: testSavedCredential("claude"),
+      owner: { senderId: "models", requestId: "models-claude" },
+      purpose: "models",
+      provider: {
+        kind: "claude",
+        endpoint: "https://host.example/base/v1/",
+        model: null,
+        proxyMode: "direct",
+      },
       jobId: "models-claude",
       method: "GET",
       url: "https://host.example/base/v1/models",
       headers: {
-        "x-api-key": "claude-key",
         "anthropic-version": "2023-06-01",
       },
       proxyMode: "direct",
@@ -216,7 +225,7 @@ describe("provider model discovery", () => {
           jobId: "models-ollama-claude",
           kind: "claude",
           endpoint: "http://127.0.0.1:11434",
-          apiKey: "ollama",
+          credential: testSavedCredential("claude"),
           proxyMode: "direct",
         },
         client,
@@ -227,7 +236,6 @@ describe("provider model discovery", () => {
       method: "GET",
       url: "http://127.0.0.1:11434/v1/models",
       headers: {
-        "x-api-key": "ollama",
         "anthropic-version": "2023-06-01",
       },
     });
@@ -239,7 +247,7 @@ describe("provider model discovery", () => {
         jobId: "unsupported",
         kind: "claude",
         endpoint: "https://api.anthropic.com",
-        apiKey: "PRIVATE_CLAUDE_KEY",
+        credential: testSavedCredential("claude"),
       },
       transport({ error: { message: "PRIVATE_MODEL_RESPONSE" } }, 404),
     ).catch((error) => error);
@@ -251,7 +259,7 @@ describe("provider model discovery", () => {
     expect(JSON.stringify(failure)).not.toMatch(/PRIVATE/);
   });
 
-  it("uses the DeepSeek models contract with optional Bearer and exact stable IDs", async () => {
+  it("uses the DeepSeek models contract with a saved credential reference and exact stable IDs", async () => {
     const client = transport({
       data: [
         { id: " model-a ", owned_by: "deepseek" },
@@ -268,17 +276,26 @@ describe("provider model discovery", () => {
           jobId: "models-deepseek",
           kind: "deepseek",
           endpoint: "https://API.DeepSeek.com/",
-          apiKey: "deepseek-secret",
+          credential: testSavedCredential("deepseek"),
           proxyMode: "system",
         },
         client,
       ),
     ).resolves.toEqual(["model-a", "Model-A", "custom/model:v2"]);
     expect(client.requests[0]).toEqual({
+      credential: testSavedCredential("deepseek"),
+      owner: { senderId: "models", requestId: "models-deepseek" },
+      purpose: "models",
+      provider: {
+        kind: "deepseek",
+        endpoint: "https://API.DeepSeek.com/",
+        model: null,
+        proxyMode: "system",
+      },
       jobId: "models-deepseek",
       method: "GET",
       url: "https://API.DeepSeek.com/models",
-      headers: { Authorization: "Bearer deepseek-secret" },
+      headers: {},
       proxyMode: "system",
       timeoutMs: 10_000,
       maxResponseBytes: 1_048_576,
@@ -306,7 +323,7 @@ describe("provider model discovery", () => {
         jobId: "deepseek-auth",
         kind: "deepseek",
         endpoint: "https://api.deepseek.com",
-        apiKey: "PRIVATE_KEY",
+        credential: testSavedCredential("deepseek"),
       },
       transport({ error: { message: "PRIVATE_RESPONSE" } }, 401),
     ).catch((error) => error);
@@ -335,17 +352,26 @@ describe("provider model discovery", () => {
           jobId: "models-openai",
           kind: "openai",
           endpoint: "https://example.test/v1/",
-          apiKey: "secret",
+          credential: testSavedCredential("openai"),
           proxyMode: "direct",
         },
         client,
       ),
     ).resolves.toEqual(["model-a", "Model-A", "namespace/model:v2"]);
     expect(client.requests[0]).toEqual({
+      credential: testSavedCredential("openai"),
+      owner: { senderId: "models", requestId: "models-openai" },
+      purpose: "models",
+      provider: {
+        kind: "openai",
+        endpoint: "https://example.test/v1/",
+        model: null,
+        proxyMode: "direct",
+      },
       jobId: "models-openai",
       method: "GET",
       url: "https://example.test/v1/models",
-      headers: { Authorization: "Bearer secret" },
+      headers: {},
       proxyMode: "direct",
       timeoutMs: 10_000,
       maxResponseBytes: 1_048_576,

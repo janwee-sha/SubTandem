@@ -1,3 +1,5 @@
+import type { CredentialEnvelope, CredentialOwner } from "../../shared/credential-protocol.js";
+import { validateProfileSave } from "./client.js";
 import { SubTandemError } from "../domain/errors.js";
 import type {
   ProfileStateCommitResult,
@@ -83,34 +85,42 @@ export class TransportSupervisor implements TransportRpcClient {
     await client.health();
   }
 
-  async credentialRead(profileId: string): Promise<Record<string, string> | null> {
-    let client = await this.liveClient();
-    try {
-      return await client.credentialRead(profileId);
-    } catch (error) {
-      if (!isExpiredSession(error)) throw error;
-      this.retireExpiredClient(client);
-    }
-    client = await this.liveClient();
-    return client.credentialRead(profileId);
+  async credentialChannel(action: string, payload: unknown): Promise<unknown> {
+    const client = await this.liveClient();
+    if (!client.credentialChannel)
+      throw new SubTandemError("HELPER_PROTOCOL", "protocol", "RESTART_IINA");
+    return client.credentialChannel(action, payload);
   }
 
-  async credentialWrite(
-    profileId: string,
-    fields: Record<string, string>,
-    commitId: string,
-    expectedStoreRevision: number,
-    expectedProfileRevision: number,
+  async profileStateSave(
+    owner: CredentialOwner,
+    frame: CredentialEnvelope,
   ): Promise<ProfileStateCommitResult> {
-    return this.localMutation(commitId, (client) =>
-      client.credentialWrite(
-        profileId,
-        fields,
-        commitId,
-        expectedStoreRevision,
-        expectedProfileRevision,
-      ),
-    );
+    validateProfileSave(owner, frame);
+    let client = await this.liveClient();
+    const attempt = () => {
+      if (!client.profileStateSave)
+        throw new SubTandemError("HELPER_PROTOCOL", "protocol", "RESTART_IINA");
+      return client.profileStateSave(owner, frame);
+    };
+    try {
+      return await attempt();
+    } catch (error) {
+      if (
+        !isExpiredSession(error) &&
+        !(error instanceof SubTandemError && error.code === "PROFILE_STATE_UNCONFIRMED")
+      )
+        throw error;
+      if (isExpiredSession(error)) {
+        this.retireExpiredClient(client);
+        client = await this.liveClient();
+      }
+    }
+    try {
+      return await attempt();
+    } catch {
+      return { state: "reconciling", ...(await client.profileStateRead()) };
+    }
   }
 
   async profileStateRead(): Promise<ProfileStateStoreSnapshot> {
@@ -126,7 +136,7 @@ export class TransportSupervisor implements TransportRpcClient {
   }
 
   profileStateOpen(commitId: string): Promise<ProfileStateCommitResult> {
-    return this.localMutation(commitId, (client) => client.profileStateOpen(commitId));
+    return this.localMutation((client) => client.profileStateOpen(commitId));
   }
 
   profileStateInitialize(
@@ -134,7 +144,7 @@ export class TransportSupervisor implements TransportRpcClient {
     expectedStoreRevision: number,
     profiles: PersistentProviderProfile[],
   ): Promise<ProfileStateCommitResult> {
-    return this.localMutation(commitId, (client) =>
+    return this.localMutation((client) =>
       client.profileStateInitialize(commitId, expectedStoreRevision, profiles),
     );
   }
@@ -144,7 +154,7 @@ export class TransportSupervisor implements TransportRpcClient {
     expectedStoreRevision: number,
     profileState: ProfileState,
   ): Promise<ProfileStateCommitResult> {
-    return this.localMutation(commitId, (client) =>
+    return this.localMutation((client) =>
       client.profileStateCommit(commitId, expectedStoreRevision, profileState),
     );
   }
@@ -195,24 +205,29 @@ export class TransportSupervisor implements TransportRpcClient {
   }
 
   private async localMutation(
-    commitId: string,
     attempt: (client: TransportRpcClient) => Promise<ProfileStateCommitResult>,
   ): Promise<ProfileStateCommitResult> {
     let client = await this.liveClient();
     try {
       return await attempt(client);
     } catch (error) {
-      if (!isExpiredSession(error)) throw error;
-      this.retireExpiredClient(client);
+      if (
+        !isExpiredSession(error) &&
+        !(error instanceof SubTandemError && error.code === "PROFILE_STATE_UNCONFIRMED")
+      )
+        throw error;
+      if (isExpiredSession(error)) {
+        this.retireExpiredClient(client);
+        client = await this.liveClient();
+      }
     }
-    client = await this.liveClient();
     try {
       return await attempt(client);
     } catch {
       try {
         const snapshot = await client.profileStateRead();
         return {
-          state: snapshot.lastCommit?.commitId === commitId ? "committed" : "reconciling",
+          state: "reconciling",
           ...snapshot,
         };
       } catch (error) {

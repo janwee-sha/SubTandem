@@ -45,7 +45,7 @@ enum SubTandemTransportMain {
         )
         let rpcDirectory = dataDirectory
             .appendingPathComponent(".rpc", isDirectory: true)
-            .appendingPathComponent("transport-\(arguments[7])", isDirectory: true)
+            .appendingPathComponent("transport-v2-\(arguments[7])", isDirectory: true)
         try FileRPCWorker.prepareDirectory(rpcDirectory)
         defer { try? FileManager.default.removeItem(at: rpcDirectory) }
         let server = try TransportServer(

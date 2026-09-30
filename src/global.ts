@@ -1,3 +1,6 @@
+import type { CredentialReference } from "../shared/credential-protocol.js";
+import { CredentialChannelRelay } from "./adapters/iina/global-rpc.js";
+import { parseCredentialSource } from "../shared/credential-protocol.js";
 import { RequestLifecycle, type RequestOwner } from "./providers/request-lifecycle.js";
 import { identityHash, sha256Hex } from "./domain/identity.js";
 import { normalizeProviderError } from "./domain/errors.js";
@@ -19,16 +22,12 @@ import {
   parseProfileActivationGet,
   parseProfileActivationSet,
   parseProfileDeleteRequest,
-  parseSecretSet,
+  parseProfileSaveRequest,
   parseTargetLanguageSave,
   parseTranslationBatchProgress,
   sanitizedProfileView,
 } from "./domain/messages.js";
-import {
-  HelperCredentialStore,
-  HelperProfileStateStore,
-  CredentialStoreError,
-} from "./credentials/store.js";
+import { HelperProfileStateStore } from "./credentials/store.js";
 import { hostTimers } from "./adapters/iina/host-timers.js";
 import { GlobalMailbox, IinaGlobalMailboxFileStore } from "./adapters/iina/global-mailbox.js";
 import {
@@ -173,14 +172,13 @@ const transport = new TransportSupervisor(async () => {
     new IinaFileRpcBridge(files, {
       helper: "transport",
       fileDirectory: session.rpcDirectory,
-      maxRequestBytes: 2_101_248,
-      maxResponseBytes: 4_210_688,
+      maxRequestBytes: 2_097_152,
+      maxResponseBytes: 4_194_304,
       maxConcurrentRequests: 8,
     }),
   );
 });
 
-const credentials = new HelperCredentialStore(transport);
 const profileStateStore = new HelperProfileStateStore(transport);
 const modelTransport = new ProviderTransportAdapter(transport, localUuid);
 interface ModelRequestContext {
@@ -256,7 +254,20 @@ function profileModelContextKey(profile: ProviderProfileSnapshot): string {
   });
 }
 
-async function buildProvider(profile: ProviderProfileSnapshot): Promise<ConfiguredProvider> {
+function savedCredentialReference(profile: ProviderProfileSnapshot): CredentialReference {
+  return {
+    source: "saved",
+    profileId: profile.profileId,
+    profileRevision: profile.revision,
+    kind: profile.kind,
+    endpointFingerprint: profile.endpointFingerprint,
+  };
+}
+
+async function buildProvider(
+  profile: ProviderProfileSnapshot,
+  senderId: string,
+): Promise<ConfiguredProvider> {
   if (!profile.model)
     throw {
       category: "model",
@@ -281,8 +292,7 @@ async function buildProvider(profile: ProviderProfileSnapshot): Promise<Configur
       };
   };
   guard();
-  const secret = await credentials.getSecret(profile.profileId);
-  guard();
+  const credential = savedCredentialReference(profile);
   const providerTransport = new ProviderTransportAdapter(transport, localUuid);
   switch (profile.kind) {
     case "openai": {
@@ -290,7 +300,8 @@ async function buildProvider(profile: ProviderProfileSnapshot): Promise<Configur
         {
           endpoint: profile.endpoint,
           model: profile.model,
-          ...(secret?.apiKey ? { apiKey: secret.apiKey } : {}),
+          credential,
+          senderId,
           ...(profile.capability ? { capability: profile.capability } : {}),
           proxyMode: profile.proxyMode ?? "system",
           sessionId: localUuid(),
@@ -304,7 +315,8 @@ async function buildProvider(profile: ProviderProfileSnapshot): Promise<Configur
         {
           endpoint: profile.endpoint,
           model: profile.model,
-          ...(secret?.apiKey ? { apiKey: secret.apiKey } : {}),
+          credential,
+          senderId,
           proxyMode: profile.proxyMode ?? "system",
         },
         providerTransport,
@@ -315,7 +327,8 @@ async function buildProvider(profile: ProviderProfileSnapshot): Promise<Configur
         {
           endpoint: profile.endpoint,
           model: profile.model,
-          ...(secret?.apiKey ? { apiKey: secret.apiKey } : {}),
+          credential,
+          senderId,
           proxyMode: profile.proxyMode ?? "system",
         },
         providerTransport,
@@ -326,7 +339,8 @@ async function buildProvider(profile: ProviderProfileSnapshot): Promise<Configur
         {
           endpoint: profile.endpoint,
           model: profile.model,
-          ...(secret?.apiKey ? { apiKey: secret.apiKey } : {}),
+          credential,
+          senderId,
           proxyMode: profile.proxyMode ?? "system",
         },
         providerTransport,
@@ -390,7 +404,8 @@ function buildDraftProvider(
     endpoint: string;
     model: string;
     proxyMode: "system" | "direct";
-    apiKey?: string;
+    credential: CredentialReference;
+    senderId: string;
   },
   providerTransport: ProviderTransport,
 ): ConfiguredProvider {
@@ -400,7 +415,8 @@ function buildDraftProvider(
         {
           endpoint: input.endpoint,
           model: input.model,
-          ...(input.apiKey ? { apiKey: input.apiKey } : {}),
+          credential: input.credential,
+          senderId: input.senderId,
           proxyMode: input.proxyMode,
           sessionId: localUuid(),
         },
@@ -411,7 +427,8 @@ function buildDraftProvider(
         {
           endpoint: input.endpoint,
           model: input.model,
-          ...(input.apiKey ? { apiKey: input.apiKey } : {}),
+          credential: input.credential,
+          senderId: input.senderId,
           proxyMode: input.proxyMode,
         },
         providerTransport,
@@ -421,7 +438,8 @@ function buildDraftProvider(
         {
           endpoint: input.endpoint,
           model: input.model,
-          ...(input.apiKey ? { apiKey: input.apiKey } : {}),
+          credential: input.credential,
+          senderId: input.senderId,
           proxyMode: input.proxyMode,
         },
         providerTransport,
@@ -431,7 +449,8 @@ function buildDraftProvider(
         {
           endpoint: input.endpoint,
           model: input.model,
-          ...(input.apiKey ? { apiKey: input.apiKey } : {}),
+          credential: input.credential,
+          senderId: input.senderId,
           proxyMode: input.proxyMode,
         },
         providerTransport,
@@ -481,8 +500,11 @@ const providerCache = new CredentialScopedProviderCache(
   buildProvider,
 );
 
-function providerFor(profile: ProviderProfileSnapshot): Promise<ConfiguredProvider> {
-  return providerCache.get(profile);
+function providerFor(
+  profile: ProviderProfileSnapshot,
+  senderId: string,
+): Promise<ConfiguredProvider> {
+  return providerCache.get(profile, senderId);
 }
 
 let profileAuthority!: ProfileActivationAuthority;
@@ -507,37 +529,6 @@ const profileReady = (async () => {
   broker = new ProviderBroker(profiles, profileAuthority, providerFor);
 })();
 
-function credentialFailure(error: unknown): {
-  state: "unavailable";
-  code: string;
-  category: string;
-  userAction: string;
-} {
-  if (error instanceof CredentialStoreError) {
-    return {
-      state: "unavailable",
-      code: error.code,
-      category: "configuration",
-      userAction: "RESTART_IINA",
-    };
-  }
-  const safe = normalizeProviderError(error);
-  if (safe.providerCode && safe.providerCode !== "UNKNOWN_PROVIDER_ERROR") {
-    return {
-      state: "unavailable",
-      code: safe.providerCode,
-      category: safe.category,
-      userAction: safe.userAction,
-    };
-  }
-  return {
-    state: "unavailable",
-    code: "CREDENTIAL_STORE_UNAVAILABLE",
-    category: "protocol",
-    userAction: "RESTART_IINA",
-  };
-}
-
 function payload(raw: unknown): Record<string, unknown> {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("INVALID_MESSAGE");
   const value = (raw as Record<string, unknown>).payload;
@@ -552,14 +543,32 @@ function requestId(raw: unknown): string {
   return typeof value === "string" ? value : localUuid();
 }
 
-function supportedProviderKind(value: unknown): "openai" | "claude" | "deepseek" | "ollama" {
-  if (value === "openai" || value === "claude" || value === "deepseek" || value === "ollama")
-    return value;
-  throw new Error("UNSUPPORTED_PROVIDER_KIND");
-}
-
 const globalMailbox = new GlobalMailbox(new IinaGlobalMailboxFileStore(iina.file));
+const credentialChannels = new CredentialChannelRelay({
+  onClose: (owner) => profileAuthority?.cancelProfileSave(owner),
+  send: (senderId, name, data) => globalMailbox.postMessage(senderId, name, data),
+  call: (action, payload) => transport.credentialChannel(action, payload),
+  authorizeSource: async (raw) => {
+    const source = parseCredentialSource(raw);
+    if (source === null) return;
+    await profileReady;
+    const current = profiles.get(source.profileId);
+    if (
+      !current ||
+      current.revision !== source.profileRevision ||
+      current.endpointFingerprint !== source.endpointFingerprint
+    )
+      throw new Error("CREDENTIAL_OWNER_MISMATCH");
+  },
+});
+for (const action of ["open", "confirm", "operation", "close"]) {
+  const name = `credential-channel:${action}`;
+  globalMailbox.onMessage(name, (raw: unknown, senderId?: string) => {
+    if (senderId) return credentialChannels.receive(senderId, name, raw);
+  });
+}
 globalMailbox.onSessionClose((playerId) => {
+  credentialChannels.close(playerId);
   profilePlayers.delete(playerId);
   translationSessions.delete(playerId);
   void translationRequests.releaseSender(playerId);
@@ -812,6 +821,29 @@ async function profileViews(): Promise<unknown[]> {
   });
 }
 
+async function reconcileProfileAuthority(): Promise<void> {
+  const before = profileAuthority.snapshot.profiles.map((profile) => profile.profileId);
+  if (!(await profileAuthority.reconcile())) return;
+  const affected = new Set([
+    ...before,
+    ...profileAuthority.snapshot.profiles.map((profile) => profile.profileId),
+  ]);
+  for (const profileId of affected) {
+    advanceCredentialEpoch(profileId);
+    credentialChannels.closeProfile(profileId);
+    clearProfileProviderCache(profileId);
+    clearProfileModelCatalogs(profileId);
+  }
+  publishProfileAuthority();
+  await Promise.all([
+    broker.cancelAll(),
+    ...[...affected].flatMap((profileId) => [
+      invalidateProfileConnectionTests(profileId),
+      cancelProfileModelRequests(profileId),
+    ]),
+  ]);
+}
+
 function publishProfileAuthority(playerId: string | null = null): void {
   const snapshot = profileAuthority.snapshot;
   if (playerId !== null) {
@@ -1039,6 +1071,7 @@ globalMailbox.onMessage("subtitle-style:picker-cancel", async (raw: unknown, pla
 globalMailbox.onMessage("profiles:list", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
+  await reconcileProfileAuthority();
   const authority = profileAuthority.snapshot;
   postToPlayer(playerId, "profiles:result", {
     requestId: requestId(raw),
@@ -1054,6 +1087,7 @@ globalMailbox.onMessage("profile-activation:get", async (raw: unknown, playerId?
     const message = parseProfileActivationGet(raw);
     profilePlayers.add(playerId);
     await profileReady;
+    await reconcileProfileAuthority();
     postToPlayer(playerId, "profile-activation:state", {
       requestId: message.requestId,
       authority: profileAuthority.snapshot,
@@ -1083,6 +1117,7 @@ globalMailbox.onMessage("profile-activation:set", async (raw: unknown, playerId?
     if (result.outcome === "changed") publishProfileAuthority();
     else if (result.outcome === "unchanged") publishProfileAuthority(playerId);
     await cancellation;
+    if (result.outcome === "pending") await reconcileProfileAuthority();
   } catch {
     await profileReady;
     postToPlayer(playerId, "profile-activation:result", {
@@ -1161,20 +1196,20 @@ async function runModelRequest(
             : {}),
           credentialEpoch: context.credentialEpoch,
         });
-    let apiKey: string | undefined;
-    if (preview) apiKey = values.credential.apiKey;
-    else if (savedCredentialEligible && profile) {
-      assertSavedModelOwner(owner);
-      apiKey = (await credentials.getSecret(profile.profileId))?.apiKey;
-      assertSavedModelOwner(owner);
-    }
+    if (preview || (profileId && !matchingService)) throw new Error("CREDENTIAL_CHANNEL_REQUIRED");
+    const credential =
+      savedCredentialEligible && profile
+        ? savedCredentialReference(profile)
+        : { source: "none" as const };
     const models = await discoverProviderModels(
       {
         jobId: context.jobId,
         kind: values.kind,
-        endpoint,
+        endpoint: credential.source === "saved" ? profile!.endpoint : endpoint,
         proxyMode: values.proxyMode,
-        ...(apiKey ? { apiKey } : {}),
+        credential,
+        ...(profile?.model ? { model: profile.model } : {}),
+        owner: { senderId: playerId, requestId: message.requestId },
         assertActive: () => assertSavedModelOwner(owner),
       },
       modelRequests.transport(owner, modelTransport, () => {
@@ -1252,57 +1287,81 @@ globalMailbox.onMessage("provider:models-cancel", async (raw: unknown, playerId?
   }
 });
 
-globalMailbox.onMessage("profile:create-revision", async (raw: unknown, playerId?: string) => {
-  if (!playerId) return;
-  await profileReady;
-  try {
-    const values = payload(raw);
-    const kind = supportedProviderKind(values.kind);
-    const profileId = typeof values.profileId === "string" ? values.profileId : undefined;
-    const expectedRevision =
-      typeof values.expectedRevision === "number" ? values.expectedRevision : undefined;
-    const currentProfile = profileId ? profiles.get(profileId) : null;
-    const endpoint = normalizeProviderEndpoint(kind, String(values.endpoint ?? ""));
-    const model = typeof values.model === "string" ? values.model.trim() : "";
-    if (!model) throw new Error("MODEL_REQUIRED");
-    const kindChanged = Boolean(currentProfile && currentProfile.kind !== kind);
-    const wasActive = profileAuthority.snapshot.activation?.profileId === profileId;
-    const mutation = await profileAuthority.saveProfile({
-      ...(profileId ? { profileId } : {}),
-      ...(expectedRevision === undefined ? {} : { expectedRevision }),
-      displayName: String(values.displayName ?? "Provider"),
-      kind,
-      endpoint,
-      proxyMode: values.proxyMode === "direct" ? "direct" : "system",
-      model,
-    });
-    if (mutation.outcome !== "changed" || !mutation.profile) throw new Error("PROFILE_SAVE_FAILED");
-    const profile = mutation.profile;
-    if (kindChanged) advanceCredentialEpoch(profile.profileId);
-    await Promise.all([
-      broker.cancelProfile(profile.profileId),
-      invalidateProfileConnectionTests(profile.profileId),
-      cancelProfileModelRequests(profile.profileId),
-    ]);
-    clearProfileProviderCache(profile.profileId);
-    clearProfileModelCatalogs(profile.profileId);
-    publishProfileAuthority();
-    const view = mutation.authority.profiles.find(
-      (candidate) => candidate.profileId === profile.profileId,
-    );
-    postToPlayer(playerId, "profile:revision-created", {
-      requestId: requestId(raw),
-      profile: view ?? sanitizedProfileView(profile),
-      selectionInvalidated: wasActive,
-    });
-  } catch {
-    postToPlayer(playerId, "operation:error", {
-      requestId: requestId(raw),
-      code: "PROFILE_SAVE_FAILED",
-      userAction: "CHECK_ENDPOINT",
-    });
-  }
-});
+for (const stage of ["prepare", "commit"] as const) {
+  globalMailbox.onMessage(`profile:save-${stage}`, async (raw: unknown, playerId?: string) => {
+    if (!playerId) return;
+    let identity: { sidebarInstanceId: string; drawerId: string } | undefined;
+    try {
+      const message = parseProfileSaveRequest(raw, stage);
+      identity = {
+        sidebarInstanceId: message.payload.sidebarInstanceId,
+        drawerId: message.payload.drawerId,
+      };
+      await profileReady;
+      const owner = credentialChannels.ownerFor(
+        playerId,
+        identity,
+        "frame" in message.payload ? message.payload.frame : undefined,
+      );
+      if ("input" in message.payload) {
+        const reservation = await profileAuthority.reserveProfileSave(
+          message.payload.input!,
+          owner,
+          message.requestId,
+        );
+        credentialChannels.ownerFor(playerId, identity);
+        postToPlayer(playerId, "profile:save-result", {
+          requestId: message.requestId,
+          ok: true,
+          ...identity,
+          payload: reservation,
+        });
+        return;
+      }
+      const wasActive = profileAuthority.snapshot.activation?.profileId;
+      const mutation = await profileAuthority.completeProfileSave(
+        message.payload.reservationId!,
+        owner,
+        message.payload.frame!,
+        (target, frame) => profileStateStore.save(target, frame),
+      );
+      if (mutation.outcome === "pending") await reconcileProfileAuthority();
+      publishProfileAuthority();
+      if (mutation.outcome !== "changed" || !mutation.profile)
+        throw new Error("PROFILE_SAVE_FAILED");
+      const profile = mutation.profile;
+      advanceCredentialEpoch(profile.profileId);
+      credentialChannels.closeProfile(profile.profileId);
+      credentialChannels.close(playerId);
+      await Promise.all([
+        broker.cancelProfile(profile.profileId),
+        invalidateProfileConnectionTests(profile.profileId),
+        cancelProfileModelRequests(profile.profileId),
+      ]);
+      clearProfileProviderCache(profile.profileId);
+      clearProfileModelCatalogs(profile.profileId);
+      const view = mutation.authority.profiles.find(
+        (candidate) => candidate.profileId === profile.profileId,
+      );
+      postToPlayer(playerId, "profile:save-result", {
+        requestId: message.requestId,
+        ok: true,
+        ...identity,
+        payload: {
+          profile: view ?? sanitizedProfileView(profile),
+          selectionInvalidated: wasActive === profile.profileId,
+        },
+      });
+    } catch {
+      if (identity) profileAuthority?.cancelProfileSave({ senderId: playerId, ...identity });
+      postToPlayer(playerId, "profile:save-result", {
+        requestId: requestId(raw),
+        ok: false,
+        ...identity,
+      });
+    }
+  });
+}
 
 globalMailbox.onMessage("profile:delete", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
@@ -1312,8 +1371,10 @@ globalMailbox.onMessage("profile:delete", async (raw: unknown, playerId?: string
     const { profileId, expectedRevision } = message.payload;
     const wasActive = profileAuthority.snapshot.activation?.profileId === profileId;
     const mutation = await profileAuthority.deleteProfile(profileId, expectedRevision);
+    if (mutation.outcome === "pending") await reconcileProfileAuthority();
     if (mutation.outcome !== "changed") throw new Error("PROFILE_DELETE_FAILED");
     advanceCredentialEpoch(profileId);
+    credentialChannels.closeProfile(profileId);
     await Promise.all([
       broker.cancelProfile(profileId),
       invalidateProfileConnectionTests(profileId),
@@ -1332,48 +1393,6 @@ globalMailbox.onMessage("profile:delete", async (raw: unknown, playerId?: string
       requestId: requestId(raw),
       code: "PROFILE_DELETE_FAILED",
       userAction: "NONE",
-    });
-  }
-});
-
-globalMailbox.onMessage("credential:set", async (raw: unknown, playerId?: string) => {
-  if (!playerId) return;
-  await profileReady;
-  try {
-    const secret = parseSecretSet(payload(raw));
-    const profile = profiles.get(secret.profileId);
-    if (!profile || profile.revision !== secret.expectedRevision)
-      throw new Error("STALE_PROFILE_REVISION");
-    const mutation = await profileAuthority.writeCredential(
-      secret.profileId,
-      secret.expectedRevision,
-      (commitId, expectedStoreRevision, expectedProfileRevision) =>
-        credentials.setSecret(secret.profileId, secret.fields, {
-          commitId,
-          expectedStoreRevision,
-          expectedProfileRevision,
-        }),
-    );
-    if (mutation.outcome !== "changed") throw new Error("CREDENTIAL_SAVE_FAILED");
-    advanceCredentialEpoch(secret.profileId);
-    await Promise.all([
-      broker.cancelProfile(secret.profileId),
-      invalidateProfileConnectionTests(secret.profileId),
-      cancelProfileModelRequests(secret.profileId),
-    ]);
-    clearProfileProviderCache(secret.profileId);
-    clearProfileModelCatalogs(secret.profileId);
-    publishProfileAuthority();
-    postToPlayer(playerId, "credential:result", {
-      requestId: requestId(raw),
-      state: "ready",
-      profileId: secret.profileId,
-    });
-  } catch (error) {
-    const failure = credentialFailure(error);
-    postToPlayer(playerId, "credential:state", {
-      requestId: requestId(raw),
-      ...failure,
     });
   }
 });
@@ -1398,51 +1417,32 @@ globalMailbox.onMessage("provider:test", async (raw: unknown, senderId?: string)
     await profileReady;
     assertDraftTestOwner(owner);
 
-    const endpoint = normalizeProviderEndpoint(message.payload.kind, message.payload.endpoint);
-    let apiKey: string | undefined;
-    if (source) {
-      const current = profiles.get(source.profileId);
-      if (
-        !current ||
-        current.revision !== source.profileRevision ||
-        current.endpointFingerprint !== source.endpointFingerprint
+    normalizeProviderEndpoint(message.payload.kind, message.payload.endpoint);
+    if (message.payload.credential.source !== "saved" || !source)
+      throw new Error("CREDENTIAL_CHANNEL_REQUIRED");
+    const current = profiles.get(source.profileId);
+    if (
+      !current ||
+      current.revision !== source.profileRevision ||
+      current.endpointFingerprint !== source.endpointFingerprint ||
+      current.kind !== message.payload.kind ||
+      current.model !== message.payload.model.trim() ||
+      !sameProviderService(
+        { ...current, proxyMode: current.proxyMode ?? "system" },
+        message.payload,
       )
-        throw {
-          category: "configuration",
-          retryable: false,
-          providerCode: "CREDENTIAL_CONTEXT_CHANGED",
-          userAction: "RETRY",
-        };
-    }
-    if (message.payload.credential.source === "entered") {
-      apiKey = message.payload.credential.apiKey;
-    } else if (message.payload.credential.source === "saved") {
-      if (!source)
-        throw {
-          category: "configuration",
-          retryable: false,
-          providerCode: "PROFILE_NOT_FOUND",
-          userAction: "RETRY",
-        };
-      const current = profiles.get(source.profileId);
-      if (!current || current.kind !== message.payload.kind)
-        throw {
-          category: "configuration",
-          retryable: false,
-          providerCode: "CREDENTIAL_CONTEXT_CHANGED",
-          userAction: "RETRY",
-        };
-      apiKey = (await credentials.getSecret(source.profileId))?.apiKey;
-      assertDraftTestOwner(owner);
-    }
+    )
+      throw new Error("CREDENTIAL_CONTEXT_CHANGED");
+    const credential = savedCredentialReference(current);
 
     const provider = buildDraftProvider(
       {
         kind: message.payload.kind,
-        endpoint,
+        endpoint: current.endpoint,
         model: message.payload.model.trim(),
         proxyMode: message.payload.proxyMode,
-        ...(apiKey ? { apiKey } : {}),
+        credential,
+        senderId,
       },
       draftTestTransport(owner),
     );
@@ -1597,12 +1597,7 @@ async function prefetchProfileModels(profile: ProviderProfileSnapshot): Promise<
   if (!owner) return;
   try {
     assertSavedModelOwner(owner);
-    let apiKey: string | undefined;
-    try {
-      apiKey = (await credentials.getSecret(profile.profileId))?.apiKey;
-    } catch {
-      apiKey = undefined;
-    }
+    const credential = savedCredentialReference(profile);
     assertSavedModelOwner(owner);
     const models = await discoverProviderModels(
       {
@@ -1610,7 +1605,9 @@ async function prefetchProfileModels(profile: ProviderProfileSnapshot): Promise<
         kind: profile.kind,
         endpoint: profile.endpoint,
         proxyMode: profile.proxyMode ?? "system",
-        ...(apiKey ? { apiKey } : {}),
+        credential,
+        ...(profile.model ? { model: profile.model } : {}),
+        owner: { senderId: owner.senderId, requestId: owner.requestId },
         assertActive: () => assertSavedModelOwner(owner),
       },
       modelRequests.transport(owner, modelTransport, () => {

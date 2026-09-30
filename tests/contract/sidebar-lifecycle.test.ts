@@ -76,34 +76,30 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(controllerSource).toContain('this.options.providerKind !== "claude"');
   });
 
-  it("keeps Claude drafts isolated and completes Save through credential ownership", () => {
+  it("keeps Claude drafts isolated and completes Save through the encrypted editor", () => {
     expect(sidebarSource).toContain("providerDrafts");
     expect(sidebarSource).toContain('claude: { endpoint: "https://api.anthropic.com"');
     expect(sidebarSource).toContain("saveActiveDraft");
     expect(sidebarSource).toContain("draftCredentialEpoch += 1");
-    expect(sidebarSource).toContain("pendingProfileSave.secret");
-    expect(sidebarSource).toContain('postMessage(\n      "secret:set"');
-    expect(sidebarSource).toContain("profileCredentialPartialFailureMessage");
-    expect(sidebarSource).toContain(
-      "pendingProfileSave.contextSignature !== editorContextSignature()",
-    );
-    expect(sidebarSource).toContain("finishSuccessfulProfileSave(result.profile)");
+    expect(sidebarSource).not.toContain("pendingProfileSave.secret");
+    expect(sidebarSource).not.toContain('"secret:set"');
+    expect(sidebarSource).toContain("currentCredentialEditor().save(");
+    expect(sidebarSource).toContain("pending.contextSignature !== editorContextSignature()");
+    expect(sidebarSource).toContain("finishSuccessfulProfileSave(result.profile as ProfileView)");
     expect(sidebarStateSource).toContain("snapshot.drawer = closedDrawer()");
   });
 
-  it("shows the optional-key hint after saving a credential", () => {
-    const start = sidebarSource.indexOf('window.iina?.onMessage("credential:state"');
-    const end = sidebarSource.indexOf('window.iina?.onMessage("operation:result"', start);
-    const credentialHandler = sidebarSource.slice(start, end);
-
-    expect(credentialHandler).toContain("Write-only. Leave blank to keep the saved API key.");
+  it("does not consume a separate credential write result", () => {
+    expect(sidebarSource).not.toContain('onMessage("credential:state"');
+    expect(sidebarSource).not.toContain('onMessage("profile:revision-created"');
+    expect(sidebarSource).not.toContain("API key saved.");
   });
 
   it("does not let a late Claude save, Test or deletion replace a newer drawer owner", () => {
     expect(sidebarSource).toContain("currentTest.requestId !== result.requestId");
     expect(sidebarSource).toContain("currentTest.drawerId !== result.drawerId");
     expect(sidebarSource).toContain("currentTest.draftRevision !== result.draftRevision");
-    expect(sidebarSource).toContain("result.requestId !== pendingProfileSave.requestId");
+    expect(sidebarSource).toContain("pendingProfileSave !== pending");
     expect(sidebarSource).toContain("deleteSucceeded");
     expect(sidebarStateSource).toContain("latestRequestByRegion");
   });
@@ -241,11 +237,9 @@ describe("IINA sidebar lifecycle contract", () => {
   it("binds DeepSeek save and credential feedback to the current editor context", () => {
     expect(sidebarSource).toContain("function editorContextSignature");
     expect(sidebarSource).toContain("contextSignature: editorContextSignature()");
-    expect(sidebarSource).toContain(
-      "pendingProfileSave.contextSignature !== editorContextSignature()",
-    );
+    expect(sidebarSource).toContain("pending.contextSignature !== editorContextSignature()");
     expect(sidebarSource).toContain("cancelPendingProfileSaveForContextChange");
-    expect(sidebarSource).toContain("result.profileId !== pendingProfileSave.profileId");
+    expect(sidebarSource).toContain("pendingProfileSave !== pending");
   });
 
   it("does not reinterpret repeated ui:ready as a model refresh", () => {
@@ -426,22 +420,20 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(renderSource).not.toContain("deletedResults");
   });
 
-  it("keeps Update activation invalidation through optional credential completion", () => {
+  it("completes configuration and credentials through one confirmed Save", () => {
     expect(sidebarSource).toContain("beginProfileSave");
-    expect(sidebarSource).toContain("profileRevisionCreated");
     expect(sidebarSource).toContain("completeProfileSave");
     expect(sidebarSource).toContain("reconcileEditingProfile");
-    expect(sidebarSource).toContain("Profile updated. Enable it when you are ready.");
-    expect(sidebarSource).toContain("Profile saved, but the credential was not saved.");
+    expect(sidebarSource).not.toContain("profileRevisionCreated");
+    expect(sidebarSource).not.toContain("Profile saved, but the credential was not saved.");
     expect(sidebarSource).not.toContain("to authorize translation");
   });
 
-  it("lets credential completion replace cancelled model work and consumes authority state", () => {
+  it("refreshes models after confirmed Save and consumes authority state", () => {
     expect(sidebarSource).toContain('trigger !== "credential"');
     expect(mainSource).toContain("applyProfileAuthority");
-    const createdStart = mainSource.indexOf('runtime.global.onMessage("profile:revision-created"');
-    const createdSource = mainSource.slice(createdStart, createdStart + 1_600);
-    expect(createdSource).toContain('queueSidebarMessage("profile:revision-created"');
+    expect(mainSource).toContain("installCredentialMainRelay");
+    expect(mainSource).not.toContain('onMessage("profile:revision-created"');
   });
 
   it("prioritizes every safe embedded preparation state and exposes Retry only when allowed", () => {

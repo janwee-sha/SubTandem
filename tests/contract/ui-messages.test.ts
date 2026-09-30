@@ -468,7 +468,7 @@ describe("Sidebar/Main/Global security messages", () => {
   });
 
   it("uses exact translation-activation guidance without authorization wording", () => {
-    expect(sidebarSource).toContain("Profile updated. Enable it when you are ready.");
+    expect(sidebarSource).not.toContain("Profile saved, but the credential was not saved.");
     expect(providerTestStatusMessage({ ok: true })).toBe("Test passed");
     expect(`${sidebarSource}\n${providerTestStatusMessage({ ok: true })}`).not.toContain(
       "to authorize translation",
@@ -488,7 +488,10 @@ describe("Sidebar/Main/Global security messages", () => {
   it("uses the global activation and credential message contract", () => {
     expect(GLOBAL_MESSAGE_NAMES).toContain("profile-activation:get");
     expect(GLOBAL_MESSAGE_NAMES).toContain("profile-activation:set");
-    expect(GLOBAL_MESSAGE_NAMES).toContain("credential:set");
+    expect(GLOBAL_MESSAGE_NAMES).not.toContain("credential:set");
+    expect(GLOBAL_MESSAGE_NAMES).toEqual(
+      expect.arrayContaining(["profile:save-prepare", "profile:save-commit"]),
+    );
     expect(SIDEBAR_MESSAGE_NAMES).toContain("profile-activation:set");
     expect(GLOBAL_MESSAGE_NAMES).not.toContain("profile:select");
     expect(GLOBAL_MESSAGE_NAMES).not.toContain("profile:release");

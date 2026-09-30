@@ -46,13 +46,11 @@ for (const kind of ["openai", "deepseek", "claude", "ollama"] as const) {
     expect(h.transport.calls).toEqual([]);
     expect(h.replies.filter((reply) => reply.name.startsWith("provider:attempt"))).toEqual([]);
   });
-  it(`${kind} closes a window during Key preparation and never sends the returned Key`, async () => {
-    const h = await globalProviderHarness([profile], false, true);
-    await flush();
+  it(`${kind} closes a window during restoration and never dispatches its credential reference`, async () => {
+    const h = await globalProviderHarness([profile], true, true);
     const work = h.send("provider:attempt", request);
-    await h.secrets.waitForPending();
     h.close("window");
-    h.secrets.releaseNext({ apiKey: "old-key" });
+    h.ready.releaseNext();
     await work;
     expect(h.transport.calls).toEqual([]);
     expect(h.replies.filter((reply) => reply.name.startsWith("provider:attempt"))).toEqual([]);
@@ -61,8 +59,6 @@ for (const kind of ["openai", "deepseek", "claude", "ollama"] as const) {
     const h = await globalProviderHarness([profile], false, true);
     await flush();
     const work = h.send("provider:attempt", request);
-    await h.secrets.waitForPending();
-    h.secrets.releaseNext(null);
     await h.transport.responses.waitForPending();
     await h.send("provider:test-cancel", { testRequestId: "test" }, "window", "cancel-test");
     await h.send("provider:models-cancel", { modelRequestId: "models" }, "window", "cancel-models");

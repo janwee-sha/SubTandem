@@ -1,3 +1,4 @@
+import { saveTestProfile } from "../helpers/encrypted-profile-fixture.js";
 import { describe, expect, it } from "vitest";
 import type { TranslationProvider } from "../../src/providers/provider.js";
 import { ProviderBroker } from "../../src/providers/broker.js";
@@ -14,7 +15,9 @@ import { CompletionQueue } from "../helpers/profile-activation-harness.js";
 
 function setup() {
   let id = 0;
-  const profiles = new ProviderProfiles(() => `profile-${++id}`);
+  const profiles = new ProviderProfiles(
+    () => `00000000-0000-4000-8000-${String(++id).padStart(12, "0")}`,
+  );
   const a = profiles.save({
     displayName: "A",
     kind: "openai",
@@ -329,7 +332,7 @@ describe("global Profile activation lifecycle", () => {
 
   it("rejects a stale window deletion after another window commits a new revision", async () => {
     const { authority, b } = setup();
-    const updated = await authority.saveProfile({
+    const updated = await saveTestProfile(authority, {
       profileId: b.profileId,
       expectedRevision: b.revision,
       displayName: "B updated",

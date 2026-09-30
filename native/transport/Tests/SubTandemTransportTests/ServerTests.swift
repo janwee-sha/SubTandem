@@ -26,22 +26,22 @@ func runServerTests() async throws {
     let credentialStore = try SecureCredentialStore(directory: credentialDirectory)
     defer { try? FileManager.default.removeItem(at: credentialDirectory) }
     let handler = ProtocolHandler(token: "correct-token", credentialStore: credentialStore)
-    let unauthorized = await handler.handle(path: "/v1/health", authorization: "Bearer wrong", body: Data("{}".utf8))
+    let unauthorized = await handler.handle(path: "/v2/health", authorization: "Bearer wrong", body: Data("{}".utf8))
     try check(unauthorized.statusCode == 401, "wrong bearer token must be rejected")
     let bodylessHealth = await handler.handle(
-        path: "/v1/health",
+        path: "/v2/health",
         authorization: "Bearer correct-token",
         body: Data()
     )
     try check(bodylessHealth.statusCode == 200, "IINA may omit the empty health JSON body")
     let invalidHealth = await handler.handle(
-        path: "/v1/health",
+        path: "/v2/health",
         authorization: "Bearer correct-token",
         body: Data("{\"unexpected\":true}".utf8)
     )
     try check(invalidHealth.statusCode == 400, "health must reject caller-controlled fields")
     let oversized = await handler.handle(
-        path: "/v1/health",
+        path: "/v2/health",
         authorization: "Bearer correct-token",
         body: Data(repeating: 0, count: ProtocolLimits.maxRequestBytes + 1)
     )
@@ -54,12 +54,12 @@ func runServerTests() async throws {
         "displayName": "A",
         "kind": "openai",
         "endpoint": "https://example.test/v1",
-        "endpointFingerprint": "fingerprint-a",
+        "endpointFingerprint": "0d60715773b0025a549a09f48db8f58ac0f08cd3fb973bf8eca151f51a7eb4d8",
         "proxyMode": "direct",
         "model": "model-a",
     ]
     let uninitialized = await handler.handle(
-        path: "/v1/profile-state",
+        path: "/v2/profile-state",
         authorization: "Bearer correct-token",
         body: try JSONSerialization.data(withJSONObject: ["action": "read"])
     )
@@ -71,7 +71,7 @@ func runServerTests() async throws {
 
     let initializeCommitID = "00000000-0000-4000-8000-000000000001"
     let initialized = await handler.handle(
-        path: "/v1/profile-state",
+        path: "/v2/profile-state",
         authorization: "Bearer correct-token",
         body: try JSONSerialization.data(withJSONObject: [
             "action": "initialize",
@@ -87,7 +87,7 @@ func runServerTests() async throws {
     try check(initializedProfileState?["activation"] is NSNull, "initialization must encode disabled activation as null")
 
     let initializedRead = await handler.handle(
-        path: "/v1/profile-state",
+        path: "/v2/profile-state",
         authorization: "Bearer correct-token",
         body: try JSONSerialization.data(withJSONObject: ["action": "read"])
     )
@@ -95,81 +95,19 @@ func runServerTests() async throws {
     let initializedReadProfileState = initializedReadJSON?["profileState"] as? [String: Any]
     try check(initializedReadProfileState?["activation"] is NSNull, "read must encode disabled activation as null")
 
-    let readCredentialBody = try JSONSerialization.data(withJSONObject: [
-        "action": "read", "profileId": profileID,
-    ])
-    let missingCredential = await handler.handle(
-        path: "/v1/credentials",
-        authorization: "Bearer correct-token",
-        body: readCredentialBody
-    )
-    let missingCredentialJSON = try JSONSerialization.jsonObject(with: missingCredential.body) as? [String: Any]
-    try check(missingCredential.statusCode == 200, "missing credential read must succeed")
-    try check(missingCredentialJSON?["fields"] is NSNull, "missing credential must serialize as JSON null")
-
-    let saveCredentialBody = try JSONSerialization.data(withJSONObject: [
-        "action": "write",
-        "profileId": profileID,
-        "fields": ["apiKey": "private-key"],
-        "commitId": "00000000-0000-4000-8000-000000000002",
-        "expectedStoreRevision": 1,
-        "expectedProfileRevision": 1,
-    ])
-    let savedCredential = await handler.handle(
-        path: "/v1/credentials",
-        authorization: "Bearer correct-token",
-        body: saveCredentialBody
-    )
-    let savedCredentialJSON = try JSONSerialization.jsonObject(with: savedCredential.body) as? [String: Any]
-    try check(savedCredential.statusCode == 200, "versioned credential write must succeed")
-    try check(savedCredentialJSON?["storeRevision"] as? Int == 2, "credential write must advance shared revision")
-    try check(savedCredentialJSON?["credentials"] == nil, "credential response must not expose secrets")
-    try check(savedCredentialJSON?["credentialConfigured"] as? [String: Bool] == [profileID: true], "credential response must expose only configured state")
-    let credentialProfileState = savedCredentialJSON?["profileState"] as? [String: Any]
-    try check(credentialProfileState?["activation"] is NSNull, "credential write must encode disabled activation as null")
-    let storedCredential = try await credentialStore.read(profileID: profileID)
-    try check(storedCredential == ["apiKey": "private-key"], "credential must round-trip")
-    let attributes = try FileManager.default.attributesOfItem(
-        atPath: credentialDirectory.appendingPathComponent("credentials.json").path
-    )
-    let permissions = (attributes[.posixPermissions] as? NSNumber)?.intValue
-    try check(permissions == 0o600, "credential file must be mode 0600")
-    let versionedData = try Data(contentsOf: credentialDirectory.appendingPathComponent("credentials.json"))
-    let versionedJSON = try JSONSerialization.jsonObject(with: versionedData) as? [String: Any]
-    try check(versionedJSON?["storeRevision"] as? Int == 2, "credential writes must advance the shared store revision")
-    try check(versionedJSON?["lastCommit"] is [String: Any], "credential writes must persist an idempotency receipt")
-    let fixedLock = credentialDirectory.appendingPathComponent(".credentials.lock")
-    try check(FileManager.default.fileExists(atPath: fixedLock.path), "all mutations must use one fixed sidecar lock")
-    let repeatedCredential = await handler.handle(
-        path: "/v1/credentials",
-        authorization: "Bearer correct-token",
-        body: saveCredentialBody
-    )
-    let repeatedCredentialJSON = try JSONSerialization.jsonObject(with: repeatedCredential.body) as? [String: Any]
-    try check(repeatedCredentialJSON?["storeRevision"] as? Int == 2, "same credential commit must be idempotent")
-    let changedCredentialBody = try JSONSerialization.data(withJSONObject: [
-        "action": "write",
-        "profileId": profileID,
-        "fields": ["apiKey": "different-key"],
-        "commitId": "00000000-0000-4000-8000-000000000002",
-        "expectedStoreRevision": 1,
-        "expectedProfileRevision": 1,
-    ])
-    let changedCredential = await handler.handle(
-        path: "/v1/credentials",
-        authorization: "Bearer correct-token",
-        body: changedCredentialBody
-    )
-    try check(changedCredential.statusCode == 409, "same commit ID with different secret must conflict")
+    for action in ["read", "write", "delete"] {
+        let rejected = await handler.handle(path: "/v2/credentials", authorization: "Bearer correct-token", body: try JSONSerialization.data(withJSONObject: ["action": action, "profileId": profileID]))
+        try check(rejected.statusCode == 404, "plaintext credential endpoint must be removed")
+    }
 
     let deleteProfileBody = try JSONSerialization.data(withJSONObject: [
         "action": "commit",
         "commitId": "00000000-0000-4000-8000-000000000003",
-        "expectedStoreRevision": 2,
+        "expectedStoreRevision": 1,
         "profileState": ["profiles": [], "activation": NSNull()],
     ])
     let deletedProfile = await handler.handle(
-        path: "/v1/profile-state",
+        path: "/v2/profile-state",
         authorization: "Bearer correct-token",
         body: deleteProfileBody
     )
@@ -177,84 +115,35 @@ func runServerTests() async throws {
     let deletedProfileJSON = try JSONSerialization.jsonObject(with: deletedProfile.body) as? [String: Any]
     let deletedProfileState = deletedProfileJSON?["profileState"] as? [String: Any]
     try check(deletedProfileState?["activation"] is NSNull, "commit must encode disabled activation as null")
-    let credentialAfterDelete = try await credentialStore.read(profileID: profileID)
-    try check(credentialAfterDelete == nil, "Profile transaction must delete its credential")
+    let afterDelete = try await credentialStore.readProfileState()
+    try check(afterDelete.credentialConfigured.isEmpty, "Profile transaction must remove its credential projection")
 
     for kind in ["openai", "claude", "deepseek", "ollama"] {
-        let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("subtandem-profile-key-\(UUID().uuidString)", isDirectory: true)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("subtandem-profile-key-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let store = try SecureCredentialStore(directory: directory)
-        let original = StoredProviderProfile(
-            profileId: profileID,
-            revision: 1,
-            displayName: "Original",
-            kind: kind,
-            endpoint: "https://example.test/v1",
-            endpointFingerprint: "original-fingerprint",
-            proxyMode: "direct",
-            model: "original-model",
-            capability: nil
-        )
-        let initialized = try await store.initializeProfileState(
-            commitID: UUID().uuidString,
-            expectedStoreRevision: 0,
-            profiles: [original]
-        )
-        let written = try await store.write(
-            profileID: profileID,
-            fields: ["apiKey": "saved-key"],
-            commitID: UUID().uuidString,
-            expectedStoreRevision: initialized.storeRevision,
-            expectedProfileRevision: 1
-        )
-        let updated = StoredProviderProfile(
-            profileId: profileID,
-            revision: 2,
-            displayName: "Changed name",
-            kind: kind,
-            endpoint: "https://other.test/v2",
-            endpointFingerprint: "changed-fingerprint",
-            proxyMode: "system",
-            model: "changed-model",
-            capability: nil
-        )
-        let retained = try await store.commitProfileState(
-            commitID: UUID().uuidString,
-            expectedStoreRevision: written.storeRevision,
-            profileState: StoredProfileState(profiles: [updated], activation: nil)
-        )
-        let reopened = try SecureCredentialStore(directory: directory)
-        let retainedKey = try await reopened.read(profileID: profileID)
-        try check(
-            retainedKey == ["apiKey": "saved-key"],
-            "\(kind) non-type Profile changes must retain the saved Key after reopening"
-        )
-        let changedType = StoredProviderProfile(
-            profileId: profileID,
-            revision: 3,
-            displayName: "Changed type",
-            kind: kind == "ollama" ? "openai" : "ollama",
-            endpoint: "https://other.test/v2",
-            endpointFingerprint: "new-type-fingerprint",
-            proxyMode: "system",
-            model: "changed-model",
-            capability: nil
-        )
-        _ = try await reopened.commitProfileState(
-            commitID: UUID().uuidString,
-            expectedStoreRevision: retained.storeRevision,
-            profileState: StoredProfileState(profiles: [changedType], activation: nil)
-        )
-        let clearedKey = try await reopened.read(profileID: profileID)
-        try check(
-            clearedKey == nil,
-            "\(kind) Service type changes must clear the saved Key"
-        )
+        let store = try SecureCredentialStore(directory: directory, protection: CredentialProtection(backend: SyntheticKeyBackend()))
+        var snapshot = try await store.initializeProfileState(commitID: UUID().uuidString, expectedStoreRevision: 0, profiles: [])
+        for revision in 1...3 {
+            let endpoint = revision == 1 ? "https://example.test/v1" : "https://other.test/v2"
+            let proxy = revision == 1 ? "direct" : "system"
+            let selectedKind = revision == 3 ? (kind == "ollama" ? "openai" : "ollama") : kind
+            let fingerprint = CredentialCryptography.digest(try JSONSerialization.data(withJSONObject: ["kind": selectedKind, "endpoint": endpoint, "proxyMode": proxy], options: [.sortedKeys, .withoutEscapingSlashes]))
+            let candidate = StoredProviderProfile(profileId: profileID, revision: revision, displayName: "Changed", kind: selectedKind, endpoint: endpoint, endpointFingerprint: fingerprint, proxyMode: proxy, model: "model", capability: nil)
+            let state = StoredProfileState(profiles: [candidate], activation: nil)
+            try await expectCredentialAsyncFailure("metadata-only commit cannot add or edit a Profile") {
+                _ = try await store.commitProfileState(commitID: UUID().uuidString, expectedStoreRevision: snapshot.storeRevision, profileState: state)
+            }
+            let commit = UUID().uuidString
+            let value = revision == 3 ? Data() : Data("synthetic-current-input".utf8)
+            snapshot = try await store.saveProfile(CredentialProfileSave(commitID: commit, expectedStoreRevision: snapshot.storeRevision, expectedProfileRevision: revision - 1, profileID: profileID, profileState: state, requestDigest: CredentialCryptography.digest(Data(commit.utf8))), value: value)
+            let reopened = try SecureCredentialStore(directory: directory, protection: CredentialProtection(backend: SyntheticKeyBackend()))
+            let current = try await reopened.readCredential(profileID: profileID, expectedProfileRevision: revision)
+            try check(current == (value.isEmpty ? nil : value), "\(kind) Save must persist exactly the current input across restart")
+        }
     }
 
     let openedProfile = await handler.handle(
-        path: "/v1/profile-state",
+        path: "/v2/profile-state",
         authorization: "Bearer correct-token",
         body: try JSONSerialization.data(withJSONObject: [
             "action": "open",
@@ -276,7 +165,7 @@ func runServerTests() async throws {
         displayName: "Keyless Claude",
         kind: "claude",
         endpoint: "https://compatible.example",
-        endpointFingerprint: "keyless-claude-fingerprint",
+        endpointFingerprint: CredentialCryptography.digest(try JSONSerialization.data(withJSONObject: ["kind": "claude", "endpoint": "https://compatible.example", "proxyMode": "direct"], options: [.sortedKeys, .withoutEscapingSlashes])),
         proxyMode: "direct",
         model: "exact-model",
         capability: nil
@@ -305,17 +194,17 @@ func runServerTests() async throws {
     try check(restoredKeyless.invalidActivation != true, "keyless Claude activation must remain valid")
 
     let oldDeleteCredential = await handler.handle(
-        path: "/v1/credentials",
+        path: "/v2/credentials",
         authorization: "Bearer correct-token",
         body: try JSONSerialization.data(withJSONObject: ["action": "delete", "profileId": profileID])
     )
-    try check(oldDeleteCredential.statusCode == 400, "independent credential delete must be removed")
+    try check(oldDeleteCredential.statusCode == 404, "independent credential delete must be removed")
     let invalidCredential = await handler.handle(
-        path: "/v1/credentials",
+        path: "/v2/credentials",
         authorization: "Bearer correct-token",
         body: Data("{\"action\":\"read\",\"profileId\":\"not-a-uuid\"}".utf8)
     )
-    try check(invalidCredential.statusCode == 400, "invalid profile IDs must be rejected")
+    try check(invalidCredential.statusCode == 404, "invalid profile IDs must be rejected")
 
     let encoded = try ReadyFrame(
         port: 49152,
@@ -364,7 +253,7 @@ func runServerTests() async throws {
 
     let body = Data("{}".utf8)
     let header = Data((
-        "POST /v1/health HTTP/1.1\r\n" +
+        "POST /v2/health HTTP/1.1\r\n" +
         "Content-Type: application/json\r\n" +
         "Content-Length: \(body.count)\r\n" +
         "Authorization: Bearer correct-token\r\n\r\n"
@@ -381,7 +270,7 @@ func runServerTests() async throws {
     guard case .complete(let path, let authorization, let parsedBody) = TransportServer.parseRequest(splitFrame) else {
         throw ContractTestFailure(description: "complete split request must parse")
     }
-    try check(path == "/v1/health", "parsed request path must match")
+    try check(path == "/v2/health", "parsed request path must match")
     try check(authorization == "Bearer correct-token", "parsed authorization must match")
     try check(parsedBody == body, "parsed split body must match")
 
@@ -401,7 +290,7 @@ func runServerTests() async throws {
     let activeRequest = try encodedTransportRequest(jobID: activeJobID)
     let activeResponse = Task {
         await lifecycleHandler.handle(
-            path: "/v1/request",
+            path: "/v2/request",
             authorization: "Bearer correct-token",
             body: activeRequest
         )
@@ -412,12 +301,12 @@ func runServerTests() async throws {
         "the shutdown contract requires an active upstream request"
     )
     let firstShutdown = await lifecycleHandler.handle(
-        path: "/v1/shutdown",
+        path: "/v2/shutdown",
         authorization: "Bearer correct-token",
         body: Data("{}".utf8)
     )
     let repeatedShutdown = await lifecycleHandler.handle(
-        path: "/v1/shutdown",
+        path: "/v2/shutdown",
         authorization: "Bearer correct-token",
         body: Data("{}".utf8)
     )
@@ -427,7 +316,7 @@ func runServerTests() async throws {
     let cancelledResponse = await activeResponse.value
     try check(cancelledResponse.statusCode == 409, "shutdown must give the active request one cancelled terminal response")
     let rejectedResponse = await lifecycleHandler.handle(
-        path: "/v1/request",
+        path: "/v2/request",
         authorization: "Bearer correct-token",
         body: try encodedTransportRequest(jobID: UUID().uuidString)
     )

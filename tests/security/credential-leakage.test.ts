@@ -1,3 +1,4 @@
+import { testSavedCredential } from "../contract/provider-test-helpers.js";
 import { describe, expect, it } from "vitest";
 import { diagnostic } from "../../src/domain/logging.js";
 import {
@@ -100,7 +101,7 @@ describe("credential and content leakage boundaries", () => {
       {
         endpoint: "https://api.anthropic.com",
         model: "current-model",
-        apiKey: "PRIVATE_FALLBACK_KEY",
+        credential: testSavedCredential("claude"),
       },
       {
         request: async (request) => {
@@ -151,7 +152,8 @@ describe("credential and content leakage boundaries", () => {
     expect(requests).toHaveLength(2);
     for (const sent of requests) {
       expect(sent.url).toBe("https://api.anthropic.com/v1/messages");
-      expect(sent.headers["x-api-key"]).toBe("PRIVATE_FALLBACK_KEY");
+      expect(sent.headers["x-api-key"]).toBeUndefined();
+      expect(sent.credential).toEqual(testSavedCredential("claude"));
       expect(JSON.stringify(sent.body)).not.toMatch(/profile|session|player|endpointFingerprint/);
       const body = sent.body as {
         messages: Array<{ content: string }>;

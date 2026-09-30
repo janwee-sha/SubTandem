@@ -18,8 +18,7 @@ vi.mock("../../src/providers/model-discovery.js", () => ({
 }));
 
 async function setup(restoreActive = false) {
-  const { HelperCredentialStore, HelperProfileStateStore } =
-    await import("../../src/credentials/store.js");
+  const { HelperProfileStateStore } = await import("../../src/credentials/store.js");
   const { OllamaProvider } = await import("../../src/providers/ollama.js");
   const { ProviderProfiles } = await import("../../src/providers/profiles.js");
   let sequence = 0;
@@ -76,7 +75,6 @@ async function setup(restoreActive = false) {
       stored = structuredClone(state);
       return receipt(id, "commit");
     });
-  vi.spyOn(HelperCredentialStore.prototype, "getSecret").mockResolvedValue(null);
   const providerAttempt = vi
     .spyOn(OllamaProvider.prototype, "attempt")
     .mockImplementation(async (request) => ({

@@ -1,3 +1,5 @@
+import type { CredentialOwner, CredentialEnvelope } from "../../shared/credential-protocol.js";
+import { encryptedSaveFrame, encryptedSaveOwner } from "../helpers/encrypted-profile-fixture.js";
 import { describe, expect, it } from "vitest";
 import { SubTandemError } from "../../src/domain/errors.js";
 import type {
@@ -17,7 +19,7 @@ class FakeTransportClient implements TransportRpcClient {
   requestCalls = 0;
   cancelCalls = 0;
   failRequestAfterDispatch = false;
-  credentials = new Map<string, Record<string, string>>();
+  saveCalls: Array<{ owner: CredentialOwner; frame: CredentialEnvelope }> = [];
   shutdownCalls = 0;
   disposeCalls = 0;
   commitCalls: Array<{ commitId: string; expectedStoreRevision: number; profileState: unknown }> =
@@ -37,20 +39,13 @@ class FakeTransportClient implements TransportRpcClient {
       throw new SubTandemError("HELPER_UNAVAILABLE", "network", "RESTART_IINA", true);
   }
 
-  async credentialRead(profileId: string): Promise<Record<string, string> | null> {
-    if (!this.available)
-      throw new SubTandemError("HELPER_UNAVAILABLE", "network", "RESTART_IINA", true);
-    const fields = this.credentials.get(profileId);
-    return fields ? { ...fields } : null;
-  }
-
-  async credentialWrite(
-    profileId: string,
-    fields: Record<string, string>,
+  async profileStateSave(
+    owner: CredentialOwner,
+    frame: CredentialEnvelope,
   ): Promise<ProfileStateCommitResult> {
+    this.saveCalls.push({ owner, frame });
     if (!this.available)
       throw new SubTandemError("HELPER_UNAVAILABLE", "network", "RESTART_IINA", true);
-    this.credentials.set(profileId, { ...fields });
     return { state: "committed", ...structuredClone(this.profileSnapshot) };
   }
 
@@ -111,6 +106,15 @@ class FakeTransportClient implements TransportRpcClient {
 }
 
 const providerRequest: TransportRequest = {
+  credential: { source: "none" },
+  owner: { senderId: "window", requestId: "request" },
+  purpose: "test",
+  provider: {
+    kind: "openai",
+    endpoint: "https://example.test/v1",
+    model: "model",
+    proxyMode: "system",
+  },
   jobId: "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae",
   method: "POST",
   url: "https://example.test/v1/chat/completions",
@@ -178,8 +182,8 @@ describe("transport supervisor", () => {
               if (!path.endsWith(".request.ready")) return;
               const stem = path.slice(0, -".request.ready".length);
               const request = JSON.parse(contents.get(`${stem}.request.json`)!);
-              let body: unknown = { state: "ok" };
-              if (request.path === "/v1/profile-state") {
+              let body: unknown = { state: "ok", protocolVersion: 2 };
+              if (request.path === "/v2/profile-state") {
                 commits.push({ directory, body: request.body });
                 body = {
                   state: "committed",
@@ -199,7 +203,7 @@ describe("transport supervisor", () => {
                 `${stem}.response.json`,
                 JSON.stringify({
                   type: "response",
-                  protocolVersion: 1,
+                  protocolVersion: 2,
                   createdAtMs: Date.now(),
                   statusCode: 200,
                   body,
@@ -281,29 +285,37 @@ describe("transport supervisor", () => {
     expect(replacement.randomCalls).toBeGreaterThanOrEqual(2);
   });
 
-  it("reconnects fixed-purpose credential reads and idempotent writes", async () => {
+  it("confirms an encrypted Save through the replacement helper without retrieving a secret", async () => {
     const expired = new FakeTransportClient();
     const replacement = new FakeTransportClient();
     let starts = 0;
-    const supervisor = new TransportSupervisor(async () => {
-      starts += 1;
-      return starts === 1 ? expired : replacement;
-    });
+    const supervisor = new TransportSupervisor(async () =>
+      ++starts === 1 ? expired : replacement,
+    );
     await supervisor.health();
     expired.available = false;
-    const profileId = "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae";
-
-    await expect(
-      supervisor.credentialWrite(
-        profileId,
-        { apiKey: "private-key" },
-        "00000000-0000-4000-8000-000000000100",
-        4,
-        1,
-      ),
-    ).resolves.toMatchObject({ state: "committed" });
-    await expect(supervisor.credentialRead(profileId)).resolves.toEqual({ apiKey: "private-key" });
-    expect(replacement.credentials.get(profileId)).toEqual({ apiKey: "private-key" });
+    const frame = encryptedSaveFrame({
+      profiles: [
+        {
+          profileId: "10000000-0000-4000-8000-000000000001",
+          revision: 1,
+          displayName: "Synthetic",
+          kind: "openai",
+          endpoint: "https://example.test/v1",
+          endpointFingerprint: "fingerprint",
+          model: "model",
+          proxyMode: "system",
+        },
+      ],
+      activation: null,
+    });
+    await expect(supervisor.profileStateSave(encryptedSaveOwner, frame)).resolves.toMatchObject({
+      state: "committed",
+    });
+    expect(replacement.saveCalls).toEqual([{ owner: encryptedSaveOwner, frame }]);
+    expect(JSON.stringify(replacement.saveCalls)).not.toContain("synthetic-store-key");
+    expect(supervisor).not.toHaveProperty("credentialRead");
+    expect(supervisor).not.toHaveProperty("credentialWrite");
     expect(starts).toBe(2);
   });
 
@@ -379,6 +391,29 @@ describe("transport supervisor", () => {
     ).resolves.toMatchObject({ state: "reconciling", storeRevision: 4 });
     expect(expired.commitCalls).toHaveLength(1);
     expect(replacement.commitCalls).toHaveLength(1);
+  });
+
+  it("never infers durability from a matching receipt after two unconfirmed attempts", async () => {
+    const client = new FakeTransportClient();
+    client.profileSnapshot.lastCommit = {
+      commitId: "00000000-0000-4000-8000-000000000103",
+      operation: "commit",
+      baseRevision: 3,
+      requestDigest: "safe",
+    };
+    let attempts = 0;
+    client.profileStateCommit = async () => {
+      attempts += 1;
+      throw new SubTandemError("PROFILE_STATE_UNCONFIRMED", "protocol", "RETRY");
+    };
+    const supervisor = new TransportSupervisor(async () => client);
+    await expect(
+      supervisor.profileStateCommit(client.profileSnapshot.lastCommit.commitId, 3, {
+        profiles: [],
+        activation: null,
+      }),
+    ).resolves.toMatchObject({ state: "reconciling", storeRevision: 4 });
+    expect(attempts).toBe(2);
   });
 
   it("does not restart or leak a helper for a valid protocol rejection", async () => {

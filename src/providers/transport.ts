@@ -1,4 +1,45 @@
-export interface ProviderTransportRequest {
+import type {
+  CredentialReference,
+  CredentialProviderKind,
+} from "../../shared/credential-protocol.js";
+import type { RequestOwner } from "./request-lifecycle.js";
+
+export interface ProviderRequestAuthority {
+  credential: CredentialReference;
+  owner: { senderId: string; requestId: string };
+  purpose: "models" | "test" | "translation";
+  provider: {
+    kind: CredentialProviderKind;
+    endpoint: string;
+    model: string | null;
+    proxyMode: "system" | "direct";
+  };
+}
+
+export function providerRequestAuthority(
+  config: {
+    credential?: CredentialReference;
+    endpoint: string;
+    model?: string;
+    proxyMode?: "system" | "direct";
+  },
+  kind: CredentialProviderKind,
+  owner: Pick<RequestOwner, "senderId" | "requestId" | "operation">,
+): ProviderRequestAuthority {
+  return {
+    credential: config.credential ?? { source: "none" },
+    owner: { senderId: owner.senderId, requestId: owner.requestId },
+    purpose: owner.operation,
+    provider: {
+      kind,
+      endpoint: config.endpoint,
+      model: config.model ?? null,
+      proxyMode: config.proxyMode ?? "system",
+    },
+  };
+}
+
+export interface ProviderTransportRequest extends ProviderRequestAuthority {
   jobId: string;
   assertActive?: () => void;
   method: "GET" | "POST";

@@ -1,3 +1,5 @@
+import type { CredentialReference } from "../../shared/credential-protocol.js";
+import { providerRequestAuthority } from "./transport.js";
 import { RequestLifecycle, type RequestOwner } from "./request-lifecycle.js";
 import type { ConfiguredProvider } from "./provider.js";
 import type {
@@ -25,7 +27,8 @@ export class OllamaProvider implements ConfiguredProvider {
     private readonly config: {
       endpoint: string;
       model: string;
-      apiKey?: string;
+      credential?: CredentialReference;
+      senderId?: string;
       proxyMode?: "system" | "direct";
     },
     private readonly transport: ProviderTransport,
@@ -45,7 +48,7 @@ export class OllamaProvider implements ConfiguredProvider {
 
   async testConnection(testId: string): Promise<{ version: string; model: string }> {
     const owner = this.requests.beginRequired({
-      senderId: "provider",
+      senderId: this.config.senderId ?? "provider",
       operation: "test",
       requestId: testId,
       context: undefined,
@@ -100,7 +103,7 @@ export class OllamaProvider implements ConfiguredProvider {
     assertAuthorized?: () => void,
   ): Promise<TranslationBatchResult> {
     const owner = this.requests.beginRequired({
-      senderId: "provider",
+      senderId: this.config.senderId ?? "provider",
       operation: "translation",
       requestId: request.requestId,
       context: undefined,
@@ -149,8 +152,8 @@ export class OllamaProvider implements ConfiguredProvider {
 
   async cancel(requestId: string): Promise<void> {
     await Promise.allSettled([
-      this.requests.cancel("provider", "test", requestId),
-      this.requests.cancel("provider", "translation", requestId),
+      this.requests.cancel(this.config.senderId ?? "provider", "test", requestId),
+      this.requests.cancel(this.config.senderId ?? "provider", "translation", requestId),
     ]);
   }
 
@@ -160,12 +163,11 @@ export class OllamaProvider implements ConfiguredProvider {
     path: string,
   ): Promise<ProviderTransportResponse> {
     return this.requests.transport(owner, this.transport).request({
+      ...providerRequestAuthority(this.config, "ollama", owner),
       jobId,
       method: "GET",
       url: `${this.endpoint}${path}`,
-      headers: this.config.apiKey?.trim()
-        ? { Authorization: `Bearer ${this.config.apiKey.trim()}` }
-        : {},
+      headers: {},
       proxyMode: this.config.proxyMode ?? "system",
       timeoutMs: 10_000,
       maxResponseBytes: 1_048_576,
@@ -182,14 +184,12 @@ export class OllamaProvider implements ConfiguredProvider {
   ): Promise<ProviderTransportResponse> {
     const task = buildOllamaTranslationTask({ targetLanguage, targets: items });
     return this.requests.transport(owner, this.transport).request({
+      ...providerRequestAuthority(this.config, "ollama", owner),
       jobId,
       method: "POST",
       url: `${this.endpoint}/api/chat`,
       headers: {
         "Content-Type": "application/json",
-        ...(this.config.apiKey?.trim()
-          ? { Authorization: `Bearer ${this.config.apiKey.trim()}` }
-          : {}),
       },
       proxyMode: this.config.proxyMode ?? "system",
       body: {

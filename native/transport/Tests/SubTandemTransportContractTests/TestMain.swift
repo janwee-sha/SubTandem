@@ -24,6 +24,26 @@ func expectFailure(_ message: String, _ operation: () throws -> Void) throws {
 enum SubTandemTransportContractTestMain {
     static func main() async {
         do {
+            if ProcessInfo.processInfo.environment["SUBTANDEM_NATIVE_TEST"] == "credential-store-worker" {
+                try await runSecureStoreWorker()
+                exit(EXIT_SUCCESS)
+            }
+            if ProcessInfo.processInfo.environment["SUBTANDEM_NATIVE_TEST"] == "credential-store" {
+                try await runSecureCredentialStoreTests()
+                print("Secure credential store tests passed")
+                exit(EXIT_SUCCESS)
+            }
+            if ProcessInfo.processInfo.environment["SUBTANDEM_NATIVE_TEST"] == "credential-request" {
+                try await runCredentialRequestTests()
+                print("Credential request tests passed")
+                exit(EXIT_SUCCESS)
+            }
+            try runCredentialChannelTests()
+            try runCredentialProtectionTests()
+            try runCredentialHostProbeTests()
+            try await runCredentialChannelLifecycleTests()
+            try await runSecureCredentialStoreTests()
+            try await runCredentialRequestTests()
             try await runServerTests()
             try await runFileRPCClientTests()
             try await runHTTPClientTests()

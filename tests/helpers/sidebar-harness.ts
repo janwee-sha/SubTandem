@@ -1,3 +1,4 @@
+import { CredentialEditor } from "../../ui/credential-editor.js";
 import { readFileSync } from "node:fs";
 import { createContext, runInContext } from "node:vm";
 import ts from "typescript";
@@ -85,6 +86,7 @@ class Element {
     this.append(item);
     return item;
   }
+  scrollIntoView() {}
   replaceChildren(...items: Element[]) {
     for (const child of this.children) child.parentElement = null;
     this.children = [];
@@ -155,6 +157,7 @@ export function sidebarHarness() {
     Element,
     HTMLElement: Element,
     HTMLInputElement: Element,
+    HTMLButtonElement: Element,
     HTMLSelectElement: Element,
     ResizeObserver: class {
       private readonly record = { callback: () => {}, targets: new Set<Element>() };
@@ -187,6 +190,10 @@ export function sidebarHarness() {
     },
   });
   context.window = context;
+  context.subtandemCredentialEditor = {
+    create: (port: ConstructorParameters<typeof CredentialEditor>[0]) =>
+      new CredentialEditor(port, context as any),
+  };
   document.querySelector("#provider-kind").value = "openai";
   document.querySelector("#provider-proxy-mode").value = "system";
   for (const path of [

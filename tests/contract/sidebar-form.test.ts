@@ -20,7 +20,11 @@ describe("IINA sidebar bundle contract", () => {
   );
   const packageJson = JSON.parse(
     readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
-  ) as { targets?: { sidebar?: { publicUrl?: string } } };
+  ) as {
+    targets?: {
+      sidebar?: { publicUrl?: string; outputFormat?: string; includeNodeModules?: boolean };
+    };
+  };
 
   it("places a single hidden editor drawer inside the grouped Profile list", () => {
     const heading = html.indexOf('id="provider-heading"');
@@ -51,7 +55,10 @@ describe("IINA sidebar bundle contract", () => {
     expect(html).toContain('<script src="./provider-status.ts"></script>');
     expect(html).toContain('<script src="./sidebar.ts"></script>');
     expect(html).toContain('<script src="./sidebar-state.ts"></script>');
-    expect(html).not.toContain('type="module"');
+    expect(packageJson.targets?.sidebar?.outputFormat).toBe("global");
+    expect(packageJson.targets?.sidebar?.includeNodeModules).toBe(true);
+    expect(html.match(/type="module"/g)).toHaveLength(1);
+    expect(html).toContain('<script type="module" src="./credential-editor-entry.ts"></script>');
     expect(html.indexOf("./provider-status.ts")).toBeLessThan(html.indexOf("./sidebar.ts"));
     expect(html.indexOf("./sidebar-state.ts")).toBeLessThan(html.indexOf("./sidebar.ts"));
   });
@@ -385,7 +392,7 @@ describe("IINA sidebar bundle contract", () => {
   it("keeps activation separate from drawer-only credential and connection verification", () => {
     expect(sidebarSource).toMatch(/postMessage\(\s*"profile-activation:set"/);
     expect(sidebarSource).not.toContain("Profile selected for translation.");
-    expect(sidebarSource).toContain("window.subtandemCredentialStatusMessage");
+    expect(sidebarSource).toContain("currentCredentialEditor().save(");
     expect(html).toContain("private local file (mode 0600)");
     expect(sidebarSource).not.toContain('" · no key saved"');
     expect(html).toContain('id="profile-test-status"');

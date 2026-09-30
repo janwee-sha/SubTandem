@@ -70,7 +70,6 @@ const saveProfileButton = document.querySelector<HTMLButtonElement>("#save-profi
 const newProfileButton = document.querySelector<HTMLButtonElement>("#new-profile")!;
 const profilesElement = document.querySelector<HTMLElement>("#profiles")!;
 const requestUrl = document.querySelector<HTMLElement>("#request-url")!;
-const credentialState = document.querySelector<HTMLElement>("#credential-state")!;
 const translationPosition = document.querySelector<HTMLInputElement>("#translation-position")!;
 const translationPositionValue = document.querySelector<HTMLOutputElement>(
   "#translation-position-value",
@@ -222,9 +221,6 @@ const profiles = new Map<string, ProfileView>();
 const sidebarState = window.createSubTandemSidebarState();
 const profileCardInteractions = new ProfileCardInteractionCoordinator();
 const profileDeleteDialogInteractions = new ProfileDeleteDialogInteractionCoordinator();
-const profileUpdatedSelectionMessage = "Profile updated. Enable it when you are ready.";
-const profileCredentialPartialFailureMessage =
-  "Profile saved, but the credential was not saved. Review the credential status and retry the profile update.";
 const profileRows = new Map<string, HTMLElement>();
 let newProfileRow: HTMLElement | null = null;
 const pendingOperations = new Set<string>();
@@ -240,11 +236,19 @@ let activeProviderKind: ProviderKind = "openai";
 let editingProfile: ProfileView | null = null;
 let pendingProfileSave: {
   requestId: string;
-  secret: string | null;
   contextSignature: string;
   profileId: string | null;
   revision: number | null;
 } | null = null;
+let credentialEditor: ReturnType<Window["subtandemCredentialEditor"]["create"]> | null = null;
+function currentCredentialEditor() {
+  if (!credentialEditor) {
+    if (!window.iina || !window.subtandemCredentialEditor)
+      throw new Error("CREDENTIAL_CHANNEL_UNAVAILABLE");
+    credentialEditor = window.subtandemCredentialEditor.create(window.iina);
+  }
+  return credentialEditor;
+}
 let renderedAssistiveFeedbackSignature = "";
 let requestSequence = 0;
 let renderedProfilesSignature = "";
@@ -728,6 +732,7 @@ function cancelPendingProfileSaveForContextChange(): void {
   if (!pendingProfileSave) return;
   const requestId = pendingProfileSave.requestId;
   pendingProfileSave = null;
+  credentialEditor?.close();
   sidebarState.cancelProfileSave(requestId);
   finishOperation(
     requestId,
@@ -1039,6 +1044,7 @@ function clearProfileDrawer(focus = true): void {
   cancelActiveDrawerTest();
   cancelPendingProfileSaveForContextChange();
   invalidatePendingModelRefresh();
+  credentialEditor?.close();
   const target = sidebarState.closeProfileDrawer();
   editingProfile = null;
   draftCredentialEpoch += 1;
@@ -1097,6 +1103,7 @@ function loadEditor(profile: ProfileView, preservePendingSave = false): void {
     !preservePendingSave
   )
     return;
+  credentialEditor?.close();
   resetProviderDrafts();
   editingProfile = profile;
   draftCredentialEpoch += 1;
@@ -1134,6 +1141,7 @@ function openNewProfile(): void {
   cancelPendingProfileSaveForContextChange();
   invalidatePendingModelRefresh();
   sidebarState.openNewProfileDrawer();
+  credentialEditor?.close();
   resetProviderDrafts();
   editingProfile = null;
   draftCredentialEpoch += 1;
@@ -1397,7 +1405,8 @@ testProfileButton.addEventListener("click", () => {
   );
 });
 
-saveProfileButton.addEventListener("click", () => {
+saveProfileButton.addEventListener("click", async () => {
+  if (sidebarState.snapshot.drawer.savePhase) return;
   cancelPendingProfileSaveForContextChange();
   const model = sidebarState.modelForSave();
   if (!model) {
@@ -1418,29 +1427,54 @@ saveProfileButton.addEventListener("click", () => {
   );
   pendingProfileSave = {
     requestId,
-    secret: providerKey.value.trim() || null,
     contextSignature: editorContextSignature(),
     profileId: editingProfile?.profileId ?? null,
     revision: editingProfile?.revision ?? null,
   };
-  sidebarState.beginProfileSave(requestId, Boolean(pendingProfileSave.secret));
+  sidebarState.beginProfileSave(requestId, false);
+  const value = providerKey.value;
   setProfileSaveLocked(true);
-  window.iina?.postMessage(
-    "profile:save",
-    envelope(
+  const drawer = sidebarState.snapshot.drawer;
+  const pending = pendingProfileSave;
+  try {
+    if (!drawer.drawerId) throw new Error("PROFILE_SAVE_FAILED");
+    const result = await currentCredentialEditor().save(
+      value,
       {
         ...(editingProfile
           ? { profileId: editingProfile.profileId, expectedRevision: editingProfile.revision }
           : {}),
         displayName: profileName.value.trim(),
-        kind: providerKind.value,
+        kind: providerKind.value as ProviderKind,
         endpoint: providerEndpoint.value.trim(),
-        proxyMode: providerProxyMode.value,
+        proxyMode: providerProxyMode.value as "system" | "direct",
         model,
       },
+      {
+        drawerId: drawer.drawerId,
+        sourceProfile: drawer.sourceProfile,
+        draftRevision: drawer.draftRevision,
+        keyEditEpoch: drawer.keyEditEpoch,
+        submitEpoch: drawer.submitEpoch,
+      },
       requestId,
-    ),
-  );
+    );
+    if (pendingProfileSave !== pending || pending.contextSignature !== editorContextSignature())
+      return;
+    sidebarState.completeProfileSave(requestId, "");
+    finishOperation(requestId, "");
+    pendingProfileSave = null;
+    credentialEditor?.close();
+    finishSuccessfulProfileSave(result.profile as ProfileView);
+    window.iina?.postMessage("ui:ready", envelope({}));
+  } catch {
+    if (pendingProfileSave !== pending) return;
+    sidebarState.completeProfileSave(requestId, "Profile could not be saved.", false);
+    finishOperation(requestId, "Profile could not be saved.", "error");
+    pendingProfileSave = null;
+    credentialEditor?.close();
+    setProfileSaveLocked(false);
+  }
 });
 
 newProfileButton.addEventListener("click", openNewProfile);
@@ -1582,53 +1616,6 @@ profilesElement.addEventListener("change", (event) => {
   );
 });
 
-window.iina?.onMessage("profile:revision-created", (raw: unknown) => {
-  const result = raw as {
-    requestId?: string;
-    profile?: ProfileView;
-    selectionInvalidated?: boolean;
-  };
-  if (
-    !result.profile ||
-    !pendingProfileSave ||
-    result.requestId !== pendingProfileSave.requestId ||
-    pendingProfileSave.contextSignature !== editorContextSignature()
-  )
-    return;
-  const transition = sidebarState.profileRevisionCreated(result.requestId, {
-    profileId: result.profile.profileId,
-    revision: result.profile.revision,
-    endpointFingerprint: result.profile.endpointFingerprint,
-    selectionInvalidated: result.selectionInvalidated === true,
-  });
-  if (!transition.accepted) return;
-  pendingProfileSave.profileId = result.profile.profileId;
-  pendingProfileSave.revision = result.profile.revision;
-  loadEditor(result.profile, true);
-  pendingProfileSave.contextSignature = editorContextSignature();
-  if (pendingProfileSave.secret) {
-    window.iina?.postMessage(
-      "secret:set",
-      envelope(
-        {
-          profileId: result.profile.profileId,
-          expectedRevision: result.profile.revision,
-          fields: { apiKey: pendingProfileSave.secret },
-        },
-        pendingProfileSave.requestId,
-      ),
-    );
-  } else {
-    const message =
-      sidebarState.completeProfileSave(result.requestId, "Profile saved.") ??
-      profileUpdatedSelectionMessage;
-    finishOperation(result.requestId, message);
-    pendingProfileSave = null;
-    finishSuccessfulProfileSave(result.profile);
-  }
-  window.iina?.postMessage("ui:ready", envelope({}));
-});
-
 window.iina?.onMessage("profile-activation:state", (raw: unknown) => {
   if (!sidebarState.applyProfileAuthority(raw as SidebarProfileAuthority)) return;
   clearConfirmedProfileActivationTimeouts();
@@ -1756,43 +1743,6 @@ window.iina?.onMessage("provider:models-result", (raw: unknown) => {
     credentialSource,
   });
   setModelRefreshFeedback("error", message);
-});
-
-window.iina?.onMessage("credential:state", (raw: unknown) => {
-  const result = raw as {
-    requestId?: string;
-    state?: string;
-    code?: string;
-    userAction?: string;
-    profileId?: string;
-  };
-  const ready = result.state === "ready";
-  const message = window.subtandemCredentialStatusMessage(result);
-  if (
-    pendingProfileSave &&
-    result.requestId === pendingProfileSave.requestId &&
-    pendingProfileSave.contextSignature === editorContextSignature() &&
-    (result.profileId === undefined || result.profileId === pendingProfileSave.profileId)
-  ) {
-    if (result.profileId !== undefined && result.profileId !== pendingProfileSave.profileId) return;
-    credentialState.textContent = message;
-    if (ready && editingProfile && editingProfile.profileId === pendingProfileSave.profileId) {
-      editingProfile = { ...editingProfile, credentialConfigured: true };
-      profiles.set(editingProfile.profileId, editingProfile);
-      document.querySelector<HTMLElement>("#credential-hint")!.textContent =
-        "Write-only. Leave blank to keep the saved API key.";
-    }
-    const saveMessage = sidebarState.completeProfileSave(
-      result.requestId,
-      ready ? "Profile and local credential saved." : profileCredentialPartialFailureMessage,
-      ready,
-    );
-    finishOperation(result.requestId, saveMessage ?? message, ready ? "success" : "error");
-    pendingProfileSave = null;
-    if (ready && editingProfile) finishSuccessfulProfileSave(editingProfile);
-    else setProfileSaveLocked(false);
-  }
-  if (ready) window.iina?.postMessage("ui:ready", envelope({}));
 });
 
 window.iina?.onMessage("operation:result", (raw: unknown) => {
@@ -2341,6 +2291,7 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
 window.iina?.postMessage("ui:ready", envelope({}));
 window.setInterval(() => window.iina?.postMessage("ui:poll", envelope({})), 750);
 window.addEventListener("pagehide", () => {
+  credentialEditor?.close();
   for (const article of profileRows.values()) clearProfileOverflow(article);
   if (endpointRefreshTimer !== null) clearTimeout(endpointRefreshTimer);
   invalidatePendingModelRefresh();

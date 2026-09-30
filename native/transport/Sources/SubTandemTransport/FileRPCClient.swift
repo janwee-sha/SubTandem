@@ -21,15 +21,16 @@ private struct ClaimedFileRPCRequest: Sendable {
 }
 
 enum FileRPCWorker {
-    static let maximumRequestFileBytes = ProtocolLimits.maxRequestBytes + 4_096
-    static let maximumResponseFileBytes = ProtocolLimits.maxResponseBytes + 16_384
+    static let maximumRequestFileBytes = ProtocolLimits.maxRequestBytes
+    static let maximumResponseFileBytes = ProtocolLimits.maxResponseBytes
     static let allowedPaths = Set([
-        "/v1/health",
-        "/v1/credentials",
-        "/v1/profile-state",
-        "/v1/request",
-        "/v1/cancel",
-        "/v1/shutdown",
+        "/v2/health",
+        "/v2/credential-channel",
+        "/v2/credentials",
+        "/v2/profile-state",
+        "/v2/request",
+        "/v2/cancel",
+        "/v2/shutdown",
     ])
 
     static func prepareDirectory(_ directory: URL) throws {
@@ -91,7 +92,7 @@ enum FileRPCWorker {
               let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               Set(json.keys) == Set(["type", "protocolVersion", "createdAtMs", "port", "token", "path", "body"]),
               json["type"] as? String == "request",
-              json["protocolVersion"] as? Int == 1,
+              json["protocolVersion"] as? Int == 2,
               let createdAtMs = (json["createdAtMs"] as? NSNumber)?.int64Value,
               createdAtMs >= nowMs - 30_000,
               createdAtMs <= nowMs + 1_000,
@@ -153,12 +154,12 @@ enum FileRPCWorker {
 
     private static func requestStem(_ filename: String) -> String? {
         let suffix = ".request.ready"
-        guard filename.hasPrefix("transport-"), filename.hasSuffix(suffix) else { return nil }
+        guard filename.hasPrefix("transport-v2-"), filename.hasSuffix(suffix) else { return nil }
         let stem = String(filename.dropLast(suffix.count))
         let parts = stem.split(separator: "-", omittingEmptySubsequences: false)
-        guard parts.count == 4,
-              parts[0] == "transport",
-              parts.dropFirst().allSatisfy({
+        guard parts.count == 5,
+              parts[0] == "transport", parts[1] == "v2",
+              parts.dropFirst(2).allSatisfy({
                   !$0.isEmpty && $0.allSatisfy { $0.isASCII && ($0.isNumber || $0.isLowercase) }
               })
         else { return nil }
@@ -214,7 +215,7 @@ enum FileRPCWorker {
         else { throw FileRPCWorkerError.unavailable }
         let object: [String: Any] = [
             "type": "response",
-            "protocolVersion": 1,
+            "protocolVersion": 2,
             "createdAtMs": Int64(Date().timeIntervalSince1970 * 1_000),
             "statusCode": response.statusCode,
             "body": body,

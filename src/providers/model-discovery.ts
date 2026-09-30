@@ -1,3 +1,5 @@
+import type { CredentialReference } from "../../shared/credential-protocol.js";
+import { providerRequestAuthority } from "./transport.js";
 import { claudeApiError, claudeApiUrl, claudeRequestHeaders } from "./claude-api.js";
 import { providerHttpError, protocolError } from "./errors.js";
 import { normalizeProviderEndpoint } from "./profiles.js";
@@ -8,7 +10,9 @@ export interface ModelDiscoveryRequest {
   jobId: string;
   kind: Exclude<ProviderKind, "fake">;
   endpoint: string;
-  apiKey?: string;
+  credential?: CredentialReference;
+  model?: string;
+  owner?: { senderId: string; requestId: string };
   proxyMode?: "system" | "direct";
   assertActive?: () => void | Promise<void>;
 }
@@ -71,6 +75,10 @@ export async function discoverProviderModels(
   request: ModelDiscoveryRequest,
   transport: ProviderTransport,
 ): Promise<string[]> {
+  const authority = providerRequestAuthority(request, request.kind, {
+    ...(request.owner ?? { senderId: "models", requestId: request.jobId }),
+    operation: "models",
+  });
   if (request.kind === "claude") {
     const rootUrl = claudeApiUrl(request.endpoint, "models");
     const seenModels = new Set<string>();
@@ -80,10 +88,11 @@ export async function discoverProviderModels(
     for (;;) {
       await request.assertActive?.();
       const response = await transport.request({
+        ...authority,
         jobId: request.jobId,
         method: "GET",
         url: afterId === undefined ? rootUrl : `${rootUrl}?after_id=${encodeURIComponent(afterId)}`,
-        headers: claudeRequestHeaders(request.apiKey, "models"),
+        headers: claudeRequestHeaders("models"),
         proxyMode: request.proxyMode ?? "system",
         timeoutMs: 10_000,
         maxResponseBytes: 1_048_576,
@@ -125,10 +134,11 @@ export async function discoverProviderModels(
   const endpoint = normalizeProviderEndpoint(request.kind, request.endpoint).replace(/\/+$/, "");
   await request.assertActive?.();
   const response = await transport.request({
+    ...authority,
     jobId: request.jobId,
     method: "GET",
     url: `${endpoint}${request.kind === "ollama" ? "/api/tags" : "/models"}`,
-    headers: request.apiKey?.trim() ? { Authorization: `Bearer ${request.apiKey.trim()}` } : {},
+    headers: {},
     proxyMode: request.proxyMode ?? "system",
     timeoutMs: 10_000,
     maxResponseBytes: 1_048_576,

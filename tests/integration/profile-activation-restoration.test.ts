@@ -1,3 +1,5 @@
+import { saveTestProfile, encryptedSaveOwner } from "../helpers/encrypted-profile-fixture.js";
+import { profileSaveRequestDigest } from "../../src/transport/client.js";
 import { describe, expect, it } from "vitest";
 import type { ActivationReference, ProfileState } from "../../src/domain/types.js";
 import {
@@ -332,7 +334,7 @@ describe("Profile activation restoration", () => {
 });
 
 for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
-  it(`preserves ${kind} saved Key through non-equivalent Endpoint and route changes after restart`, async () => {
+  it(`restores the ${kind} revision saved with an explicit empty key after Endpoint and route changes`, async () => {
     const saved = {
       ...profile,
       kind,
@@ -359,14 +361,34 @@ for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
     const first = await restoreProfileActivationAuthority(options);
     expect(first.snapshot.profiles[0]).toMatchObject({ ...saved, credentialConfigured: true });
     expect(first.snapshot.activation).toEqual(active);
-    const edited = await first.saveProfile({
-      ...saved,
-      expectedRevision: saved.revision,
-      displayName: "Changed name",
-      endpoint: " https://other.test:8443/Changed/Root ",
-      proxyMode: "system",
-      model: "changed-model",
-    });
+    const edited = await saveTestProfile(
+      first,
+      {
+        ...saved,
+        expectedRevision: saved.revision,
+        displayName: "Changed name",
+        endpoint: " https://other.test:8443/Changed/Root ",
+        proxyMode: "system",
+        model: "changed-model",
+      },
+      async (reservation, frame) => {
+        store.configured[saved.profileId] = false;
+        const result = await store.commit(
+          reservation.commitId,
+          reservation.expectedStoreRevision,
+          reservation.profileState,
+        );
+        return {
+          ...result,
+          lastCommit: {
+            commitId: reservation.commitId,
+            operation: "save-profile",
+            baseRevision: reservation.expectedStoreRevision,
+            requestDigest: profileSaveRequestDigest(encryptedSaveOwner, frame),
+          },
+        };
+      },
+    );
     expect(edited.outcome).toBe("changed");
     expect(edited.profile).toMatchObject({
       revision: saved.revision + 1,
@@ -393,7 +415,7 @@ for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
     });
     expect(restarted.snapshot.profiles[0]).toMatchObject({
       ...edited.profile,
-      credentialConfigured: true,
+      credentialConfigured: false,
     });
     expect(restarted.snapshot.activation?.profileRevision).toBe(saved.revision + 1);
   });

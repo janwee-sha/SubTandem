@@ -1,3 +1,4 @@
+import { saveTestProfile } from "../helpers/encrypted-profile-fixture.js";
 import { describe, expect, it } from "vitest";
 import type { ProfileState } from "../../src/domain/types.js";
 import { ProfileActivationAuthority } from "../../src/providers/profile-activation.js";
@@ -16,7 +17,9 @@ function setup(
   }) => Promise<ProfileStateCommitResult> = async (input) => committed(input),
 ) {
   let commitSequence = 0;
-  const profiles = new ProviderProfiles(() => `profile-${profiles.listLatest().length + 1}`);
+  const profiles = new ProviderProfiles(
+    () => `00000000-0000-4000-8000-${String(profiles.listLatest().length + 1).padStart(12, "0")}`,
+  );
   const a = profiles.save({
     displayName: "A",
     kind: "openai",
@@ -94,7 +97,7 @@ describe("ProfileActivationAuthority", () => {
   it("places a new Profile first, keeps updates in place and never enables on save", async () => {
     const { authority, a, b } = setup();
 
-    const created = await authority.saveProfile({
+    const created = await saveTestProfile(authority, {
       displayName: "Created",
       kind: "ollama",
       endpoint: "http://127.0.0.1:11434",
@@ -109,7 +112,7 @@ describe("ProfileActivationAuthority", () => {
     ]);
     expect(authority.snapshot.activation).toBeNull();
 
-    await authority.saveProfile({
+    await saveTestProfile(authority, {
       profileId: a.profileId,
       expectedRevision: a.revision,
       displayName: "A updated",

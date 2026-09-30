@@ -17,12 +17,22 @@ swiftc -parse-as-library \
   -I "$PACKAGE_DIR/Sources/CCurl" \
   -lcurl \
   "$SOURCE_DIR/Protocol.swift" \
+  "$SOURCE_DIR/CredentialProtection.swift" \
+  "$SOURCE_DIR/CredentialChannel.swift" \
+  "$SOURCE_DIR/CredentialResponseGuard.swift" \
+  "$SOURCE_DIR/CredentialHTTPRequest.swift" \
   "$SOURCE_DIR/SecureCredentialStore.swift" \
   "$SOURCE_DIR/HTTPClient.swift" \
   "$SOURCE_DIR/DirectCurlTransport.swift" \
   "$SOURCE_DIR/Server.swift" \
   "$SOURCE_DIR/FileRPCClient.swift" \
   "$SOURCE_DIR/DetachedBootstrap.swift" \
+  "$ROOT_DIR/tests/helpers/CredentialHostProbe.swift" \
+  "$TEST_DIR/SubTandemTransportTests/CredentialProtectionTests.swift" \
+  "$TEST_DIR/SubTandemTransportTests/CredentialHostProbeTests.swift" \
+  "$TEST_DIR/SubTandemTransportTests/SecureCredentialStoreTests.swift" \
+  "$TEST_DIR/SubTandemTransportTests/CredentialRequestTests.swift" \
+  "$TEST_DIR/SubTandemTransportTests/CredentialChannelTests.swift" \
   "$TEST_DIR/SubTandemTransportTests/ServerTests.swift" \
   "$TEST_DIR/SubTandemTransportTests/FileRPCClientTests.swift" \
   "$TEST_DIR/SubTandemTransportTests/HTTPClientTests.swift" \

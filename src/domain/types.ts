@@ -37,7 +37,7 @@ export interface ProfileState {
 
 export interface StoreCommitReceipt {
   commitId: string;
-  operation: "open" | "initialize" | "commit" | "credential-write";
+  operation: "open" | "initialize" | "commit" | "save-profile" | "credential-write";
   baseRevision: number;
   requestDigest: string;
 }
@@ -103,3 +103,11 @@ export interface SanitizedConnectionView {
   endpoint: string;
   credentialConfigured: boolean;
 }
+
+export type {
+  CredentialOwner,
+  CredentialReference,
+  CredentialOperationContext,
+  SavedCredentialReference,
+  DraftOperationReference,
+} from "../../shared/credential-protocol.js";

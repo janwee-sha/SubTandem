@@ -29,6 +29,7 @@ interface RuntimeHarness {
   triggerEvent(name: string, ...args: unknown[]): void;
   triggerSidebar(name: string, data?: unknown): void;
   states(): Array<Record<string, unknown>>;
+  messages(): Array<{ name: string; data: unknown }>;
   close(): void;
 }
 
@@ -154,7 +155,7 @@ function createHarness(options: HarnessOptions): RuntimeHarness {
       sync: () => undefined,
     },
     sidebar: {
-      loadFile: () => undefined,
+      loadFile: () => sidebarListeners.clear(),
       onMessage: (name: string, callback: (data: unknown) => void) =>
         sidebarListeners.set(name, callback),
       postMessage: (name: string, data: unknown) => sidebarMessages.push({ name, data }),
@@ -239,6 +240,7 @@ function createHarness(options: HarnessOptions): RuntimeHarness {
       for (const callback of eventListeners.get(name)?.values() ?? []) callback(...args);
     },
     triggerSidebar: (name, data = {}) => sidebarListeners.get(name)?.(data),
+    messages: () => sidebarMessages,
     states: () =>
       sidebarMessages
         .filter((message) => message.name === "state:update")
@@ -539,4 +541,24 @@ describe("translation-disabled Main startup", () => {
     disabled.close();
     enabled.close();
   });
+});
+
+it("keeps credential handlers active after the host clears listeners when loading Sidebar", async () => {
+  const harness = createHarness({ enabled: false, selection: "external" });
+  await startHarness(harness);
+  harness.triggerSidebar("credential-channel:open", {
+    requestId: "invalid-open-after-load",
+    revision: 1,
+    payload: {},
+  });
+  harness.triggerSidebar("ui:poll");
+  expect(harness.messages()).toContainEqual({
+    name: "credential-channel:result",
+    data: {
+      requestId: "invalid-open-after-load",
+      ok: false,
+      error: "invalid-credential-message",
+    },
+  });
+  harness.close();
 });

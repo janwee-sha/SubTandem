@@ -106,37 +106,28 @@ describe("file-backed Main and Global mailbox", () => {
     expect(api.intervals.size).toBe(0);
   });
 
-  it("keeps API keys out of mailbox frames and deletes the one-use handoff first", () => {
+  it("rejects plaintext credentials before writing any handoff file", () => {
     const { files, api, options } = createHarness();
     const global = new GlobalMailbox(files, options);
     const main = new MainGlobalMailbox(files, "player-secret", options);
-    const received = vi.fn((data: unknown) => {
-      expect([...files.contents.keys()].some((path) => path.endsWith(".secrets.json"))).toBe(false);
-      expect(data).toEqual({
-        requestId: "credential.1",
-        payload: { fields: { apiKey: "PRIVATE_TEST_KEY" } },
-      });
-    });
+    const received = vi.fn();
     global.onMessage("credential:set", received);
-
-    main.postMessage("credential:set", {
-      requestId: "credential.1",
-      payload: { fields: { apiKey: "PRIVATE_TEST_KEY" } },
-    });
-
-    const mailboxFrames = [...files.contents.entries()].filter(
-      ([path]) => path.endsWith(".json") && !path.endsWith(".secrets.json"),
-    );
-    expect(mailboxFrames.some(([, value]) => value.includes("PRIVATE_TEST_KEY"))).toBe(false);
-    expect(
-      [...files.contents.entries()].some(
-        ([path, value]) => path.endsWith(".secrets.json") && value.includes("PRIVATE_TEST_KEY"),
-      ),
-    ).toBe(true);
-
     api.tick();
-    expect(received).toHaveBeenCalledOnce();
+    const before = files.writes.length;
+    for (const fields of [
+      { apiKey: "PRIVATE_TEST_KEY" },
+      { Authorization: "Bearer PRIVATE_TEST_KEY" },
+      { "x-api-key": "PRIVATE_TEST_KEY" },
+    ]) {
+      expect(() =>
+        main.postMessage("credential:set", { requestId: "credential.1", payload: { fields } }),
+      ).toThrow("MAILBOX_PLAINTEXT_FORBIDDEN");
+    }
+    expect(files.writes.length).toBe(before);
+    expect(files.writes.some((path) => path.endsWith(".secrets.json"))).toBe(false);
     expect([...files.contents.values()].join("\n")).not.toContain("PRIVATE_TEST_KEY");
+    api.tick();
+    expect(received).not.toHaveBeenCalled();
     main.close();
     global.close();
   });
