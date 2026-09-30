@@ -13,6 +13,10 @@ import type {
 } from "../../src/transport/client.js";
 import { ProfileActivationSync } from "../../src/adapters/iina/profile-activation-sync.js";
 import { identityHash } from "../../src/domain/identity.js";
+import { mkdtempSync, writeFileSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { spawn, spawnSync } from "node:child_process";
 
 const profile = {
   profileId: "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae",
@@ -28,6 +32,56 @@ const profile = {
   proxyMode: "direct" as const,
   model: "model-a",
 };
+
+describe.skipIf(process.platform !== "darwin")("production activation fixture script", () => {
+  const fixture = () => ({ formatVersion: 2, storeId: "10000000-0000-4000-8000-000000000001", storeRevision: 7,
+    lastCommit: { commitId: "10000000-0000-4000-8000-000000000002", operation: "open", baseRevision: 6, requestDigest: "0".repeat(64) },
+    profileState: { profiles: [profile], activation: activation(true) },
+    credentials: { [profile.profileId]: { credentialId: "10000000-0000-4000-8000-000000000003", envelope: "opaque-encrypted-value" } }, keyRing: {}, migration: null });
+  const run = (path: string) => spawnSync(process.execPath, ["scripts/profile-activation-fixture.ts", "--invalidate-restoration", path], { cwd: process.cwd(), encoding: "utf8" });
+  it("updates a v2 snapshot and receipt atomically while retaining its opaque encrypted contents", () => {
+    const root = mkdtempSync(join(tmpdir(), "subtandem-activation-fixture-"));
+    try {
+      const path = join(root, "credentials.json"); const before = fixture();
+      writeFileSync(path, JSON.stringify(before));
+      const result = run(path);
+      expect(result.status, result.stderr).toBe(0);
+      const after = JSON.parse(readFileSync(path, "utf8"));
+      expect(after.storeRevision).toBe(8);
+      expect(after.lastCommit).toMatchObject({ operation: "commit", baseRevision: 7 });
+      expect(after.lastCommit.requestDigest).toMatch(/^[a-f0-9]{64}$/);
+      expect(after.profileState.activation.profileRevision).toBe(4);
+      expect(after.credentials).toEqual(before.credentials);
+      const backup = readdirSync(root).find((name) => name.includes("v2-activation-backup"))!;
+      expect(JSON.parse(readFileSync(join(root, backup), "utf8"))).toEqual(before);
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  });
+  it("rejects real v1-shaped input before creating a plaintext backup", () => {
+    const root = mkdtempSync(join(tmpdir(), "subtandem-activation-fixture-"));
+    try {
+      const path = join(root, "credentials.json");
+      const before = JSON.stringify({ ...fixture(), formatVersion: 1, credentials: { [profile.profileId]: { apiKey: "synthetic-fixture-old-key" } } });
+      writeFileSync(path, before);
+      expect(run(path).status).not.toBe(0);
+      expect(readFileSync(path, "utf8")).toBe(before);
+      expect(readdirSync(root).filter((name) => name.includes("backup") || name.endsWith(".tmp"))).toEqual([]);
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  });
+  it("refuses to modify a snapshot while another process holds the fixed credential lock", async () => {
+    const root = mkdtempSync(join(tmpdir(), "subtandem-activation-fixture-"));
+    let child: ReturnType<typeof spawn> | undefined;
+    try {
+      const path = join(root, "credentials.json"); const before = JSON.stringify(fixture());
+      writeFileSync(path, before);
+      const lock = join(root, ".credentials.lock"); writeFileSync(lock, "", { mode: 0o600 });
+      child = spawn("/usr/bin/lockf", ["-k", lock, process.execPath, "-e", "process.stdout.write('locked'); setTimeout(() => {}, 10000)"], { detached: true, stdio: ["ignore", "pipe", "pipe"] });
+      await new Promise<void>((resolve, reject) => { child!.once("error", reject); child!.stdout!.once("data", () => resolve()); });
+      expect(run(path).status).not.toBe(0);
+      expect(readFileSync(path, "utf8")).toBe(before);
+      expect(readdirSync(root).filter((name) => name.includes("backup"))).toEqual([]);
+    } finally { if (child?.pid) { try { process.kill(-child.pid); } catch (error) { void error; } } rmSync(root, { recursive: true, force: true }); }
+  });
+});
 
 function activation(credentialConfigured = true): ActivationReference {
   return {

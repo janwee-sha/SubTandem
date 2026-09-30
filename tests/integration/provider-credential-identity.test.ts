@@ -40,6 +40,44 @@ for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
         }
       : { kind, endpoint, proxyMode: "direct", trigger: "manual", ...sourceProfile };
   describe(`${kind} native saved credential authority`, () => {
+    it("clears an existing credential after the native bridge reorders reservation fields", async () => {
+      const h = await globalProviderHarness([saved]);
+      const result = await h.save(
+        {
+          displayName: saved.displayName,
+          kind,
+          endpoint: saved.endpoint,
+          proxyMode: saved.proxyMode,
+          model: saved.model,
+          profileId: saved.profileId,
+          expectedRevision: saved.revision,
+        },
+        "",
+      );
+      expect(result.profile).toMatchObject({ revision: 2, credentialConfigured: false });
+      expect(h.saveCalls).toHaveLength(1);
+    });
+    it("tests an unchanged saved Profile whose credential is confirmed absent", async () => {
+      const h = await globalProviderHarness([saved], false, false, { [saved.profileId]: false });
+      const work = h.send("provider:test", {
+        ...input("test"),
+        credential: { source: "none" },
+      });
+      await Promise.race([work, h.transport.responses.waitForPending()]);
+      expect(h.transport.calls[0]).toMatchObject({
+        credential: { source: "saved", ...sourceProfile, kind },
+        provider: { kind, endpoint: saved.endpoint, model: "model", proxyMode: "direct" },
+      });
+      await h.send("provider:test-cancel", { testRequestId: "request" }, "window", "cancel");
+      h.transport.responses.releaseNext({ statusCode: 200, headers: {}, bodyText: "{}" });
+      await work;
+    });
+    it("rejects an unsealed empty draft when the saved Profile still has a credential", async () => {
+      const h = await globalProviderHarness([saved]);
+      await h.send("provider:test", { ...input("test"), credential: { source: "none" } });
+      expect(h.transport.calls).toEqual([]);
+      expect(h.replies.at(-1)?.data).toMatchObject({ ok: false });
+    });
     for (const operation of ["test", "models"] as const) {
       it.each([saved.endpoint, " HTTPS://EXAMPLE.TEST:443/Root/%41/// "])(
         `${operation} binds an equivalent endpoint to the persisted configuration: %s`,
@@ -137,7 +175,7 @@ for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
         ...input("test"),
         credential: { source: "entered", apiKey: "synthetic-entered-key" },
       });
-      await h.send("provider:models-preview", {
+      await expect(h.send("provider:models-preview", {
         kind,
         endpoint: saved.endpoint,
         proxyMode: "direct",
@@ -145,7 +183,7 @@ for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
         draftCredentialEpoch: 1,
         sourceProfile,
         credential: { apiKey: "synthetic-entered-key" },
-      });
+      })).rejects.toThrow("MISSING_HANDLER");
       expect(h.transport.calls).toEqual([]);
       expect(JSON.stringify(h.replies)).not.toContain("synthetic-entered-key");
     });

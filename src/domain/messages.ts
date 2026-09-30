@@ -4,8 +4,60 @@ import {
   credentialInteger,
   credentialRecord,
   parseCredentialEnvelope,
+  parseCredentialSnapshot,
+  credentialDecode,
+  credentialText,
+  credentialSourceArray,
+  CREDENTIAL_LIMITS,
   type CredentialEnvelope,
 } from "../../shared/credential-protocol.js";
+import { identityHash, sha256Hex } from "./identity.js";
+
+export type ProviderDraftRequest = RpcEnvelope<{
+  sidebarInstanceId: string;
+  drawerId: string;
+  frame: CredentialEnvelope;
+}>;
+export function parseProviderDraftRequest(
+  value: unknown,
+  purpose: "draft-test" | "draft-models",
+): ProviderDraftRequest {
+  const message = parseEnvelope(value);
+  const p = credentialRecord(message.payload, ["sidebarInstanceId", "drawerId", "frame"]);
+  const frame = parseCredentialEnvelope(p.frame);
+  const bytes = credentialDecode(frame.snapshotBytes, CREDENTIAL_LIMITS.documentBytes);
+  const snapshot = parseCredentialSnapshot(JSON.parse(credentialText(bytes)));
+  credentialAssert(
+    credentialIdentity(p.sidebarInstanceId) &&
+      credentialIdentity(p.drawerId) &&
+      frame.context.requestId === message.requestId &&
+      snapshot.purpose === purpose &&
+      frame.context.purpose === purpose &&
+      frame.context.kind === snapshot.kind &&
+      sha256Hex(bytes) === frame.context.snapshotDigest &&
+      JSON.stringify(credentialSourceArray(snapshot.sourceProfile)) ===
+        JSON.stringify(credentialSourceArray(frame.context.sourceProfile)) &&
+      identityHash({
+        kind: snapshot.kind,
+        endpoint: snapshot.endpoint,
+        proxyMode: snapshot.proxyMode,
+      }) === frame.context.endpointFingerprint,
+  );
+  return {
+    ...message,
+    payload: { sidebarInstanceId: p.sidebarInstanceId, drawerId: p.drawerId, frame },
+  };
+}
+
+export function providerDraftSnapshot(message: ProviderDraftRequest) {
+  return parseCredentialSnapshot(
+    JSON.parse(
+      credentialText(
+        credentialDecode(message.payload.frame.snapshotBytes, CREDENTIAL_LIMITS.documentBytes),
+      ),
+    ),
+  );
+}
 import type { SaveProfileInput } from "../providers/profiles.js";
 export interface RpcEnvelope<T = unknown> {
   requestId: string;
@@ -513,7 +565,8 @@ export const SIDEBAR_MESSAGE_NAMES = [
   "provider:test",
   "provider:test-cancel",
   "provider:models",
-  "provider:models-preview",
+  "provider:draft-models",
+  "provider:draft-test",
   "provider:models-cancel",
   "translation:set-enabled",
   "subtitle:retry-preparation",
@@ -560,7 +613,8 @@ export const GLOBAL_MESSAGE_NAMES = [
   "provider:test",
   "provider:test-cancel",
   "provider:models",
-  "provider:models-preview",
+  "provider:draft-models",
+  "provider:draft-test",
   "provider:models-cancel",
   "provider:attempt",
   "provider:cancel",
@@ -723,8 +777,7 @@ export interface ProviderDraftSourceProfile {
   endpointFingerprint: string;
 }
 
-export type ProviderDraftCredential =
-  { source: "entered"; apiKey: string } | { source: "saved" } | { source: "none" };
+export type ProviderDraftCredential = { source: "saved" } | { source: "none" };
 
 export interface ProviderTestRequestPayload {
   drawerId: string;
@@ -841,13 +894,8 @@ export function parseProviderTestRequest(value: unknown): ProviderTestRequest {
     throw new Error("INVALID_MESSAGE");
   const credential = payload.credential as Record<string, unknown>;
   if (
-    credential.source === "entered"
-      ? !exactKeys(credential, ["source", "apiKey"]) ||
-        typeof credential.apiKey !== "string" ||
-        !credential.apiKey.trim() ||
-        credential.apiKey.length > 8_192
-      : (credential.source !== "saved" && credential.source !== "none") ||
-        !exactKeys(credential, ["source"])
+    (credential.source !== "saved" && credential.source !== "none") ||
+    !exactKeys(credential, ["source"])
   )
     throw new Error("INVALID_MESSAGE");
   return envelope as ProviderTestRequest;
@@ -938,18 +986,6 @@ export interface ProviderModelsRequestPayload {
 
 export type ProviderModelsRequest = RpcEnvelope<ProviderModelsRequestPayload>;
 
-export interface ProviderModelsPreviewRequestPayload {
-  trigger: "manual";
-  kind: "openai" | "claude" | "deepseek" | "ollama";
-  endpoint: string;
-  proxyMode: "system" | "direct";
-  draftCredentialEpoch: number;
-  sourceProfile?: ProviderDraftSourceProfile;
-  credential: { apiKey: string };
-}
-
-export type ProviderModelsPreviewRequest = RpcEnvelope<ProviderModelsPreviewRequestPayload>;
-
 export function parseProviderModelsRequest(value: unknown): ProviderModelsRequest {
   const envelope = parseEnvelope(value);
   const payload = envelope.payload as Record<string, unknown>;
@@ -984,43 +1020,6 @@ export function parseProviderModelsRequest(value: unknown): ProviderModelsReques
   )
     throw new Error("INVALID_MESSAGE");
   return envelope as ProviderModelsRequest;
-}
-
-export function parseProviderModelsPreviewRequest(value: unknown): ProviderModelsPreviewRequest {
-  const envelope = parseEnvelope(value);
-  const payload = envelope.payload as Record<string, unknown>;
-  const credential = payload.credential as Record<string, unknown> | undefined;
-  if (
-    !exactKeys(payload, [
-      "credential",
-      "draftCredentialEpoch",
-      "endpoint",
-      "kind",
-      "proxyMode",
-      "trigger",
-      ...(payload.sourceProfile === undefined ? [] : ["sourceProfile"]),
-    ]) ||
-    payload.trigger !== "manual" ||
-    (payload.kind !== "openai" &&
-      payload.kind !== "claude" &&
-      payload.kind !== "deepseek" &&
-      payload.kind !== "ollama") ||
-    typeof payload.endpoint !== "string" ||
-    !payload.endpoint ||
-    (payload.proxyMode !== "system" && payload.proxyMode !== "direct") ||
-    !Number.isInteger(payload.draftCredentialEpoch) ||
-    (payload.draftCredentialEpoch as number) < 1 ||
-    !credential ||
-    typeof credential !== "object" ||
-    Array.isArray(credential) ||
-    Object.keys(credential).join(",") !== "apiKey" ||
-    typeof credential.apiKey !== "string" ||
-    !credential.apiKey.trim() ||
-    credential.apiKey.length > 8_192
-  )
-    throw new Error("INVALID_MESSAGE");
-  validateDraftSourceProfile(payload.sourceProfile);
-  return envelope as ProviderModelsPreviewRequest;
 }
 
 export type ProviderModelsResult =
@@ -1083,18 +1082,22 @@ export function parseProviderModelsResult(value: unknown): ProviderModelsResult 
   return record as ProviderModelsResult;
 }
 
-export function sanitizedProfileView(profile: {
-  profileId: string;
-  revision: number;
-  displayName: string;
-  kind: "openai" | "claude" | "deepseek" | "ollama";
-  endpoint: string;
-  endpointFingerprint: string;
-  proxyMode?: "system" | "direct";
-  model?: string;
-  credential?: Record<string, string>;
-  modelCatalog?: { contextKey: string; models: string[] };
-}): {
+export function sanitizedProfileView<
+  T extends {
+    profileId: string;
+    revision: number;
+    displayName: string;
+    kind: "openai" | "claude" | "deepseek" | "ollama";
+    endpoint: string;
+    endpointFingerprint: string;
+    proxyMode?: "system" | "direct";
+    model?: string;
+    credentialConfigured?: boolean;
+    modelCatalog?: { contextKey: string; models: string[] };
+  },
+>(
+  profile: T,
+): {
   profileId: string;
   revision: number;
   displayName: string;
@@ -1115,9 +1118,7 @@ export function sanitizedProfileView(profile: {
     endpointFingerprint: profile.endpointFingerprint,
     proxyMode: profile.proxyMode ?? "system",
     ...(profile.model === undefined ? {} : { model: profile.model }),
-    credentialConfigured: Boolean(
-      profile.credential && Object.values(profile.credential).some(Boolean),
-    ),
+    credentialConfigured: profile.credentialConfigured === true,
     ...(profile.modelCatalog
       ? {
           modelCatalog: {
@@ -1126,38 +1127,6 @@ export function sanitizedProfileView(profile: {
           },
         }
       : {}),
-  };
-}
-
-export function parseSecretSet(value: unknown): {
-  profileId: string;
-  expectedRevision: number;
-  fields: Record<string, string>;
-} {
-  if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("INVALID_SECRET_SET");
-  const input = value as Record<string, unknown>;
-  if (
-    typeof input.profileId !== "string" ||
-    !Number.isInteger(input.expectedRevision) ||
-    !input.fields ||
-    typeof input.fields !== "object" ||
-    Array.isArray(input.fields)
-  ) {
-    throw new Error("INVALID_SECRET_SET");
-  }
-  const fields = input.fields as Record<string, unknown>;
-  if (
-    Object.keys(fields).length === 0 ||
-    Object.values(fields).some((field) => typeof field !== "string" || !field)
-  )
-    throw new Error("INVALID_SECRET_SET");
-  if (Object.values(fields).some((field) => /[•●]{3,}|\*{4,}/.test(field as string)))
-    throw new Error("MASKED_SECRET");
-  return {
-    profileId: input.profileId,
-    expectedRevision: input.expectedRevision as number,
-    fields: fields as Record<string, string>,
   };
 }
 

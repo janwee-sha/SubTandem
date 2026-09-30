@@ -8,6 +8,8 @@ import {
 import {
   parseEnvelope,
   parseProfileSaveRequest,
+  parseProviderDraftRequest,
+  type ProviderDraftRequest,
   SIDEBAR_MESSAGE_NAMES,
   type RpcEnvelope,
 } from "../../domain/messages.js";
@@ -42,9 +44,29 @@ export class SidebarRpc {
   }
 }
 
-export function installCredentialMainRelay(sidebar: SidebarPort, global: SidebarPort): void {
+export function installCredentialMainRelay(sidebar: SidebarPort, global: SidebarPort, options: { onDraftModels?(message: ProviderDraftRequest): boolean } = {}): void {
   let current: { sidebarInstanceId: string; drawerId: string } | null = null;
   const requests = new Set<string>();
+  global.onMessage("credential-channel:revoked", (raw) => {
+    const identity = raw as { sidebarInstanceId?: string; drawerId?: string };
+    if (!current || identity?.sidebarInstanceId !== current.sidebarInstanceId || identity.drawerId !== current.drawerId) return;
+    current = null;
+    requests.clear();
+    sidebar.postMessage("credential-channel:revoked", raw);
+  });
+  for (const purpose of ["draft-test", "draft-models"] as const) {
+    const event = `provider:${purpose}`;
+    sidebar.onMessage(event, (raw) => {
+      try {
+        const message = parseProviderDraftRequest(raw, purpose);
+        credentialAssert(current && message.payload.sidebarInstanceId === current.sidebarInstanceId && message.payload.drawerId === current.drawerId);
+        if (purpose === "draft-models" && options.onDraftModels?.(message) === false) return;
+        global.postMessage(event, message);
+      } catch {
+        sidebar.postMessage("operation:error", { requestId: (raw as { requestId?: unknown })?.requestId, code: "INVALID_MESSAGE", userAction: "NONE" });
+      }
+    });
+  }
   for (const name of ["open", "confirm", "operation", "close"] as const) {
     const event = `credential-channel:${name}`;
     sidebar.onMessage(event, (raw) => {
@@ -59,7 +81,11 @@ export function installCredentialMainRelay(sidebar: SidebarPort, global: Sidebar
           requests.clear();
           payload = opening;
         } else if (name === "confirm") payload = parseCredentialHandshake(payload);
-        else if (name === "operation") payload = parseCredentialEnvelope(payload);
+        else if (name === "operation") {
+          const frame = parseCredentialEnvelope(payload);
+          credentialAssert(frame.context.purpose === "read-edit" && frame.context.requestId === message.requestId);
+          payload = frame;
+        }
         else {
           const closing = credentialRecord(payload, ["sidebarInstanceId", "drawerId"]);
           credentialAssert(

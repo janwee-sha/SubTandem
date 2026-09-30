@@ -1,5 +1,4 @@
 import type {
-  ProviderModelsPreviewRequestPayload,
   ProviderModelsRequestPayload,
   ProviderModelsResult,
 } from "../../domain/messages.js";
@@ -33,17 +32,6 @@ export function modelCatalogContextToken(input: ProviderModelsRequestPayload): s
           profileRevision: input.profileRevision,
           endpointFingerprint: input.endpointFingerprint,
         }),
-  });
-}
-
-export function modelCatalogPreviewContextToken(
-  input: ProviderModelsPreviewRequestPayload,
-): string {
-  return JSON.stringify({
-    kind: input.kind,
-    endpoint: input.endpoint,
-    proxyMode: input.proxyMode,
-    draftCredentialEpoch: input.draftCredentialEpoch,
   });
 }
 

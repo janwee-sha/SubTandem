@@ -6,12 +6,15 @@ describe.each(["openai", "claude", "deepseek", "ollama"])(
   (kind) => {
     it.each(["#provider-key", "#provider-endpoint", "#provider-proxy-mode", "#provider-kind"])(
       "cancels the old request when %s changes",
-      (field) => {
+      async (field) => {
         const h = sidebarHarness();
+        h.connectCredentials();
+        h.evaluate("sidebarState.openNewProfileDrawer()");
         h.evaluate(
           `providerKind.value = ${JSON.stringify(kind)}; applyProviderKind(); requestModels("manual");`,
         );
-        const old = h.messages.filter((m) => m.name === "provider:models").at(-1)!;
+        await h.settleCredentials();
+        const old = h.messages.filter((m) => m.name === "provider:draft-models").at(-1)!;
         const count = h.messages.length;
         h.element(field).value =
           field === "#provider-key"
@@ -40,14 +43,18 @@ describe.each(["openai", "claude", "deepseek", "ollama"])(
         ).toHaveLength(0);
       },
     );
-    it("keeps a newer busy state after late success and cancels on pagehide", () => {
+    it("keeps a newer busy state after late success and cancels on pagehide", async () => {
       const h = sidebarHarness();
+        h.connectCredentials();
+        h.evaluate("sidebarState.openNewProfileDrawer()");
       h.evaluate(
         `providerKind.value = ${JSON.stringify(kind)}; applyProviderKind(); requestModels("manual");`,
       );
-      const old = h.messages.filter((m) => m.name === "provider:models").at(-1)!;
+      await h.settleCredentials();
+        const old = h.messages.filter((m) => m.name === "provider:draft-models").at(-1)!;
       h.evaluate('requestModels("manual")');
-      const next = h.messages.filter((m) => m.name === "provider:models").at(-1)!;
+      await h.settleCredentials();
+      const next = h.messages.filter((m) => m.name === "provider:draft-models").at(-1)!;
       h.receive("provider:models-result", {
         requestId: old.data.requestId,
         ok: true,

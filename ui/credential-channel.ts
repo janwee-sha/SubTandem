@@ -306,6 +306,10 @@ export class SidebarCredentialChannel {
     }
   }
 
+  get channelId(): string | null {
+    return this.ready ? (this.offer?.channelId ?? null) : null;
+  }
+
   close(): void {
     this.closed = true;
     this.ready = false;

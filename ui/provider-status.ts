@@ -10,7 +10,6 @@ interface ProviderTestStatus {
 interface Window {
   subtandemServiceFailureMessage(result: ProviderTestStatus): string | null;
   subtandemProviderTestStatusMessage(result: ProviderTestStatus): string;
-  subtandemCredentialStatusMessage(result: CredentialStatus): string;
   subtandemModelCatalogStatusMessage(result: ModelCatalogStatus): string;
 }
 
@@ -20,12 +19,6 @@ interface ModelCatalogStatus {
   category?: string;
   statusCode?: number;
   credentialSource?: "saved" | "entered" | "none";
-}
-
-interface CredentialStatus {
-  state?: string;
-  code?: string;
-  userAction?: string;
 }
 
 function providerTestStatusMessage(result: ProviderTestStatus): string {
@@ -48,27 +41,6 @@ function providerTestStatusMessage(result: ProviderTestStatus): string {
 
 (globalThis as typeof globalThis & Window).subtandemProviderTestStatusMessage =
   providerTestStatusMessage;
-
-function credentialStatusMessage(result: CredentialStatus): string {
-  if (result.state === "ready")
-    return "Credential saved in SubTandem's private local file (mode 0600).";
-  switch (result.code) {
-    case "HELPER_UNAVAILABLE":
-    case "HELPER_PROTOCOL":
-    case "HELPER_START_FAILED":
-    case "HELPER_START_TIMEOUT":
-    case "PACKAGED_HELPER_NOT_FOUND":
-    case "PACKAGED_HELPER_AMBIGUOUS":
-      return "Credential was not saved because the secure transport helper is unavailable.";
-    case "CREDENTIAL_STORE_UNAVAILABLE":
-      return "Credential was not saved because SubTandem's private credential file is unavailable.";
-    default:
-      return "Credential was not saved. Check the plugin installation and local data-directory permissions.";
-  }
-}
-
-(globalThis as typeof globalThis & Window).subtandemCredentialStatusMessage =
-  credentialStatusMessage;
 
 function modelCatalogStatusMessage(result: ModelCatalogStatus): string {
   if (result.ok) {

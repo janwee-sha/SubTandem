@@ -4,27 +4,29 @@ import Foundation
 enum SubTandemTransportMain {
     static func run() async throws {
         let arguments = CommandLine.arguments
-        if arguments.count == 8,
+        if (arguments.count == 8 || arguments.count == 10),
            arguments[1] == "launch",
            arguments[2] == "--data-directory",
            arguments[4] == "--ready-file",
            arguments[6] == "--rpc-session",
-           validRPCSession(arguments[7]) {
+           validRPCSession(arguments[7]),
+           arguments.count == 8 || arguments[8] == "--mailbox-directory" {
             let readyFile = URL(fileURLWithPath: arguments[5]).standardizedFileURL
             try DetachedBootstrap.launch(
-                arguments: Array(arguments[2...7]),
+                arguments: Array(arguments.dropFirst(2)),
                 readyFile: readyFile
             )
             return
         }
-        guard arguments.count == 10,
+        guard (arguments.count == 10 || arguments.count == 12),
               arguments[1] == "serve",
               arguments[2] == "--data-directory",
               arguments[4] == "--ready-file",
               arguments[6] == "--rpc-session",
               validRPCSession(arguments[7]),
-              arguments[8] == "--parent-pid",
-              let parentPID = Int32(arguments[9]),
+              arguments[arguments.count - 2] == "--parent-pid",
+              let parentPID = Int32(arguments[arguments.count - 1]),
+              arguments.count == 10 || arguments[8] == "--mailbox-directory",
               parentPID > 1
         else { throw TransportProtocolError.invalidRequest }
         try relaunchWithoutInheritedProxyIfNeeded()
@@ -41,7 +43,8 @@ enum SubTandemTransportMain {
               readyFile.pathExtension == "json"
         else { throw TransportProtocolError.invalidRequest }
         let credentialStore = try SecureCredentialStore(
-            directory: dataDirectory
+            directory: dataDirectory,
+            mailboxDirectory: arguments.count == 12 ? URL(fileURLWithPath: arguments[9], isDirectory: true).standardizedFileURL : nil
         )
         let rpcDirectory = dataDirectory
             .appendingPathComponent(".rpc", isDirectory: true)

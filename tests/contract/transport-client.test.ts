@@ -356,7 +356,8 @@ describe("transport helper client", () => {
     const old = (now - 600_000).toString(36);
     const recent = (now - 10_000).toString(36);
     const files = new Map<string, string>([
-      [`/private/plugin/.ready/transport-${old}-1-old.json`, "old"],
+      [`/private/plugin/.ready/transport-${old}-1-old.json`, readyFrame(now - 600_000)],
+      [`/private/plugin/.ready/transport-${old}-2-legacy.json`, readyFrame(now - 600_000, 1)],
       [`/private/plugin/.ready/transport-${recent}-2-new.json`, "new"],
       [`/private/plugin/.rpc/extractor-${old}-3-old.request.json`, "private"],
       [`/private/plugin/.rpc/transport-${old}-5-old.processing.json`, "private"],
@@ -384,9 +385,10 @@ describe("transport helper client", () => {
     expect(deleted).toEqual([
       `/private/plugin/.ready/transport-${old}-1-old.json`,
       `/private/plugin/.rpc/extractor-${old}-3-old.request.json`,
-      `/private/plugin/.rpc/transport-${old}-5-old.processing.json`,
-      `/private/plugin/.rpc/transport-${old}-6-old.request.ready`,
     ]);
+    expect(files.has(`/private/plugin/.ready/transport-${old}-2-legacy.json`)).toBe(true);
+    expect(files.has(`/private/plugin/.rpc/transport-${old}-5-old.processing.json`)).toBe(true);
+    expect(files.has(`/private/plugin/.rpc/transport-${old}-6-old.request.ready`)).toBe(true);
     expect(files.has(`/private/plugin/.ready/transport-${recent}-2-new.json`)).toBe(true);
     expect(files.has(`/private/plugin/.rpc/unrelated-${old}-4-old.response.json`)).toBe(true);
   });

@@ -39,6 +39,20 @@ export class HelperProfileStateStore {
     return this.mutation(() => this.transport.profileStateOpen(commitId));
   }
 
+  migrate(commitId: string, profiles?: PersistentProviderProfile[]): Promise<ProfileStateCommitResult> {
+    return this.mutation(() => {
+      if (!this.transport.profileStateMigrate) throw new CredentialStoreError("CREDENTIAL_STORE_UNAVAILABLE");
+      return this.transport.profileStateMigrate(commitId, profiles);
+    });
+  }
+
+  cleanup(commitId: string, migrationId: string, preferenceConfirmed: boolean): Promise<ProfileStateCommitResult> {
+    return this.mutation(() => {
+      if (!this.transport.profileStateCleanup) throw new CredentialStoreError("CREDENTIAL_STORE_UNAVAILABLE");
+      return this.transport.profileStateCleanup(commitId, migrationId, preferenceConfirmed);
+    });
+  }
+
   initialize(
     commitId: string,
     expectedStoreRevision: number,

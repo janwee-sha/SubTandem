@@ -8,6 +8,27 @@ import type { ProviderProfileSnapshot } from "./types.js";
 
 type Kind = "openai" | "claude" | "deepseek" | "ollama";
 
+export function normalizeLegacyProviderProfiles(value: unknown): ProviderProfileSnapshot[] {
+  if (value === undefined || value === null) return [];
+  if (typeof value !== "string") throw new Error("LEGACY_METADATA_UNAVAILABLE");
+  const input: unknown = JSON.parse(value);
+  if (!Array.isArray(input)) throw new Error("LEGACY_METADATA_UNAVAILABLE");
+  const profiles = new ProviderProfiles(() => { throw new Error("LEGACY_ID_REQUIRED"); });
+  const ids = new Set<string>();
+  for (const item of input) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error("LEGACY_METADATA_UNAVAILABLE");
+    const record = item as Record<string, unknown>;
+    if (typeof record.profileId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(record.profileId) || ids.has(record.profileId) ||
+        typeof record.displayName !== "string" || !record.displayName.trim() || typeof record.endpoint !== "string" || typeof record.model !== "string" || !record.model.trim() ||
+        !["openai", "claude", "deepseek", "ollama"].includes(String(record.kind)) || (record.proxyMode !== undefined && record.proxyMode !== "direct" && record.proxyMode !== "system") ||
+        (record.capability !== undefined && !["strict-json-schema", "json-object", "prompt-json"].includes(String(record.capability)))) throw new Error("LEGACY_METADATA_UNAVAILABLE");
+    ids.add(record.profileId);
+    profiles.save({ profileId: record.profileId, expectedRevision: 0, displayName: record.displayName, kind: record.kind as Kind, endpoint: record.endpoint, model: record.model, proxyMode: record.proxyMode === "direct" ? "direct" : "system",
+      ...(record.kind === "openai" && record.capability ? { capability: record.capability as NonNullable<SaveProfileInput["capability"]> } : {}) });
+  }
+  return profiles.listLatest();
+}
+
 export interface SaveProfileInput {
   profileId?: string;
   expectedRevision?: number;

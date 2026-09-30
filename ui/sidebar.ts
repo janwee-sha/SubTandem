@@ -223,6 +223,7 @@ const profileCardInteractions = new ProfileCardInteractionCoordinator();
 const profileDeleteDialogInteractions = new ProfileDeleteDialogInteractionCoordinator();
 const profileRows = new Map<string, HTMLElement>();
 let newProfileRow: HTMLElement | null = null;
+let profileStorageStatus: string | null = null;
 const pendingOperations = new Set<string>();
 const profileActivationTimeouts = new Map<string, number>();
 const clearConfirmedProfileActivationTimeouts = (): void => {
@@ -240,6 +241,65 @@ let pendingProfileSave: {
   profileId: string | null;
   revision: number | null;
 } | null = null;
+const toggleProviderKey = document.querySelector<HTMLButtonElement>("#toggle-provider-key")!;
+function renderCredentialVisibility(): void {
+  const masked = sidebarState.snapshot.drawer.masked;
+  providerKey.type = masked ? "password" : "text";
+  toggleProviderKey.disabled = providerKey.value.length === 0;
+  toggleProviderKey.setAttribute("aria-label", masked ? "Show API key" : "Hide API key");
+  toggleProviderKey.setAttribute("aria-pressed", String(!masked));
+}
+toggleProviderKey.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+});
+toggleProviderKey.addEventListener("click", () => {
+  if (toggleProviderKey.disabled) return;
+  const start = providerKey.selectionStart,
+    end = providerKey.selectionEnd,
+    direction = providerKey.selectionDirection;
+  const scrollLeft = providerKey.scrollLeft;
+  sidebarState.setDrawerMasked(!sidebarState.snapshot.drawer.masked);
+  renderCredentialVisibility();
+  if (start !== null && end !== null)
+    providerKey.setSelectionRange(start, end, direction ?? "none");
+  providerKey.scrollLeft = scrollLeft;
+});
+function clearCredentialInput(): void {
+  providerKey.value = "";
+  sidebarState.setDrawerMasked(true);
+  renderCredentialVisibility();
+}
+async function readEditorCredential(): Promise<void> {
+  const frozen = JSON.parse(
+    JSON.stringify(sidebarState.snapshot.drawer),
+  ) as SidebarProfileDrawerState;
+  if (!frozen.drawerId || !frozen.sourceProfile || !editingProfile) return;
+  const editor = currentCredentialEditor();
+  const input = {
+    kind: editingProfile.kind,
+    endpoint: editingProfile.endpoint,
+    model: editingProfile.model ?? null,
+    proxyMode: editingProfile.proxyMode,
+    purpose: "read-edit" as const,
+    sourceProfile: frozen.sourceProfile,
+    save: null,
+  };
+  try {
+    await editor.open(frozen.drawerId, frozen.sourceProfile);
+    if (!editor.channelId) return;
+    const owner = sidebarState.beginCredentialRead(editor.channelId, frozen);
+    if (!owner) return;
+    let value = await editor.read(input, { ...frozen, drawerId: frozen.drawerId });
+    if (sidebarState.acceptCredentialRead(owner, editor.channelId)) {
+      providerKey.value = value;
+      renderCredentialVisibility();
+    }
+    value = "";
+  } catch {
+    return;
+  }
+}
+
 let credentialEditor: ReturnType<Window["subtandemCredentialEditor"]["create"]> | null = null;
 function currentCredentialEditor() {
   if (!credentialEditor) {
@@ -776,12 +836,12 @@ function reconcileDrawerAfterAuthority(previousTest: SidebarDrawerTestState | nu
   }
   if (drawer.validity === "conflict") {
     invalidatePendingModelRefresh();
-    providerKey.value = "";
+    clearCredentialInput();
     draftCredentialEpoch += 1;
   }
   if (drawer.mode === "closed") {
     editingProfile = null;
-    providerKey.value = "";
+    clearCredentialInput();
     sidebarState.setProfileContext({ credentialDisplayProfileId: null });
   }
   renderDrawerAvailability();
@@ -836,7 +896,7 @@ function requestModels(trigger: "open" | "endpoint" | "profile" | "credential" |
   invalidatePendingModelRefresh();
   const requestId = nextRequestId();
   const enteredApiKey = providerKey.value;
-  const usesDraftCredential = trigger === "manual" && Boolean(enteredApiKey.trim());
+  const usesDraftCredential = trigger === "manual";
   const matchesSaved = canUseSavedDraftCredential();
   pendingModelRefresh = {
     requestId,
@@ -854,26 +914,53 @@ function requestModels(trigger: "open" | "endpoint" | "profile" | "credential" |
   };
   setModelRefreshFeedback("busy");
   if (usesDraftCredential) {
-    window.iina?.postMessage(
-      "provider:models-preview",
-      envelope(
-        {
-          trigger: "manual",
-          kind: providerKind.value,
-          endpoint: providerEndpoint.value.trim(),
-          proxyMode: providerProxyMode.value,
-          draftCredentialEpoch,
-          credential: { apiKey: enteredApiKey },
-          ...(sidebarState.snapshot.drawer.sourceProfile
-            ? { sourceProfile: sidebarState.snapshot.drawer.sourceProfile }
-            : {}),
-        },
-        requestId,
-      ),
-    );
+    void sealDrawerOperation(enteredApiKey, "draft-models", requestId)
+      .then((operation) => {
+        if (pendingModelRefresh?.requestId !== requestId || contextSignature !== modelContextKey())
+          return;
+        window.iina?.postMessage("provider:draft-models", envelope(operation, requestId));
+      })
+      .catch(() => {
+        if (pendingModelRefresh?.requestId !== requestId) return;
+        pendingModelRefresh = null;
+        setModelRefreshFeedback("error", "Model refresh failed. Try again.");
+      });
     return;
   }
   window.iina?.postMessage("provider:models", envelope(modelRefreshPayload(trigger), requestId));
+}
+
+function sealDrawerOperation(
+  value: string,
+  purpose: "draft-test" | "draft-models",
+  requestId: string,
+) {
+  const drawer = sidebarState.snapshot.drawer;
+  if (!drawer.drawerId) return Promise.reject(new Error("CREDENTIAL_CHANNEL_UNAVAILABLE"));
+  return currentCredentialEditor().sealOperation(
+    value,
+    {
+      kind: providerKind.value as ProviderKind,
+      endpoint: normalizeProviderEndpoint(
+        providerKind.value as ProviderKind,
+        providerEndpoint.value,
+      ),
+      model: sidebarState.snapshot.modelControl.value.trim() || null,
+      proxyMode: providerProxyMode.value === "direct" ? "direct" : "system",
+      purpose,
+      sourceProfile: drawer.sourceProfile,
+      save: null,
+    },
+    {
+      drawerId: drawer.drawerId,
+      sourceProfile: drawer.sourceProfile,
+      draftRevision: drawer.draftRevision,
+      keyEditEpoch: drawer.keyEditEpoch,
+      submitEpoch: drawer.submitEpoch,
+    },
+    requestId,
+    Date.now() + (purpose === "draft-models" ? 10_000 : 30_000),
+  );
 }
 
 function invalidatePendingModelRefresh(): void {
@@ -962,9 +1049,7 @@ function applyProviderKind(): void {
   document.querySelector<HTMLElement>("#model-hint")!.textContent = providerUi[kind].modelHint;
   providerModel.placeholder = providerUi[kind].modelPlaceholder;
   document.querySelector<HTMLElement>("#credential-hint")!.textContent =
-    editingProfile?.kind === kind && editingProfile.credentialConfigured
-      ? "Write-only. Leave blank to keep the saved API key."
-      : "Write-only; optional when unauthenticated. Enter a key if the service requires one.";
+    "Enter an API key if the service requires one.";
   setModelContext(providerDrafts[kind].model);
   updateRequestUrl();
 }
@@ -975,7 +1060,7 @@ providerKind.addEventListener("change", () => {
   invalidatePendingModelRefresh();
   saveActiveDraft();
   draftCredentialEpoch += 1;
-  providerKey.value = "";
+  clearCredentialInput();
   applyProviderKind();
   requestModels("profile");
 });
@@ -1008,6 +1093,7 @@ providerKey.addEventListener("input", () => {
   cancelPendingProfileSaveForContextChange();
   invalidatePendingModelRefresh();
   draftCredentialEpoch += 1;
+  renderCredentialVisibility();
   setModelContext(sidebarState.snapshot.modelControl.value);
   setModelRefreshFeedback("idle");
 });
@@ -1048,7 +1134,7 @@ function clearProfileDrawer(focus = true): void {
   const target = sidebarState.closeProfileDrawer();
   editingProfile = null;
   draftCredentialEpoch += 1;
-  providerKey.value = "";
+  clearCredentialInput();
   profileTestStatus.textContent = "";
   sidebarState.setProfileContext({ credentialDisplayProfileId: null });
   profileDrawer.hidden = true;
@@ -1092,7 +1178,7 @@ function loadEditor(profile: ProfileView, preservePendingSave = false): void {
     : sidebarState.openProfileDrawer(profile.profileId);
   if (activation.closed) {
     editingProfile = null;
-    providerKey.value = "";
+    clearCredentialInput();
     mountProfileDrawer();
     profileRows.get(profile.profileId)?.querySelector<HTMLElement>(".profile-disclosure")?.focus();
     return;
@@ -1107,7 +1193,7 @@ function loadEditor(profile: ProfileView, preservePendingSave = false): void {
   resetProviderDrafts();
   editingProfile = profile;
   draftCredentialEpoch += 1;
-  providerKey.value = "";
+  clearCredentialInput();
   sidebarState.setProfileContext({ credentialDisplayProfileId: profile.profileId });
   providerKind.value = profile.kind;
   sidebarState.loadProfileName(profile.displayName, selectedServiceTypeLabel());
@@ -1120,13 +1206,11 @@ function loadEditor(profile: ProfileView, preservePendingSave = false): void {
   };
   applyProviderKind();
   setModelContext(profile.model ?? "", profile.modelCatalog);
-  providerKey.placeholder = profile.credentialConfigured
-    ? "Leave blank to keep saved key"
-    : "Not shown after saving";
+  providerKey.placeholder = "Optional";
   deleteProfileButton.hidden = false;
   saveProfileButton.textContent = "Save";
   mountProfileDrawer();
-  if (!preservePendingSave) requestModels("profile");
+  if (!preservePendingSave) void readEditorCredential();
 }
 
 function openNewProfile(): void {
@@ -1145,13 +1229,13 @@ function openNewProfile(): void {
   resetProviderDrafts();
   editingProfile = null;
   draftCredentialEpoch += 1;
-  providerKey.value = "";
+  clearCredentialInput();
   providerKind.value = "openai";
   activeProviderKind = "openai";
   sidebarState.setProfileContext({ credentialDisplayProfileId: null });
   sidebarState.resetProfileName("OpenAI");
   profileName.value = sidebarState.snapshot.profileName.value;
-  providerKey.placeholder = "Not shown after saving";
+  providerKey.placeholder = "Optional";
   deleteProfileButton.hidden = true;
   saveProfileButton.textContent = "Save";
   applyProviderKind();
@@ -1186,7 +1270,7 @@ function finishSuccessfulProfileSave(profile: ProfileView): void {
   const created = !profiles.has(profile.profileId);
   profiles.set(profile.profileId, profile);
   editingProfile = null;
-  providerKey.value = "";
+  clearCredentialInput();
   setProfileSaveLocked(false);
   renderProfiles(
     created
@@ -1376,33 +1460,34 @@ testProfileButton.addEventListener("click", () => {
     return;
   }
   const enteredApiKey = providerKey.value.trim();
-  const credential = enteredApiKey
-    ? { source: "entered" as const, apiKey: enteredApiKey }
-    : canUseSavedDraftCredential()
-      ? { source: "saved" as const }
-      : { source: "none" as const };
   const requestId = nextRequestId();
   const started = sidebarState.beginDrawerTest(requestId);
   if (!started) return;
   profileTestStatus.dataset.state = "busy";
   profileTestStatus.textContent = "Testing…";
   setActionBusy("test", undefined, true);
-  window.iina?.postMessage(
-    "provider:test",
-    envelope(
-      {
-        drawerId: started.drawerId,
-        draftRevision: started.draftRevision,
-        kind: providerKind.value,
-        endpoint: providerEndpoint.value.trim(),
-        proxyMode: providerProxyMode.value,
-        model,
-        ...(drawer.sourceProfile ? { sourceProfile: drawer.sourceProfile } : {}),
-        credential,
-      },
-      requestId,
-    ),
-  );
+  void sealDrawerOperation(enteredApiKey, "draft-test", requestId)
+    .then((operation) => {
+      if (
+        sidebarState.snapshot.drawer.test?.requestId !== requestId ||
+        sidebarState.snapshot.drawer.draftRevision !== started.draftRevision
+      )
+        return;
+      window.iina?.postMessage("provider:draft-test", envelope(operation, requestId));
+    })
+    .catch(() => {
+      if (sidebarState.snapshot.drawer.test?.requestId !== requestId) return;
+      sidebarState.finishDrawerTest(
+        requestId,
+        false,
+        "Test failed. Try again.",
+        started.drawerId,
+        started.draftRevision,
+      );
+      clearDrawerTestFeedback();
+      profileTestStatus.dataset.state = "error";
+      profileTestStatus.textContent = "Test failed. Try again.";
+    });
 });
 
 saveProfileButton.addEventListener("click", async () => {
@@ -1431,7 +1516,7 @@ saveProfileButton.addEventListener("click", async () => {
     profileId: editingProfile?.profileId ?? null,
     revision: editingProfile?.revision ?? null,
   };
-  sidebarState.beginProfileSave(requestId, false);
+  sidebarState.beginProfileSave(requestId);
   const value = providerKey.value;
   setProfileSaveLocked(true);
   const drawer = sidebarState.snapshot.drawer;
@@ -1558,6 +1643,13 @@ profilesElement.addEventListener("pointerup", (event) => {
     selectionCollapsed: selectionCollapsed(),
   });
   const profile = profileId ? profiles.get(profileId) : null;
+  if (profile) loadEditor(profile);
+});
+
+profilesElement.addEventListener("click", (event) => {
+  if (event.detail !== 0) return;
+  const entry = (event.target as HTMLElement).closest<HTMLElement>(".profile-details");
+  const profile = entry ? profiles.get(entry.dataset.profileId ?? "") : null;
   if (profile) loadEditor(profile);
 });
 
@@ -1920,8 +2012,7 @@ function createProfileRow(profile: ProfileView): HTMLElement {
   article.className = "profile";
   article.innerHTML = `<div class="profile-heading"><div class="profile-details profile-disclosure"><span class="disclosure-indicator" aria-hidden="true"></span><span class="profile-copy"><strong></strong><span class="profile-summary"></span><code></code></span></div><label class="switch profile-activation"><input type="checkbox"></label></div><p class="operation-status profile-operation-status" role="status" aria-live="polite"></p>`;
   const disclosure = article.querySelector<HTMLElement>(".profile-disclosure")!;
-  disclosure.className = "profile-disclosure";
-  disclosure.classList.add("profile-details");
+  disclosure.className = "profile-disclosure profile-details";
   disclosure.tabIndex = 0;
   disclosure.setAttribute("role", "button");
   const activation = article.querySelector<HTMLInputElement>(".profile-activation input")!;
@@ -2093,20 +2184,34 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
     profilesElement.append(article);
     syncProfileOverflow(article);
   }
+  const ready = sidebarState.snapshot.profileAuthority?.ready === true;
+  const emptyList = ready && !viewProfiles.length && drawer.mode !== "new";
+  profilesElement.dataset.empty = String(emptyList);
   const existingEmpty = profilesElement.querySelector<HTMLElement>(":scope > .empty");
-  if (!viewProfiles.length && drawer.mode !== "new") {
+  if (emptyList) {
     const empty = existingEmpty ?? document.createElement("p");
     empty.className = "empty";
-    const unavailable = sidebarState.snapshot.profileAuthority?.ready === false;
-    empty.textContent = unavailable
-      ? "Profiles unavailable (HELPER_UNAVAILABLE). Restart IINA."
-      : "No saved profiles yet.";
-    if (unavailable) empty.dataset.state = "error";
-    else delete empty.dataset.state;
+    empty.textContent = "No profiles yet.";
     profilesElement.append(empty);
-  } else {
-    existingEmpty?.remove();
-  }
+  } else existingEmpty?.remove();
+  const existingStorageError = profilesElement.querySelector<HTMLElement>(
+    ":scope > .profile-storage-status",
+  );
+  const unavailable = sidebarState.snapshot.profileAuthority?.ready === false;
+  if (unavailable || profileStorageStatus) {
+    const status = existingStorageError ?? document.createElement("p");
+    status.className = "operation-status profile-storage-status";
+    status.dataset.state = "error";
+    status.setAttribute("role", "status");
+    status.textContent =
+      profileStorageStatus === "MIGRATION_CLEANUP_PENDING"
+        ? "Profiles updated; local cleanup failed."
+        : profileStorageStatus === "MIGRATION_NOT_COMMITTED" ||
+            profileStorageStatus === "MIGRATION_UNCONFIRMED"
+          ? "Profile storage update incomplete."
+          : "Profiles unavailable (HELPER_UNAVAILABLE). Restart IINA.";
+    profilesElement.append(status);
+  } else existingStorageError?.remove();
   renderActiveFeedback();
   mountProfileDrawer();
   renderProfileActivationControls();
@@ -2160,6 +2265,7 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     cacheSize?: number;
     profiles?: ProfileView[];
     profileAuthority?: SidebarProfileAuthority;
+    profileStorageStatus?: string | null;
     sourceIssue?: string | null;
     providerError?: SessionProviderError | null;
     sourcePreparation?: {
@@ -2173,6 +2279,14 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     overlayPosition?: SidebarOverlayPositionAuthorityState;
     subtitleStyle?: SidebarSubtitleStyleAuthorityState | null;
   };
+  if (Object.prototype.hasOwnProperty.call(view, "profileStorageStatus"))
+    profileStorageStatus = [
+      "MIGRATION_CLEANUP_PENDING",
+      "MIGRATION_NOT_COMMITTED",
+      "MIGRATION_UNCONFIRMED",
+    ].includes(String(view.profileStorageStatus))
+      ? view.profileStorageStatus!
+      : null;
   if (view.overlayPosition && sidebarState.applyOverlayPositionState(view.overlayPosition))
     renderOverlayPosition();
   if (view.subtitleStyle && sidebarState.applySubtitleStyleState(view.subtitleStyle))

@@ -26,6 +26,7 @@ interface RuntimeHarness {
   counts: Counts;
   trace: string[];
   setSelection(kind: SelectionKind): void;
+  setVisible(visible: boolean): void;
   triggerEvent(name: string, ...args: unknown[]): void;
   triggerSidebar(name: string, data?: unknown): void;
   states(): Array<Record<string, unknown>>;
@@ -47,6 +48,7 @@ interface MainPlayerDependencies {
 interface HarnessOptions {
   enabled: boolean;
   selection: SelectionKind;
+  iinaVersion?: string;
   createCoordinator?: () => Promise<SubtitlePreparationCoordinator>;
 }
 
@@ -93,10 +95,12 @@ function createHarness(options: HarnessOptions): RuntimeHarness {
   const sidebarListeners = new Map<string, (data: unknown) => void>();
   const sidebarMessages: Array<{ name: string; data: unknown }> = [];
   const files = new Map<string, string>();
+  const windowState = { fullscreen: false, loaded: true, visible: true };
   let nextListenerId = 0;
   const runtime: Record<PropertyKey, unknown> = {
     console: { log: () => undefined },
     core: {
+      getVersion: () => ({ iina: options.iinaVersion ?? "1.4.4", build: "", mpv: "" }),
       status: {
         url: "file:///private/movie.mkv",
         isNetworkResource: false,
@@ -108,7 +112,7 @@ function createHarness(options: HarnessOptions): RuntimeHarness {
         tracks: [{ id: 7, isExternal: selection === "external", title: "English" }],
         currentTrack: { id: 7, isExternal: selection === "external", title: "English" },
       },
-      window: { fullscreen: false, loaded: true },
+      window: windowState,
     },
     event: {
       on: (name: string, callback: (...args: unknown[]) => void) => {
@@ -155,7 +159,10 @@ function createHarness(options: HarnessOptions): RuntimeHarness {
       sync: () => undefined,
     },
     sidebar: {
-      loadFile: () => sidebarListeners.clear(),
+      loadFile: () => {
+        trace.push("sidebar:load");
+        sidebarListeners.clear();
+      },
       onMessage: (name: string, callback: (data: unknown) => void) =>
         sidebarListeners.set(name, callback),
       postMessage: (name: string, data: unknown) => sidebarMessages.push({ name, data }),
@@ -236,6 +243,9 @@ function createHarness(options: HarnessOptions): RuntimeHarness {
     setSelection: (kind) => {
       selection = kind;
     },
+    setVisible: (visible) => {
+      windowState.visible = visible;
+    },
     triggerEvent: (name, ...args) => {
       for (const callback of eventListeners.get(name)?.values() ?? []) callback(...args);
     },
@@ -246,6 +256,7 @@ function createHarness(options: HarnessOptions): RuntimeHarness {
         .filter((message) => message.name === "state:update")
         .map((message) => message.data as Record<string, unknown>),
     close: () => {
+      windowState.visible = false;
       for (const callback of eventListeners.get("iina.window-will-close")?.values() ?? [])
         callback();
     },
@@ -560,5 +571,71 @@ it("keeps credential handlers active after the host clears listeners when loadin
       error: "invalid-credential-message",
     },
   });
+  harness.close();
+});
+
+it("rewires a reused player when its hidden window becomes visible without window-loaded", async () => {
+  const harness = createHarness({ enabled: false, selection: "external" });
+  await startHarness(harness);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(1);
+
+  harness.close();
+  harness.triggerSidebar("ui:poll");
+  await vi.advanceTimersByTimeAsync(200);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(1);
+
+  harness.setVisible(true);
+  harness.triggerSidebar("ui:poll");
+  await vi.advanceTimersByTimeAsync(100);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(2);
+  harness.triggerSidebar("credential-channel:open", {
+    requestId: "invalid-open-after-reopen",
+    revision: 1,
+    payload: {},
+  });
+  harness.triggerSidebar("ui:poll");
+  expect(harness.messages()).toContainEqual({
+    name: "credential-channel:result",
+    data: {
+      requestId: "invalid-open-after-reopen",
+      ok: false,
+      error: "invalid-credential-message",
+    },
+  });
+  harness.close();
+});
+
+it("loads a first player even when visibility lags behind window.loaded", async () => {
+  const harness = createHarness({ enabled: false, selection: "external" });
+  harness.setVisible(false);
+  await startHarness(harness);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(1);
+
+  harness.close();
+  harness.triggerSidebar("ui:poll");
+  await vi.advanceTimersByTimeAsync(200);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(1);
+
+  harness.setVisible(true);
+  harness.triggerSidebar("ui:poll");
+  await vi.advanceTimersByTimeAsync(100);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(2);
+  harness.close();
+});
+
+it("boots on IINA 1.4.0 despite its false window visibility and waits for reopen", async () => {
+  const harness = createHarness({ enabled: false, selection: "external", iinaVersion: "1.4.0" });
+  harness.setVisible(false);
+  await startHarness(harness);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(1);
+
+  harness.close();
+  harness.triggerSidebar("ui:poll");
+  await vi.advanceTimersByTimeAsync(200);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(1);
+
+  harness.triggerSidebar("ui:ready");
+  await vi.advanceTimersByTimeAsync(100);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(2);
   harness.close();
 });

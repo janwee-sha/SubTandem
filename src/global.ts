@@ -1,6 +1,14 @@
-import type { CredentialReference } from "../shared/credential-protocol.js";
+import type {
+  CredentialReference,
+  CredentialOwner,
+  DraftOperationReference,
+} from "../shared/credential-protocol.js";
 import { CredentialChannelRelay } from "./adapters/iina/global-rpc.js";
-import { parseCredentialSource } from "../shared/credential-protocol.js";
+import {
+  parseCredentialSource,
+  parseDraftOperationReference,
+  credentialAssert,
+} from "../shared/credential-protocol.js";
 import { RequestLifecycle, type RequestOwner } from "./providers/request-lifecycle.js";
 import { identityHash, sha256Hex } from "./domain/identity.js";
 import { normalizeProviderError } from "./domain/errors.js";
@@ -11,11 +19,9 @@ import {
   parseSubtitleStyleEdit,
   parseSubtitleStyleGet,
   parseSubtitleStylePickerOpen,
-  parseProviderModelsPreviewRequest,
   parseProviderModelsRequest,
   parseProviderModelsCancelRequest,
   type ProviderModelsRequest,
-  type ProviderModelsPreviewRequest,
   parseProviderTestCancelRequest,
   parseProviderTestRequest,
   parseProviderAttempt,
@@ -26,9 +32,12 @@ import {
   parseTargetLanguageSave,
   parseTranslationBatchProgress,
   sanitizedProfileView,
+  parseProviderDraftRequest,
+  providerDraftSnapshot,
+  type ProviderDraftRequest,
 } from "./domain/messages.js";
 import { HelperProfileStateStore } from "./credentials/store.js";
-import { hostTimers } from "./adapters/iina/host-timers.js";
+import { hostClock, hostTimers } from "./adapters/iina/host-timers.js";
 import { GlobalMailbox, IinaGlobalMailboxFileStore } from "./adapters/iina/global-mailbox.js";
 import {
   IinaFileRpcBridge,
@@ -43,7 +52,7 @@ import { OllamaProvider } from "./providers/ollama.js";
 import { OpenAICompatibleProvider } from "./providers/openai.js";
 import { DeepSeekProvider } from "./providers/deepseek.js";
 import { ClaudeProvider } from "./providers/claude.js";
-import { ProviderProfiles } from "./providers/profiles.js";
+import { ProviderProfiles, normalizeLegacyProviderProfiles } from "./providers/profiles.js";
 import { restoreProfileActivationAuthority } from "./providers/profile-activation.js";
 import type { ProfileActivationAuthority } from "./providers/profile-activation.js";
 import { normalizeProviderEndpoint, sameProviderService } from "./providers/profiles.js";
@@ -77,6 +86,8 @@ import {
   type RgbaColor,
 } from "./domain/subtitle-style.js";
 
+if (iina.global) iina.global.onMessage("runtime:tick", () => hostClock.pulse());
+
 let idSequence = 0;
 function localUuid(): string {
   const hex = sha256Hex(`subtandem:${Date.now()}:${++idSequence}`);
@@ -103,52 +114,21 @@ function advanceCredentialEpoch(profileId: string): number {
   return next;
 }
 
-function legacyProfileMetadata(): ProviderProfileSnapshot[] {
-  const legacy = new ProviderProfiles(localUuid);
+function legacyProfileMetadata(required = false): ProviderProfileSnapshot[] {
   const raw = iina.preferences.get("providerProfilesJson");
-  if (typeof raw !== "string") return [];
+  if (required && typeof raw !== "string") throw new Error("LEGACY_METADATA_UNAVAILABLE");
+  return normalizeLegacyProviderProfiles(raw);
+}
+
+function clearLegacyProfilePreferences(): boolean {
   try {
-    const saved: unknown = JSON.parse(raw);
-    if (!Array.isArray(saved)) return [];
-    for (const item of saved) {
-      if (!item || typeof item !== "object" || Array.isArray(item)) continue;
-      const value = item as Record<string, unknown>;
-      if (
-        typeof value.profileId !== "string" ||
-        !value.profileId ||
-        typeof value.displayName !== "string" ||
-        (value.kind !== "openai" &&
-          value.kind !== "claude" &&
-          value.kind !== "deepseek" &&
-          value.kind !== "ollama") ||
-        typeof value.endpoint !== "string" ||
-        typeof value.model !== "string"
-      )
-        continue;
-      try {
-        legacy.save({
-          profileId: value.profileId,
-          expectedRevision: 0,
-          displayName: value.displayName,
-          kind: value.kind,
-          endpoint: value.endpoint,
-          model: value.model,
-          proxyMode: value.proxyMode === "direct" ? "direct" : "system",
-          ...(value.kind === "openai" &&
-          (value.capability === "strict-json-schema" ||
-            value.capability === "json-object" ||
-            value.capability === "prompt-json")
-            ? { capability: value.capability }
-            : {}),
-        });
-      } catch {
-        continue;
-      }
-    }
+    iina.preferences.set("providerProfilesJson", "");
+    iina.preferences.sync();
+    const remaining = iina.preferences.get("providerProfilesJson");
+    return remaining === undefined || remaining === null || remaining === "";
   } catch {
-    return [];
+    return false;
   }
-  return legacy.listLatest();
 }
 
 const transport = new TransportSupervisor(async () => {
@@ -164,7 +144,7 @@ const transport = new TransportSupervisor(async () => {
   const session = await TransportProcess.bootstrap(
     launcher,
     files,
-    { dataDirectory, fileDirectory: "@data" },
+    { dataDirectory, fileDirectory: "@data", mailboxDirectory: iina.utils.resolvePath("@tmp/.") },
     executable,
   );
   return new TransportClient(
@@ -518,6 +498,7 @@ interface TranslationContext {
 const translationRequests = new RequestLifecycle<TranslationContext>();
 const translationSessions = new Map<string, TranslationContext>();
 
+let profileStorageStatus: string | null = null;
 const profileReady = (async () => {
   profileAuthority = await restoreProfileActivationAuthority({
     authorityId: localUuid(),
@@ -525,6 +506,10 @@ const profileReady = (async () => {
     store: profileStateStore,
     createCommitId: localUuid,
     loadLegacyProfiles: legacyProfileMetadata,
+    clearLegacyPreferences: clearLegacyProfilePreferences,
+    onStorageStatus: (code) => {
+      profileStorageStatus = code;
+    },
   });
   broker = new ProviderBroker(profiles, profileAuthority, providerFor);
 })();
@@ -544,8 +529,42 @@ function requestId(raw: unknown): string {
 }
 
 const globalMailbox = new GlobalMailbox(new IinaGlobalMailboxFileStore(iina.file));
+interface DraftContext {
+  message: ProviderDraftRequest;
+  identity: CredentialOwner;
+  reference?: DraftOperationReference;
+}
+const draftRequests = new RequestLifecycle<DraftContext>();
+async function closeNativeDraft(owner: RequestOwner<DraftContext>, action: "finish" | "cancel") {
+  const { identity, reference, message } = owner.context;
+  await transport
+    .draftOperation(action, {
+      owner: identity,
+      ...(reference ? { reference } : { frame: message.payload.frame }),
+    })
+    .catch(() => undefined);
+}
+async function cancelDraftRequests(predicate: (owner: RequestOwner<DraftContext>) => boolean) {
+  await Promise.allSettled(
+    draftRequests
+      .owners()
+      .filter(predicate)
+      .map((owner) => {
+        const cancelled = draftRequests.invalidate(owner);
+        return Promise.allSettled([cancelled, closeNativeDraft(owner, "cancel")]);
+      }),
+  );
+}
 const credentialChannels = new CredentialChannelRelay({
-  onClose: (owner) => profileAuthority?.cancelProfileSave(owner),
+  onClose: (owner) => {
+    profileAuthority?.cancelProfileSave(owner);
+    void cancelDraftRequests(
+      (draft) =>
+        draft.context.identity.senderId === owner.senderId &&
+        draft.context.identity.sidebarInstanceId === owner.sidebarInstanceId &&
+        draft.context.identity.drawerId === owner.drawerId,
+    );
+  },
   send: (senderId, name, data) => globalMailbox.postMessage(senderId, name, data),
   call: (action, payload) => transport.credentialChannel(action, payload),
   authorizeSource: async (raw) => {
@@ -568,6 +587,8 @@ for (const action of ["open", "confirm", "operation", "close"]) {
   });
 }
 globalMailbox.onSessionClose((playerId) => {
+  void cancelDraftRequests((owner) => owner.senderId === playerId);
+  void draftRequests.releaseSender(playerId);
   credentialChannels.close(playerId);
   profilePlayers.delete(playerId);
   translationSessions.delete(playerId);
@@ -576,6 +597,173 @@ globalMailbox.onSessionClose((playerId) => {
   void modelRequests.releaseSender(playerId);
   void providerConnectionTests.releaseSender(playerId);
 });
+
+function assertEncryptedDraft(owner: RequestOwner<DraftContext>): void {
+  draftRequests.assertActive(owner);
+  const { message } = owner.context;
+  credentialChannels.ownerFor(owner.senderId, message.payload, message.payload.frame);
+  credentialAssert(
+    message.payload.frame.context.expiresAtMs > Date.now(),
+    "credential-channel-expired",
+  );
+  const source = message.payload.frame.context.sourceProfile;
+  if (source) {
+    const current = profiles.get(source.profileId);
+    credentialAssert(
+      current &&
+        current.revision === source.profileRevision &&
+        current.endpointFingerprint === source.endpointFingerprint,
+      "credential-owner-mismatch",
+    );
+  }
+}
+
+async function runEncryptedDraft(
+  raw: unknown,
+  senderId: string,
+  purpose: "draft-test" | "draft-models",
+): Promise<void> {
+  let owner: RequestOwner<DraftContext> | null = null;
+  let completed = false;
+  const operation = purpose === "draft-test" ? "test" : "models";
+  const event = operation === "test" ? "provider:test-result" : "provider:models-result";
+  try {
+    const message = parseProviderDraftRequest(raw, purpose);
+    const identity = credentialChannels.ownerFor(senderId, message.payload, message.payload.frame);
+    void cancelDraftRequests(
+      (previous) => previous.senderId === senderId && previous.operation === operation,
+    );
+    owner = draftRequests.begin(
+      { senderId, operation, requestId: message.requestId, context: { message, identity } },
+      true,
+    );
+    if (!owner) return;
+    assertEncryptedDraft(owner);
+    await profileReady;
+    assertEncryptedDraft(owner);
+    const snapshot = providerDraftSnapshot(message);
+    credentialAssert(
+      normalizeProviderEndpoint(snapshot.kind, snapshot.endpoint) === snapshot.endpoint &&
+        (snapshot.model === null || snapshot.model === snapshot.model.trim()),
+    );
+    const reference = parseDraftOperationReference(
+      await transport.draftOperation("begin", { owner: identity, frame: message.payload.frame }),
+    );
+    owner.context.reference = reference;
+    credentialAssert(
+      reference.channelId === message.payload.frame.channelId &&
+        reference.requestId === message.requestId &&
+        reference.purpose === purpose &&
+        reference.snapshotDigest === message.payload.frame.context.snapshotDigest &&
+        reference.deadlineMs === message.payload.frame.context.expiresAtMs &&
+        identityHash(reference.owner) === identityHash(identity),
+    );
+    assertEncryptedDraft(owner);
+    const current = owner;
+    const base = new ProviderTransportAdapter(transport, localUuid);
+    const bound: ProviderTransport = {
+      request: async (request) => {
+        assertEncryptedDraft(current);
+        const remaining = reference.deadlineMs - Date.now();
+        const response = await base.request({
+          ...request,
+          credential: reference,
+          owner: { senderId, requestId: message.requestId },
+          timeoutMs: Math.min(request.timeoutMs, remaining),
+          assertActive: () => {
+            assertEncryptedDraft(current);
+            request.assertActive?.();
+          },
+        });
+        assertEncryptedDraft(current);
+        return response;
+      },
+      cancel: (jobId) => base.cancel(jobId),
+    };
+    const ownedTransport = draftRequests.transport(owner, bound);
+    let models: string[] | undefined;
+    if (operation === "test") {
+      credentialAssert(snapshot.model);
+      const provider = buildDraftProvider(
+        {
+          kind: snapshot.kind,
+          endpoint: snapshot.endpoint,
+          model: snapshot.model,
+          proxyMode: snapshot.proxyMode,
+          credential: reference,
+          senderId,
+        },
+        ownedTransport,
+      );
+      await provider.testConnection(localUuid());
+    } else {
+      models = await discoverProviderModels(
+        {
+          jobId: `models-${localUuid()}`,
+          kind: snapshot.kind,
+          endpoint: snapshot.endpoint,
+          proxyMode: snapshot.proxyMode,
+          ...(snapshot.model === null ? {} : { model: snapshot.model }),
+          credential: reference,
+          owner: { senderId, requestId: message.requestId },
+          assertActive: () => assertEncryptedDraft(current),
+        },
+        ownedTransport,
+      );
+    }
+    assertEncryptedDraft(owner);
+    completed = true;
+    postToPlayer(senderId, event, {
+      requestId: message.requestId,
+      ok: true,
+      ...(operation === "test"
+        ? {
+            drawerId: message.payload.drawerId,
+            draftRevision: message.payload.frame.context.draftRevision,
+          }
+        : { contextKey: message.payload.frame.context.snapshotDigest, models }),
+    });
+  } catch (error) {
+    if (!owner || !draftRequests.isActive(owner)) return;
+    const safe = normalizeProviderError(error);
+    if (safe.category === "cancelled") return;
+    const { message } = owner.context;
+    postToPlayer(senderId, event, {
+      requestId: owner.requestId,
+      ok: false,
+      ...(operation === "test"
+        ? {
+            drawerId: message.payload.drawerId,
+            draftRevision: message.payload.frame.context.draftRevision,
+          }
+        : { contextKey: message.payload.frame.context.snapshotDigest }),
+      category: safe.category,
+      retryable: safe.retryable,
+      ...(safe.statusCode === undefined ? {} : { statusCode: safe.statusCode }),
+      code: providerTestCode(safe.category, safe.providerCode),
+      userAction: safe.userAction,
+    });
+    const code = (error as { code?: string })?.code;
+    if (code === "HELPER_UNAVAILABLE" || code === "CREDENTIAL_OPERATION_REJECTED") {
+      credentialChannels.close(senderId);
+      postToPlayer(senderId, "credential-channel:revoked", {
+        sidebarInstanceId: message.payload.sidebarInstanceId,
+        drawerId: message.payload.drawerId,
+      });
+    }
+  } finally {
+    if (owner) {
+      const action = completed && draftRequests.isActive(owner) ? "finish" : "cancel";
+      draftRequests.finish(owner);
+      await closeNativeDraft(owner, action);
+    }
+  }
+}
+for (const purpose of ["draft-test", "draft-models"] as const) {
+  globalMailbox.onMessage(`provider:${purpose}`, (raw, senderId) => {
+    if (senderId) return runEncryptedDraft(raw, senderId, purpose);
+  });
+}
 const postToPlayer = (playerId: null | number | string, name: string, data: unknown): void =>
   globalMailbox.postMessage(playerId, name, data);
 
@@ -1078,6 +1266,7 @@ globalMailbox.onMessage("profiles:list", async (raw: unknown, playerId?: string)
     authorityId: authority.authorityId,
     stateVersion: authority.stateVersion,
     profiles: await profileViews(),
+    storageStatus: profileStorageStatus,
   });
 });
 
@@ -1129,15 +1318,12 @@ globalMailbox.onMessage("profile-activation:set", async (raw: unknown, playerId?
   }
 });
 
-async function runModelRequest(
-  message: ProviderModelsRequest | ProviderModelsPreviewRequest,
-  playerId: string,
-): Promise<void> {
+async function runModelRequest(message: ProviderModelsRequest, playerId: string): Promise<void> {
   const values = message.payload;
-  const preview = "credential" in values;
-  const sourceProfile = "sourceProfile" in values ? values.sourceProfile : undefined;
-  const profileId =
-    sourceProfile?.profileId ?? ("profileId" in values ? values.profileId : undefined);
+  const profileId = values.profileId;
+  void cancelDraftRequests(
+    (previous) => previous.senderId === playerId && previous.operation === "models",
+  );
   const owner = modelRequests.begin(
     {
       operation: "models",
@@ -1149,7 +1335,6 @@ async function runModelRequest(
         kind: values.kind,
         endpoint: values.endpoint,
         proxyMode: values.proxyMode,
-        ...(sourceProfile ? { ...sourceProfile } : {}),
         ...(profileId && "profileRevision" in values
           ? {
               profileId,
@@ -1174,29 +1359,20 @@ async function runModelRequest(
       sameProviderService({ ...profile, proxyMode: profile.proxyMode ?? "system" }, values),
     );
     const savedCredentialEligible = Boolean(profile && profile.kind === values.kind);
-    context.contextKey = preview
-      ? identityHash({
-          playerId,
-          requestId: message.requestId,
-          kind: values.kind,
-          endpoint,
-          proxyMode: values.proxyMode,
-          draftCredentialEpoch: values.draftCredentialEpoch,
-        })
-      : modelContextKey({
-          kind: context.kind,
-          endpoint,
-          proxyMode: context.proxyMode,
-          ...(profile && matchingService
-            ? {
-                profileId: profile.profileId,
-                profileRevision: profile.revision,
-                endpointFingerprint: profile.endpointFingerprint,
-              }
-            : {}),
-          credentialEpoch: context.credentialEpoch,
-        });
-    if (preview || (profileId && !matchingService)) throw new Error("CREDENTIAL_CHANNEL_REQUIRED");
+    context.contextKey = modelContextKey({
+      kind: context.kind,
+      endpoint,
+      proxyMode: context.proxyMode,
+      ...(profile && matchingService
+        ? {
+            profileId: profile.profileId,
+            profileRevision: profile.revision,
+            endpointFingerprint: profile.endpointFingerprint,
+          }
+        : {}),
+      credentialEpoch: context.credentialEpoch,
+    });
+    if (profileId && !matchingService) throw new Error("CREDENTIAL_CHANNEL_REQUIRED");
     const credential =
       savedCredentialEligible && profile
         ? savedCredentialReference(profile)
@@ -1218,7 +1394,7 @@ async function runModelRequest(
       }),
     );
     assertSavedModelOwner(owner);
-    if (!preview) {
+    {
       if (matchingService && profile)
         recordProfileModelCatalog(profile.profileId, context.contextKey, models);
       else modelCatalogs.set(context.contextKey, models);
@@ -1262,23 +1438,17 @@ globalMailbox.onMessage("provider:models", (raw: unknown, playerId?: string) => 
   }
 });
 
-globalMailbox.onMessage("provider:models-preview", (raw: unknown, playerId?: string) => {
-  if (!playerId) return;
-  try {
-    return runModelRequest(parseProviderModelsPreviewRequest(raw), playerId);
-  } catch {
-    postToPlayer(playerId, "operation:error", {
-      requestId: requestId(raw),
-      code: "INVALID_MESSAGE",
-      userAction: "NONE",
-    });
-  }
-});
-
 globalMailbox.onMessage("provider:models-cancel", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   try {
     const message = parseProviderModelsCancelRequest(raw);
+    await cancelDraftRequests(
+      (owner) =>
+        owner.senderId === playerId &&
+        owner.operation === "models" &&
+        (!("modelRequestId" in message.payload) ||
+          owner.requestId === message.payload.modelRequestId),
+    );
     if ("modelRequestId" in message.payload)
       await modelRequests.cancel(playerId, "models", message.payload.modelRequestId);
     else await modelRequests.releaseSender(playerId);
@@ -1402,6 +1572,9 @@ globalMailbox.onMessage("provider:test", async (raw: unknown, senderId?: string)
   let owner: ProviderConnectionTestTask | null = null;
   try {
     const message = parseProviderTestRequest(raw);
+    void cancelDraftRequests(
+      (previous) => previous.senderId === senderId && previous.operation === "test",
+    );
     const source = message.payload.sourceProfile;
     const started = providerConnectionTests.begin({
       senderId,
@@ -1418,14 +1591,17 @@ globalMailbox.onMessage("provider:test", async (raw: unknown, senderId?: string)
     assertDraftTestOwner(owner);
 
     normalizeProviderEndpoint(message.payload.kind, message.payload.endpoint);
-    if (message.payload.credential.source !== "saved" || !source)
-      throw new Error("CREDENTIAL_CHANNEL_REQUIRED");
+    if (!source) throw new Error("CREDENTIAL_CHANNEL_REQUIRED");
     const current = profiles.get(source.profileId);
     if (
       !current ||
       current.revision !== source.profileRevision ||
       current.endpointFingerprint !== source.endpointFingerprint ||
       current.kind !== message.payload.kind ||
+      (message.payload.credential.source === "none" &&
+        profileAuthority.snapshot.profiles.find(
+          (profile) => profile.profileId === current.profileId,
+        )?.credentialConfigured !== false) ||
       current.model !== message.payload.model.trim() ||
       !sameProviderService(
         { ...current, proxyMode: current.proxyMode ?? "system" },
@@ -1482,6 +1658,13 @@ globalMailbox.onMessage("provider:test-cancel", async (raw: unknown, senderId?: 
   if (!senderId) return;
   try {
     const message = parseProviderTestCancelRequest(raw);
+    await cancelDraftRequests(
+      (owner) =>
+        owner.senderId === senderId &&
+        owner.operation === "test" &&
+        (!("testRequestId" in message.payload) ||
+          owner.requestId === message.payload.testRequestId),
+    );
     if ("testRequestId" in message.payload)
       await providerConnectionTests.cancel(senderId, message.payload.testRequestId);
     else await providerConnectionTests.releaseSender(senderId);

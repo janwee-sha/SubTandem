@@ -9,6 +9,7 @@ import {
   credentialText,
   parseCredentialEnvelope,
   parseCredentialSnapshot,
+  parseDraftOperationReference,
 } from "../../shared/credential-protocol.js";
 import type { CredentialEnvelope, CredentialOwner } from "../../shared/credential-protocol.js";
 import { canonicalJson, identityHash, sha256Hex } from "../domain/identity.js";
@@ -52,6 +53,10 @@ export const TRANSPORT_RPC_ERROR_CODES = [
   "invalid-credential-request",
   "credential-store-unavailable",
   "profile-state-unconfirmed",
+  "legacy-preferences-required",
+  "legacy-profile-state-required",
+  "migration-not-committed",
+  "migration-unconfirmed",
   ...CREDENTIAL_ERRORS,
   "profile-state-conflict",
   "invalid-profile-state",
@@ -102,6 +107,14 @@ function rpcError(error: TransportRpcError): SubTandemError {
       return new SubTandemError("CREDENTIAL_UNAVAILABLE", "configuration", "NONE");
     case "profile-state-unconfirmed":
       return new SubTandemError("PROFILE_STATE_UNCONFIRMED", "configuration", "NONE", true);
+    case "legacy-preferences-required":
+      return new SubTandemError("LEGACY_PREFERENCES_REQUIRED", "configuration", "NONE");
+    case "legacy-profile-state-required":
+      return new SubTandemError("LEGACY_PROFILE_STATE_REQUIRED", "configuration", "NONE");
+    case "migration-not-committed":
+      return new SubTandemError("MIGRATION_NOT_COMMITTED", "configuration", "NONE", true);
+    case "migration-unconfirmed":
+      return new SubTandemError("MIGRATION_UNCONFIRMED", "configuration", "NONE", true);
     case "credential-store-unavailable":
       return new SubTandemError("CREDENTIAL_STORE_UNAVAILABLE", "configuration", "RESTART_IINA");
     case "profile-state-conflict":
@@ -148,6 +161,16 @@ export interface ProfileStateStoreSnapshot {
   profileState: ProfileState | null;
   credentialConfigured: Record<string, boolean>;
   invalidActivation?: true;
+  migration?: CredentialMigrationState;
+}
+
+export interface CredentialMigrationState {
+  migrationId: string;
+  sourceFormat: 1;
+  sourceLayout: "profile-state" | "credentials-only";
+  commitState: "committed";
+  cleanupState: "pending" | "clean";
+  pendingClasses: Array<"legacy-credentials" | "legacy-rpc" | "legacy-mailbox" | "legacy-preferences">;
 }
 
 export type ProfileStateCommitResult =
@@ -155,8 +178,11 @@ export type ProfileStateCommitResult =
   | ({ state: "reconciling" } & ProfileStateStoreSnapshot);
 
 export interface TransportRpcClient {
+  profileStateMigrate?(commitId: string, profiles?: PersistentProviderProfile[]): Promise<ProfileStateCommitResult>;
+  profileStateCleanup?(commitId: string, migrationId: string, preferenceConfirmed: boolean): Promise<ProfileStateCommitResult>;
   health(): Promise<void>;
   credentialChannel?(action: string, payload: unknown): Promise<unknown>;
+  draftOperation?(action: string, payload: unknown): Promise<unknown>;
   profileStateSave?(
     owner: CredentialOwner,
     frame: CredentialEnvelope,
@@ -226,6 +252,18 @@ export class TransportClient implements TransportRpcClient {
     return this.post("/v2/credential-channel", { action, payload });
   }
 
+  async draftOperation(action: string, payload: unknown): Promise<unknown> {
+    const r = credentialRecord(payload, ["owner"], ["frame", "reference"]);
+    credentialRecord(r.owner, ["senderId", "sidebarInstanceId", "drawerId"]);
+    if (!["begin", "finish", "cancel"].includes(action) || (r.frame === undefined) === (r.reference === undefined) || (action === "begin" && r.frame === undefined) || (action === "finish" && r.reference === undefined)) protocolFailure();
+    if (r.frame !== undefined) parseCredentialEnvelope(r.frame);
+    if (r.reference !== undefined) parseDraftOperationReference(r.reference);
+    const result = await this.post<unknown>("/v2/draft-operation", { action, ...r });
+    if (action === "begin") return parseDraftOperationReference(result);
+    if (credentialRecord(result, ["state"]).state !== "closed") protocolFailure();
+    return result;
+  }
+
   async profileStateSave(
     owner: CredentialOwner,
     frame: CredentialEnvelope,
@@ -255,6 +293,14 @@ export class TransportClient implements TransportRpcClient {
     return parseProfileStateStoreSnapshot(
       await this.post<unknown>("/v2/profile-state", { action: "read" }),
     );
+  }
+
+  async profileStateMigrate(commitId: string, profiles?: PersistentProviderProfile[]): Promise<ProfileStateCommitResult> {
+    return parseProfileStateCommitResult(await this.post<unknown>("/v2/profile-state", { action: "migrate", commitId, ...(profiles ? { profiles } : {}) }));
+  }
+
+  async profileStateCleanup(commitId: string, migrationId: string, preferenceConfirmed: boolean): Promise<ProfileStateCommitResult> {
+    return parseProfileStateCommitResult(await this.post<unknown>("/v2/profile-state", { action: "cleanup", commitId, migrationId, preferenceConfirmed }));
   }
 
   async profileStateOpen(commitId: string): Promise<ProfileStateCommitResult> {
@@ -391,7 +437,8 @@ export function validateTransportRequest(request: TransportRequest): TransportRe
         credential.kind !== provider.kind
       )
         protocolFailure();
-    } else protocolFailure();
+    } else if (credential?.source === "draft") parseDraftOperationReference(credential);
+    else protocolFailure();
     return { ...cloneJson(request), proxyMode: request.proxyMode ?? "system" };
   } catch {
     return protocolFailure();
@@ -531,7 +578,7 @@ function parseCommitReceipt(value: unknown): StoreCommitReceipt | null {
 export function parseProfileStateStoreSnapshot(value: unknown): ProfileStateStoreSnapshot {
   if (!value || typeof value !== "object" || Array.isArray(value)) protocolFailure();
   const record = value as Record<string, unknown>;
-  const optional = record.invalidActivation === undefined ? [] : ["invalidActivation"];
+  const optional = ["invalidActivation", "migration"].filter((key) => record[key] !== undefined);
   if (
     !exactKeys(record, [
       "initialized",
@@ -569,7 +616,18 @@ export function parseProfileStateStoreSnapshot(value: unknown): ProfileStateStor
     profileState,
     credentialConfigured: cloneJson(configured) as Record<string, boolean>,
     ...(record.invalidActivation === true ? { invalidActivation: true as const } : {}),
+    ...(record.migration === undefined ? {} : { migration: parseCredentialMigrationState(record.migration) }),
   };
+}
+
+function parseCredentialMigrationState(value: unknown): CredentialMigrationState {
+  try {
+    const record = credentialRecord(value, ["migrationId", "sourceFormat", "sourceLayout", "commitState", "cleanupState", "pendingClasses"]);
+    credentialIdentity(record.migrationId);
+    const classes = ["legacy-credentials", "legacy-rpc", "legacy-mailbox", "legacy-preferences"];
+    if (record.sourceFormat !== 1 || !["profile-state", "credentials-only"].includes(String(record.sourceLayout)) || record.commitState !== "committed" || !["pending", "clean"].includes(String(record.cleanupState)) || !Array.isArray(record.pendingClasses) || new Set(record.pendingClasses).size !== record.pendingClasses.length || record.pendingClasses.some((entry) => !classes.includes(String(entry))) || (record.cleanupState === "clean") !== (record.pendingClasses.length === 0)) protocolFailure();
+    return cloneJson(record) as unknown as CredentialMigrationState;
+  } catch { return protocolFailure(); }
 }
 
 export function parseProfileStateCommitResult(value: unknown): ProfileStateCommitResult {

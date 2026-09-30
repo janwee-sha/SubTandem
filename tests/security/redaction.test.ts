@@ -201,6 +201,18 @@ describe("allowlist-only diagnostics", () => {
     expect(JSON.stringify(output)).not.toContain("subtitle");
   });
 
+  it("rejects a credential-bearing request ID before diagnostics", () => {
+    const secret = "synthetic-diagnostic-key";
+    const output = diagnostic({
+      code: "CREDENTIAL_STORE_UNAVAILABLE",
+      requestId: `read\nAuthorization: Bearer ${secret}`,
+      apiKey: secret,
+      stack: `native failure: ${secret}`,
+    });
+    expect(output).toEqual({ code: "CREDENTIAL_STORE_UNAVAILABLE" });
+    expect(JSON.stringify(output)).not.toContain(secret);
+  });
+
   it("sanitizes provider request IDs", () => {
     expect(safeRequestId("safe_Request-42.abc")).toBe("safe_Request-42.abc");
     expect(safeRequestId("bad\nAuthorization: secret")).toBeUndefined();

@@ -49,6 +49,24 @@ struct CredentialOpenedOperation: Sendable {
 }
 
 actor CredentialChannelManager {
+    private final class Draft {
+        let reference: DraftCredentialReference
+        let frameDigest: String
+        let envelope: CredentialSealedOperation
+        let cancelJob: @Sendable (String) async -> Void
+        var phase = "preparing"
+        var value = Data()
+        var jobs = Set<String>()
+        var beginning: Task<DraftCredentialReference, Error>?
+        var deadlineTask: Task<Void, Never>?
+        init(reference: DraftCredentialReference, frameDigest: String, envelope: CredentialSealedOperation, cancelJob: @escaping @Sendable (String) async -> Void) {
+            self.reference = reference
+            self.frameDigest = frameDigest
+            self.envelope = envelope
+            self.cancelJob = cancelJob
+        }
+        deinit { value.resetBytes(in: 0..<value.count); deadlineTask?.cancel() }
+    }
     private final class Session {
         let offer: CredentialChannelOffer
         var sendKey: Data
@@ -76,6 +94,7 @@ actor CredentialChannelManager {
     private var sessions: [String: Session] = [:]
     private var generations: [String: Int] = [:]
     private var registeredOwners: [String: CredentialChannelOwner] = [:]
+    private var drafts: [String: Draft] = [:]
 
     init(helperSessionID: String = UUID().uuidString.lowercased(), now: @escaping @Sendable () -> Int64 = { Int64(Date().timeIntervalSince1970 * 1000) }) {
         self.helperSessionID = helperSessionID
@@ -183,23 +202,136 @@ actor CredentialChannelManager {
         else { throw CredentialFailure.ownerMismatch }
     }
 
+    func beginDraft(_ data: Data, owner: CredentialChannelOwner, validateSource: @escaping @Sendable (CredentialSource?) async throws -> Void, cancelJob: @escaping @Sendable (String) async -> Void) async throws -> DraftCredentialReference {
+        let envelope = try CredentialSealedOperation(JSONSerialization.jsonObject(with: data))
+        try Self.validateSnapshot(envelope)
+        let snapshot = try JSONSerialization.jsonObject(with: envelope.snapshot) as! [String: Any]
+        let fingerprint = CredentialCryptography.digest(try JSONSerialization.data(withJSONObject: ["kind": envelope.context.kind, "endpoint": snapshot["endpoint"]!, "proxyMode": snapshot["proxyMode"]!], options: [.sortedKeys, .withoutEscapingSlashes]))
+        guard fingerprint == envelope.context.endpointFingerprint else { throw CredentialFailure.ownerMismatch }
+        guard ["draft-test", "draft-models"].contains(envelope.context.purpose), envelope.context.expiresAtMilliseconds > now(), envelope.context.expiresAtMilliseconds <= now() + 30_000 else { throw CredentialFailure.expired }
+        let digest = CredentialCryptography.digest(try JSONSerialization.data(withJSONObject: envelope.object, options: [.sortedKeys, .withoutEscapingSlashes]))
+        let key = draftKey(envelope.channelID, envelope.context.requestID)
+        prune()
+        if let existing = drafts[key] {
+            guard existing.reference.owner == owner, existing.frameDigest == digest, existing.phase != "closed" else { throw CredentialFailure.replay }
+            if existing.phase == "live" { return existing.reference }
+            guard let task = existing.beginning else { throw CredentialFailure.channelUnavailable }
+            let reference = try await task.value
+            guard drafts[key] === existing, existing.phase == "live" else { throw CredentialFailure.ownerMismatch }
+            return reference
+        }
+        guard drafts.count < 1_024 else { throw CredentialFailure.channelUnavailable }
+        let reference = DraftCredentialReference(operationID: UUID().uuidString.lowercased(), channelID: envelope.channelID, requestID: envelope.context.requestID, owner: owner, purpose: envelope.context.purpose, snapshotDigest: envelope.context.snapshotDigest, deadlineMilliseconds: envelope.context.expiresAtMilliseconds)
+        let draft = Draft(reference: reference, frameDigest: digest, envelope: envelope, cancelJob: cancelJob)
+        drafts[key] = draft
+        let delay = UInt64(max(1, reference.deadlineMilliseconds - now())) * 1_000_000
+        draft.deadlineTask = Task { [weak self] in
+            do { try await Task.sleep(nanoseconds: delay) } catch { return }
+            await self?.expireDraft(reference)
+        }
+        let task = Task { [self] in
+            var opened = try await self.decrypt(data, owner: owner, validateSource: validateSource)
+            defer { opened.value.resetBytes(in: 0..<opened.value.count) }
+            guard self.drafts[key] === draft, draft.phase == "preparing", reference.deadlineMilliseconds > self.now() else { throw CredentialFailure.ownerMismatch }
+            try self.finish(opened)
+            draft.value = opened.value
+            draft.phase = "live"
+            return reference
+        }
+        draft.beginning = task
+        do {
+            let result = try await task.value
+            draft.beginning = nil
+            guard draft.phase == "live" else { throw CredentialFailure.ownerMismatch }
+            return result
+        } catch {
+            draft.beginning = nil
+            closeDraft(draft)
+            throw error
+        }
+    }
+
+    func endDraft(_ reference: DraftCredentialReference, owner: CredentialChannelOwner) throws {
+        let key = draftKey(reference.channelID, reference.requestID)
+        guard reference.owner == owner, let draft = drafts[key], draft.reference == reference else { throw CredentialFailure.ownerMismatch }
+        closeDraft(draft)
+    }
+
+    func cancelDraft(_ data: Data, owner: CredentialChannelOwner, cancelJob: @escaping @Sendable (String) async -> Void) throws {
+        let envelope = try CredentialSealedOperation(JSONSerialization.jsonObject(with: data))
+        try Self.validateSnapshot(envelope)
+        guard ["draft-test", "draft-models"].contains(envelope.context.purpose) else { throw CredentialFailure.invalidMessage }
+        _ = try active(envelope.channelID, owner: owner)
+        let key = draftKey(envelope.channelID, envelope.context.requestID)
+        let digest = CredentialCryptography.digest(try JSONSerialization.data(withJSONObject: envelope.object, options: [.sortedKeys, .withoutEscapingSlashes]))
+        if let draft = drafts[key] {
+            guard draft.reference.owner == owner, draft.frameDigest == digest else { throw CredentialFailure.ownerMismatch }
+            closeDraft(draft)
+        } else {
+            guard drafts.count < 1_024, envelope.context.expiresAtMilliseconds > now(), envelope.context.expiresAtMilliseconds <= now() + 30_000 else { throw CredentialFailure.expired }
+            let reference = DraftCredentialReference(operationID: UUID().uuidString.lowercased(), channelID: envelope.channelID, requestID: envelope.context.requestID, owner: owner, purpose: envelope.context.purpose, snapshotDigest: envelope.context.snapshotDigest, deadlineMilliseconds: envelope.context.expiresAtMilliseconds)
+            let draft = Draft(reference: reference, frameDigest: digest, envelope: envelope, cancelJob: cancelJob)
+            draft.phase = "closed"
+            drafts[key] = draft
+        }
+    }
+
+    func authorizeDraft(_ reference: DraftCredentialReference, input: CredentialHTTPRequest, includeValue: Bool, validateSource: @Sendable (CredentialSource?) async throws -> Void) async throws -> Data {
+        let key = draftKey(reference.channelID, reference.requestID)
+        guard let draft = drafts[key], draft.reference == reference, draft.phase == "live", reference.deadlineMilliseconds > now(), reference.owner.senderID == input.senderID, reference.requestID == input.requestID, reference.purpose == "draft-" + input.purpose else { throw CredentialFailure.ownerMismatch }
+        _ = try active(reference.channelID, owner: reference.owner)
+        let snapshot = try JSONSerialization.jsonObject(with: draft.envelope.snapshot) as! [String: Any]
+        guard snapshot["kind"] as? String == input.kind, snapshot["endpoint"] as? String == input.endpoint, snapshot["model"] as? String == input.model, snapshot["proxyMode"] as? String == input.request.proxyMode else { throw CredentialFailure.ownerMismatch }
+        draft.jobs.insert(input.request.jobID)
+        try await validateSource(draft.envelope.context.source)
+        guard drafts[key] === draft, draft.phase == "live", reference.deadlineMilliseconds > now() else { throw CredentialFailure.ownerMismatch }
+        return includeValue ? draft.value : Data()
+    }
+
+    func finishDraftJob(_ reference: DraftCredentialReference, jobID: String) {
+        drafts[draftKey(reference.channelID, reference.requestID)]?.jobs.remove(jobID)
+    }
+
+    private func draftKey(_ channelID: String, _ requestID: String) -> String { channelID + "\u{0}" + requestID }
+
+    private func expireDraft(_ reference: DraftCredentialReference) {
+        guard let draft = drafts[draftKey(reference.channelID, reference.requestID)], draft.reference == reference else { return }
+        closeDraft(draft)
+    }
+
+    private func closeDraft(_ draft: Draft) {
+        draft.phase = "closed"
+        draft.beginning?.cancel()
+        draft.value.resetBytes(in: 0..<draft.value.count)
+        draft.value.removeAll()
+        draft.deadlineTask?.cancel()
+        draft.deadlineTask = nil
+        let jobs = draft.jobs
+        draft.jobs.removeAll()
+        let cancelJob = draft.cancelJob
+        Task { for job in jobs { await cancelJob(job) } }
+    }
+
     func close(profileID: String) {
         let owners = sessions.values.filter { $0.offer.source?.profileID == profileID }.map { $0.offer.owner }
         for owner in owners { close(owner: owner) }
     }
 
     func close(senderID: String) {
+        for draft in drafts.values where draft.reference.owner.senderID == senderID { closeDraft(draft) }
         registeredOwners.removeValue(forKey: senderID)
         generations[senderID, default: 0] += 1
         sessions = sessions.filter { $0.value.offer.owner.senderID != senderID }
     }
 
-    func close(owner: CredentialChannelOwner) {
+    func close(owner: CredentialChannelOwner, channelID: String? = nil) {
         guard registeredOwners[owner.senderID] == owner else { return }
+        if let channelID, sessions[channelID]?.offer.owner != owner { return }
         close(senderID: owner.senderID)
     }
 
     func closeAll() {
+        for draft in drafts.values { closeDraft(draft) }
         registeredOwners.removeAll()
         sessions.removeAll()
         for senderID in generations.keys { generations[senderID, default: 0] += 1 }
@@ -217,6 +349,8 @@ actor CredentialChannelManager {
 
     private func prune() {
         let time = now()
+        for draft in drafts.values where draft.reference.deadlineMilliseconds <= time { closeDraft(draft) }
+        drafts = drafts.filter { $0.value.reference.deadlineMilliseconds > time }
         sessions = sessions.filter { time - $0.value.lastActivity < CredentialWire.idleMilliseconds }
         for session in sessions.values {
             session.pending = session.pending.filter { $0.value.context.expiresAtMilliseconds > time }

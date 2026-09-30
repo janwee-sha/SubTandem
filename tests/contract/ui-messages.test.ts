@@ -10,13 +10,12 @@ import {
   parseProfileActivationState,
   parseProfileDeleteRequest,
   parseProfileSelection,
-  parseSecretSet,
   parseTargetLanguageSave,
   parseTargetLanguageSaved,
   parseLanguageOperationError,
   parseLanguageOperationResult,
   parseProviderModelsRequest,
-  parseProviderModelsPreviewRequest,
+  parseProviderDraftRequest,
   parseProviderModelsResult,
   parseProviderAttempt,
   parseProviderTestCancelRequest,
@@ -52,15 +51,6 @@ const sessionFailureMessage = (
     }): string | null;
   }
 ).subtandemSessionFailureMessage;
-const credentialStatusMessage = (
-  globalThis as typeof globalThis & {
-    subtandemCredentialStatusMessage(result: {
-      state?: string;
-      code?: string;
-      userAction?: string;
-    }): string;
-  }
-).subtandemCredentialStatusMessage;
 const modelCatalogStatusMessage = (
   globalThis as typeof globalThis & {
     subtandemModelCatalogStatusMessage(result: {
@@ -71,6 +61,14 @@ const modelCatalogStatusMessage = (
     }): string;
   }
 ).subtandemModelCatalogStatusMessage;
+
+function parsePlaintextDraft(value: unknown) {
+  try {
+    return parseProviderDraftRequest(value, "draft-models");
+  } catch {
+    throw new Error("INVALID_MESSAGE");
+  }
+}
 
 describe("Sidebar/Main/Global security messages", () => {
   const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
@@ -86,10 +84,11 @@ describe("Sidebar/Main/Global security messages", () => {
     endpoint: "https://api.example.test/v1",
     endpointFingerprint: "fingerprint",
     model: "model",
+    credentialConfigured: true,
     credential: { apiKey: "secret-value" },
   };
 
-  it("returns sanitized views with exact kind/address and write-only credential state", () => {
+  it("returns sanitized views with exact kind/address and credential metadata", () => {
     expect(sanitizedProfileView(profile)).toEqual({
       profileId: profile.profileId,
       revision: 2,
@@ -117,8 +116,8 @@ describe("Sidebar/Main/Global security messages", () => {
         },
       }).payload.kind,
     ).toBe("deepseek");
-    expect(
-      parseProviderModelsPreviewRequest({
+    expect(() =>
+      parsePlaintextDraft({
         requestId: "models-deepseek-preview-1",
         revision: 1,
         payload: {
@@ -129,8 +128,8 @@ describe("Sidebar/Main/Global security messages", () => {
           draftCredentialEpoch: 2,
           credential: { apiKey: "draft-secret" },
         },
-      }).payload.kind,
-    ).toBe("deepseek");
+      }),
+    ).toThrow(/INVALID_MESSAGE/);
     const view = sanitizedProfileView({
       profileId: "deepseek-profile",
       revision: 2,
@@ -138,6 +137,7 @@ describe("Sidebar/Main/Global security messages", () => {
       kind: "deepseek",
       endpoint: "https://api.deepseek.com",
       endpointFingerprint: "deepseek-fingerprint",
+      credentialConfigured: true,
       credential: { apiKey: "saved-secret" },
     });
     expect(view).toMatchObject({ kind: "deepseek", credentialConfigured: true });
@@ -165,7 +165,7 @@ describe("Sidebar/Main/Global security messages", () => {
         credential: { apiKey: "draft-secret" },
       },
     };
-    expect(parseProviderModelsPreviewRequest(preview)).toEqual(preview);
+    expect(() => parsePlaintextDraft(preview)).toThrow(/INVALID_MESSAGE/);
     const view = sanitizedProfileView({
       profileId: "claude-profile",
       revision: 1,
@@ -173,6 +173,7 @@ describe("Sidebar/Main/Global security messages", () => {
       kind: "claude",
       endpoint: "https://api.anthropic.com",
       endpointFingerprint: "fingerprint",
+      credentialConfigured: true,
       credential: { apiKey: "saved-secret" },
     });
     expect(view).toMatchObject({ kind: "claude", credentialConfigured: true });
@@ -204,7 +205,7 @@ describe("Sidebar/Main/Global security messages", () => {
       }),
     ).toThrow(/INVALID_MESSAGE/);
     expect(() =>
-      parseProviderModelsPreviewRequest({
+      parsePlaintextDraft({
         ...base,
         payload: {
           ...base.payload,
@@ -215,25 +216,7 @@ describe("Sidebar/Main/Global security messages", () => {
     ).toThrow(/INVALID_MESSAGE/);
   });
 
-  it("accepts fresh write-only secrets and exact selection authorization only", () => {
-    expect(
-      parseSecretSet({
-        profileId: profile.profileId,
-        expectedRevision: 2,
-        fields: { apiKey: "new-secret" },
-      }),
-    ).toEqual({
-      profileId: profile.profileId,
-      expectedRevision: 2,
-      fields: { apiKey: "new-secret" },
-    });
-    expect(() =>
-      parseSecretSet({
-        profileId: profile.profileId,
-        expectedRevision: 2,
-        fields: { apiKey: "••••••" },
-      }),
-    ).toThrow(/MASKED_SECRET/);
+  it("accepts exact selection authorization only", () => {
     expect(
       parseProfileSelection({
         profileId: profile.profileId,
@@ -475,14 +458,9 @@ describe("Sidebar/Main/Global security messages", () => {
     );
   });
 
-  it("distinguishes helper and private-file credential failures", () => {
-    expect(credentialStatusMessage({ state: "unavailable", code: "HELPER_UNAVAILABLE" })).toMatch(
-      /not saved.*helper/i,
-    );
-    expect(
-      credentialStatusMessage({ state: "unavailable", code: "CREDENTIAL_STORE_UNAVAILABLE" }),
-    ).toMatch(/not saved.*private credential file/i);
-    expect(credentialStatusMessage({ state: "ready" })).toMatch(/0600/i);
+  it("does not publish the removed plaintext credential status formatter", () => {
+    expect(Reflect.get(globalThis, "subtandemCredentialStatusMessage")).toBeUndefined();
+    expect(providerStatusSource).not.toContain("mode 0600");
   });
 
   it("uses the global activation and credential message contract", () => {
@@ -496,7 +474,6 @@ describe("Sidebar/Main/Global security messages", () => {
     expect(GLOBAL_MESSAGE_NAMES).not.toContain("profile:select");
     expect(GLOBAL_MESSAGE_NAMES).not.toContain("profile:release");
     expect(SIDEBAR_MESSAGE_NAMES).not.toContain("profile:select");
-    expect(credentialStatusMessage({ state: "ready" })).toMatch(/private local file/i);
   });
 
   it("strictly parses activation requests, snapshots, results and delete confirmations", () => {
@@ -805,7 +782,7 @@ describe("Sidebar/Main/Global security messages", () => {
     ).toThrow(/INVALID_MESSAGE/);
   });
 
-  it("accepts a write-only draft credential only in the manual preview message", () => {
+  it("rejects the replaced plaintext preview message", () => {
     const message = {
       requestId: "models.preview.window-a.1",
       revision: 2,
@@ -818,9 +795,9 @@ describe("Sidebar/Main/Global security messages", () => {
         credential: { apiKey: "draft-secret" },
       },
     };
-    expect(parseProviderModelsPreviewRequest(message)).toEqual(message);
-    expect(SIDEBAR_MESSAGE_NAMES).toContain("provider:models-preview");
-    expect(GLOBAL_MESSAGE_NAMES).toContain("provider:models-preview");
+    expect(() => parsePlaintextDraft(message)).toThrow(/INVALID_MESSAGE/);
+    expect(SIDEBAR_MESSAGE_NAMES).not.toContain("provider:models-preview");
+    expect(GLOBAL_MESSAGE_NAMES).not.toContain("provider:models-preview");
     expect(() => parseProviderModelsRequest(message)).toThrow(/INVALID_MESSAGE/);
     for (const invalid of [
       { ...message.payload, trigger: "endpoint" },
@@ -831,7 +808,7 @@ describe("Sidebar/Main/Global security messages", () => {
       { ...message.payload, credential: { apiKey: "x".repeat(8_193) } },
       { ...message.payload, credential: { apiKey: "draft-secret", token: "extra" } },
     ])
-      expect(() => parseProviderModelsPreviewRequest({ ...message, payload: invalid })).toThrow(
+      expect(() => parsePlaintextDraft({ ...message, payload: invalid })).toThrow(
         /INVALID_MESSAGE/,
       );
   });

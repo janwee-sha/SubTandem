@@ -32,7 +32,7 @@ describe("Profile summary operations", () => {
     h.evaluate(`loadEditor(${JSON.stringify(saved)})`);
     expect(row.querySelector(".profile-disclosure").getAttribute("aria-expanded")).toBe("true");
     expect(h.element("#provider-proxy-mode").value).toBe("direct");
-    expect(h.element("#provider-key").placeholder).toBe("Leave blank to keep saved key");
+    expect(h.element("#provider-key").placeholder).toBe("Optional");
     expect(row.querySelector(".profile-summary").textContent).toBe("OpenAI · model-one");
 
     h.evaluate("clearProfileDrawer(false)");
@@ -54,7 +54,7 @@ describe("Profile summary operations", () => {
     expect(row.querySelector("code").textContent).toBe(updated.endpoint);
     h.evaluate(`loadEditor(${JSON.stringify(updated)})`);
     expect(h.element("#provider-proxy-mode").value).toBe("system");
-    expect(h.element("#provider-key").placeholder).toBe("Not shown after saving");
+    expect(h.element("#provider-key").placeholder).toBe("Optional");
 
     const activation = row.querySelector(".profile-activation input");
     expect(activation.dataset.profileId).toBe("saved");

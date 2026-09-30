@@ -22,6 +22,7 @@ export class ProviderSimulator {
   private readonly countWaiters: Array<{ count: number; resolve: () => void }> = [];
   private server: Server | null = null;
   private mode: ProviderSimulatorMode = "success";
+  private responseFactory: ((call: ProviderSimulatorCall) => SimulatedResponse) | null = null;
   private expectedBearer: string | null = null;
   private requestGate: Promise<void> = Promise.resolve();
   private releaseGate: (() => void) | null = null;
@@ -37,6 +38,10 @@ export class ProviderSimulator {
 
   setMode(mode: ProviderSimulatorMode): void {
     this.mode = mode;
+  }
+
+  respondWith(factory: (call: ProviderSimulatorCall) => SimulatedResponse): void {
+    this.responseFactory = factory;
   }
 
   requireBearer(token: string | null): void {
@@ -67,12 +72,13 @@ export class ProviderSimulator {
       const chunks: Buffer[] = [];
       request.on("data", (chunk: Buffer) => chunks.push(chunk));
       request.on("end", () => {
-        this.calls.push({
+        const call = {
           path: request.url ?? "/",
           method: request.method ?? "GET",
           headers: { ...request.headers },
           body: Buffer.concat(chunks).toString("utf8"),
-        });
+        };
+        this.calls.push(call);
         this.resolveCountWaiters();
         const gate = this.requestGate;
         void gate.then(() => {
@@ -80,7 +86,7 @@ export class ProviderSimulator {
             this.expectedBearer === null ||
             request.headers.authorization === `Bearer ${this.expectedBearer}`;
           const next = authorized
-            ? (this.responses.shift() ?? this.responseForMode(request.url ?? "/"))
+            ? (this.responses.shift() ?? this.responseFactory?.(call) ?? this.responseForMode(request.url ?? "/"))
             : { status: 401, body: { error: { code: "invalid_api_key" } } };
           setTimeout(() => {
             response.writeHead(next.status, {

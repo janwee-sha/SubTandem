@@ -27,7 +27,6 @@ import { EpochBootstrapGate } from "./app/epoch-bootstrap-gate.js";
 import {
   parseProviderModelsRequest,
   parseProviderModelsCancelRequest,
-  parseProviderModelsPreviewRequest,
   parseProviderModelsResult,
   parseProviderTestCancelRequest,
   parseProviderTestRequest,
@@ -51,11 +50,7 @@ import {
   parseTargetLanguageSave,
   parseTargetLanguageSaved,
 } from "./domain/messages.js";
-import {
-  ModelCatalogSync,
-  modelCatalogContextToken,
-  modelCatalogPreviewContextToken,
-} from "./adapters/iina/model-catalog-sync.js";
+import { ModelCatalogSync, modelCatalogContextToken } from "./adapters/iina/model-catalog-sync.js";
 import { TARGET_LANGUAGES } from "./domain/target-languages.js";
 import { TargetLanguagePreferences } from "./adapters/iina/target-language-preferences.js";
 import { TargetLanguageSession } from "./app/target-language-session.js";
@@ -70,7 +65,7 @@ import { OverlayRegionRuntime } from "./adapters/iina/overlay-region-runtime.js"
 import { SidebarMessageBuffer } from "./adapters/iina/sidebar-message-buffer.js";
 import { ProfileActivationSync } from "./adapters/iina/profile-activation-sync.js";
 import { TranslationEnabledPreferences } from "./adapters/iina/translation-enabled-preferences.js";
-import { hostTimers, type HostTimeout } from "./adapters/iina/host-timers.js";
+import { hostClock, hostTimers, type HostTimeout } from "./adapters/iina/host-timers.js";
 import {
   createMailboxPlayerId,
   IinaGlobalMailboxFileStore,
@@ -93,6 +88,7 @@ interface MainRuntime {
   console: IINA.API.Console;
   core: IINA.API.Core;
   event: IINA.API.Event;
+  global?: { postMessage(name: string, data: unknown): void };
   file: IINA.API.File;
   mpv: IINA.API.MPV;
   overlay: IINA.API.Overlay;
@@ -150,6 +146,10 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     runtime.overlay,
     runtime.event,
     (message) => runtime.console.log(message),
+    () => {
+      hostClock.pulse();
+      hostRuntime.global?.postMessage("runtime:tick", {});
+    },
   );
   const overlayRegion = new OverlayRegionRuntime(runtime.mpv, runtime.core.window.fullscreen);
   const overlayPosition = new OverlayPositionFollower();
@@ -589,8 +589,24 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
       postMessage: queueSidebarMessage,
     },
     runtime.global,
+    {
+      onDraftModels: (message) =>
+        modelCatalogSync.begin(playerId, {
+          requestId: message.requestId,
+          contextToken: message.payload.frame.context.snapshotDigest,
+          trigger: "manual",
+          cacheResult: false,
+        }).forwarded,
+    },
   );
   runtime.sidebar.onMessage("ui:ready", () => {
+    if (!playerWired) {
+      if (legacyWindowVisibility && legacyWindowClosed) {
+        legacyWindowClosed = false;
+        scheduleInitializePlayer();
+      }
+      return;
+    }
     if (sourceLoadingAllowed()) scheduleSourceReload();
     else if (!sourceLoadingAllowed()) suspendSourceLoading();
     requestProfileActivation();
@@ -599,6 +615,12 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     flushSidebar();
   });
   runtime.sidebar.onMessage("ui:poll", () => {
+    if (!playerWired) {
+      if (!legacyWindowVisibility && hostRuntime.core.window.visible) scheduleInitializePlayer();
+      return;
+    }
+    hostClock.pulse();
+    hostRuntime.global?.postMessage("runtime:tick", {});
     updateSidebarState();
     flushSidebar();
   });
@@ -790,24 +812,6 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
       });
     }
   });
-  runtime.sidebar.onMessage("provider:models-preview", (raw: unknown) => {
-    try {
-      const message = parseProviderModelsPreviewRequest(raw);
-      const started = modelCatalogSync.begin(playerId, {
-        requestId: message.requestId,
-        contextToken: modelCatalogPreviewContextToken(message.payload),
-        trigger: message.payload.trigger,
-        cacheResult: false,
-      });
-      if (started.forwarded) runtime.global.postMessage("provider:models-preview", message);
-    } catch {
-      queueSidebarMessage("operation:error", {
-        requestId: (raw as { requestId?: unknown })?.requestId,
-        code: "INVALID_MESSAGE",
-        userAction: "NONE",
-      });
-    }
-  });
   runtime.sidebar.onMessage("profile:delete-request", (raw: unknown) => {
     try {
       runtime.global.postMessage("profile:delete", parseProfileDeleteRequest(raw));
@@ -854,6 +858,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
       authorityId?: unknown;
       stateVersion?: unknown;
       profiles?: unknown;
+      storageStatus?: unknown;
     };
     if (
       typeof result.requestId !== "string" ||
@@ -876,7 +881,17 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     });
     if (accepted === profileListState) return;
     profileListState = accepted;
-    updateSidebarState({ profiles: profileListState.profiles });
+    const storageStatus = [
+      "MIGRATION_CLEANUP_PENDING",
+      "MIGRATION_NOT_COMMITTED",
+      "MIGRATION_UNCONFIRMED",
+    ].includes(String(result.storageStatus))
+      ? result.storageStatus
+      : null;
+    updateSidebarState({
+      profiles: profileListState.profiles,
+      profileStorageStatus: storageStatus,
+    });
   });
   runtime.global.onMessage("overlay-position:state", (raw: unknown) => {
     try {
@@ -1009,7 +1024,11 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
   });
   requestProfileActivation();
 
-  runtime.event.on("iina.file-loaded", () => {
+  const playerEventListeners: Array<{ name: string; id: string }> = [];
+  const trackPlayerEvent = (name: string, id: string): void => {
+    playerEventListeners.push({ name, id });
+  };
+  trackPlayerEvent("iina.file-loaded", runtime.event.on("iina.file-loaded", () => {
     mediaEpoch += 1;
     sourceSelectionTimer?.cancel();
     invalidatePreparation();
@@ -1022,8 +1041,8 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     } else {
       suspendSourceLoading();
     }
-  });
-  runtime.event.on("mpv.sid.changed", () => {
+  }));
+  trackPlayerEvent("mpv.sid.changed", runtime.event.on("mpv.sid.changed", () => {
     if (!sourceLoadingAllowed()) {
       suspendSourceLoading();
       return;
@@ -1031,11 +1050,11 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     const selectedId = runtime.core.subtitle.id;
     if (selectedId === selectedSourceTrackId) return;
     scheduleSourceReload();
-  });
-  runtime.event.on("mpv.track-list.changed", () => {
+  }));
+  trackPlayerEvent("mpv.track-list.changed", runtime.event.on("mpv.track-list.changed", () => {
     if (sourceLoadingAllowed()) scheduleSourceReload();
     else suspendSourceLoading();
-  });
+  }));
   const overlayRegionListeners = [
     {
       name: "mpv.sub-margin-x.changed",
@@ -1074,20 +1093,20 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     for (const listener of overlayRegionListeners) runtime.event.off(listener.name, listener.id);
     overlayRegion.close();
   };
-  runtime.event.on("mpv.shutdown", closeOverlayRegion);
-  runtime.event.on("mpv.seek", () => {
+  trackPlayerEvent("mpv.shutdown", runtime.event.on("mpv.shutdown", closeOverlayRegion));
+  trackPlayerEvent("mpv.seek", runtime.event.on("mpv.seek", () => {
     preparation?.onSeek();
     controller.onSeek(
       finitePosition(
         runtime.core.status.position === null ? null : runtime.core.status.position * 1_000,
       ),
     );
-  });
-  runtime.event.on("mpv.end-file", () => {
+  }));
+  trackPlayerEvent("mpv.end-file", runtime.event.on("mpv.end-file", () => {
     mediaEpoch += 1;
     invalidatePreparation();
-  });
-  runtime.event.on("mpv.end-file", () => controller.endFile());
+  }));
+  trackPlayerEvent("mpv.end-file", runtime.event.on("mpv.end-file", () => controller.endFile()));
   const translationTickTimer = hostTimers.setInterval(() => {
     controller.session.setPaused(runtime.core.status.paused);
     controller.tick(
@@ -1097,7 +1116,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     );
     updateSidebarState();
   }, 350);
-  runtime.event.on("iina.window-will-close", () => {
+  const closeListenerId = runtime.event.on("iina.window-will-close", () => {
     closeOverlayRegion();
     translationTickTimer.cancel();
     translationOverlay.close();
@@ -1132,6 +1151,8 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     controller.endFile();
     controller.clearProviderSelection();
     updateSidebarState({ source: null, sourceIssue: null, selection: null });
+    for (const listener of playerEventListeners) runtime.event.off(listener.name, listener.id);
+    runtime.event.off("iina.window-will-close", closeListenerId);
   });
   if (sourceLoadingAllowed()) {
     scheduleSourceReload();
@@ -1145,18 +1166,43 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
 }
 
 let playerWired = false;
-let initializePlayerTimer: HostTimeout | null = null;
+let initializePlayerTimer: ReturnType<typeof setTimeout> | null = null;
+let playerClosedOnce = false;
+// IINA 1.4.0 reports visible=false for an onscreen player. Later versions
+// expose visibility correctly, including when a closed player is reused.
+const legacyWindowVisibility = typeof iina !== "undefined" && iina.core.getVersion().iina === "1.4.0";
+let legacyWindowClosed = false;
 const initializePlayer = (): void => {
   initializePlayerTimer = null;
-  if (playerWired || !iina.core.window.loaded) return;
+  if (
+    playerWired ||
+    !iina.core.window.loaded ||
+    legacyWindowClosed ||
+    (playerClosedOnce && !legacyWindowVisibility && !iina.core.window.visible)
+  ) return;
   playerWired = true;
   wirePlayer(iina, createMailboxPlayerId());
 };
 const scheduleInitializePlayer = (): void => {
-  if (initializePlayerTimer !== null) return;
-  initializePlayerTimer = hostTimers.setTimeout(initializePlayer, 100);
+  if (playerWired || initializePlayerTimer !== null) return;
+  initializePlayerTimer = setTimeout(initializePlayer, 100);
 };
 if (typeof iina !== "undefined") {
-  iina.event.on("iina.window-loaded", scheduleInitializePlayer);
+  iina.event.on("iina.window-loaded", () => {
+    legacyWindowClosed = false;
+    scheduleInitializePlayer();
+  });
+  iina.event.on("iina.file-started", () => {
+    if (!legacyWindowVisibility || !legacyWindowClosed) return;
+    legacyWindowClosed = false;
+    scheduleInitializePlayer();
+  });
+  iina.event.on("iina.window-will-close", () => {
+    if (initializePlayerTimer !== null) clearTimeout(initializePlayerTimer);
+    initializePlayerTimer = null;
+    playerWired = false;
+    playerClosedOnce = true;
+    legacyWindowClosed = legacyWindowVisibility;
+  });
   scheduleInitializePlayer();
 }

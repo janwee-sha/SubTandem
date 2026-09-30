@@ -51,4 +51,6 @@ if unzip -Z1 "$ARTIFACT" | grep -Eq '(^|/)(node_modules|\.git|\.parcel-cache|spe
   exit 1
 fi
 
+node "$ROOT_DIR/scripts/audit-credential-package.mjs" --archive "$ARTIFACT" "$STAGE_DIR"
+
 echo "Packed artifact: $ARTIFACT"

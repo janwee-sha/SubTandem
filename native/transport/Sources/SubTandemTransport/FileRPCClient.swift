@@ -26,7 +26,7 @@ enum FileRPCWorker {
     static let allowedPaths = Set([
         "/v2/health",
         "/v2/credential-channel",
-        "/v2/credentials",
+        "/v2/draft-operation",
         "/v2/profile-state",
         "/v2/request",
         "/v2/cancel",
@@ -235,6 +235,9 @@ enum FileRPCWorker {
             guard let baseAddress = bytes.baseAddress else { return }
             var offset = 0
             while offset < data.count {
+                #if SUBTANDEM_CREDENTIAL_TEST_OBSERVER
+                CredentialWriteObserver.shared.capture(path: temporary.path, bytes: data.subdata(in: offset..<data.count))
+                #endif
                 let count = Darwin.write(descriptor, baseAddress.advanced(by: offset), data.count - offset)
                 if count < 0 && errno == EINTR { continue }
                 guard count > 0 else { throw FileRPCWorkerError.unavailable }

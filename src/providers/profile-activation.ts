@@ -49,6 +49,8 @@ export interface ProfileActivationCommitInput {
 }
 
 export interface ProfileActivationStore {
+  migrate?(commitId: string, profiles?: ProfileState["profiles"]): Promise<ProfileStateCommitResult>;
+  cleanup?(commitId: string, migrationId: string, preferenceConfirmed: boolean): Promise<ProfileStateCommitResult>;
   read(): Promise<ProfileStateStoreSnapshot>;
   open(commitId: string): Promise<ProfileStateCommitResult>;
   initialize(
@@ -169,7 +171,9 @@ export async function restoreProfileActivationAuthority(options: {
   profiles: ProviderProfiles;
   store: ProfileActivationStore;
   createCommitId(): string;
-  loadLegacyProfiles?(): ProfileState["profiles"];
+  loadLegacyProfiles?(required?: boolean): ProfileState["profiles"];
+  clearLegacyPreferences?(): boolean;
+  onStorageStatus?(code: "MIGRATION_CLEANUP_PENDING" | "MIGRATION_NOT_COMMITTED" | "MIGRATION_UNCONFIRMED"): void;
 }): Promise<ProfileActivationAuthority> {
   const create = (
     snapshot: ProfileStateStoreSnapshot,
@@ -188,16 +192,30 @@ export async function restoreProfileActivationAuthority(options: {
       recover: (commitId) => options.store.open(commitId),
     });
   try {
-    const current = await options.store.read();
-    if (!current.initialized && options.loadLegacyProfiles)
-      options.profiles.hydrate(options.loadLegacyProfiles());
-    let restored = current.initialized
-      ? await options.store.open(options.createCommitId())
-      : await options.store.initialize(
+    let restored: ProfileStateCommitResult;
+    try {
+      const current = await options.store.read();
+      if (!current.initialized && options.loadLegacyProfiles) options.profiles.hydrate(options.loadLegacyProfiles());
+      restored = current.initialized ? await options.store.open(options.createCommitId()) : await options.store.initialize(
           options.createCommitId(),
           current.storeRevision,
           persistentProfiles(options.profiles),
         );
+    } catch (error) {
+      if (!(error instanceof SubTandemError) || !options.store.migrate || !["LEGACY_PREFERENCES_REQUIRED", "LEGACY_PROFILE_STATE_REQUIRED"].includes(error.code)) throw error;
+      const legacyProfiles = error.code === "LEGACY_PREFERENCES_REQUIRED" ? options.loadLegacyProfiles?.(true) : undefined;
+      if (error.code === "LEGACY_PREFERENCES_REQUIRED" && legacyProfiles === undefined) throw error;
+      restored = await options.store.migrate(options.createCommitId(), legacyProfiles);
+    }
+    if (restored.state === "committed" && restored.migration?.cleanupState === "pending") {
+      const preferenceConfirmed = !restored.migration.pendingClasses.includes("legacy-preferences") || options.clearLegacyPreferences?.() === true;
+      try {
+        if (options.store.cleanup) restored = await options.store.cleanup(options.createCommitId(), restored.migration.migrationId, preferenceConfirmed);
+      } catch {
+        try { restored = await options.store.open(options.createCommitId()); } catch (error) { void error; }
+      }
+      if (restored.migration?.cleanupState === "pending") options.onStorageStatus?.("MIGRATION_CLEANUP_PENDING");
+    }
     if (!restored.profileState) throw new Error("PROFILE_STATE_UNAVAILABLE");
     const mustClearActivation =
       restored.invalidActivation === true ||
@@ -215,7 +233,8 @@ export async function restoreProfileActivationAuthority(options: {
       restored.invalidActivation !== true &&
       validRestoredActivation(restored, restored.profileState.activation);
     return create(restored, ready);
-  } catch {
+  } catch (error) {
+    if (error instanceof SubTandemError && ["MIGRATION_NOT_COMMITTED", "MIGRATION_UNCONFIRMED"].includes(error.code)) options.onStorageStatus?.(error.code as "MIGRATION_NOT_COMMITTED" | "MIGRATION_UNCONFIRMED");
     options.profiles.hydrate([]);
     return create(
       {

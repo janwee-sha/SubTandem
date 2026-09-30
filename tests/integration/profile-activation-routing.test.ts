@@ -5,6 +5,7 @@ import {
   MainGlobalMailbox,
   type GlobalMailboxFileStore,
 } from "../../src/adapters/iina/global-mailbox.js";
+import { hostClock as mainHostClock } from "../../src/adapters/iina/host-timers.js";
 import { ProfileActivationSync } from "../../src/adapters/iina/profile-activation-sync.js";
 import { parseProfileActivationState } from "../../src/domain/messages.js";
 import type { AuthoritySnapshot, ProfileState } from "../../src/domain/types.js";
@@ -125,11 +126,16 @@ async function setup(restoreActive = false) {
     file: mailboxFiles,
   });
   await import("../../src/global.js");
+  const { hostClock } = await import("../../src/adapters/iina/host-timers.js");
   let drainQueue = Promise.resolve();
   const drain = async (): Promise<void> => {
     drainQueue = drainQueue.then(async () => {
-      await vi.advanceTimersByTimeAsync(500);
-      await Promise.resolve();
+      for (let step = 0; step < 10; step += 1) {
+        await vi.advanceTimersByTimeAsync(50);
+        hostClock.pulse();
+        mainHostClock.pulse();
+        await Promise.resolve();
+      }
     });
     await drainQueue;
   };

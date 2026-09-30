@@ -60,6 +60,9 @@ enum ReadyFileWriter {
             guard let baseAddress = bytes.baseAddress else { return }
             var offset = 0
             while offset < data.count {
+                #if SUBTANDEM_CREDENTIAL_TEST_OBSERVER
+                CredentialWriteObserver.shared.capture(path: temporary.path, bytes: data.subdata(in: offset..<data.count))
+                #endif
                 let count = Darwin.write(descriptor, baseAddress.advanced(by: offset), data.count - offset)
                 if count < 0 && errno == EINTR { continue }
                 guard count > 0 else { throw TransportProtocolError.invalidRequest }
@@ -237,6 +240,18 @@ actor ProtocolHandler {
             else { return .json(statusCode: 400, ["error": "invalid-profile-state"]) }
             do {
                 switch action {
+                case "migrate" where json.count == 2 || json.count == 3:
+                    _ = try CredentialWire.record(json, keys: json["profiles"] == nil ? ["action", "commitId"] : ["action", "commitId", "profiles"])
+                    let commitID = try CredentialWire.identity(json["commitId"])
+                    let profiles = json["profiles"] == nil ? nil : try Self.decodeProfiles(json["profiles"])
+                    return Self.storeResponse(try await credentialStore.migrateProfileState(commitID: commitID, profiles: profiles), state: "committed")
+                case "cleanup" where json.count == 4:
+                    _ = try CredentialWire.record(json, keys: ["action", "commitId", "migrationId", "preferenceConfirmed"])
+                    let commitID = try CredentialWire.identity(json["commitId"])
+                    let migrationID = try CredentialWire.identity(json["migrationId"])
+                    guard let boolean = json["preferenceConfirmed"] as? NSNumber, CFGetTypeID(boolean) == CFBooleanGetTypeID() else { throw TransportProtocolError.invalidRequest }
+                    let preferenceConfirmed = boolean.boolValue
+                    return Self.storeResponse(try await credentialStore.cleanupProfileState(commitID: commitID, migrationID: migrationID, preferenceConfirmed: preferenceConfirmed), state: "committed")
                 case "save" where json.count == 3:
                     return try await saveProfile(json)
                 case "read" where json.count == 1:
@@ -278,6 +293,12 @@ actor ProtocolHandler {
                 default:
                     return .json(statusCode: 400, ["error": "invalid-profile-state"])
                 }
+            } catch CredentialMigrationFailure.required(let layout) {
+                return .json(statusCode: 409, ["error": layout == "credentials-only" ? "legacy-preferences-required" : "legacy-profile-state-required"])
+            } catch CredentialMigrationFailure.notCommitted {
+                return .json(statusCode: 503, ["error": "migration-not-committed"])
+            } catch CredentialMigrationFailure.unconfirmed {
+                return .json(statusCode: 503, ["error": "migration-unconfirmed"])
             } catch CredentialStoreFailure.unconfirmed {
                 return .json(statusCode: 503, ["error": "profile-state-unconfirmed"])
             } catch let error as CredentialFailure {
@@ -290,6 +311,29 @@ actor ProtocolHandler {
             } catch {
                 return .json(statusCode: 503, ["error": "credential-store-unavailable"])
             }
+
+        case "/v2/draft-operation":
+            do {
+                let raw = try JSONSerialization.jsonObject(with: body)
+                guard let json = raw as? [String: Any], let action = json["action"] as? String, ["begin", "finish", "cancel"].contains(action) else { throw CredentialFailure.invalidMessage }
+                let input = try CredentialWire.record(raw, keys: ["action", "owner", json["frame"] == nil ? "reference" : "frame"])
+                let o = try CredentialWire.record(input["owner"] as Any, keys: ["senderId", "sidebarInstanceId", "drawerId"])
+                let owner = CredentialChannelOwner(sidebarInstanceID: try CredentialWire.identity(o["sidebarInstanceId"]), senderID: try CredentialWire.identity(o["senderId"]), drawerID: try CredentialWire.identity(o["drawerId"]))
+                let http = httpClient
+                let store = credentialStore
+                if action == "begin" {
+                    guard let frame = input["frame"] else { throw CredentialFailure.invalidMessage }
+                    let reference = try await credentialChannels.beginDraft(JSONSerialization.data(withJSONObject: frame), owner: owner, validateSource: { try await Self.validateSource($0, store: store) }, cancelJob: { _ = await http.cancel(jobID: $0) })
+                    return .json(statusCode: 200, reference.object)
+                }
+                if let frame = input["frame"] {
+                    guard action == "cancel" else { throw CredentialFailure.invalidMessage }
+                    try await credentialChannels.cancelDraft(JSONSerialization.data(withJSONObject: frame), owner: owner, cancelJob: { _ = await http.cancel(jobID: $0) })
+                } else {
+                    try await credentialChannels.endDraft(DraftCredentialReference(input["reference"] as Any), owner: owner)
+                }
+                return .json(statusCode: 200, ["state": "closed"])
+            } catch { return Self.errorResponse(for: error) }
 
         case "/v2/cancel":
             guard let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
@@ -315,10 +359,19 @@ actor ProtocolHandler {
                 let generation = UUID()
                 preparingJobs[input.request.jobID] = generation
                 defer { if preparingJobs[input.request.jobID] == generation { preparingJobs.removeValue(forKey: input.request.jobID) } }
+                let manager = credentialChannels
+                defer {
+                    if case .draft(let reference) = input.credential {
+                        Task { await manager.finishDraftJob(reference, jobID: input.request.jobID) }
+                    }
+                }
                 try await authorize(input, generation: generation)
                 var value = Data()
                 if case .saved(let reference) = input.credential {
                     value = try await credentialStore.readCredential(profileID: reference.profile.profileID, expectedProfileRevision: Int(reference.profile.profileRevision)) ?? Data()
+                } else if case .draft(let reference) = input.credential {
+                    let store = credentialStore
+                    value = try await credentialChannels.authorizeDraft(reference, input: input, includeValue: true, validateSource: { try await Self.validateSource($0, store: store) })
                 }
                 defer { value.resetBytes(in: 0..<value.count) }
                 var headers = input.request.headers
@@ -327,7 +380,11 @@ actor ProtocolHandler {
                     if input.kind == "claude" { headers["x-api-key"] = key }
                     else { headers["Authorization"] = "Bearer " + key }
                 }
-                let request = TransportRequest(jobID: input.request.jobID, method: input.request.method, url: input.request.url, headers: headers, proxyMode: input.request.proxyMode, body: input.request.body, timeoutMilliseconds: input.request.timeoutMilliseconds, maxResponseBytes: input.request.maxResponseBytes, restrictRedirects: true)
+                let remaining: Int
+                if case .draft(let reference) = input.credential { remaining = min(input.request.timeoutMilliseconds, Int(reference.deadlineMilliseconds - Int64(Date().timeIntervalSince1970 * 1000))) }
+                else { remaining = input.request.timeoutMilliseconds }
+                guard remaining > 0 else { throw CredentialFailure.expired }
+                let request = TransportRequest(jobID: input.request.jobID, method: input.request.method, url: input.request.url, headers: headers, proxyMode: input.request.proxyMode, body: input.request.body, timeoutMilliseconds: remaining, maxResponseBytes: input.request.maxResponseBytes, restrictRedirects: true)
                 let result = try await httpClient.perform(request, authorize: { try await self.authorize(input, generation: generation) })
                 try await authorize(input, generation: generation)
                 try CredentialResponseGuard.validate(body: result.body, headers: result.rawHeaders, credential: value)
@@ -393,8 +450,17 @@ actor ProtocolHandler {
                       activation.credentialConfigured == snapshot.credentialConfigured[profile.profileId]
                 else { throw CredentialFailure.ownerMismatch }
             }
+        } else if case .draft(let reference) = input.credential {
+            let store = credentialStore
+            _ = try await credentialChannels.authorizeDraft(reference, input: input, includeValue: false, validateSource: { try await Self.validateSource($0, store: store) })
         } else if input.purpose == "translation" { throw CredentialFailure.ownerMismatch }
         guard acceptingRequests, preparingJobs[input.request.jobID] == generation else { throw CancellationError() }
+    }
+
+    private nonisolated static func validateSource(_ source: CredentialSource?, store: CredentialStoreAccess) async throws {
+        guard let source else { return }
+        let state = try await store.readProfileState()
+        guard let current = state.profileState?.profiles.first(where: { $0.profileId == source.profileID }), current.revision == source.profileRevision, current.endpointFingerprint == source.endpointFingerprint else { throw CredentialFailure.ownerMismatch }
     }
 
     private nonisolated static func storeResponse(
@@ -480,11 +546,13 @@ actor ProtocolHandler {
                 let response = try await credentialChannels.open(data, senderID: senderID, validateSource: validateSource)
                 return ProtocolResponse(statusCode: 200, body: response)
             }
-            let request = try CredentialWire.record(payload, keys: action == "close" ? ["owner"] : ["owner", "frame"])
+            let hasChannel = payload["channelId"] != nil
+            let request = try CredentialWire.record(payload, keys: action == "close" ? (hasChannel ? ["owner", "channelId"] : ["owner"]) : ["owner", "frame"])
             let ownerRecord = try CredentialWire.record(request["owner"] as Any, keys: ["senderId", "sidebarInstanceId", "drawerId"])
             let owner = CredentialChannelOwner(sidebarInstanceID: try CredentialWire.identity(ownerRecord["sidebarInstanceId"]), senderID: try CredentialWire.identity(ownerRecord["senderId"]), drawerID: try CredentialWire.identity(ownerRecord["drawerId"]))
             if action == "close" {
-                await credentialChannels.close(owner: owner)
+                let channelID = hasChannel ? try CredentialWire.identity(request["channelId"]) : nil
+                await credentialChannels.close(owner: owner, channelID: channelID)
                 return .json(statusCode: 200, ["state": "closed"])
             }
             let data = try JSONSerialization.data(withJSONObject: request["frame"] as Any)
@@ -498,7 +566,17 @@ actor ProtocolHandler {
                 let responseValue = try CredentialHostProbe.run(operation)
                 return ProtocolResponse(statusCode: 200, body: try await credentialChannels.respond(responseValue, operation: operation))
                 #else
-                throw CredentialFailure.channelUnavailable
+                guard operation.envelope.context.purpose == "read-edit" else { throw CredentialFailure.invalidMessage }
+                var value = Data()
+                defer { value.resetBytes(in: 0..<value.count) }
+                if let source = operation.envelope.context.source {
+                    let snapshot = try JSONSerialization.jsonObject(with: operation.envelope.snapshot) as! [String: Any]
+                    let state = try await store.readProfileState()
+                    guard let profile = state.profileState?.profiles.first(where: { $0.profileId == source.profileID }), profile.revision == source.profileRevision, profile.kind == operation.envelope.context.kind, profile.endpointFingerprint == operation.envelope.context.endpointFingerprint, profile.endpoint == snapshot["endpoint"] as? String, profile.model == snapshot["model"] as? String, profile.proxyMode == snapshot["proxyMode"] as? String else { throw CredentialFailure.ownerMismatch }
+                    value = try await store.readCredential(profileID: source.profileID, expectedProfileRevision: Int(source.profileRevision)) ?? Data()
+                    try await validateSource(source)
+                }
+                return ProtocolResponse(statusCode: 200, body: try await credentialChannels.respond(value, operation: operation))
                 #endif
             }
             throw CredentialFailure.invalidMessage
@@ -755,7 +833,7 @@ struct SavedCredentialReference: Sendable {
     let profile: CredentialSource
     let kind: String
 }
-struct DraftCredentialReference: Sendable {
+struct DraftCredentialReference: Equatable, Sendable {
     let operationID: String
     let channelID: String
     let requestID: String
@@ -763,6 +841,35 @@ struct DraftCredentialReference: Sendable {
     let purpose: String
     let snapshotDigest: String
     let deadlineMilliseconds: Int64
+
+    init(operationID: String, channelID: String, requestID: String, owner: CredentialChannelOwner, purpose: String, snapshotDigest: String, deadlineMilliseconds: Int64) {
+        self.operationID = operationID
+        self.channelID = channelID
+        self.requestID = requestID
+        self.owner = owner
+        self.purpose = purpose
+        self.snapshotDigest = snapshotDigest
+        self.deadlineMilliseconds = deadlineMilliseconds
+    }
+
+    init(_ value: Any) throws {
+        let r = try CredentialWire.record(value, keys: ["source", "operationId", "channelId", "requestId", "owner", "purpose", "snapshotDigest", "deadlineMs"])
+        guard r["source"] as? String == "draft", let purpose = r["purpose"] as? String, ["draft-test", "draft-models"].contains(purpose) else { throw CredentialFailure.invalidMessage }
+        let o = try CredentialWire.record(r["owner"] as Any, keys: ["senderId", "sidebarInstanceId", "drawerId"])
+        owner = CredentialChannelOwner(sidebarInstanceID: try CredentialWire.identity(o["sidebarInstanceId"]), senderID: try CredentialWire.identity(o["senderId"]), drawerID: try CredentialWire.identity(o["drawerId"]))
+        operationID = try CredentialWire.identity(r["operationId"])
+        channelID = try CredentialWire.identity(r["channelId"])
+        requestID = try CredentialWire.identity(r["requestId"])
+        self.purpose = purpose
+        snapshotDigest = try CredentialWire.identity(r["snapshotDigest"])
+        deadlineMilliseconds = try CredentialWire.integer(r["deadlineMs"], minimum: 1)
+    }
+
+    var object: [String: Any] {
+        ["source": "draft", "operationId": operationID, "channelId": channelID, "requestId": requestID,
+         "owner": ["senderId": owner.senderID, "sidebarInstanceId": owner.sidebarInstanceID, "drawerId": owner.drawerID],
+         "purpose": purpose, "snapshotDigest": snapshotDigest, "deadlineMs": deadlineMilliseconds]
+    }
 }
 enum CredentialReference: Sendable {
     case saved(SavedCredentialReference)

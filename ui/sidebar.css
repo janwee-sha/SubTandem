@@ -252,8 +252,7 @@ button.secondary {
   background: var(--secondary-control-surface);
 }
 
-.section-heading p,
-.credential-state {
+.section-heading p {
   margin-top: 2px;
   color: var(--label-secondary);
   font-size: 11px;
@@ -509,8 +508,7 @@ button.secondary {
   min-width: 62px;
 }
 
-.operation-status,
-.credential-state {
+.operation-status {
   color: var(--label-secondary);
   font-size: 11px;
   line-height: 14px;
@@ -1123,4 +1121,56 @@ dd {
     border: 2px solid CanvasText;
     forced-color-adjust: none;
   }
+}
+
+.credential-input {
+  position: relative;
+  min-width: 0;
+}
+.credential-input input {
+  padding-right: 28px;
+  min-width: 0;
+}
+#toggle-provider-key {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  min-width: 24px;
+  min-height: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--label-secondary);
+}
+.credential-eye {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.credential-eye-slash {
+  display: none;
+}
+#toggle-provider-key[aria-pressed="true"] .credential-eye-slash {
+  display: block;
+}
+
+.profiles[data-empty="true"] {
+  min-height: 80px;
+  aspect-ratio: 3.7;
+  box-sizing: border-box;
+  border: 1px solid var(--separator);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.profiles[data-empty="true"] .empty {
+  margin: 0;
+  text-align: center;
 }

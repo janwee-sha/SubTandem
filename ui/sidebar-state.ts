@@ -62,10 +62,6 @@ interface ProfileNameState {
 
 interface PendingProfileSaveState {
   requestId: string;
-  profileId: string | null;
-  revision: number | null;
-  credentialPending: boolean;
-  selectionInvalidated: boolean;
 }
 
 interface SidebarDeleteConfirmationState {
@@ -109,10 +105,20 @@ interface SidebarProfileDrawerState {
   credentialEpoch: number;
   keyEditEpoch: number;
   submitEpoch: number;
+  masked: boolean;
   validity: "current" | "conflict";
   test: SidebarDrawerTestState | null;
-  savePhase: "profile" | "credential" | null;
+  savePhase: "profile" | null;
   deletePhase: "confirming" | "deleting" | null;
+}
+
+interface SidebarCredentialReadOwner {
+  channelId: string;
+  drawerId: string | null;
+  sourceProfile: SidebarDrawerSourceProfile | null;
+  draftRevision: number;
+  keyEditEpoch: number;
+  submitEpoch: number;
 }
 
 interface SidebarOverlayPositionState {
@@ -348,16 +354,13 @@ interface SidebarStateCoordinator {
   changeServiceTypeLabel(serviceTypeLabel: string): void;
   inputProfileName(value: string): void;
   loadProfileName(value: string, serviceTypeLabel: string): void;
-  beginProfileSave(requestId: string, credentialPending: boolean): void;
-  profileRevisionCreated(
-    requestId: string,
-    result: {
-      profileId: string;
-      revision: number;
-      endpointFingerprint?: string;
-      selectionInvalidated: boolean;
-    },
-  ): { accepted: boolean; waitingForCredential: boolean };
+  beginCredentialRead(
+    channelId: string,
+    expected?: SidebarProfileDrawerState,
+  ): SidebarCredentialReadOwner | null;
+  acceptCredentialRead(owner: SidebarCredentialReadOwner, channelId: string | null): boolean;
+  setDrawerMasked(masked: boolean): void;
+  beginProfileSave(requestId: string): void;
   completeProfileSave(
     requestId: string,
     fallbackMessage: string,
@@ -495,6 +498,7 @@ function createSubTandemSidebarState(
       credentialEpoch: 0,
       keyEditEpoch: 0,
       submitEpoch: 0,
+      masked: true,
       validity: "current",
       test: null,
       savePhase: null,
@@ -562,6 +566,7 @@ function createSubTandemSidebarState(
           credentialEpoch: 0,
           keyEditEpoch: 0,
           submitEpoch: 0,
+          masked: true,
           validity: "current",
           test: null,
           savePhase: null,
@@ -883,6 +888,7 @@ function createSubTandemSidebarState(
         credentialEpoch: 0,
         keyEditEpoch: 0,
         submitEpoch: 0,
+        masked: true,
         validity: "current",
         test: null,
         savePhase: null,
@@ -938,50 +944,64 @@ function createSubTandemSidebarState(
     snapshot.profileName = { value, mode: "saved", serviceTypeLabel };
   };
 
-  const beginProfileSave = (requestId: string, credentialPending: boolean): void => {
+  let credentialReadOwner: SidebarCredentialReadOwner | null = null;
+  const readContext = (drawer: SidebarProfileDrawerState) => ({
+    drawerId: drawer.drawerId,
+    sourceProfile: drawer.sourceProfile,
+    draftRevision: drawer.draftRevision,
+    keyEditEpoch: drawer.keyEditEpoch,
+    submitEpoch: drawer.submitEpoch,
+  });
+  const beginCredentialRead = (
+    channelId: string,
+    expected = snapshot.drawer,
+  ): SidebarCredentialReadOwner | null => {
+    const drawer = snapshot.drawer;
+    if (
+      drawer.mode !== "editing" ||
+      drawer.validity !== "current" ||
+      drawer.keyEditEpoch !== 0 ||
+      drawer.submitEpoch !== 0 ||
+      JSON.stringify(readContext(drawer)) !== JSON.stringify(readContext(expected))
+    )
+      return null;
+    credentialReadOwner = { channelId, ...JSON.parse(JSON.stringify(readContext(drawer))) };
+    return credentialReadOwner;
+  };
+  const acceptCredentialRead = (
+    owner: SidebarCredentialReadOwner,
+    channelId: string | null,
+  ): boolean => {
+    if (
+      owner !== credentialReadOwner ||
+      owner.channelId !== channelId ||
+      snapshot.drawer.mode !== "editing" ||
+      snapshot.drawer.validity !== "current" ||
+      JSON.stringify(readContext(snapshot.drawer)) !==
+        JSON.stringify({
+          drawerId: owner.drawerId,
+          sourceProfile: owner.sourceProfile,
+          draftRevision: owner.draftRevision,
+          keyEditEpoch: owner.keyEditEpoch,
+          submitEpoch: owner.submitEpoch,
+        })
+    )
+      return false;
+    credentialReadOwner = null;
+    snapshot.drawer.masked = true;
+    return true;
+  };
+  const setDrawerMasked = (masked: boolean): void => {
+    snapshot.drawer.masked = masked;
+  };
+
+  const beginProfileSave = (requestId: string): void => {
     snapshot.drawer.submitEpoch += 1;
     snapshot.pendingProfileSave = {
       requestId,
-      profileId: null,
-      revision: null,
-      credentialPending,
-      selectionInvalidated: false,
     };
     snapshot.drawer.test = null;
     snapshot.drawer.savePhase = "profile";
-  };
-
-  const profileRevisionCreated = (
-    requestId: string,
-    result: {
-      profileId: string;
-      revision: number;
-      endpointFingerprint?: string;
-      selectionInvalidated: boolean;
-    },
-  ): { accepted: boolean; waitingForCredential: boolean } => {
-    const pending = snapshot.pendingProfileSave;
-    if (!pending || pending.requestId !== requestId)
-      return { accepted: false, waitingForCredential: false };
-    snapshot.pendingProfileSave = {
-      ...pending,
-      profileId: result.profileId,
-      revision: result.revision,
-      selectionInvalidated: pending.selectionInvalidated || result.selectionInvalidated,
-    };
-    if (snapshot.drawer.mode !== "closed") {
-      snapshot.drawer.mode = "editing";
-      snapshot.drawer.profileId = result.profileId;
-      snapshot.drawer.sourceProfile = {
-        profileId: result.profileId,
-        profileRevision: result.revision,
-        endpointFingerprint:
-          result.endpointFingerprint ?? snapshot.drawer.sourceProfile?.endpointFingerprint ?? "",
-      };
-      snapshot.drawer.savePhase = pending.credentialPending ? "credential" : "profile";
-      snapshot.editingProfileId = result.profileId;
-    }
-    return { accepted: true, waitingForCredential: pending.credentialPending };
   };
 
   const completeProfileSave = (
@@ -999,9 +1019,7 @@ function createSubTandemSidebarState(
     } else {
       snapshot.drawer.savePhase = null;
     }
-    return succeeded && pending.selectionInvalidated
-      ? "Profile updated. Enable it when you are ready."
-      : fallbackMessage;
+    return fallbackMessage;
   };
 
   const cancelProfileSave = (requestId: string): void => {
@@ -1032,6 +1050,7 @@ function createSubTandemSidebarState(
     credentialEpoch: 0,
     keyEditEpoch: 0,
     submitEpoch: 0,
+    masked: true,
     validity: "current",
     test: null,
     savePhase: null,
@@ -1102,6 +1121,7 @@ function createSubTandemSidebarState(
       credentialEpoch: 1,
       keyEditEpoch: 0,
       submitEpoch: 0,
+      masked: true,
       validity: "current",
       test: null,
       savePhase: null,
@@ -1133,6 +1153,7 @@ function createSubTandemSidebarState(
       credentialEpoch: 1,
       keyEditEpoch: 0,
       submitEpoch: 0,
+      masked: true,
       validity: "current",
       test: null,
       savePhase: null,
@@ -1667,8 +1688,10 @@ function createSubTandemSidebarState(
     changeServiceTypeLabel,
     inputProfileName,
     loadProfileName,
+    beginCredentialRead,
+    acceptCredentialRead,
+    setDrawerMasked,
     beginProfileSave,
-    profileRevisionCreated,
     completeProfileSave,
     cancelProfileSave,
     setModelContext,

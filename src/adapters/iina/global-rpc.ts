@@ -73,6 +73,7 @@ export interface CredentialRelayOptions {
   onClose?(owner: CredentialOwner): void;
 }
 export class CredentialChannelRelay {
+  private readonly closings = new Map<string, Promise<unknown>>();
   private readonly owners = new Map<
     string,
     { opening: CredentialChannelOpen; offer?: CredentialChannelOffer; confirmed: boolean }
@@ -91,6 +92,9 @@ export class CredentialChannelRelay {
         owner = { opening: JSON.parse(JSON.stringify(opening)), confirmed: false };
         this.owners.set(senderId, owner);
         await this.options.authorizeSource(opening.sourceProfile);
+        if (this.owners.get(senderId) !== owner) return;
+        const closing = this.closings.get(senderId);
+        if (closing) await closing;
         if (this.owners.get(senderId) !== owner) return;
         const rawOffer = await this.options.call("open", { ...opening, senderId });
         if (this.owners.get(senderId) !== owner) return;
@@ -130,6 +134,7 @@ export class CredentialChannelRelay {
           ? !owner.confirmed
           : name === "credential-channel:operation" && owner.confirmed,
       );
+      if ("context" in frame) credentialAssert(frame.context.purpose === "read-edit" && frame.context.requestId === requestId);
       const identity = {
         senderId,
         sidebarInstanceId: owner.opening.sidebarInstanceId,
@@ -197,9 +202,10 @@ export class CredentialChannelRelay {
         sidebarInstanceId: owner.opening.sidebarInstanceId,
         drawerId: owner.opening.drawerId,
       });
-    if (owner)
-      void this.options
+    if (owner) {
+      const closing = this.options
         .call("close", {
+          ...(owner.offer ? { channelId: owner.offer.channelId } : {}),
           owner: {
             senderId,
             sidebarInstanceId: owner.opening.sidebarInstanceId,
@@ -207,6 +213,9 @@ export class CredentialChannelRelay {
           },
         })
         .catch(() => undefined);
+      this.closings.set(senderId, closing);
+      void closing.finally(() => { if (this.closings.get(senderId) === closing) this.closings.delete(senderId); });
+    }
   }
   private reply(
     senderId: string,

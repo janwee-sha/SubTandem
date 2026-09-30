@@ -29,6 +29,7 @@ export class CredentialPeer {
       for (const [id, channel] of this.channels) {
         if (
           channel.offer.senderId === raw.owner.senderId &&
+          (raw.channelId === undefined || raw.channelId === id) &&
           channel.offer.drawerId === raw.owner.drawerId
         )
           this.channels.delete(id);
@@ -100,5 +101,11 @@ export class CredentialPeer {
         credentialOperationAAD(offer, "sidebar-to-helper", frame.sequence, frame.context),
       ),
     );
+  }
+  respond(owner: CredentialOwner, frame: CredentialEnvelope, value: string): CredentialEnvelope {
+    if (this.open(owner, frame) !== "") throw new Error("NONEMPTY_READ_REQUEST");
+    const { offer, secret } = this.channels.get(frame.channelId)!;
+    const key = deriveCredentialKey(secret, credentialDecode(offer.clientPublicKey, 65), credentialDecode(offer.salt, 32), credentialKeyInfo(offer, "helper-to-sidebar"));
+    return { ...frame, sequence: 1, sealedPayload: credentialBase64(sealCredentialBytes(key, credentialNonce(1), new TextEncoder().encode(value), credentialOperationAAD(offer, "helper-to-sidebar", 1, frame.context))) };
   }
 }

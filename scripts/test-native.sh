@@ -14,6 +14,7 @@ mkdir -p "$BUILD_DIR" "$MODULE_CACHE"
 export CLANG_MODULE_CACHE_PATH="$MODULE_CACHE"
 export SWIFTPM_MODULECACHE_OVERRIDE="$MODULE_CACHE"
 swiftc -parse-as-library \
+  -D SUBTANDEM_CREDENTIAL_TEST_OBSERVER \
   -I "$PACKAGE_DIR/Sources/CCurl" \
   -lcurl \
   "$SOURCE_DIR/Protocol.swift" \
@@ -22,17 +23,22 @@ swiftc -parse-as-library \
   "$SOURCE_DIR/CredentialResponseGuard.swift" \
   "$SOURCE_DIR/CredentialHTTPRequest.swift" \
   "$SOURCE_DIR/SecureCredentialStore.swift" \
+  "$SOURCE_DIR/CredentialMigration.swift" \
   "$SOURCE_DIR/HTTPClient.swift" \
   "$SOURCE_DIR/DirectCurlTransport.swift" \
   "$SOURCE_DIR/Server.swift" \
   "$SOURCE_DIR/FileRPCClient.swift" \
   "$SOURCE_DIR/DetachedBootstrap.swift" \
   "$ROOT_DIR/tests/helpers/CredentialHostProbe.swift" \
+  "$ROOT_DIR/tests/helpers/CredentialWriteObserver.swift" \
   "$TEST_DIR/SubTandemTransportTests/CredentialProtectionTests.swift" \
   "$TEST_DIR/SubTandemTransportTests/CredentialHostProbeTests.swift" \
   "$TEST_DIR/SubTandemTransportTests/SecureCredentialStoreTests.swift" \
+  "$TEST_DIR/SubTandemTransportTests/CredentialMigrationTests.swift" \
   "$TEST_DIR/SubTandemTransportTests/CredentialRequestTests.swift" \
   "$TEST_DIR/SubTandemTransportTests/CredentialChannelTests.swift" \
+  "$TEST_DIR/SubTandemTransportTests/CredentialOperationTests.swift" \
+  "$TEST_DIR/SubTandemTransportTests/CredentialWriteBoundaryTests.swift" \
   "$TEST_DIR/SubTandemTransportTests/ServerTests.swift" \
   "$TEST_DIR/SubTandemTransportTests/FileRPCClientTests.swift" \
   "$TEST_DIR/SubTandemTransportTests/HTTPClientTests.swift" \

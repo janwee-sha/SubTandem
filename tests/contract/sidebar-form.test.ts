@@ -41,7 +41,7 @@ describe("IINA sidebar bundle contract", () => {
   });
 
   it("uses Disclosure semantics and never renders saved Test state in summaries", () => {
-    expect(sidebarSource).toContain('className = "profile-disclosure"');
+    expect(sidebarSource).toContain('className = "profile-disclosure profile-details"');
     expect(sidebarSource).toContain('setAttribute("aria-expanded"');
     expect(sidebarSource).toContain('setAttribute("aria-controls"');
     expect(sidebarSource).toContain("`Edit ${profile.displayName}`");
@@ -235,9 +235,7 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarSource).not.toContain("claudeCredentialRequired");
     expect(sidebarSource).not.toContain("Enter an API key before saving this Claude Profile.");
     expect(sidebarSource).not.toContain("Enter an API key before testing this Claude Profile.");
-    expect(sidebarSource).toContain(
-      '"Write-only; optional when unauthenticated. Enter a key if the service requires one."',
-    );
+    expect(sidebarSource).toContain('"Enter an API key if the service requires one."');
   });
 
   it("uses independent DeepSeek defaults without preselecting a model", () => {
@@ -264,20 +262,20 @@ describe("IINA sidebar bundle contract", () => {
     );
   });
 
-  it("uses one accessible vertical write-only API key field for both services", () => {
+  it("uses one accessible editable API key field with an inline visibility button", () => {
     expect(html).toMatch(
-      /id="credential-row"[\s\S]*?<span>API key<\/span>[\s\S]*?id="provider-key"[\s\S]*?aria-describedby="credential-hint"[\s\S]*?<small\s+id="credential-hint"[^>]*>/,
+      /id="credential-row"[\s\S]*?<label for="provider-key">API key<\/label>[\s\S]*?id="provider-key"[\s\S]*?aria-describedby="credential-hint"[\s\S]*?<small\s+id="credential-hint"[^>]*>/,
     );
     expect(html).not.toContain('id="credential-row" class="field" hidden');
     expect(sidebarSource).toContain(
       'document.querySelector<HTMLElement>("#credential-row")!.hidden = false',
     );
     expect(html).toContain('maxlength="8192"');
-    expect(html).toMatch(/credential-hint[\s\S]*optional when unauthenticated/i);
+    expect(html).toMatch(/credential-hint[\s\S]*Enter an API key if the service requires one\./i);
   });
 
-  it("uses entered credentials only for manual model preview and blocks empty-model saves", () => {
-    expect(sidebarSource).toContain('"provider:models-preview"');
+  it("seals current input for manual model discovery and blocks empty-model saves", () => {
+    expect(sidebarSource).toContain('"provider:draft-models"');
     expect(sidebarSource).toContain('trigger === "manual"');
     expect(sidebarSource).toContain("draftCredentialEpoch");
     expect(sidebarSource).toContain("Refresh models and choose one, or enter a custom model ID.");
@@ -393,10 +391,10 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarSource).toMatch(/postMessage\(\s*"profile-activation:set"/);
     expect(sidebarSource).not.toContain("Profile selected for translation.");
     expect(sidebarSource).toContain("currentCredentialEditor().save(");
-    expect(html).toContain("private local file (mode 0600)");
+    expect(html).not.toContain("private local file (mode 0600)");
     expect(sidebarSource).not.toContain('" · no key saved"');
     expect(html).toContain('id="profile-test-status"');
-    expect(sidebarSource).toContain('postMessage(\n    "provider:test"');
+    expect(sidebarSource).toContain('postMessage("provider:draft-test"');
     expect(sidebarSource).not.toContain('className = "profile-test-state"');
     expect(sidebarSource).not.toContain("profileTestStates");
   });
@@ -683,72 +681,49 @@ describe("Shared subtitle color palette contract", () => {
 describe.each(["openai", "claude", "deepseek", "ollama"])(
   "%s Sidebar credential identity",
   (kind) => {
-    it("uses the saved Key for a changed Endpoint and route without sending an automatic draft Key", async () => {
+    it("seals each current DOM value and destination without falling back to the saved Key", async () => {
       const { sidebarHarness } = await import("../helpers/sidebar-harness.js");
+      const { credentialDecode, credentialText } =
+        await import("../../shared/credential-protocol.js");
       const h = sidebarHarness();
+      const peer = h.connectCredentials();
       const profile = {
         profileId: "saved",
         revision: 1,
         endpointFingerprint: "fingerprint",
         displayName: "Saved",
         kind,
-        endpoint: "https://Example.test:443/Root",
+        endpoint: "https://example.test/Root",
         model: "model",
         proxyMode: "direct",
         credentialConfigured: true,
       };
       h.evaluate(
-        `sidebarState.applyProfiles([${JSON.stringify(profile)}]); sidebarState.openProfileDrawer("saved"); editingProfile = ${JSON.stringify(profile)}; providerKind.value = ${JSON.stringify(kind)}; providerProxyMode.value = "direct"; providerEndpoint.value = " HTTPS://EXAMPLE.TEST:443/Root/// "; sidebarState.setModelContext("fixture", "changed-model");`,
+        `sidebarState.applyProfiles([${JSON.stringify(profile)}]); sidebarState.openProfileDrawer("saved"); editingProfile = ${JSON.stringify(profile)}; providerKind.value = ${JSON.stringify(kind)}; providerProxyMode.value = "direct"; providerEndpoint.value = "https://other.test"; sidebarState.setModelContext("fixture", "changed-model");`,
       );
-      expect(h.evaluate("canUseSavedDraftCredential()")).toBe(true);
       h.element("#test-profile").dispatch("click");
-      expect(h.messages.at(-1)).toMatchObject({
-        name: "provider:test",
-        data: { payload: { credential: { source: "saved" }, model: "changed-model" } },
+      await h.settleCredentials();
+      const empty = h.messages.filter((m) => m.name === "provider:draft-test").at(-1)!.data;
+      expect(peer.open(empty)).toBe("");
+      expect(
+        JSON.parse(credentialText(credentialDecode(empty.payload.frame.snapshotBytes, 1048576))),
+      ).toMatchObject({
+        model: "changed-model",
+        endpoint: "https://other.test",
+        sourceProfile: { profileId: "saved", profileRevision: 1 },
       });
-      h.element("#provider-key").value = "new-key";
+      h.element("#provider-key").value = "synthetic-new-key";
       h.evaluate('requestModels("endpoint")');
       expect(h.messages.at(-1)).toMatchObject({
         name: "provider:models",
         data: { payload: { profileId: "saved" } },
       });
-      expect(JSON.stringify(h.messages.at(-1))).not.toContain("new-key");
       h.evaluate('requestModels("manual")');
-      expect(h.messages.at(-1)).toMatchObject({
-        name: "provider:models-preview",
-        data: {
-          payload: {
-            credential: { apiKey: "new-key" },
-            sourceProfile: {
-              profileId: "saved",
-              profileRevision: 1,
-              endpointFingerprint: "fingerprint",
-            },
-          },
-        },
-      });
-      h.element("#provider-endpoint").value = "https://other.test";
-      h.element("#provider-proxy-mode").value = "system";
-      expect(h.evaluate("canUseSavedDraftCredential()")).toBe(true);
-      h.element("#provider-key").value = "";
-      h.element("#test-profile").dispatch("click");
-      expect(h.messages.at(-1)).toMatchObject({
-        name: "provider:test",
-        data: {
-          payload: {
-            credential: { source: "saved" },
-            endpoint: "https://other.test",
-            proxyMode: "system",
-          },
-        },
-      });
-      h.evaluate('requestModels("endpoint")');
-      expect(h.messages.at(-1)).toMatchObject({
-        name: "provider:models",
-        data: { payload: { endpoint: "https://other.test", proxyMode: "system" } },
-      });
-      h.element("#provider-kind").value = kind === "ollama" ? "openai" : "ollama";
-      expect(h.evaluate("canUseSavedDraftCredential()")).toBe(false);
+      await h.settleCredentials();
+      const manual = h.messages.filter((m) => m.name === "provider:draft-models").at(-1)!.data;
+      expect(peer.open(manual)).toBe("synthetic-new-key");
+      expect(JSON.stringify(h.messages)).not.toContain("synthetic-new-key");
+      h.event("pagehide");
     });
   },
 );

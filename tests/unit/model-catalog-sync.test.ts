@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   ModelCatalogSync,
   modelCatalogContextToken,
-  modelCatalogPreviewContextToken,
 } from "../../src/adapters/iina/model-catalog-sync.js";
 
 describe("per-window model catalog synchronization", () => {
@@ -23,20 +22,13 @@ describe("per-window model catalog synchronization", () => {
     );
   });
 
-  it("isolates draft credential epochs without accepting credential material", () => {
-    const base = {
-      trigger: "manual" as const,
-      kind: "openai" as const,
-      endpoint: "https://example.test/v1",
-      proxyMode: "system" as const,
-      draftCredentialEpoch: 1,
-      credential: { apiKey: "draft-secret" },
-    };
-    const first = modelCatalogPreviewContextToken(base);
-    const next = modelCatalogPreviewContextToken({ ...base, draftCredentialEpoch: 2 });
-
-    expect(first).not.toBe(next);
-    expect(first).not.toContain("draft-secret");
+  it("keeps an operation-specific model catalog out of reusable cache", () => {
+    const sync = new ModelCatalogSync();
+    sync.begin("window-a", { requestId: "draft-a", contextToken: "snapshot-a", trigger: "manual", cacheResult: false });
+    expect(sync.commit("window-a", { requestId: "draft-a", ok: true, contextKey: "snapshot-a", models: ["draft-only"] })).toBe(true);
+    sync.invalidate("window-a", "saved-context");
+    sync.invalidate("window-a", "snapshot-a");
+    expect(sync.snapshot("window-a").catalog).toBeNull();
   });
 
   it("coalesces equivalent automatic requests and lets manual refresh take ownership", () => {

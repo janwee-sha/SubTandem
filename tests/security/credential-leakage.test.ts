@@ -21,6 +21,21 @@ import type { ProviderTransportRequest } from "../../src/providers/transport.js"
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 
 describe("credential and content leakage boundaries", () => {
+  it("derives configured state only from authority metadata", () => {
+    const input = {
+      profileId: "profile",
+      revision: 1,
+      displayName: "Synthetic",
+      kind: "openai" as const,
+      endpoint: "http://127.0.0.1:51030/openai/v1",
+      endpointFingerprint: "fingerprint",
+      credentialConfigured: false,
+      credential: { apiKey: "synthetic-legacy-value" },
+    };
+    const view = sanitizedProfileView(input);
+    expect(view.credentialConfigured).toBe(false);
+    expect(JSON.stringify(view)).not.toMatch(/synthetic-legacy-value|apiKey|credential":/);
+  });
   it("keeps style-picker token, bodies and native failures out of user-visible source", () => {
     const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
     const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
@@ -72,6 +87,7 @@ describe("credential and content leakage boundaries", () => {
       kind: "claude",
       endpoint: "https://api.anthropic.com",
       endpointFingerprint: "fingerprint",
+      credentialConfigured: true,
       credential: { apiKey: sensitive[0]! },
     });
     const task = buildClaudeTranslationTask({
@@ -247,28 +263,36 @@ describe("credential and content leakage boundaries", () => {
     expect(JSON.stringify(h.replies)).not.toContain("private.example");
   });
 
-  it("keeps draft credentials out of reusable model contexts and result messages", () => {
-    const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
-    const catalogSource = readFileSync(
-      new URL("../../src/adapters/iina/model-catalog-sync.ts", import.meta.url),
-      "utf8",
+  it("keeps encrypted draft credentials out of runtime messages", async () => {
+    const { globalProviderHarness } = await import("../helpers/global-provider-harness.js");
+    const h = await globalProviderHarness();
+    const draft = await h.openDraft();
+    const work = h.send(
+      "provider:draft-models",
+      draft.seal("synthetic-private-model-key", {
+        kind: "openai",
+        endpoint: "https://example.test/v1",
+        model: null,
+        proxyMode: "direct",
+        purpose: "draft-models",
+        sourceProfile: null,
+        save: null,
+      }),
+      "draft-window",
+      "draft-request",
     );
-    const previewTokenStart = catalogSource.indexOf("modelCatalogPreviewContextToken");
-    const previewTokenEnd = catalogSource.indexOf(
-      "export class ModelCatalogSync",
-      previewTokenStart,
+    await h.transport.responses.waitForPending();
+    h.transport.responses.releaseNext({
+      statusCode: 200,
+      headers: {},
+      bodyText: '{"data":[{"id":"model-a"}]}',
+    });
+    await work;
+    expect(JSON.stringify([h.draftCalls, h.transport.calls, h.replies])).not.toContain(
+      "synthetic-private-model-key",
     );
-    const previewTokenSource = catalogSource.slice(previewTokenStart, previewTokenEnd);
-    const mainStart = mainSource.indexOf('onMessage("provider:models-preview"');
-    const mainEnd = mainSource.indexOf('onMessage("profile:delete-request"', mainStart);
-    const mainHandler = mainSource.slice(mainStart, mainEnd);
-
-    expect(previewTokenStart).toBeGreaterThan(-1);
-    expect(previewTokenSource).toContain("draftCredentialEpoch");
-    expect(previewTokenSource).not.toContain("apiKey");
-    expect(mainHandler).toContain("parseProviderModelsPreviewRequest");
-    expect(mainHandler).toContain("cacheResult: false");
-    expect(mainHandler).not.toContain("raw,");
+    expect(h.saveCalls).toEqual([]);
+    expect(h.draftValues.size).toBe(0);
   });
 
   it("keeps credentials, local paths, loopback tokens, auth headers and bodies out of views/diagnostics", () => {
@@ -287,6 +311,7 @@ describe("credential and content leakage boundaries", () => {
       kind: "openai",
       endpoint: "http://provider.example.test:8080/v1",
       endpointFingerprint: "f",
+      credentialConfigured: true,
       credential: { apiKey: sensitive[0]! },
     });
     const output = JSON.stringify({
@@ -312,6 +337,7 @@ describe("credential and content leakage boundaries", () => {
       kind: "deepseek",
       endpoint: "https://api.deepseek.com",
       endpointFingerprint: "safe-fingerprint",
+      credentialConfigured: true,
       credential: { apiKey: "PRIVATE_DEEPSEEK_KEY" },
     });
     expect(view).toMatchObject({ kind: "deepseek", credentialConfigured: true });

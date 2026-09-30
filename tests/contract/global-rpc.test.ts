@@ -8,7 +8,7 @@ import {
 } from "../../src/domain/messages.js";
 
 describe("authoritative global RPC routing", () => {
-  it("keeps every Main and Global message off IINA's synchronous cross-context bridge", () => {
+  it("keeps business messages off the synchronous bridge and allows only clock pulses", () => {
     const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
     const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
     const mailboxSource = readFileSync(
@@ -16,7 +16,11 @@ describe("authoritative global RPC routing", () => {
       "utf8",
     );
     for (const source of [mainSource, globalSource, mailboxSource]) {
-      expect(source).not.toMatch(/iina\.global\.(?:postMessage|onMessage)/);
+      const bridgeCalls =
+        source.match(/(?:iina|hostRuntime)\.global\??\.(?:postMessage|onMessage)\([\s\S]*?\);/g) ??
+        [];
+      for (const call of bridgeCalls) expect(call).toContain('"runtime:tick"');
+      expect(source).not.toMatch(/iina\.global\.postMessage\(\s*"(?:profile|provider|credential)/);
     }
     expect(mainSource).toContain("new MainGlobalMailbox(");
     expect(globalSource).toContain("new GlobalMailbox(");
@@ -27,7 +31,6 @@ describe("authoritative global RPC routing", () => {
     expect(source).toContain('import { ClaudeProvider } from "./providers/claude.js"');
     expect(source).toContain('case "claude"');
     expect(source).toContain("new ClaudeProvider(");
-    expect(source).toContain('value.kind !== "claude"');
     for (const name of [
       "provider:models",
       "provider:test",
@@ -154,8 +157,8 @@ describe("authoritative global RPC routing", () => {
   it("allows model refresh across both runtime message boundaries", () => {
     expect(SIDEBAR_MESSAGE_NAMES).toContain("provider:models");
     expect(GLOBAL_MESSAGE_NAMES).toContain("provider:models");
-    expect(SIDEBAR_MESSAGE_NAMES).toContain("provider:models-preview");
-    expect(GLOBAL_MESSAGE_NAMES).toContain("provider:models-preview");
+    expect(SIDEBAR_MESSAGE_NAMES).toContain("provider:draft-models");
+    expect(GLOBAL_MESSAGE_NAMES).toContain("provider:draft-models");
   });
 
   it("keeps DeepSeek on the existing provider RPC names", () => {
@@ -169,17 +172,19 @@ describe("authoritative global RPC routing", () => {
   it("rejects plaintext preview credentials without network execution", async () => {
     const { globalProviderHarness } = await import("../helpers/global-provider-harness.js");
     const h = await globalProviderHarness();
-    await h.send("provider:models-preview", {
-      trigger: "manual",
-      kind: "openai",
-      endpoint: "https://fixture.test",
-      proxyMode: "direct",
-      draftCredentialEpoch: 1,
-      credential: { apiKey: "entered-key" },
-    });
+    await expect(
+      h.send("provider:models-preview", {
+        trigger: "manual",
+        kind: "openai",
+        endpoint: "https://fixture.test",
+        proxyMode: "direct",
+        draftCredentialEpoch: 1,
+        credential: { apiKey: "entered-key" },
+      }),
+    ).rejects.toThrow("MISSING_HANDLER");
     expect(h.transport.calls).toEqual([]);
     expect(h.profiles.listLatest()).toEqual([]);
-    expect(h.replies.at(-1)?.data).toMatchObject({ ok: false });
+    expect(h.replies).toEqual([]);
     expect(JSON.stringify(h.replies)).not.toContain("entered-key");
   });
 

@@ -98,7 +98,7 @@ export function removeStaleHelperFiles(
     [".ready", /^(?:transport|extractor|style-picker)-([0-9a-z]+)-[0-9a-z]+-[0-9a-z]+\.json$/],
     [
       ".rpc",
-      /^(?:transport|extractor)-([0-9a-z]+)-[0-9a-z]+-[0-9a-z]+\.(?:request\.ready|(?:request|processing|response)\.json)$/,
+      /^extractor-([0-9a-z]+)-[0-9a-z]+-[0-9a-z]+\.(?:request\.ready|(?:request|processing|response)\.json)$/,
     ],
   ] as const) {
     let entries: Array<{ filename: string; isDir: boolean }> = [];
@@ -112,6 +112,10 @@ export function removeStaleHelperFiles(
       if (entry.isDir || !match) continue;
       const createdAtMs = Number.parseInt(match[1]!, 36);
       if (!Number.isSafeInteger(createdAtMs) || createdAtMs > nowMs - 300_000) continue;
+      if (directory === ".ready" && entry.filename.startsWith("transport-")) {
+        try { parseReadyFrame(store.read(`${normalizedRoot}/${directory}/${entry.filename}`) ?? "", 0, nowMs, 2); }
+        catch { continue; }
+      }
       removeReadyFile(store, `${normalizedRoot}/${directory}/${entry.filename}`);
     }
   }
@@ -121,7 +125,7 @@ export class TransportProcess {
   static async bootstrap(
     launcher: ProcessLauncher,
     readyFiles: ReadyFileStore,
-    options: { dataDirectory: string; fileDirectory?: string },
+    options: { dataDirectory: string; fileDirectory?: string; mailboxDirectory?: string },
     executable = "@plugin/dist/native/subtandem-transport",
   ): Promise<TransportSession & { rpcSessionId: string; rpcDirectory: string }> {
     const fileDirectory = options.fileDirectory ?? options.dataDirectory;
@@ -146,6 +150,7 @@ export class TransportProcess {
       nativeReadyFile,
       "--rpc-session",
       rpcSessionId,
+      ...(options.mailboxDirectory ? ["--mailbox-directory", options.mailboxDirectory] : []),
     ]);
     void completion.then(
       (result) => {

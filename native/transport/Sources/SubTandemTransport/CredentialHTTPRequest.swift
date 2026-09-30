@@ -80,6 +80,8 @@ struct CredentialHTTPRequest: Sendable {
             let saved = try CredentialWire.record(reference as Any, keys: ["source", "profileId", "profileRevision", "kind", "endpointFingerprint"])
             guard saved["kind"] as? String == kind else { throw CredentialFailure.ownerMismatch }
             credential = .saved(SavedCredentialReference(profile: try CredentialSource(["profileId": saved["profileId"] as Any, "profileRevision": saved["profileRevision"] as Any, "endpointFingerprint": saved["endpointFingerprint"] as Any]), kind: kind))
+        case "draft":
+            credential = .draft(try DraftCredentialReference(reference as Any))
         default:
             throw CredentialFailure.invalidMessage
         }

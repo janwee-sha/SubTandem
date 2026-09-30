@@ -2,6 +2,14 @@ import type * as SupervisorModule from "../../src/transport/supervisor.js";
 import { CredentialPeer } from "./credential-peer.js";
 import { CredentialEditor } from "../../ui/credential-editor.js";
 import { validateProfileSave, profileSaveRequestDigest } from "../../src/transport/client.js";
+import { canonicalJson } from "../../src/domain/identity.js";
+import { identityHash } from "../../src/domain/identity.js";
+import { SidebarCredentialChannel } from "../../ui/credential-channel.js";
+import {
+  type CredentialOperationSnapshot,
+  type CredentialSourceProfile,
+  type DraftOperationReference,
+} from "../../shared/credential-protocol.js";
 import type { CredentialEnvelope, CredentialOwner } from "../../shared/credential-protocol.js";
 import type { SaveProfileInput } from "../../src/providers/profiles.js";
 import { vi } from "vitest";
@@ -18,6 +26,7 @@ export async function globalProviderHarness(
   saved: ProviderProfileSnapshot[] = [],
   pauseReady = false,
   activateSaved = false,
+  credentialConfigured?: Record<string, boolean>,
 ) {
   vi.resetModules();
   const handlers = new Map<string, (data: unknown, sender?: string) => unknown>();
@@ -26,6 +35,11 @@ export async function globalProviderHarness(
   const editors = new Map<string, Map<string, (value: unknown) => void>>();
   const peer = new CredentialPeer();
   const saveCalls: Array<{ owner: CredentialOwner; frame: CredentialEnvelope }> = [];
+  const draftCalls: Array<{ action: string; payload: any }> = [];
+  const draftValues = new Map<string, string>();
+  const draftStarts = new CompletionQueue<unknown, void>();
+  let pauseDraftBegin = false;
+  let draftSequence = 0;
   const replies: Array<{ sender: unknown; name: string; data: any }> = [];
   const ready = new CompletionQueue<string, void>();
   const readyGate = pauseReady ? ready.hold("ready").promise : Promise.resolve();
@@ -47,7 +61,8 @@ export async function globalProviderHarness(
       }
       postMessage(sender: unknown, name: string, data: unknown) {
         replies.push({ sender, name, data });
-        if (typeof sender === "string") editors.get(sender)?.get(name)?.(data);
+        if (typeof sender === "string")
+          editors.get(sender)?.get(name)?.(JSON.parse(canonicalJson(data)));
       }
     },
     IinaGlobalMailboxFileStore: class {},
@@ -113,6 +128,26 @@ export async function globalProviderHarness(
         credentialChannel(action: string, payload: unknown) {
           return peer.call(action, payload);
         }
+        async draftOperation(action: string, payload: any) {
+          draftCalls.push({ action, payload });
+          if (action !== "begin") {
+            if (payload.reference) draftValues.delete(payload.reference.operationId);
+            return { state: "closed" };
+          }
+          if (pauseDraftBegin) await draftStarts.hold(payload).promise;
+          const reference: DraftOperationReference = {
+            source: "draft",
+            operationId: `synthetic-operation-${++draftSequence}`,
+            channelId: payload.frame.channelId,
+            requestId: payload.frame.context.requestId,
+            owner: payload.owner,
+            purpose: payload.frame.context.purpose,
+            snapshotDigest: payload.frame.context.snapshotDigest,
+            deadlineMs: payload.frame.context.expiresAtMs,
+          };
+          draftValues.set(reference.operationId, peer.open(payload.owner, payload.frame));
+          return reference;
+        }
       },
     };
   });
@@ -122,7 +157,7 @@ export async function globalProviderHarness(
       profiles = options.profiles;
       await readyGate;
       profiles.hydrate(saved);
-      authority = createTestProfileAuthority(profiles);
+      authority = createTestProfileAuthority(profiles, credentialConfigured);
       if (activateSaved && saved[0]) await activateTestProfile(authority, saved[0]);
       return authority;
     },
@@ -131,6 +166,33 @@ export async function globalProviderHarness(
   return {
     transport,
     saveCalls,
+    draftCalls,
+    draftValues,
+    draftStarts,
+    holdDraftBegins() { pauseDraftBegin = true; },
+    async openDraft(sender = "draft-window", source: CredentialSourceProfile | null = null, drawerId = "draft-drawer") {
+      const channel = new SidebarCredentialChannel("synthetic-sidebar", drawerId, source);
+      await handlers.get("credential-channel:open")!({ requestId: "draft-open", revision: 1, payload: channel.opening }, sender);
+      const confirmation = channel.acceptOffer(replies.at(-1)!.data.payload);
+      await handlers.get("credential-channel:confirm")!({ requestId: "draft-confirm", revision: 1, payload: confirmation }, sender);
+      channel.confirm(replies.at(-1)!.data.payload);
+      return {
+        channel,
+        seal(value: string, snapshot: CredentialOperationSnapshot, requestId = "draft-request", deadlineMs = Date.now() + 30_000) {
+          return {
+            sidebarInstanceId: channel.opening.sidebarInstanceId,
+            drawerId,
+            frame: channel.seal(value, {
+              requestId, draftRevision: 1, keyEditEpoch: 1, submitEpoch: 0,
+              purpose: snapshot.purpose, sourceProfile: source,
+              kind: snapshot.kind,
+              endpointFingerprint: identityHash({ kind: snapshot.kind, endpoint: snapshot.endpoint, proxyMode: snapshot.proxyMode }),
+              expiresAtMs: deadlineMs,
+            }, snapshot),
+          };
+        },
+      };
+    },
     async save(input: SaveProfileInput, value = "", sender = "editor-window") {
       const listeners = new Map<string, (data: unknown) => void>();
       editors.set(sender, listeners);

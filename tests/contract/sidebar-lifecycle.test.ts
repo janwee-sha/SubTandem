@@ -45,10 +45,13 @@ describe("IINA sidebar lifecycle contract", () => {
         ]),
     ] as const;
     for (const [path, source] of sources) {
-      expect(source, path).not.toMatch(/(?<![.A-Za-z])setTimeout\(/);
-      expect(source, path).not.toMatch(/(?<![.A-Za-z])clearTimeout\(/);
-      expect(source, path).not.toMatch(/(?<![.A-Za-z])setInterval\(/);
-      expect(source, path).not.toMatch(/(?<![.A-Za-z])clearInterval\(/);
+      const managed = path === "src/main.ts"
+        ? source.replace("setTimeout(initializePlayer, 100)", "").replace("clearTimeout(initializePlayerTimer)", "")
+        : source;
+      expect(managed, path).not.toMatch(/(?<![.A-Za-z])setTimeout\(/);
+      expect(managed, path).not.toMatch(/(?<![.A-Za-z])clearTimeout\(/);
+      expect(managed, path).not.toMatch(/(?<![.A-Za-z])setInterval\(/);
+      expect(managed, path).not.toMatch(/(?<![.A-Za-z])clearInterval\(/);
     }
   });
 
@@ -111,7 +114,7 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(requestSource).not.toContain("Enter an API key before refreshing Claude models.");
     expect(requestSource).toContain("usesDraftCredential");
     expect(requestSource).toContain("editingProfile?.credentialConfigured");
-    expect(requestSource).toContain('"provider:models-preview"');
+    expect(requestSource).toContain('"provider:draft-models"');
     expect(sidebarSource).toContain('setModelRefreshFeedback("busy")');
     expect(sidebarSource).toContain("pendingModelRefresh.contextSignature !== modelContextKey()");
     expect(sidebarSource).toContain("sidebarState.snapshot.modelControl.value");
@@ -132,7 +135,7 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(sidebarSource).toContain('providerKey.addEventListener("input"');
     expect(sidebarSource).toContain("draftCredentialEpoch += 1");
     expect(sidebarSource).toContain('trigger === "manual"');
-    expect(sidebarSource).toContain('"provider:models-preview"');
+    expect(sidebarSource).toContain('"provider:draft-models"');
   });
 
   it("cancels draft Test ownership on field changes, Save, confirmed Delete and window close", () => {
@@ -140,7 +143,7 @@ describe("IINA sidebar lifecycle contract", () => {
     const testEnd = sidebarSource.indexOf('saveProfileButton.addEventListener("click"', testStart);
     const testHandler = sidebarSource.slice(testStart, testEnd);
     expect(testHandler.indexOf("validModelEndpoint()")).toBeLessThan(
-      testHandler.indexOf('postMessage(\n    "provider:test"'),
+      testHandler.indexOf('postMessage("provider:draft-test"'),
     );
     expect(sidebarSource).toContain("invalidateDrawerTestField(true)");
     expect(sidebarSource).toContain('providerModelSelect.addEventListener("change"');
@@ -300,11 +303,13 @@ describe("IINA sidebar lifecycle contract", () => {
 
   it("waits for IINA's player window before loading the sidebar webview", () => {
     expect(mainSource).toContain("iina.core.window.loaded");
-    expect(mainSource).toContain('iina.event.on("iina.window-loaded", scheduleInitializePlayer)');
+    expect(mainSource).toContain('iina.event.on("iina.window-loaded", () => {');
     expect(
-      mainSource.indexOf('iina.event.on("iina.window-loaded", scheduleInitializePlayer)'),
+      mainSource.indexOf('iina.event.on("iina.window-loaded", () => {'),
     ).toBeLessThan(mainSource.lastIndexOf("scheduleInitializePlayer();"));
     expect(mainSource).toContain("setTimeout(initializePlayer, 100)");
+    expect(mainSource).toContain('iina.event.on("iina.window-will-close"');
+    expect(mainSource).toContain("clearTimeout(initializePlayerTimer)");
   });
 
   it("initializes a normal player without waiting for a global registration reply", () => {

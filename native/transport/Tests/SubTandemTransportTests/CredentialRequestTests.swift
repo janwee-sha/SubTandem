@@ -8,6 +8,7 @@ final class CredentialCaptureServer: @unchecked Sendable {
     private var captured: [String] = []
     private var response: Data = Data("HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}".utf8)
     private var connections: [NWConnection] = []
+    private var delay: UInt64 = 0
 
     init() throws {
         let parameters = NWParameters.tcp
@@ -37,21 +38,24 @@ final class CredentialCaptureServer: @unchecked Sendable {
             guard let self else { return }
             let combined = data + (bytes ?? Data())
             if combined.range(of: Data("\r\n\r\n".utf8)) != nil {
-                let output = self.lock.withLock {
+                let (output, delay) = self.lock.withLock {
                     self.captured.append(String(decoding: combined, as: UTF8.self))
-                    return self.response
+                    return (self.response, self.delay)
                 }
-                connection.send(content: output, completion: .contentProcessed { _ in connection.cancel() })
+                Task {
+                    if delay > 0 { try? await Task.sleep(nanoseconds: delay) }
+                    connection.send(content: output, completion: .contentProcessed { _ in connection.cancel() })
+                }
             } else if !complete && error == nil && combined.count < 65536 {
                 self.receive(connection, data: combined)
             } else { connection.cancel() }
         }
     }
 
-    func respond(body: String, headers: [String: String] = [:], status: String = "200 OK") {
+    func respond(body: String, headers: [String: String] = [:], status: String = "200 OK", delayNanoseconds: UInt64 = 0) {
         let data = Data(body.utf8)
         let extra = headers.map { "\($0.key): \($0.value)\r\n" }.joined()
-        lock.withLock { response = Data("HTTP/1.1 \(status)\r\nContent-Length: \(data.count)\r\nConnection: close\r\n\(extra)\r\n".utf8) + data }
+        lock.withLock { response = Data("HTTP/1.1 \(status)\r\nContent-Length: \(data.count)\r\nConnection: close\r\n\(extra)\r\n".utf8) + data; delay = delayNanoseconds }
     }
 
     func requests() -> [String] { lock.withLock { captured } }
@@ -70,6 +74,14 @@ func runCredentialRequestTests() async throws {
     defer { try? FileManager.default.removeItem(at: directory) }
     let store = try SecureCredentialStore(directory: directory, protection: CredentialProtection(backend: SyntheticKeyBackend()))
     let handler = ProtocolHandler(token: "synthetic-rpc-token", credentialStore: store)
+    let rpcDirectory = directory.appendingPathComponent(".rpc")
+    try FileRPCWorker.prepareDirectory(rpcDirectory)
+    let rpcWorker = Task {
+        await FileRPCWorker.run(directory: rpcDirectory, port: 49_153) { path, token, body in
+            await handler.handle(path: path, authorization: "Bearer " + token, body: body)
+        }
+    }
+    defer { rpcWorker.cancel() }
     func request(_ credential: [String: Any], endpoint: String, kind: String = "openai", headers: [String: String] = [:], purpose: String = "models", method: String = "GET", proxyMode: String = "direct", overrides: [String: Any] = [:]) async throws -> ProtocolResponse {
         var object: [String: Any] = [
             "jobId": UUID().uuidString, "method": method, "url": endpoint, "headers": headers,
@@ -79,7 +91,19 @@ func runCredentialRequestTests() async throws {
         ]
         if method == "POST" { object["body"] = ["model": "synthetic-model", "messages": []] }
         for (name, value) in overrides { object[name] = value }
-        return await handler.handle(path: "/v2/request", authorization: "Bearer synthetic-rpc-token", body: try JSONSerialization.data(withJSONObject: object))
+        let now = Int64(Date().timeIntervalSince1970 * 1000)
+        let stem = "transport-v2-\(String(now, radix: 36))-1-\(UUID().uuidString.lowercased().replacingOccurrences(of: "-", with: ""))"
+        let responseFile = rpcDirectory.appendingPathComponent(stem + ".response.json")
+        try JSONSerialization.data(withJSONObject: ["type": "request", "protocolVersion": 2, "createdAtMs": now, "port": 49_153, "token": "synthetic-rpc-token", "path": "/v2/request", "body": object]).write(to: rpcDirectory.appendingPathComponent(stem + ".request.json"))
+        try Data().write(to: rpcDirectory.appendingPathComponent(stem + ".request.ready"))
+        for _ in 0..<500 {
+            if let data = try? Data(contentsOf: responseFile), let result = try JSONSerialization.jsonObject(with: data) as? [String: Any], let status = result["statusCode"] as? Int, let body = result["body"] as? [String: Any] {
+                try FileManager.default.removeItem(at: responseFile)
+                return .json(statusCode: status, body)
+            }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        throw ContractTestFailure(description: "credential request FileRPC response timed out")
     }
     for name in ["Authorization", "authorization", "x-api-key", "X-Api-Key"] {
         let result = try await request(["source": "none"], endpoint: "http://127.0.0.1:\(port)/v1/models", headers: [name: "synthetic-must-not-send"])

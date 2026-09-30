@@ -1,4 +1,5 @@
 import { CredentialEditor } from "../../ui/credential-editor.js";
+import { CredentialPeer } from "./credential-peer.js";
 import { readFileSync } from "node:fs";
 import { createContext, runInContext } from "node:vm";
 import ts from "typescript";
@@ -12,6 +13,16 @@ class Element {
   textContent = "";
   innerHTML = "";
   tabIndex = 0;
+  type = "password";
+  selectionStart = 0;
+  selectionEnd = 0;
+  selectionDirection = "none";
+  scrollLeft = 0;
+  setSelectionRange(start: number, end: number, direction = "none") {
+    this.selectionStart = start;
+    this.selectionEnd = end;
+    this.selectionDirection = direction;
+  }
   scrollTop = 0;
   clientWidth = 0;
   scrollWidth = 0;
@@ -32,6 +43,11 @@ class Element {
     this.id = id;
   }
   querySelector(selector: string): Element {
+    if (selector.startsWith(":scope > ."))
+      return (
+        this.children.find((child) => child.className.split(" ").includes(selector.slice(11))) ??
+        (null as any)
+      );
     if (!this.elements.has(selector)) {
       const element = new Element(selector, this.focusElement);
       element.parentElement = this;
@@ -72,9 +88,15 @@ class Element {
   addEventListener(name: string, callback: (event: any) => void) {
     this.events.set(name, [...(this.events.get(name) ?? []), callback]);
   }
-  dispatch(name: string, target: Element = this) {
+  dispatch(name: string, target: Element = this, extra: Record<string, unknown> = {}) {
     for (const callback of this.events.get(name) ?? [])
-      callback({ target, currentTarget: this, preventDefault() {}, stopPropagation() {} });
+      callback({
+        target,
+        currentTarget: this,
+        preventDefault() {},
+        stopPropagation() {},
+        ...extra,
+      });
   }
   append(...items: Element[]) {
     for (const item of items) {
@@ -137,6 +159,12 @@ export function sidebarHarness() {
   const timers = new Map<number, () => void>();
   const windowEvents = new Map<string, () => void>();
   let timerId = 0;
+  let credentialPeer: CredentialPeer | null = null;
+  let credentialOwner: any;
+  let credentialReadValue = "";
+  let deferCredentialRead = false;
+  let failCredentialRead = false;
+  const credentialReads: Array<() => void> = [];
   const resizeObservers: Array<{
     callback: () => void;
     targets: Set<Element>;
@@ -185,9 +213,63 @@ export function sidebarHarness() {
     addEventListener: (name: string, callback: () => void) => windowEvents.set(name, callback),
     getSelection: () => ({ isCollapsed: true }),
     iina: {
-      postMessage: (name: string, data: unknown) => messages.push({ name, data }),
+      postMessage: (name: string, data: any) => {
+        messages.push({ name, data });
+        if (!credentialPeer || !name.startsWith("credential-channel:")) return;
+        const action = name.split(":")[1]!;
+        if (action === "open") credentialOwner = { ...data.payload, senderId: "test-window" };
+        const owner = {
+          senderId: "test-window",
+          sidebarInstanceId: credentialOwner?.sidebarInstanceId,
+          drawerId: credentialOwner?.drawerId,
+        };
+        if (action === "operation") {
+          const response = failCredentialRead
+            ? null
+            : credentialPeer!.respond(owner, data.payload, credentialReadValue);
+          const reply = () => {
+            if (failCredentialRead)
+              listeners.get("credential-channel:result")?.({
+                requestId: data.requestId,
+                ok: false,
+              });
+            else
+              listeners.get("credential-channel:result")?.({
+                requestId: data.requestId,
+                ok: true,
+                sidebarInstanceId: owner.sidebarInstanceId,
+                drawerId: owner.drawerId,
+                payload: response,
+              });
+          };
+          if (deferCredentialRead) credentialReads.push(reply);
+          else reply();
+          return;
+        }
+        void credentialPeer
+          .call(action, action === "open" ? credentialOwner : { owner, frame: data.payload })
+          .then(
+            (payload) =>
+              listeners.get("credential-channel:result")?.({
+                requestId: data.requestId,
+                ok: true,
+                sidebarInstanceId: owner.sidebarInstanceId,
+                drawerId: owner.drawerId,
+                payload,
+              }),
+            () =>
+              listeners.get("credential-channel:result")?.({
+                requestId: data.requestId,
+                ok: false,
+              }),
+          );
+      },
       onMessage: (name: string, callback: (data: unknown) => void) => listeners.set(name, callback),
     },
+  });
+  Object.defineProperty(document, "activeElement", {
+    get: () => activeElement,
+    configurable: true,
   });
   context.window = context;
   context.subtandemCredentialEditor = {
@@ -215,6 +297,31 @@ export function sidebarHarness() {
   }
   return {
     messages,
+    connectCredentials(
+      options: { readValue?: string; deferRead?: boolean; failRead?: boolean } = {},
+    ) {
+      credentialReadValue = options.readValue ?? "";
+      deferCredentialRead = options.deferRead ?? false;
+      failCredentialRead = options.failRead ?? false;
+      credentialPeer = new CredentialPeer();
+      return {
+        open: (message: any) =>
+          credentialPeer!.open(
+            {
+              senderId: "test-window",
+              sidebarInstanceId: message.payload.sidebarInstanceId,
+              drawerId: message.payload.drawerId,
+            },
+            message.payload.frame,
+          ),
+      };
+    },
+    releaseCredentialReads() {
+      credentialReads.splice(0).forEach((reply) => reply());
+    },
+    async settleCredentials() {
+      for (let n = 0; n < 20; n++) await Promise.resolve();
+    },
     element: (id: string) => document.querySelector(id),
     receive: (name: string, data: unknown) => listeners.get(name)?.(data),
     evaluate: (source: string) => runInContext(source, context),
