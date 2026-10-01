@@ -34,6 +34,26 @@ const response = {
 };
 
 describe("production encrypted draft lifecycle", () => {
+  it("returns an invalidated Test result when a resumed window has lost its channel owner", async () => {
+    const h = await globalProviderHarness();
+    const draft = await h.openDraft();
+    const payload = draft.seal("synthetic-resumed-key", snapshot("draft-test", false));
+    h.close("draft-window");
+    await h.send("provider:draft-test", payload, "draft-window", "draft-request");
+    expect(h.replies.findLast((reply) => reply.name === "provider:test-result")).toMatchObject({
+      sender: "draft-window",
+      data: {
+        requestId: "draft-request",
+        drawerId: payload.drawerId,
+        draftRevision: 1,
+        ok: false,
+        code: "TEST_INVALIDATED",
+      },
+    });
+    expect(h.transport.calls).toEqual([]);
+    expect(h.draftValues.size).toBe(0);
+  });
+
   it("reuses one absolute deadline and encrypted reference across paginated child jobs", async () => {
     const h = await globalProviderHarness();
     const draft = await h.openDraft();

@@ -1,6 +1,6 @@
 import type { CredentialOwner, CredentialEnvelope } from "../../shared/credential-protocol.js";
 import { encryptedSaveFrame, encryptedSaveOwner } from "../helpers/encrypted-profile-fixture.js";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { SubTandemError } from "../../src/domain/errors.js";
 import type {
   ProfileStateCommitResult,
@@ -12,6 +12,8 @@ import type {
 import { TransportSupervisor } from "../../src/transport/supervisor.js";
 import { TransportClient } from "../../src/transport/client.js";
 import { IinaFileRpcBridge } from "../../src/adapters/iina/provider-transport.js";
+
+import { HostClock, HostTimers } from "../../src/adapters/iina/host-timers.js";
 
 class FakeTransportClient implements TransportRpcClient {
   available = true;
@@ -242,6 +244,96 @@ describe("transport supervisor", () => {
       },
     ]);
     expect(contents.size).toBe(0);
+  });
+
+  it("recovers a saturated file RPC session through a queued health deadline without replaying old jobs", async () => {
+    const now = Date.now();
+    const clock = vi.spyOn(Date, "now").mockReturnValue(now);
+    const hostClock = new HostClock();
+    const files = new Map<string, string>();
+    const requests: Array<{ generation: number; path: string }> = [];
+    const bridges: IinaFileRpcBridge[] = [];
+    let starts = 0;
+    let stalled = false;
+    const supervisor = new TransportSupervisor(async () => {
+      const generation = ++starts;
+      const bridge = new IinaFileRpcBridge(
+        {
+          exists: (path) => files.has(path),
+          read: (path) => files.get(path) ?? null,
+          delete: (path) => {
+            files.delete(path);
+          },
+          write: (path, value) => {
+            files.set(path, value);
+            if (!path.endsWith(".request.ready")) return;
+            const stem = path.slice(0, -".request.ready".length);
+            const request = JSON.parse(files.get(`${stem}.request.json`)!);
+            requests.push({ generation, path: request.path });
+            if (generation === 1 && stalled) return;
+            files.set(
+              `${stem}.response.json`,
+              JSON.stringify({
+                type: "response",
+                protocolVersion: 2,
+                createdAtMs: Date.now(),
+                statusCode: 200,
+                body:
+                  request.path === "/v2/health"
+                    ? { state: "ok", protocolVersion: 2 }
+                    : {
+                        jobId: request.body.jobId,
+                        transportState: "completed",
+                        statusCode: 200,
+                        headers: {},
+                        bodyText: "{}",
+                      },
+              }),
+            );
+          },
+        },
+        {
+          helper: "transport",
+          fileDirectory: `/rpc/generation-${generation}`,
+          maxRequestBytes: 65_536,
+          maxResponseBytes: 65_536,
+          maxConcurrentRequests: 8,
+          timers: new HostTimers(hostClock),
+        },
+      );
+      bridges.push(bridge);
+      return new TransportClient(
+        { port: 49152 + generation, token: `session-token-${generation}` },
+        bridge,
+      );
+    });
+    const oldJobs: Promise<unknown>[] = [];
+    let work: Promise<unknown> | undefined;
+    try {
+      await supervisor.health();
+      stalled = true;
+      for (let job = 0; job < 8; job++)
+        oldJobs.push(bridges[0]!.post(49153, "session-token-1", "/v2/request", {}).catch((e) => e));
+      for (let step = 0; step < 10; step++) await Promise.resolve();
+      work = supervisor.request(providerRequest).catch((e) => e);
+      for (let step = 0; step < 10; step++) await Promise.resolve();
+      clock.mockReturnValue(now + 1_000);
+      hostClock.pulse();
+      for (let step = 0; step < 30; step++) await Promise.resolve();
+      expect(starts).toBe(2);
+      expect(await work).toMatchObject({ statusCode: 200 });
+      expect(requests.filter((r) => r.path === "/v2/request" && r.generation === 1)).toHaveLength(
+        8,
+      );
+      expect(requests.filter((r) => r.path === "/v2/request" && r.generation === 2)).toHaveLength(
+        1,
+      );
+      expect(files.size).toBe(0);
+    } finally {
+      bridges.forEach((bridge) => bridge.close());
+      await Promise.all([...oldJobs, work]);
+      clock.mockRestore();
+    }
   });
 
   it("coalesces concurrent helper restart and health checks", async () => {

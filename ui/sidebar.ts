@@ -321,6 +321,12 @@ let renderedLanguageCatalogSignature = "";
 let subtitleRetryAvailable = false;
 let subtitleDetailsVisible = false;
 let endpointRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+const drawerTestTimeoutMs = 10_000;
+let pendingDrawerTestDeadline: {
+  requestId: string;
+  expiresAtMs: number;
+  timer: ReturnType<typeof setTimeout>;
+} | null = null;
 let draftCredentialEpoch = 1;
 let pendingModelRefresh: {
   requestId: string;
@@ -801,7 +807,37 @@ function cancelPendingProfileSaveForContextChange(): void {
   );
 }
 
+function clearDrawerTestDeadline(): void {
+  if (pendingDrawerTestDeadline) clearTimeout(pendingDrawerTestDeadline.timer);
+  pendingDrawerTestDeadline = null;
+}
+
+function expireDrawerTest(): void {
+  const pending = pendingDrawerTestDeadline;
+  if (!pending || Date.now() < pending.expiresAtMs) return;
+  clearDrawerTestDeadline();
+  const current = sidebarState.snapshot.drawer.test;
+  if (!current || current.requestId !== pending.requestId || current.phase !== "testing") return;
+  const message = window.subtandemProviderTestStatusMessage({ category: "timeout" });
+  if (
+    !sidebarState.finishDrawerTest(
+      current.requestId,
+      false,
+      message,
+      current.drawerId,
+      current.draftRevision,
+    )
+  )
+    return;
+  setActionBusy("test", undefined, false);
+  profileTestStatus.dataset.state = "error";
+  profileTestStatus.textContent = message;
+  credentialEditor?.close();
+  window.iina?.postMessage("provider:test-cancel", envelope({ testRequestId: current.requestId }));
+}
+
 function clearDrawerTestFeedback(): void {
+  clearDrawerTestDeadline();
   setActionBusy("test", undefined, false);
   delete profileTestStatus.dataset.state;
   profileTestStatus.textContent = "";
@@ -934,6 +970,7 @@ function sealDrawerOperation(
   value: string,
   purpose: "draft-test" | "draft-models",
   requestId: string,
+  expiresAtMs = Date.now() + 10_000,
 ) {
   const drawer = sidebarState.snapshot.drawer;
   if (!drawer.drawerId) return Promise.reject(new Error("CREDENTIAL_CHANNEL_UNAVAILABLE"));
@@ -959,7 +996,7 @@ function sealDrawerOperation(
       submitEpoch: drawer.submitEpoch,
     },
     requestId,
-    Date.now() + (purpose === "draft-models" ? 10_000 : 30_000),
+    expiresAtMs,
   );
 }
 
@@ -1463,20 +1500,32 @@ testProfileButton.addEventListener("click", () => {
   const requestId = nextRequestId();
   const started = sidebarState.beginDrawerTest(requestId);
   if (!started) return;
+  clearDrawerTestDeadline();
+  const expiresAtMs = Date.now() + drawerTestTimeoutMs;
+  pendingDrawerTestDeadline = {
+    requestId,
+    expiresAtMs,
+    timer: setTimeout(expireDrawerTest, drawerTestTimeoutMs),
+  };
   profileTestStatus.dataset.state = "busy";
   profileTestStatus.textContent = "Testing…";
   setActionBusy("test", undefined, true);
-  void sealDrawerOperation(enteredApiKey, "draft-test", requestId)
+  void sealDrawerOperation(enteredApiKey, "draft-test", requestId, expiresAtMs)
     .then((operation) => {
       if (
         sidebarState.snapshot.drawer.test?.requestId !== requestId ||
+        sidebarState.snapshot.drawer.test.phase !== "testing" ||
         sidebarState.snapshot.drawer.draftRevision !== started.draftRevision
       )
         return;
       window.iina?.postMessage("provider:draft-test", envelope(operation, requestId));
     })
     .catch(() => {
-      if (sidebarState.snapshot.drawer.test?.requestId !== requestId) return;
+      if (
+        sidebarState.snapshot.drawer.test?.requestId !== requestId ||
+        sidebarState.snapshot.drawer.test.phase !== "testing"
+      )
+        return;
       sidebarState.finishDrawerTest(
         requestId,
         false,
@@ -1750,6 +1799,7 @@ window.iina?.onMessage("profile:deleted", (raw: unknown) => {
 });
 
 window.iina?.onMessage("provider:test-result", (raw: unknown) => {
+  expireDrawerTest();
   const result = raw as {
     requestId?: string;
     drawerId?: string;
@@ -1767,6 +1817,7 @@ window.iina?.onMessage("provider:test-result", (raw: unknown) => {
     typeof result.drawerId !== "string" ||
     typeof result.draftRevision !== "number" ||
     !currentTest ||
+    currentTest.phase !== "testing" ||
     currentTest.requestId !== result.requestId ||
     currentTest.drawerId !== result.drawerId ||
     currentTest.draftRevision !== result.draftRevision
@@ -1784,6 +1835,8 @@ window.iina?.onMessage("provider:test-result", (raw: unknown) => {
     result.draftRevision,
   );
   if (!accepted) return;
+  clearDrawerTestDeadline();
+  if (result.code === "TEST_INVALIDATED") credentialEditor?.close();
   setActionBusy("test", undefined, false);
   profileTestStatus.dataset.state =
     result.ok === true ? "success" : result.code === "TEST_INVALIDATED" ? "pending" : "error";
@@ -2403,7 +2456,10 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
 });
 
 window.iina?.postMessage("ui:ready", envelope({}));
-window.setInterval(() => window.iina?.postMessage("ui:poll", envelope({})), 750);
+window.setInterval(() => {
+  expireDrawerTest();
+  window.iina?.postMessage("ui:poll", envelope({}));
+}, 750);
 window.addEventListener("pagehide", () => {
   credentialEditor?.close();
   for (const article of profileRows.values()) clearProfileOverflow(article);

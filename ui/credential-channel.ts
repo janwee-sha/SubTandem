@@ -322,13 +322,17 @@ export class SidebarCredentialChannel {
     this.received.clear();
   }
 
-  private assertLive(): void {
-    if (
+  get expired(): boolean {
+    return (
       this.closed ||
       Date.now() - this.lastActivity >= CREDENTIAL_LIMITS.idleMs ||
       this.messageCount >= CREDENTIAL_LIMITS.messages ||
       this.nextSequence >= CREDENTIAL_LIMITS.messages
-    ) {
+    );
+  }
+
+  private assertLive(): void {
+    if (this.expired) {
       this.close();
       throw new CredentialProtocolError("credential-channel-expired");
     }

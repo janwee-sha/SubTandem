@@ -119,7 +119,8 @@ export class CredentialEditor {
   }
 
   open(drawerId: string, sourceProfile: CredentialSourceProfile | null): Promise<void> {
-    if (this.current?.drawerId === drawerId) return this.current.ready;
+    if (this.current?.drawerId === drawerId && !this.current.channel.expired)
+      return this.current.ready;
     this.close();
     const channel = new SidebarCredentialChannel(this.sidebarInstanceId, drawerId, sourceProfile);
     const current = { drawerId, channel, ready: Promise.resolve() };

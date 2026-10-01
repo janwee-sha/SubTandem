@@ -157,6 +157,7 @@ export function sidebarHarness() {
   const messages: Array<{ name: string; data: any }> = [];
   const listeners = new Map<string, (data: unknown) => void>();
   const timers = new Map<number, () => void>();
+  const intervals = new Map<number, () => void>();
   const windowEvents = new Map<string, () => void>();
   let timerId = 0;
   let credentialPeer: CredentialPeer | null = null;
@@ -181,6 +182,7 @@ export function sidebarHarness() {
       },
     }),
     console,
+    Date,
     URL,
     Element,
     HTMLElement: Element,
@@ -208,8 +210,11 @@ export function sidebarHarness() {
       return timerId;
     },
     clearTimeout: (id: number) => timers.delete(id),
-    setInterval: () => 1,
-    clearInterval() {},
+    setInterval: (callback: () => void) => {
+      intervals.set(++timerId, callback);
+      return timerId;
+    },
+    clearInterval: (id: number) => intervals.delete(id),
     addEventListener: (name: string, callback: () => void) => windowEvents.set(name, callback),
     getSelection: () => ({ isCollapsed: true }),
     iina: {
@@ -326,6 +331,7 @@ export function sidebarHarness() {
     receive: (name: string, data: unknown) => listeners.get(name)?.(data),
     evaluate: (source: string) => runInContext(source, context),
     event: (name: string) => windowEvents.get(name)?.(),
+    pulse: () => [...intervals.values()].forEach((callback) => callback()),
     resize: (element: Element, clientWidth: number, scrollWidth: number) => {
       element.clientWidth = clientWidth;
       element.scrollWidth = scrollWidth;

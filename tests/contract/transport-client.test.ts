@@ -514,6 +514,99 @@ describe("transport helper client", () => {
     await expect(client.cancel("job-1")).rejects.not.toThrow(/private body|secret-token/);
   });
 
+  it("expires a queued health RPC without publishing it or waiting for provider slots", async () => {
+    const files = new MemoryReadyFiles();
+    const timerApi = new RetainingTimerApi();
+    const bridge = new IinaFileRpcBridge(files, {
+      helper: "transport",
+      fileDirectory: "@data/.rpc",
+      maxRequestBytes: 65_536,
+      maxResponseBytes: 65_536,
+      maxConcurrentRequests: 1,
+      timers: new HostTimers(timerApi),
+    });
+    const now = Date.now();
+    const clock = vi.spyOn(Date, "now").mockReturnValue(now);
+    const stalled = bridge.post(49152, "secret-token", "/v2/request", {}).catch((e) => e);
+    await Promise.resolve();
+    const queued = bridge.post(49152, "secret-token", "/v2/health", {}, { timeoutMs: 1_000 });
+    const result = queued.catch((e) => e);
+    let settled = false;
+    void result.then(() => {
+      settled = true;
+    });
+    try {
+      clock.mockReturnValue(now + 999);
+      timerApi.fireIntervals();
+      await Promise.resolve();
+      expect(settled).toBe(false);
+      clock.mockReturnValue(now + 1_000);
+      timerApi.fireIntervals();
+      for (let step = 0; step < 10; step++) await Promise.resolve();
+      expect(settled).toBe(true);
+      expect(await result).toMatchObject({ message: "HELPER_RPC_TIMEOUT" });
+      expect([...files.files.values()].filter((value) => value.includes("/v2/health"))).toEqual([]);
+    } finally {
+      bridge.close();
+      await Promise.all([stalled, result]);
+      clock.mockRestore();
+    }
+    expect(files.files.size).toBe(0);
+    expect(timerApi.intervals.size).toBe(0);
+  });
+
+  it("counts time spent queued against the published RPC deadline", async () => {
+    const files = new MemoryReadyFiles();
+    const timerApi = new RetainingTimerApi();
+    const bridge = new IinaFileRpcBridge(files, {
+      helper: "transport",
+      fileDirectory: "@data/.rpc",
+      maxRequestBytes: 65_536,
+      maxResponseBytes: 65_536,
+      maxConcurrentRequests: 1,
+      timers: new HostTimers(timerApi),
+    });
+    const now = Date.now();
+    const clock = vi.spyOn(Date, "now").mockReturnValue(now);
+    const first = bridge.post(49152, "secret-token", "/v2/request", {}).catch((e) => e);
+    await Promise.resolve();
+    const second = bridge.post(49152, "secret-token", "/v2/health", {}, { timeoutMs: 1_000 });
+    const result = second.catch((e) => e);
+    let settled = false;
+    void result.then(() => {
+      settled = true;
+    });
+    try {
+      clock.mockReturnValue(now + 500);
+      const ready = [...files.files.keys()].find((path) => path.endsWith(".request.ready"))!;
+      files.write(
+        ready.replace(".request.ready", ".response.json"),
+        JSON.stringify({
+          type: "response",
+          protocolVersion: 2,
+          createdAtMs: Date.now(),
+          statusCode: 200,
+          body: {},
+        }),
+      );
+      timerApi.fireIntervals();
+      await first;
+      for (let step = 0; step < 10; step++) await Promise.resolve();
+      expect([...files.files.values()].some((value) => value.includes("/v2/health"))).toBe(true);
+      clock.mockReturnValue(now + 1_000);
+      timerApi.fireIntervals();
+      for (let step = 0; step < 10; step++) await Promise.resolve();
+      expect(settled).toBe(true);
+      expect(await result).toMatchObject({ message: "HELPER_RPC_TIMEOUT" });
+    } finally {
+      bridge.close();
+      await Promise.all([first, result]);
+      clock.mockRestore();
+    }
+    expect(files.files.size).toBe(0);
+    expect(timerApi.intervals.size).toBe(0);
+  });
+
   it("handles 300 delayed file RPC posts with one bounded shared poller", async () => {
     const files = new MemoryReadyFiles();
     const timerApi = new RetainingTimerApi();

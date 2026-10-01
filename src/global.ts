@@ -624,11 +624,13 @@ async function runEncryptedDraft(
   purpose: "draft-test" | "draft-models",
 ): Promise<void> {
   let owner: RequestOwner<DraftContext> | null = null;
+  let rejectedMessage: ReturnType<typeof parseProviderDraftRequest> | null = null;
   let completed = false;
   const operation = purpose === "draft-test" ? "test" : "models";
   const event = operation === "test" ? "provider:test-result" : "provider:models-result";
   try {
     const message = parseProviderDraftRequest(raw, purpose);
+    rejectedMessage = message;
     const identity = credentialChannels.ownerFor(senderId, message.payload, message.payload.frame);
     void cancelDraftRequests(
       (previous) => previous.senderId === senderId && previous.operation === operation,
@@ -724,7 +726,25 @@ async function runEncryptedDraft(
         : { contextKey: message.payload.frame.context.snapshotDigest, models }),
     });
   } catch (error) {
-    if (!owner || !draftRequests.isActive(owner)) return;
+    if (!owner) {
+      if (rejectedMessage)
+        postToPlayer(senderId, event, {
+          requestId: rejectedMessage.requestId,
+          ok: false,
+          ...(operation === "test"
+            ? {
+                drawerId: rejectedMessage.payload.drawerId,
+                draftRevision: rejectedMessage.payload.frame.context.draftRevision,
+              }
+            : { contextKey: rejectedMessage.payload.frame.context.snapshotDigest }),
+          category: "configuration",
+          retryable: false,
+          code: "TEST_INVALIDATED",
+          userAction: "NONE",
+        });
+      return;
+    }
+    if (!draftRequests.isActive(owner)) return;
     const safe = normalizeProviderError(error);
     if (safe.category === "cancelled") return;
     const { message } = owner.context;

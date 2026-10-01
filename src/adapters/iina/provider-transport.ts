@@ -35,6 +35,7 @@ interface PendingFileRpc {
 }
 
 interface FileRpcWaiter {
+  deadlineMs: number;
   resolve(): void;
   reject(error: unknown): void;
 }
@@ -153,11 +154,17 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
     options?: { timeoutMs?: number; assertActive?: () => void },
   ): Promise<T> {
     options?.assertActive?.();
-    await this.acquire();
+    const deadlineMs =
+      Date.now() +
+      (Number.isFinite(options?.timeoutMs) && Number(options?.timeoutMs) >= 50
+        ? Number(options?.timeoutMs)
+        : rpcResponseTimeoutMs[this.options.helper]);
+    await this.acquire(deadlineMs);
     try {
       options?.assertActive?.();
       if (this.closed) throw new Error("HELPER_RPC_CLOSED");
-      return await this.execute<T>(port, bearerToken, path, body, options?.timeoutMs);
+      if (Date.now() >= deadlineMs) throw new Error("HELPER_RPC_TIMEOUT");
+      return await this.execute<T>(port, bearerToken, path, body, deadlineMs);
     } finally {
       this.release();
     }
@@ -168,7 +175,7 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
     bearerToken: string,
     path: string,
     body: unknown,
-    timeoutMs?: number,
+    deadlineMs: number,
   ): Promise<T> {
     const paths = privateRpcPaths(
       this.options.fileDirectory.replace(/\/+$/, ""),
@@ -199,11 +206,7 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
         this.pending.set(paths.responseFile, {
           paths,
           startedAtMs,
-          deadlineMs:
-            Date.now() +
-            (Number.isFinite(timeoutMs) && Number(timeoutMs) >= 50
-              ? Number(timeoutMs)
-              : rpcResponseTimeoutMs[this.options.helper]),
+          deadlineMs,
           resolve: (value) => resolve(value as T),
           reject,
         });
@@ -218,8 +221,10 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
   }
 
   private pollPending(): void {
+    this.expireWaiters();
     for (const pending of [...this.pending.values()].slice(0, this.options.maxConcurrentRequests)) {
       try {
+        if (Date.now() >= pending.deadlineMs) throw new Error("HELPER_RPC_TIMEOUT");
         if (this.files.exists(pending.paths.responseFile)) {
           const response = this.files.read(pending.paths.responseFile);
           if (response === null) throw new Error("HELPER_RPC_MISSING_RESPONSE");
@@ -241,8 +246,6 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
             );
           }
           this.settle(pending, frame.body);
-        } else if (Date.now() >= pending.deadlineMs) {
-          throw new Error("HELPER_RPC_TIMEOUT");
         }
       } catch (error) {
         this.settle(pending, undefined, error);
@@ -251,7 +254,7 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
     if (this.pending.size === 0 && this.waiters.length === 0) {
       this.poller?.cancel();
       this.poller = null;
-    } else if (this.pending.size > 0 && this.poller === null) {
+    } else if (this.poller === null) {
       this.poller = this.timers.setInterval(() => this.pollPending(), 20);
     }
   }
@@ -270,16 +273,30 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
     removeRpcFile(this.files, paths.responseFile);
   }
 
-  private acquire(): Promise<void> {
+  private expireWaiters(): void {
+    const now = Date.now();
+    for (let index = this.waiters.length - 1; index >= 0; index--) {
+      if (now < this.waiters[index]!.deadlineMs) continue;
+      const [waiter] = this.waiters.splice(index, 1);
+      waiter!.reject(new Error("HELPER_RPC_TIMEOUT"));
+    }
+  }
+
+  private acquire(deadlineMs: number): Promise<void> {
     if (this.closed) return Promise.reject(new Error("HELPER_RPC_CLOSED"));
+    if (Date.now() >= deadlineMs) return Promise.reject(new Error("HELPER_RPC_TIMEOUT"));
     if (this.activeRequests < this.options.maxConcurrentRequests) {
       this.activeRequests += 1;
       return Promise.resolve();
     }
-    return new Promise((resolve, reject) => this.waiters.push({ resolve, reject }));
+    return new Promise((resolve, reject) => {
+      this.waiters.push({ deadlineMs, resolve, reject });
+      this.pollPending();
+    });
   }
 
   private release(): void {
+    this.expireWaiters();
     const next = this.waiters.shift();
     if (next) {
       next.resolve();
