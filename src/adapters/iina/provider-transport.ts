@@ -224,7 +224,6 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
     this.expireWaiters();
     for (const pending of [...this.pending.values()].slice(0, this.options.maxConcurrentRequests)) {
       try {
-        if (Date.now() >= pending.deadlineMs) throw new Error("HELPER_RPC_TIMEOUT");
         if (this.files.exists(pending.paths.responseFile)) {
           const response = this.files.read(pending.paths.responseFile);
           if (response === null) throw new Error("HELPER_RPC_MISSING_RESPONSE");
@@ -234,6 +233,7 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
             this.options.maxResponseBytes,
             this.options.helper === "transport" ? 2 : 1,
           );
+          if (frame.createdAtMs >= pending.deadlineMs) throw new Error("HELPER_RPC_TIMEOUT");
           if (frame.statusCode < 200 || frame.statusCode >= 300) {
             const error =
               frame.body && typeof frame.body === "object" && !Array.isArray(frame.body)
@@ -246,7 +246,7 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
             );
           }
           this.settle(pending, frame.body);
-        }
+        } else if (Date.now() >= pending.deadlineMs) throw new Error("HELPER_RPC_TIMEOUT");
       } catch (error) {
         this.settle(pending, undefined, error);
       }

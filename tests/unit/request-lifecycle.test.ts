@@ -60,6 +60,29 @@ describe("request lifecycle", () => {
     expect(transport.cancelled).toEqual(["job"]);
     expect(old.jobs.size).toBe(0);
   });
+  it("releases an idle sender without reviving old jobs or forgetting request IDs", async () => {
+    const life = new RequestLifecycle();
+    const transport = new RequestLifecycleHarness();
+    transport.holdCancellation = true;
+    const old = life.begin(input("old"))!;
+    const work = life
+      .transport(old, transport)
+      .request(request)
+      .catch((error) => error);
+    const release = life.releaseSender("window", false);
+    expect(life.isActive(old)).toBe(false);
+    expect(life.begin(input("old"))).toBeNull();
+    const next = life.begin(input("new"))!;
+    expect(life.isActive(next)).toBe(true);
+    transport.responses.releaseNext({ statusCode: 200, headers: {}, bodyText: "{}" });
+    expect(await work).toMatchObject({ category: "cancelled" });
+    transport.cancellations.releaseNext();
+    await release;
+    expect(life.isActive(next)).toBe(true);
+    await life.releaseSender("window");
+    await life.releaseSender("window", false);
+    expect(life.begin(input("after-close"))).toBeNull();
+  });
   it("checks authorization before and after every access and clears references", async () => {
     const life = new RequestLifecycle();
     const transport = new RequestLifecycleHarness();

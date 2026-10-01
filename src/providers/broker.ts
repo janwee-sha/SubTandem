@@ -97,7 +97,7 @@ export class ProviderBroker {
     await this.requests.cancelWhere((owner) => owner.context.profileId === profileId);
   }
 
-  async releaseSender(senderId: string): Promise<void> {
-    await this.requests.releaseSender(senderId);
+  async releaseSender(senderId: string, permanent = true): Promise<void> {
+    await this.requests.releaseSender(senderId, permanent);
   }
 }

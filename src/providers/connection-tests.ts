@@ -104,9 +104,9 @@ export class ProviderConnectionTests {
     return active || last;
   }
 
-  async releaseSender(senderId: string): Promise<void> {
+  async releaseSender(senderId: string, permanent = true): Promise<void> {
     this.lastBySender.delete(senderId);
-    await this.requests.releaseSender(senderId);
+    await this.requests.releaseSender(senderId, permanent);
   }
 
   async invalidateProfile(

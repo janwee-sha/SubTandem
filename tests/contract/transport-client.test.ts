@@ -760,6 +760,56 @@ describe("transport helper client", () => {
     }
   });
 
+  it.each([20, 999, 1_000, 1_001])(
+    "uses the helper completion time when a response is consumed late: %s ms",
+    async (completionMs) => {
+      vi.useFakeTimers();
+      const timerApi = new RetainingTimerApi();
+      const files = new MemoryReadyFiles();
+      const bridge = new IinaFileRpcBridge(files, {
+        helper: "transport",
+        fileDirectory: "@data/.rpc/generation",
+        maxRequestBytes: 65_536,
+        maxResponseBytes: 65_536,
+        maxConcurrentRequests: 1,
+        timers: new HostTimers(timerApi),
+      });
+      try {
+        const started = Date.now();
+        const request = bridge
+          .post(49152, "synthetic-token", "/v2/health", {}, { timeoutMs: 1_000 })
+          .then(
+            (value) => ({ value }),
+            (error: Error) => ({ error: error.message }),
+          );
+        await Promise.resolve();
+        const path = [...files.files.keys()].find((path) => path.endsWith(".request.json"))!;
+        files.write(
+          path.replace(".request.json", ".response.json"),
+          JSON.stringify({
+            type: "response",
+            protocolVersion: 2,
+            createdAtMs: started + completionMs,
+            statusCode: 200,
+            body: { state: "ok", protocolVersion: 2 },
+          }),
+        );
+        vi.setSystemTime(started + 1_500);
+        timerApi.fireIntervals();
+        expect(await request).toEqual(
+          completionMs < 1_000
+            ? { value: { state: "ok", protocolVersion: 2 } }
+            : { error: "HELPER_RPC_TIMEOUT" },
+        );
+        expect(files.files.size).toBe(0);
+        expect(timerApi.intervals.size).toBe(0);
+      } finally {
+        bridge.close();
+        vi.useRealTimers();
+      }
+    },
+  );
+
   it("aborts pending and queued files when a helper generation is retired", async () => {
     const timerApi = new RetainingTimerApi();
     const files = new MemoryReadyFiles();

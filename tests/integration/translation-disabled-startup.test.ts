@@ -574,6 +574,28 @@ it("keeps credential handlers active after the host clears listeners when loadin
   harness.close();
 });
 
+it("advances the host clocks from Sidebar ticks without flushing UI and ignores a closed player", async () => {
+  const harness = createHarness({ enabled: false, selection: "external" });
+  const tick = vi.fn();
+  harness.runtime.global = { postMessage: tick };
+  await startHarness(harness);
+  const { hostClock } = await import("../../src/adapters/iina/host-timers.js");
+  const callback = vi.fn();
+  const interval = hostClock.setInterval(callback, 20);
+  const before = harness.messages().length;
+  await vi.advanceTimersByTimeAsync(20);
+  harness.triggerSidebar("runtime:tick");
+  expect(callback).toHaveBeenCalledOnce();
+  expect(tick).toHaveBeenCalledExactlyOnceWith("runtime:tick", {});
+  expect(harness.messages()).toHaveLength(before);
+  harness.close();
+  await vi.advanceTimersByTimeAsync(20);
+  harness.triggerSidebar("runtime:tick");
+  expect(callback).toHaveBeenCalledOnce();
+  expect(tick).toHaveBeenCalledOnce();
+  hostClock.clearInterval(interval);
+});
+
 it("rewires a reused player when its hidden window becomes visible without window-loaded", async () => {
   const harness = createHarness({ enabled: false, selection: "external" });
   await startHarness(harness);

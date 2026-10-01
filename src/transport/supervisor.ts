@@ -86,17 +86,40 @@ export class TransportSupervisor implements TransportRpcClient {
   }
 
   async credentialChannel(action: string, payload: unknown): Promise<unknown> {
-    const client = await this.liveClient();
-    if (!client.credentialChannel)
-      throw new SubTandemError("HELPER_PROTOCOL", "protocol", "RESTART_IINA");
-    return client.credentialChannel(action, payload);
+    return this.channelOperation((client) => {
+      if (!client.credentialChannel)
+        throw new SubTandemError("HELPER_PROTOCOL", "protocol", "RESTART_IINA");
+      return client.credentialChannel(action, payload);
+    }, action === "open");
   }
 
   async draftOperation(action: string, payload: unknown): Promise<unknown> {
-    const client = await this.liveClient();
-    if (!client.draftOperation)
-      throw new SubTandemError("HELPER_PROTOCOL", "protocol", "RESTART_IINA");
-    return client.draftOperation(action, payload);
+    return this.channelOperation((client) => {
+      if (!client.draftOperation)
+        throw new SubTandemError("HELPER_PROTOCOL", "protocol", "RESTART_IINA");
+      return client.draftOperation(action, payload);
+    });
+  }
+
+  private async channelOperation(
+    attempt: (client: TransportRpcClient) => Promise<unknown>,
+    reopen = false,
+  ): Promise<unknown> {
+    const client = await this.currentOrStart();
+    try {
+      return await attempt(client);
+    } catch (error) {
+      if (!isExpiredSession(error)) throw error;
+      this.retireExpiredClient(client);
+      if (!reopen) throw error;
+    }
+    const replacement = await this.currentOrStart();
+    try {
+      return await attempt(replacement);
+    } catch (error) {
+      if (isExpiredSession(error)) this.retireExpiredClient(replacement);
+      throw error;
+    }
   }
 
   async profileStateSave(

@@ -26,6 +26,32 @@ async function editor(connected = true) {
 afterEach(() => vi.restoreAllMocks());
 
 describe("production Profile Test deadline", () => {
+  it("pulses only for an open drawer and restores one pulse source after pageshow", async () => {
+    const h = sidebarHarness();
+    const count = () => h.messages.filter((message) => message.name === "runtime:tick").length;
+    h.pulse();
+    expect(count()).toBe(0);
+    h.connectCredentials({ readValue: "synthetic-key" });
+    h.receive("state:update", { profiles: [profile] });
+    h.evaluate('loadEditor(profiles.get("one"))');
+    await h.settleCredentials();
+    h.pulse();
+    expect(count()).toBe(1);
+    h.event("pagehide");
+    h.pulse();
+    expect(count()).toBe(1);
+    h.event("pageshow");
+    h.event("pageshow");
+    h.pulse();
+    expect(count()).toBe(2);
+    h.evaluate("clearProfileDrawer()");
+    h.pulse();
+    expect(count()).toBe(2);
+    h.event("pageshow");
+    h.pulse();
+    expect(count()).toBe(2);
+  });
+
   it("uses a ten-second click deadline and renews the channel for a successful explicit retry", async () => {
     const { h, peer } = await editor();
     const now = Date.now();

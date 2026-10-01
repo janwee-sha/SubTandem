@@ -149,7 +149,15 @@ class Element {
   setCustomValidity() {}
 }
 
-export function sidebarHarness() {
+export function sidebarHarness(
+  options: {
+    postMessage?(name: string, data: unknown): void;
+    timers?: Pick<
+      typeof globalThis,
+      "setTimeout" | "clearTimeout" | "setInterval" | "clearInterval"
+    >;
+  } = {},
+) {
   let activeElement: Element | null = null;
   const document = new Element("", (element) => {
     activeElement = element;
@@ -205,21 +213,26 @@ export function sidebarHarness() {
         this.record.targets.clear();
       }
     },
-    setTimeout: (callback: () => void) => {
-      timers.set(++timerId, callback);
-      return timerId;
-    },
-    clearTimeout: (id: number) => timers.delete(id),
-    setInterval: (callback: () => void) => {
-      intervals.set(++timerId, callback);
-      return timerId;
-    },
-    clearInterval: (id: number) => intervals.delete(id),
+    setTimeout:
+      options.timers?.setTimeout ??
+      ((callback: () => void) => {
+        timers.set(++timerId, callback);
+        return timerId;
+      }),
+    clearTimeout: options.timers?.clearTimeout ?? ((id: number) => timers.delete(id)),
+    setInterval:
+      options.timers?.setInterval ??
+      ((callback: () => void) => {
+        intervals.set(++timerId, callback);
+        return timerId;
+      }),
+    clearInterval: options.timers?.clearInterval ?? ((id: number) => intervals.delete(id)),
     addEventListener: (name: string, callback: () => void) => windowEvents.set(name, callback),
     getSelection: () => ({ isCollapsed: true }),
     iina: {
       postMessage: (name: string, data: any) => {
         messages.push({ name, data });
+        options.postMessage?.(name, data);
         if (!credentialPeer || !name.startsWith("credential-channel:")) return;
         const action = name.split(":")[1]!;
         if (action === "open") credentialOwner = { ...data.payload, senderId: "test-window" };

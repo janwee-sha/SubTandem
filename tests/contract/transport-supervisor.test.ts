@@ -131,6 +131,52 @@ function delayedStart<T>(value: T): Promise<T> {
 }
 
 describe("transport supervisor", () => {
+  it("reopens only the local channel after retiring an unavailable helper", async () => {
+    const expired = Object.assign(new FakeTransportClient(), {
+      credentialChannel: vi
+        .fn()
+        .mockRejectedValue(new SubTandemError("HELPER_UNAVAILABLE", "network", "RESTART_IINA")),
+    });
+    const replacement = Object.assign(new FakeTransportClient(), {
+      credentialChannel: vi.fn().mockResolvedValue({ channelId: "new-channel" }),
+    });
+    const clients = [expired, replacement];
+    const supervisor = new TransportSupervisor(async () => clients.shift()!);
+    await expect(supervisor.credentialChannel("open", { drawerId: "drawer" })).resolves.toEqual({
+      channelId: "new-channel",
+    });
+    expect(expired.disposeCalls).toBe(1);
+    expect(expired.credentialChannel).toHaveBeenCalledTimes(1);
+    expect(replacement.credentialChannel).toHaveBeenCalledExactlyOnceWith("open", {
+      drawerId: "drawer",
+    });
+    expect(expired.randomCalls + replacement.randomCalls).toBe(0);
+    expect(expired.requestCalls + replacement.requestCalls).toBe(0);
+  });
+
+  it.each(["confirm", "operation", "draft-begin"])(
+    "does not replay %s across helper generations",
+    async (action) => {
+      const fail = vi
+        .fn()
+        .mockRejectedValue(new SubTandemError("HELPER_UNAVAILABLE", "network", "RESTART_IINA"));
+      const client = Object.assign(new FakeTransportClient(), {
+        credentialChannel: fail,
+        draftOperation: fail,
+      });
+      const start = vi.fn().mockResolvedValue(client);
+      const supervisor = new TransportSupervisor(start);
+      const operation =
+        action === "draft-begin"
+          ? supervisor.draftOperation("begin", {})
+          : supervisor.credentialChannel(action, {});
+      await expect(operation).rejects.toMatchObject({ code: "HELPER_UNAVAILABLE" });
+      expect(start).toHaveBeenCalledOnce();
+      expect(fail).toHaveBeenCalledOnce();
+      expect(client.disposeCalls).toBe(1);
+      expect(client.randomCalls).toBe(0);
+    },
+  );
   it("claims a completed start before exposing its client to callers", async () => {
     const expired = new FakeTransportClient();
     const replacement = new FakeTransportClient();

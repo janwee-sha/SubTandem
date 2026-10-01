@@ -316,11 +316,15 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     });
   };
 
-  const flushSidebar = (): void => {
-    runtime.sidebar.postMessage("state:update", sidebarState);
+  const flushSidebarMessages = (): void => {
     for (const message of sidebarMessages.drain()) {
       runtime.sidebar.postMessage(message.name, message.data);
     }
+  };
+
+  const flushSidebar = (): void => {
+    runtime.sidebar.postMessage("state:update", sidebarState);
+    flushSidebarMessages();
   };
 
   const invalidatePreparation = (): void => {
@@ -623,6 +627,12 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     hostRuntime.global?.postMessage("runtime:tick", {});
     updateSidebarState();
     flushSidebar();
+  });
+  runtime.sidebar.onMessage("runtime:tick", () => {
+    if (!playerWired) return;
+    hostClock.pulse();
+    hostRuntime.global?.postMessage("runtime:tick", {});
+    flushSidebarMessages();
   });
   runtime.sidebar.onMessage("overlay-position:preview", (raw: unknown) => {
     try {

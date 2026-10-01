@@ -74,6 +74,32 @@ function createHarness(now: () => number = () => 10_000) {
 }
 
 describe("file-backed Main and Global mailbox", () => {
+  it("distinguishes a missing heartbeat from an explicit player close", () => {
+    let now = 10_000;
+    const { files, api, options } = createHarness(() => now);
+    const global = new GlobalMailbox(files, options);
+    const main = new MainGlobalMailbox(files, "resuming-player", options);
+    const released = vi.fn();
+    const received = vi.fn();
+    global.onSessionClose(released);
+    global.onMessage("probe", received);
+    api.tick();
+    now += 90_001;
+    main.postMessage("probe", { requestId: "fresh" });
+    api.tick();
+    expect(released).toHaveBeenCalledExactlyOnceWith("resuming-player", "expired");
+    expect(received).toHaveBeenCalledExactlyOnceWith({ requestId: "fresh" }, "resuming-player");
+    api.tick();
+    expect(released).toHaveBeenCalledOnce();
+    main.close();
+    api.tick();
+    expect(released.mock.calls).toEqual([
+      ["resuming-player", "expired"],
+      ["resuming-player", "closed"],
+    ]);
+    global.close();
+    expect(api.intervals.size).toBe(0);
+  });
   it("routes requests and replies asynchronously with one poller per context", () => {
     const { files, api, options } = createHarness();
     const global = new GlobalMailbox(files, options);

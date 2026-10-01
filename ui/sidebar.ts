@@ -322,6 +322,7 @@ let subtitleRetryAvailable = false;
 let subtitleDetailsVisible = false;
 let endpointRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 const drawerTestTimeoutMs = 10_000;
+let drawerRuntimeTick: ReturnType<typeof setInterval> | null = null;
 let pendingDrawerTestDeadline: {
   requestId: string;
   expiresAtMs: number;
@@ -2123,8 +2124,18 @@ function createNewProfileRow(): HTMLElement {
   return article;
 }
 
+function syncDrawerRuntimeTick(active: boolean): void {
+  if (!active) {
+    if (drawerRuntimeTick !== null) window.clearInterval(drawerRuntimeTick);
+    drawerRuntimeTick = null;
+  } else if (drawerRuntimeTick === null) {
+    drawerRuntimeTick = window.setInterval(() => window.iina?.postMessage("runtime:tick", {}), 20);
+  }
+}
+
 function mountProfileDrawer(): void {
   const drawer = sidebarState.snapshot.drawer;
+  syncDrawerRuntimeTick(drawer.mode !== "closed");
   for (const [profileId, article] of profileRows) {
     const expanded = drawer.mode === "editing" && drawer.profileId === profileId;
     article.classList.toggle("is-editing", expanded);
@@ -2461,6 +2472,7 @@ window.setInterval(() => {
   window.iina?.postMessage("ui:poll", envelope({}));
 }, 750);
 window.addEventListener("pagehide", () => {
+  syncDrawerRuntimeTick(false);
   credentialEditor?.close();
   for (const article of profileRows.values()) clearProfileOverflow(article);
   if (endpointRefreshTimer !== null) clearTimeout(endpointRefreshTimer);
@@ -2468,6 +2480,9 @@ window.addEventListener("pagehide", () => {
   const requestId = sidebarState.cancelDrawerTest();
   if (!requestId) return;
   window.iina?.postMessage("provider:test-cancel", envelope({ testRequestId: requestId }));
+});
+window.addEventListener("pageshow", () => {
+  syncDrawerRuntimeTick(sidebarState.snapshot.drawer.mode !== "closed");
 });
 renderSubtitleStyle();
 applyProviderKind();

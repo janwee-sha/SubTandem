@@ -26,6 +26,7 @@ export interface GlobalMailboxOptions {
 
 type MailboxDirection = "request" | "response";
 type MailboxHandler = (data: unknown, playerId?: string) => unknown;
+type SessionCloseReason = "expired" | "closed";
 
 interface MailboxFrame {
   type: "subtandem-global-mailbox";
@@ -487,7 +488,9 @@ export class MainGlobalMailbox extends FileGlobalMailbox {
 export class GlobalMailbox extends FileGlobalMailbox {
   private readonly handlers = new Map<string, MailboxHandler>();
   private readonly players = new Map<string, number>();
-  private readonly sessionCloseHandlers = new Set<(playerId: string) => void>();
+  private readonly sessionCloseHandlers = new Set<
+    (playerId: string, reason: SessionCloseReason) => void
+  >();
   private closed = false;
 
   constructor(files: GlobalMailboxFileStore, options: GlobalMailboxOptions = {}) {
@@ -499,7 +502,7 @@ export class GlobalMailbox extends FileGlobalMailbox {
     this.handlers.set(name, callback);
   }
 
-  onSessionClose(callback: (playerId: string) => void): void {
+  onSessionClose(callback: (playerId: string, reason: SessionCloseReason) => void): void {
     this.sessionCloseHandlers.add(callback);
   }
 
@@ -530,7 +533,7 @@ export class GlobalMailbox extends FileGlobalMailbox {
     for (const [playerId, lastSeenAt] of this.players) {
       if (currentTime - lastSeenAt <= this.limits.sessionTtlMs) continue;
       this.players.delete(playerId);
-      this.notifySessionClose(playerId);
+      this.notifySessionClose(playerId, "expired");
     }
     for (const stem of this.readyFiles("request")) {
       const frame = this.consume(stem, "request");
@@ -538,7 +541,7 @@ export class GlobalMailbox extends FileGlobalMailbox {
       this.players.set(frame.sourceId, currentTime);
       if (frame.name === CLOSE_MESSAGE) {
         this.players.delete(frame.sourceId);
-        this.notifySessionClose(frame.sourceId);
+        this.notifySessionClose(frame.sourceId, "closed");
         continue;
       }
       if (INTERNAL_MESSAGES.has(frame.name)) continue;
@@ -547,10 +550,10 @@ export class GlobalMailbox extends FileGlobalMailbox {
     }
   }
 
-  private notifySessionClose(playerId: string): void {
+  private notifySessionClose(playerId: string, reason: SessionCloseReason): void {
     for (const handler of this.sessionCloseHandlers) {
       try {
-        handler(playerId);
+        handler(playerId, reason);
       } catch {
         this.report("MAILBOX_SESSION_CLOSE_FAILED");
       }

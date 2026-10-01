@@ -127,11 +127,12 @@ export class RequestLifecycle<Context = unknown> {
     owner.assertAuthorized = undefined;
   }
 
-  async releaseSender(senderId: string): Promise<void> {
-    this.closedSenders.add(senderId);
+  async releaseSender(senderId: string, permanent = true): Promise<void> {
+    if (permanent) this.closedSenders.add(senderId);
     const pending = this.cancelWhere((owner) => owner.senderId === senderId);
-    for (const operation of ["models", "test", "translation"] as const)
-      this.seen.delete(this.scope(senderId, operation));
+    if (permanent)
+      for (const operation of ["models", "test", "translation"] as const)
+        this.seen.delete(this.scope(senderId, operation));
     await pending;
   }
 

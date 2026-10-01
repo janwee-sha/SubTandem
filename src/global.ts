@@ -586,16 +586,17 @@ for (const action of ["open", "confirm", "operation", "close"]) {
     if (senderId) return credentialChannels.receive(senderId, name, raw);
   });
 }
-globalMailbox.onSessionClose((playerId) => {
+globalMailbox.onSessionClose((playerId, reason) => {
+  const permanent = reason !== "expired";
   void cancelDraftRequests((owner) => owner.senderId === playerId);
-  void draftRequests.releaseSender(playerId);
+  void draftRequests.releaseSender(playerId, permanent);
   credentialChannels.close(playerId);
   profilePlayers.delete(playerId);
   translationSessions.delete(playerId);
-  void translationRequests.releaseSender(playerId);
-  void broker?.releaseSender(playerId);
-  void modelRequests.releaseSender(playerId);
-  void providerConnectionTests.releaseSender(playerId);
+  void translationRequests.releaseSender(playerId, permanent);
+  void broker?.releaseSender(playerId, permanent);
+  void modelRequests.releaseSender(playerId, permanent);
+  void providerConnectionTests.releaseSender(playerId, permanent);
 });
 
 function assertEncryptedDraft(owner: RequestOwner<DraftContext>): void {
