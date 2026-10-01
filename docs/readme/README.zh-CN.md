@@ -138,7 +138,7 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 - SubTandem 只向你明确全局启用的唯一 Profile 发送播放位置附近的字幕文字、准确的目标语言、不透明的字幕 ID 和少量相邻上下文；服务会在该翻译请求内理解源语言。SubTandem 不会发送视频或音频内容。
 - `video-overlay` 权限只用于在本地非交互式 Overlay 中显示当前译文。Overlay 不接受输入，不支持在播放器画面拖动，不使用网络或 WebView storage，并随播放会话清理。
 - API key 以认证密文保存在插件私有的 `credentials.json` 中，与 Profile 设置及硬件绑定的恢复材料一同保存。Secure Enclave 保护加密密钥；所需硬件保护不可用时，非空 API key 的保存和已保存 API key 的使用会失败。空 API key 和明确清除仍可用。API key 不会写入 IINA preferences、日志、诊断或安装包。
-- 打开 Profile 可编辑已保存的 API key。默认遮罩，**Show API key** 仅在当前抽屉显示原值。**Save** 以当前输入替换原值，空值保存会清除；读取失败时仍显示可编辑的空字段，不改变已保存数据。**Cancel** 丢弃修改。加密无法抵御已控制当前登录会话的攻击者。
+- 打开 Profile 可编辑已保存的 API key。默认遮罩，**Show API key** 仅在当前抽屉显示原值。**Save** 以当前输入替换原值，空值保存会清除；读取失败时仍显示可编辑的空字段，不改变已保存数据。**Cancel** 丢弃修改。
 - 从原明文格式升级会保留 Profile 设置和有效启用选择，但清空已保存的 API key，请按需重新录入。SubTandem 清理其受管副本；APFS/Time Machine 快照、离线副本和其他备份仍可能保留旧 API key。建议在服务端轮换旧 API key。
 - 备份时保留完整的 `credentials.json` 及其中配套恢复材料。恢复依赖原设备、原用户和有效的系统密钥环境，即使条件满足也不保证成功。其他设备或用户无法恢复已保存的 API key，请为各 Profile 重新录入。
 - 随附的 transport helper 只监听临时的 `127.0.0.1` 端口。已配置或正在编辑的 endpoint 可接收不含字幕的模型目录请求；点击 **Test** 会向当前草稿发送可能计费的固定无字幕探针，新输入的密钥仅用于该次测试，除非另行保存。其中包括默认 Claude root `https://api.anthropic.com` 和 DeepSeek root `https://api.deepseek.com`；只有全局启用的 Profile 修订版才会接收用于翻译的字幕文字。跨源重定向和 URL 中嵌入的凭据会被拒绝。
