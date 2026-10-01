@@ -699,10 +699,15 @@ describe.each(["openai", "claude", "deepseek", "ollama"])(
         credentialConfigured: true,
       };
       h.evaluate(
-        `sidebarState.applyProfiles([${JSON.stringify(profile)}]); sidebarState.openProfileDrawer("saved"); editingProfile = ${JSON.stringify(profile)}; providerKind.value = ${JSON.stringify(kind)}; providerProxyMode.value = "direct"; providerEndpoint.value = "https://other.test"; sidebarState.setModelContext("fixture", "changed-model");`,
+        `sidebarState.applyProfiles([${JSON.stringify(profile)}]); loadEditor(${JSON.stringify(profile)});`,
+      );
+      await h.settleCredentials();
+      h.evaluate(
+        'providerEndpoint.value = "https://other.test"; sidebarState.setModelContext("fixture", "changed-model")',
       );
       h.element("#test-profile").dispatch("click");
       await h.settleCredentials();
+      h.evaluate("cancelActiveDrawerTest()");
       const empty = h.messages.filter((m) => m.name === "provider:draft-test").at(-1)!.data;
       expect(peer.open(empty)).toBe("");
       expect(

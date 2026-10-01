@@ -498,7 +498,8 @@ interface TranslationContext {
 const translationRequests = new RequestLifecycle<TranslationContext>();
 const translationSessions = new Map<string, TranslationContext>();
 
-let profileStorageStatus: string | null = null;
+const initialAuthorityGets = new Set<string>();
+const profileInitializationDeadline = Date.now() + 15_000;
 const profileReady = (async () => {
   profileAuthority = await restoreProfileActivationAuthority({
     authorityId: localUuid(),
@@ -507,9 +508,7 @@ const profileReady = (async () => {
     createCommitId: localUuid,
     loadLegacyProfiles: legacyProfileMetadata,
     clearLegacyPreferences: clearLegacyProfilePreferences,
-    onStorageStatus: (code) => {
-      profileStorageStatus = code;
-    },
+    deadlineMs: profileInitializationDeadline,
   });
   broker = new ProviderBroker(profiles, profileAuthority, providerFor);
 })();
@@ -1280,14 +1279,13 @@ globalMailbox.onMessage("subtitle-style:picker-cancel", async (raw: unknown, pla
 globalMailbox.onMessage("profiles:list", async (raw: unknown, playerId?: string) => {
   if (!playerId) return;
   await profileReady;
-  await reconcileProfileAuthority();
+  if (initialAuthorityGets.has(playerId)) await reconcileProfileAuthority();
   const authority = profileAuthority.snapshot;
   postToPlayer(playerId, "profiles:result", {
     requestId: requestId(raw),
     authorityId: authority.authorityId,
     stateVersion: authority.stateVersion,
     profiles: await profileViews(),
-    storageStatus: profileStorageStatus,
   });
 });
 
@@ -1297,7 +1295,8 @@ globalMailbox.onMessage("profile-activation:get", async (raw: unknown, playerId?
     const message = parseProfileActivationGet(raw);
     profilePlayers.add(playerId);
     await profileReady;
-    await reconcileProfileAuthority();
+    if (initialAuthorityGets.has(playerId)) await reconcileProfileAuthority();
+    initialAuthorityGets.add(playerId);
     postToPlayer(playerId, "profile-activation:state", {
       requestId: message.requestId,
       authority: profileAuthority.snapshot,

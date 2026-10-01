@@ -8,6 +8,7 @@ export interface ProfileListSyncState<T extends ProfileListItem> {
   authorityId: string | null;
   stateVersion: number | null;
   profiles: T[];
+  profileListPhase: "initializing" | "settled";
 }
 
 export function createProfileListSyncState<T extends ProfileListItem>(
@@ -19,6 +20,7 @@ export function createProfileListSyncState<T extends ProfileListItem>(
     authorityId: null,
     stateVersion: null,
     profiles: [...profiles],
+    profileListPhase: "initializing",
   };
 }
 
@@ -38,6 +40,7 @@ export function bindProfileAuthority<T extends ProfileListItem>(
     ...state,
     authorityId,
     stateVersion,
+    profileListPhase: "settled",
     profiles: [...profiles],
   };
 }

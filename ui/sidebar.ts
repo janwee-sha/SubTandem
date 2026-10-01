@@ -223,7 +223,6 @@ const profileCardInteractions = new ProfileCardInteractionCoordinator();
 const profileDeleteDialogInteractions = new ProfileDeleteDialogInteractionCoordinator();
 const profileRows = new Map<string, HTMLElement>();
 let newProfileRow: HTMLElement | null = null;
-let profileStorageStatus: string | null = null;
 const pendingOperations = new Set<string>();
 const profileActivationTimeouts = new Map<string, number>();
 const clearConfirmedProfileActivationTimeouts = (): void => {
@@ -273,8 +272,8 @@ async function readEditorCredential(): Promise<void> {
   const frozen = JSON.parse(
     JSON.stringify(sidebarState.snapshot.drawer),
   ) as SidebarProfileDrawerState;
-  if (!frozen.drawerId || !frozen.sourceProfile || !editingProfile) return;
-  const editor = currentCredentialEditor();
+  const load = sidebarState.snapshot.credentialLoad;
+  if (!load || !frozen.drawerId || !frozen.sourceProfile || !editingProfile) return;
   const input = {
     kind: editingProfile.kind,
     endpoint: editingProfile.endpoint,
@@ -285,11 +284,17 @@ async function readEditorCredential(): Promise<void> {
     save: null,
   };
   try {
-    await editor.open(frozen.drawerId, frozen.sourceProfile);
+    const editor = currentCredentialEditor();
+    await editor.open(frozen.drawerId, frozen.sourceProfile, load.deadlineMs);
+    if (
+      sidebarState.snapshot.credentialLoad?.loadId !== load.loadId ||
+      Date.now() >= load.deadlineMs
+    )
+      return;
     if (!editor.channelId) return;
     const owner = sidebarState.beginCredentialRead(editor.channelId, frozen);
     if (!owner) return;
-    let value = await editor.read(input, { ...frozen, drawerId: frozen.drawerId });
+    let value = await editor.read(input, { ...frozen, drawerId: frozen.drawerId }, load.deadlineMs);
     if (sidebarState.acceptCredentialRead(owner, editor.channelId)) {
       providerKey.value = value;
       renderCredentialVisibility();
@@ -297,7 +302,51 @@ async function readEditorCredential(): Promise<void> {
     value = "";
   } catch {
     return;
+  } finally {
+    finishEditorCredentialLoad(load.loadId);
   }
+}
+
+let credentialLoadTimer: {
+  loadId: string;
+  timer: ReturnType<typeof setTimeout>;
+  drawerId: string;
+} | null = null;
+
+function finishEditorCredentialLoad(loadId: string): void {
+  if (!sidebarState.finishCredentialLoad(loadId)) return;
+  if (credentialLoadTimer?.loadId === loadId) clearTimeout(credentialLoadTimer.timer);
+  credentialLoadTimer = null;
+  renderDrawerAvailability();
+  flushAutomaticModelRefresh();
+}
+
+function cancelEditorCredentialLoad(): void {
+  const pending = credentialLoadTimer;
+  credentialLoadTimer = null;
+  if (pending) clearTimeout(pending.timer);
+  sidebarState.cancelCredentialLoad();
+  if (endpointRefreshTimer !== null) clearTimeout(endpointRefreshTimer);
+  endpointRefreshTimer = null;
+  credentialEditor?.close();
+}
+
+function startEditorCredentialLoad(): void {
+  const load = sidebarState.snapshot.credentialLoad;
+  renderDrawerAvailability();
+  if (!load) return;
+  credentialLoadTimer = {
+    loadId: load.loadId,
+    drawerId: load.drawerId,
+    timer: setTimeout(
+      () => {
+        if (sidebarState.snapshot.credentialLoad?.loadId !== load.loadId) return;
+        credentialEditor?.close(load.drawerId);
+        finishEditorCredentialLoad(load.loadId);
+      },
+      Math.max(0, load.deadlineMs - Date.now()),
+    ),
+  };
 }
 
 let credentialEditor: ReturnType<Window["subtandemCredentialEditor"]["create"]> | null = null;
@@ -635,7 +684,10 @@ function setActionBusy(
   control.disabled = busy;
   if (busy) control.setAttribute("aria-busy", "true");
   else control.removeAttribute("aria-busy");
-  if (actionId === "test") return;
+  if (actionId === "test") {
+    renderDrawerAvailability();
+    return;
+  }
   if (control instanceof HTMLButtonElement) {
     const label = control.querySelector<HTMLElement>(".profile-action-label");
     if (label) label.textContent = busy ? busyLabel : idleLabelForAction(actionId);
@@ -872,11 +924,13 @@ function reconcileDrawerAfterAuthority(previousTest: SidebarDrawerTestState | nu
     clearDrawerTestFeedback();
   }
   if (drawer.validity === "conflict") {
+    cancelEditorCredentialLoad();
     invalidatePendingModelRefresh();
     clearCredentialInput();
     draftCredentialEpoch += 1;
   }
   if (drawer.mode === "closed") {
+    cancelEditorCredentialLoad();
     editingProfile = null;
     clearCredentialInput();
     sidebarState.setProfileContext({ credentialDisplayProfileId: null });
@@ -920,7 +974,33 @@ function modelRefreshPayload(trigger: "open" | "endpoint" | "profile" | "credent
   };
 }
 
+function flushAutomaticModelRefresh(): void {
+  const intent = sidebarState.snapshot.pendingAutomaticRefresh;
+  if (!intent || sidebarState.snapshot.credentialLoad) return;
+  if (endpointRefreshTimer !== null) clearTimeout(endpointRefreshTimer);
+  endpointRefreshTimer = null;
+  if (Date.now() < intent.notBeforeMs) {
+    endpointRefreshTimer = setTimeout(flushAutomaticModelRefresh, intent.notBeforeMs - Date.now());
+    return;
+  }
+  sidebarState.snapshot.pendingAutomaticRefresh = null;
+  requestModels(intent.trigger);
+}
+
 function requestModels(trigger: "open" | "endpoint" | "profile" | "credential" | "manual"): void {
+  const drawer = sidebarState.snapshot.drawer;
+  if (drawer.mode === "closed") return;
+  if (sidebarState.snapshot.credentialLoad) {
+    if (trigger !== "manual") sidebarState.queueAutomaticRefresh(trigger);
+    return;
+  }
+  if (trigger !== "manual" && sidebarState.snapshot.pendingAutomaticRefresh) {
+    sidebarState.queueAutomaticRefresh(trigger);
+    flushAutomaticModelRefresh();
+    return;
+  }
+  if (drawer.savePhase || drawer.deletePhase === "deleting" || drawer.test?.phase === "testing")
+    return;
   if (!validModelEndpoint() || sidebarState.snapshot.drawer.validity !== "current") return;
   const contextSignature = modelContextKey();
   if (
@@ -1018,11 +1098,9 @@ function scheduleEndpointModelRefresh(): void {
     invalidatePendingModelRefresh();
   }
   setModelContext(sidebarState.snapshot.modelControl.value);
+  sidebarState.queueAutomaticRefresh("endpoint", Date.now() + 400);
   if (!validModelEndpoint()) return;
-  endpointRefreshTimer = setTimeout(() => {
-    endpointRefreshTimer = null;
-    requestModels("endpoint");
-  }, 400);
+  endpointRefreshTimer = setTimeout(flushAutomaticModelRefresh, 400);
 }
 
 function renderModelControl(): void {
@@ -1093,6 +1171,7 @@ function applyProviderKind(): void {
 }
 
 providerKind.addEventListener("change", () => {
+  cancelEditorCredentialLoad();
   invalidateDrawerTestField();
   cancelPendingProfileSaveForContextChange();
   invalidatePendingModelRefresh();
@@ -1100,6 +1179,7 @@ providerKind.addEventListener("change", () => {
   draftCredentialEpoch += 1;
   clearCredentialInput();
   applyProviderKind();
+  renderDrawerAvailability();
   requestModels("profile");
 });
 providerEndpoint.addEventListener("input", () => {
@@ -1168,7 +1248,7 @@ function clearProfileDrawer(focus = true): void {
   cancelActiveDrawerTest();
   cancelPendingProfileSaveForContextChange();
   invalidatePendingModelRefresh();
-  credentialEditor?.close();
+  cancelEditorCredentialLoad();
   const target = sidebarState.closeProfileDrawer();
   editingProfile = null;
   draftCredentialEpoch += 1;
@@ -1210,6 +1290,7 @@ function loadEditor(profile: ProfileView, preservePendingSave = false): void {
     cancelActiveDrawerTest();
     cancelPendingProfileSaveForContextChange();
     invalidatePendingModelRefresh();
+    cancelEditorCredentialLoad();
   }
   const activation = preservePendingSave
     ? { changed: false, closed: false }
@@ -1248,6 +1329,8 @@ function loadEditor(profile: ProfileView, preservePendingSave = false): void {
   deleteProfileButton.hidden = false;
   saveProfileButton.textContent = "Save";
   mountProfileDrawer();
+  startEditorCredentialLoad();
+  requestModels("open");
   if (!preservePendingSave) void readEditorCredential();
 }
 
@@ -1262,6 +1345,7 @@ function openNewProfile(): void {
   cancelActiveDrawerTest();
   cancelPendingProfileSaveForContextChange();
   invalidatePendingModelRefresh();
+  cancelEditorCredentialLoad();
   sidebarState.openNewProfileDrawer();
   credentialEditor?.close();
   resetProviderDrafts();
@@ -1480,6 +1564,8 @@ retrySubtitleButton.addEventListener("click", () => {
 });
 
 testProfileButton.addEventListener("click", () => {
+  renderDrawerAvailability();
+  if (testProfileButton.disabled) return;
   const drawer = sidebarState.snapshot.drawer;
   if (drawer.mode === "closed" || drawer.validity !== "current") return;
   if (!validModelEndpoint()) {
@@ -1541,6 +1627,8 @@ testProfileButton.addEventListener("click", () => {
 });
 
 saveProfileButton.addEventListener("click", async () => {
+  renderDrawerAvailability();
+  if (saveProfileButton.disabled || sidebarState.snapshot.drawer.mode === "closed") return;
   if (sidebarState.snapshot.drawer.savePhase) return;
   cancelPendingProfileSaveForContextChange();
   const model = sidebarState.modelForSave();
@@ -2163,23 +2251,23 @@ function mountProfileDrawer(): void {
   profileDrawer.setAttribute("aria-labelledby", disclosure.id || `${panelId}-summary`);
   if (!disclosure.id) disclosure.id = `${panelId}-summary`;
   profileDrawer.hidden = false;
-  article.append(profileDrawer);
+  if (profileDrawer.parentElement !== article) article.append(profileDrawer);
   renderDrawerAvailability();
 }
 
 function renderDrawerAvailability(): void {
   const drawer = sidebarState.snapshot.drawer;
-  const unavailable = sidebarState.snapshot.profileAuthority?.ready === false;
   const conflict = drawer.validity === "conflict";
   const saving = drawer.savePhase !== null;
   const deleting = drawer.deletePhase === "deleting";
   const testing = drawer.test?.phase === "testing";
-  testProfileButton.disabled = unavailable || conflict || saving || deleting || testing;
-  saveProfileButton.disabled = unavailable || conflict || saving || deleting;
-  deleteProfileButton.disabled = unavailable || conflict || saving || deleting;
+  const loading = sidebarState.snapshot.credentialLoad !== null;
+  testProfileButton.disabled = loading || conflict || saving || deleting || testing;
+  saveProfileButton.disabled = loading || conflict || saving || deleting;
+  deleteProfileButton.disabled = conflict || saving || deleting;
   cancelProfileButton.disabled = saving || deleting;
-  refreshModelsButton.disabled = unavailable || conflict || saving || deleting;
-  newProfileButton.disabled = unavailable || saving;
+  refreshModelsButton.disabled = loading || conflict || saving || deleting || testing;
+  newProfileButton.disabled = saving;
   if (conflict) {
     profileEditorStatus.dataset.conflict = "true";
     profileEditorStatus.dataset.state = "error";
@@ -2235,7 +2323,7 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
   const drawer = sidebarState.snapshot.drawer;
   if (drawer.mode === "new") {
     newProfileRow ??= createNewProfileRow();
-    profilesElement.append(newProfileRow);
+    if (newProfileRow.parentElement !== profilesElement) profilesElement.append(newProfileRow);
   } else if (newProfileRow) {
     newProfileRow.remove();
     newProfileRow = null;
@@ -2248,8 +2336,8 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
     profilesElement.append(article);
     syncProfileOverflow(article);
   }
-  const ready = sidebarState.snapshot.profileAuthority?.ready === true;
-  const emptyList = ready && !viewProfiles.length && drawer.mode !== "new";
+  const settled = sidebarState.snapshot.profileListPhase === "settled";
+  const emptyList = settled && !viewProfiles.length && drawer.mode !== "new";
   profilesElement.dataset.empty = String(emptyList);
   const existingEmpty = profilesElement.querySelector<HTMLElement>(":scope > .empty");
   if (emptyList) {
@@ -2258,24 +2346,6 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
     empty.textContent = "No profiles yet.";
     profilesElement.append(empty);
   } else existingEmpty?.remove();
-  const existingStorageError = profilesElement.querySelector<HTMLElement>(
-    ":scope > .profile-storage-status",
-  );
-  const unavailable = sidebarState.snapshot.profileAuthority?.ready === false;
-  if (unavailable || profileStorageStatus) {
-    const status = existingStorageError ?? document.createElement("p");
-    status.className = "operation-status profile-storage-status";
-    status.dataset.state = "error";
-    status.setAttribute("role", "status");
-    status.textContent =
-      profileStorageStatus === "MIGRATION_CLEANUP_PENDING"
-        ? "Profiles updated; local cleanup failed."
-        : profileStorageStatus === "MIGRATION_NOT_COMMITTED" ||
-            profileStorageStatus === "MIGRATION_UNCONFIRMED"
-          ? "Profile storage update incomplete."
-          : "Profiles unavailable (HELPER_UNAVAILABLE). Restart IINA.";
-    profilesElement.append(status);
-  } else existingStorageError?.remove();
   renderActiveFeedback();
   mountProfileDrawer();
   renderProfileActivationControls();
@@ -2329,7 +2399,7 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     cacheSize?: number;
     profiles?: ProfileView[];
     profileAuthority?: SidebarProfileAuthority;
-    profileStorageStatus?: string | null;
+    profileListPhase?: "initializing" | "settled";
     sourceIssue?: string | null;
     providerError?: SessionProviderError | null;
     sourcePreparation?: {
@@ -2343,14 +2413,7 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     overlayPosition?: SidebarOverlayPositionAuthorityState;
     subtitleStyle?: SidebarSubtitleStyleAuthorityState | null;
   };
-  if (Object.prototype.hasOwnProperty.call(view, "profileStorageStatus"))
-    profileStorageStatus = [
-      "MIGRATION_CLEANUP_PENDING",
-      "MIGRATION_NOT_COMMITTED",
-      "MIGRATION_UNCONFIRMED",
-    ].includes(String(view.profileStorageStatus))
-      ? view.profileStorageStatus!
-      : null;
+  if (view.profileListPhase === "settled") sidebarState.settleProfileList();
   if (view.overlayPosition && sidebarState.applyOverlayPositionState(view.overlayPosition))
     renderOverlayPosition();
   if (view.subtitleStyle && sidebarState.applySubtitleStyleState(view.subtitleStyle))
@@ -2441,6 +2504,7 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     ) as unknown as ProfileView[];
     reconcileDrawerAfterAuthority(previousTest);
     const signature = JSON.stringify({
+      profileListPhase: sidebarState.snapshot.profileListPhase,
       profileAuthority: sidebarState.snapshot.profileAuthority,
       profileActivationRequests: sidebarState.snapshot.profileActivationRequests,
       deletedProfileIds: sidebarState.snapshot.deletedProfileIds,
@@ -2473,7 +2537,7 @@ window.setInterval(() => {
 }, 750);
 window.addEventListener("pagehide", () => {
   syncDrawerRuntimeTick(false);
-  credentialEditor?.close();
+  cancelEditorCredentialLoad();
   for (const article of profileRows.values()) clearProfileOverflow(article);
   if (endpointRefreshTimer !== null) clearTimeout(endpointRefreshTimer);
   invalidatePendingModelRefresh();
@@ -2486,4 +2550,3 @@ window.addEventListener("pageshow", () => {
 });
 renderSubtitleStyle();
 applyProviderKind();
-requestModels("open");

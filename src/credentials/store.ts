@@ -26,13 +26,21 @@ export class HelperProfileStateStore {
     });
   }
 
-  async read(): Promise<ProfileStateStoreSnapshot> {
+  async read(deadlineMs?: number): Promise<ProfileStateStoreSnapshot> {
     try {
-      return cloneJson(await this.transport.profileStateRead());
+      return cloneJson(await this.transport.profileStateRead(deadlineMs));
     } catch (error) {
       if (error instanceof SubTandemError) throw error;
       throw new CredentialStoreError("CREDENTIAL_STORE_UNAVAILABLE");
     }
+  }
+
+  recover(commitId: string, expiresAtMs: number): Promise<ProfileStateCommitResult> {
+    return this.mutation(() => {
+      if (!this.transport.profileStateRecover)
+        throw new CredentialStoreError("CREDENTIAL_STORE_UNAVAILABLE");
+      return this.transport.profileStateRecover(commitId, expiresAtMs);
+    });
   }
 
   open(commitId: string): Promise<ProfileStateCommitResult> {

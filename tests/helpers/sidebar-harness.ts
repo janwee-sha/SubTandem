@@ -173,6 +173,20 @@ export function sidebarHarness(
   let credentialReadValue = "";
   let deferCredentialRead = false;
   let failCredentialRead = false;
+  const deferredCredentialPhases = new Set<string>();
+  const credentialPhaseReplies = new Map<string, Array<() => void>>();
+  const credentialTimeline: Array<{
+    name: string;
+    at: number;
+    key: string;
+    masked: boolean;
+    disabled: boolean;
+  }> = [];
+  const replyCredentialPhase = (phase: string, reply: () => void) => {
+    if (deferredCredentialPhases.has(phase)) {
+      credentialPhaseReplies.set(phase, [...(credentialPhaseReplies.get(phase) ?? []), reply]);
+    } else reply();
+  };
   const credentialReads: Array<() => void> = [];
   const resizeObservers: Array<{
     callback: () => void;
@@ -232,6 +246,13 @@ export function sidebarHarness(
     iina: {
       postMessage: (name: string, data: any) => {
         messages.push({ name, data });
+        credentialTimeline.push({
+          name,
+          at: Date.now(),
+          key: document.querySelector("#provider-key").value,
+          masked: document.querySelector("#provider-key").type === "password",
+          disabled: document.querySelector("#save-profile").disabled,
+        });
         options.postMessage?.(name, data);
         if (!credentialPeer || !name.startsWith("credential-channel:")) return;
         const action = name.split(":")[1]!;
@@ -245,21 +266,22 @@ export function sidebarHarness(
           const response = failCredentialRead
             ? null
             : credentialPeer!.respond(owner, data.payload, credentialReadValue);
-          const reply = () => {
-            if (failCredentialRead)
-              listeners.get("credential-channel:result")?.({
-                requestId: data.requestId,
-                ok: false,
-              });
-            else
-              listeners.get("credential-channel:result")?.({
-                requestId: data.requestId,
-                ok: true,
-                sidebarInstanceId: owner.sidebarInstanceId,
-                drawerId: owner.drawerId,
-                payload: response,
-              });
-          };
+          const reply = () =>
+            replyCredentialPhase("read", () => {
+              if (failCredentialRead)
+                listeners.get("credential-channel:result")?.({
+                  requestId: data.requestId,
+                  ok: false,
+                });
+              else
+                listeners.get("credential-channel:result")?.({
+                  requestId: data.requestId,
+                  ok: true,
+                  sidebarInstanceId: owner.sidebarInstanceId,
+                  drawerId: owner.drawerId,
+                  payload: response,
+                });
+            });
           if (deferCredentialRead) credentialReads.push(reply);
           else reply();
           return;
@@ -268,13 +290,15 @@ export function sidebarHarness(
           .call(action, action === "open" ? credentialOwner : { owner, frame: data.payload })
           .then(
             (payload) =>
-              listeners.get("credential-channel:result")?.({
-                requestId: data.requestId,
-                ok: true,
-                sidebarInstanceId: owner.sidebarInstanceId,
-                drawerId: owner.drawerId,
-                payload,
-              }),
+              replyCredentialPhase(action, () =>
+                listeners.get("credential-channel:result")?.({
+                  requestId: data.requestId,
+                  ok: true,
+                  sidebarInstanceId: owner.sidebarInstanceId,
+                  drawerId: owner.drawerId,
+                  payload,
+                }),
+              ),
             () =>
               listeners.get("credential-channel:result")?.({
                 requestId: data.requestId,
@@ -315,12 +339,20 @@ export function sidebarHarness(
   }
   return {
     messages,
+    credentialTimeline,
     connectCredentials(
-      options: { readValue?: string; deferRead?: boolean; failRead?: boolean } = {},
+      options: {
+        readValue?: string;
+        deferRead?: boolean;
+        failRead?: boolean;
+        deferPhases?: Array<"open" | "confirm" | "read">;
+      } = {},
     ) {
       credentialReadValue = options.readValue ?? "";
       deferCredentialRead = options.deferRead ?? false;
       failCredentialRead = options.failRead ?? false;
+      deferredCredentialPhases.clear();
+      options.deferPhases?.forEach((phase) => deferredCredentialPhases.add(phase));
       credentialPeer = new CredentialPeer();
       return {
         open: (message: any) =>
@@ -336,6 +368,19 @@ export function sidebarHarness(
     },
     releaseCredentialReads() {
       credentialReads.splice(0).forEach((reply) => reply());
+    },
+    releaseCredentialPhase(phase: "open" | "confirm" | "read") {
+      deferredCredentialPhases.delete(phase);
+      const replies = credentialPhaseReplies.get(phase) ?? [];
+      credentialPhaseReplies.delete(phase);
+      replies.forEach((reply) => reply());
+    },
+    activate(id: string, input: "mouse" | "Enter" | "Space" = "mouse") {
+      const element = document.querySelector(id);
+      if (element.disabled) return;
+      if (input !== "mouse")
+        element.dispatch("keydown", element, { key: input === "Space" ? " " : input });
+      element.dispatch("click");
     },
     async settleCredentials() {
       for (let n = 0; n < 20; n++) await Promise.resolve();

@@ -92,6 +92,36 @@ function snapshot(): ProfileStateStoreSnapshot {
 }
 
 describe("versioned Profile state transport", () => {
+  it("sends bounded recovery without client supplied state and validates its receipt", async () => {
+    const commitId = "00000000-0000-4000-8000-000000000099";
+    const { profileRecoveryRequestDigest } = await import("../../src/transport/client.js");
+    const result = {
+      state: "committed",
+      recovery: "reset",
+      initialized: true,
+      storeRevision: 1,
+      lastCommit: {
+        commitId,
+        operation: "recover",
+        baseRevision: 0,
+        requestDigest: profileRecoveryRequestDigest(),
+      },
+      profileState: { profiles: [], activation: null },
+      credentialConfigured: {},
+    };
+    const bridge = new ProfileStateBridge(result);
+    const client = new TransportClient({ port: 49152, token: "opaque-token" }, bridge);
+    const expiresAtMs = Date.now() + 10_000;
+    await expect(client.profileStateRecover(commitId, expiresAtMs)).resolves.toEqual(result);
+    expect(bridge.requests[0]!.body).toEqual({ action: "recover", commitId, expiresAtMs });
+    for (const deadline of [NaN, Infinity, 0, Date.now() + 16_000, 0.5])
+      await expect(client.profileStateRecover(commitId, deadline)).rejects.toThrow();
+    bridge.response = {
+      ...result,
+      lastCommit: { ...result.lastCommit, requestDigest: "0".repeat(64) },
+    };
+    await expect(client.profileStateRecover(commitId, Date.now() + 1000)).rejects.toThrow();
+  });
   it("sends one encrypted atomic Save without duplicating the reserved configuration", async () => {
     const frame = encryptedSaveFrame({ profiles: [{ ...profile, revision: 4 }], activation: null });
     const response = {

@@ -128,9 +128,9 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(globalSource).toContain("prefetchProfileModels");
     expect(globalSource).toContain("models-startup-");
     expect(sidebarSource).toContain('requestModels("open")');
-    expect(sidebarSource).toContain('requestModels("endpoint")');
+    expect(sidebarSource).toContain('queueAutomaticRefresh("endpoint"');
     expect(sidebarSource).toContain('requestModels("manual")');
-    expect(sidebarSource).toContain("}, 400)");
+    expect(sidebarSource).toContain("Date.now() + 400");
     expect(sidebarSource).toContain("pendingModelRefresh");
   });
 
@@ -508,9 +508,9 @@ describe("IINA sidebar lifecycle contract", () => {
     );
   });
 
-  it("renders unavailable Profile storage as HELPER_UNAVAILABLE instead of an empty library", () => {
-    expect(sidebarSource).toContain("Profiles unavailable (HELPER_UNAVAILABLE). Restart IINA.");
-    expect(sidebarSource).toContain("profileAuthority?.ready === false");
+  it("settles startup failures as the ordinary empty library", () => {
+    expect(sidebarSource).not.toContain("Profiles unavailable (HELPER_UNAVAILABLE). Restart IINA.");
+    expect(sidebarSource).toContain('profileListPhase === "settled"');
   });
 
   it("defers and coalesces Profile list refreshes outside the Global callback stack", () => {

@@ -60,6 +60,7 @@ export class CredentialEditor {
       reject(): void;
       timer: ReturnType<typeof setTimeout>;
       event: string;
+      deadlineMs: number;
     }
   >();
 
@@ -94,31 +95,42 @@ export class CredentialEditor {
           return;
         this.pending.delete(response.requestId!);
         this.timers.clearTimeout(pending.timer);
-        if (response.ok) pending.resolve(response.payload);
+        if (response.ok && Date.now() < pending.deadlineMs) pending.resolve(response.payload);
         else pending.reject();
       });
     }
   }
 
-  private send(name: string, payload: unknown, requestId = credentialRandomId()): Promise<unknown> {
+  private send(
+    name: string,
+    payload: unknown,
+    requestId = credentialRandomId(),
+    deadlineMs = Date.now() + 15_000,
+  ): Promise<unknown> {
     credentialAssert(!this.pending.has(requestId));
+    credentialAssert(Date.now() < deadlineMs);
     return new Promise((resolve, reject) => {
       const fail = () => reject(new Error("CREDENTIAL_OPERATION_FAILED"));
       const timer = this.timers.setTimeout(() => {
         this.pending.delete(requestId);
         fail();
-      }, 15_000);
+      }, deadlineMs - Date.now());
       this.pending.set(requestId, {
         resolve,
         reject: fail,
         timer,
+        deadlineMs,
         event: name.startsWith("profile:") ? "profile:save-result" : "credential-channel:result",
       });
       this.port.postMessage(name, { requestId, revision: 1, payload });
     });
   }
 
-  open(drawerId: string, sourceProfile: CredentialSourceProfile | null): Promise<void> {
+  open(
+    drawerId: string,
+    sourceProfile: CredentialSourceProfile | null,
+    deadlineMs = Date.now() + 15_000,
+  ): Promise<void> {
     if (this.current?.drawerId === drawerId && !this.current.channel.expired)
       return this.current.ready;
     this.close();
@@ -126,11 +138,23 @@ export class CredentialEditor {
     const current = { drawerId, channel, ready: Promise.resolve() };
     this.current = current;
     current.ready = (async () => {
-      const offer = await this.send("credential-channel:open", channel.opening);
+      const offer = await this.send(
+        "credential-channel:open",
+        channel.opening,
+        credentialRandomId(),
+        deadlineMs,
+      );
       credentialAssert(this.current === current);
+      credentialAssert(Date.now() < deadlineMs);
       const confirmation = channel.acceptOffer(offer);
-      const acknowledged = await this.send("credential-channel:confirm", confirmation);
+      const acknowledged = await this.send(
+        "credential-channel:confirm",
+        confirmation,
+        credentialRandomId(),
+        deadlineMs,
+      );
       credentialAssert(this.current === current);
+      credentialAssert(Date.now() < deadlineMs);
       channel.confirm(acknowledged);
     })().catch((error: unknown) => {
       if (this.current === current) this.close();
@@ -160,11 +184,16 @@ export class CredentialEditor {
         JSON.stringify(credentialSourceArray(snapshot.sourceProfile)) ===
           JSON.stringify(credentialSourceArray(frozen.sourceProfile)),
     );
-    const ready = this.open(frozen.drawerId, frozen.sourceProfile);
+    const ready = this.open(
+      frozen.drawerId,
+      frozen.sourceProfile,
+      snapshot.purpose === "read-edit" ? expiresAtMs : undefined,
+    );
     const current = this.current!;
     try {
       await ready;
       credentialAssert(this.current === current);
+      credentialAssert(Date.now() < expiresAtMs);
       const frame = current.channel.seal(
         value,
         {
@@ -190,21 +219,21 @@ export class CredentialEditor {
     }
   }
 
-  async read(input: CredentialOperationSnapshot, drawer: EditorDrawer): Promise<string> {
-    const operation = await this.sealOperation(
-      "",
-      input,
-      drawer,
-      credentialRandomId(),
-      Date.now() + 15_000,
-    );
+  async read(
+    input: CredentialOperationSnapshot,
+    drawer: EditorDrawer,
+    deadlineMs = Date.now() + 15_000,
+  ): Promise<string> {
+    const operation = await this.sealOperation("", input, drawer, credentialRandomId(), deadlineMs);
     const current = this.current!;
     const response = await this.send(
       "credential-channel:operation",
       operation.frame,
       operation.frame.context.requestId,
+      deadlineMs,
     );
     credentialAssert(this.current === current);
+    credentialAssert(Date.now() < deadlineMs);
     return current.channel.open(response);
   }
 
@@ -296,8 +325,9 @@ export class CredentialEditor {
     return this.current?.channel.channelId ?? null;
   }
 
-  close(): void {
+  close(drawerId?: string): void {
     const current = this.current;
+    if (drawerId !== undefined && current?.drawerId !== drawerId) return;
     this.current = null;
     current?.channel.close();
     for (const request of this.pending.values()) {

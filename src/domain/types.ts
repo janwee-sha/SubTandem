@@ -37,7 +37,7 @@ export interface ProfileState {
 
 export interface StoreCommitReceipt {
   commitId: string;
-  operation: "open" | "initialize" | "commit" | "save-profile" | "credential-write";
+  operation: "open" | "initialize" | "commit" | "save-profile" | "credential-write" | "recover";
   baseRevision: number;
   requestDigest: string;
 }

@@ -61,7 +61,7 @@ describe("credential visibility DOM", () => {
           "provider:draft-test",
         ].includes(m.name),
       ).length,
-    ).toBe(1);
+    ).toBe(0);
   });
   it("resets visibility and input on cancel, with no credential success text", () => {
     const h = editor(),

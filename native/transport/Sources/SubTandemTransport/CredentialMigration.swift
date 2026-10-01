@@ -35,24 +35,20 @@ struct CredentialMigration {
               let version = try? CredentialWire.integer(object["formatVersion"])
         else { throw TransportProtocolError.credentialStoreUnavailable }
         if version == 2 { return nil }
-        guard version == 1, Set(object.keys).isSubset(of: ["formatVersion", "credentials", "storeRevision", "lastCommit", "profileState"]),
-              let credentials = object["credentials"] as? [String: [String: String]]
+        guard version == 1, Set(object.keys).isSubset(of: ["formatVersion", "credentials", "storeRevision", "lastCommit", "profileState"])
         else { throw TransportProtocolError.credentialStoreUnavailable }
-        for (id, fields) in credentials {
-            guard UUID(uuidString: id) != nil, Set(fields.keys).isSubset(of: ["apiKey"]),
-                  fields.values.allSatisfy({ $0.utf8.count <= CredentialWire.keyBytes })
-            else { throw TransportProtocolError.credentialStoreUnavailable }
-        }
         let revision = object["storeRevision"] == nil ? 0 : Int(try CredentialWire.integer(object["storeRevision"]))
         guard revision < 9_007_199_254_740_991 else { throw TransportProtocolError.credentialStoreUnavailable }
         guard let rawState = object["profileState"], !(rawState is NSNull) else {
+            guard let credentials = object["credentials"] as? [String: [String: String]] else { throw TransportProtocolError.credentialStoreUnavailable }
+            for (id, fields) in credentials {
+                guard UUID(uuidString: id) != nil, Set(fields.keys).isSubset(of: ["apiKey"]), fields.values.allSatisfy({ $0.utf8.count <= CredentialWire.keyBytes }) else { throw TransportProtocolError.credentialStoreUnavailable }
+            }
             return LegacyCredentialMetadata(sourceLayout: "credentials-only", storeRevision: revision, profileState: nil)
         }
         guard var state = rawState as? [String: Any], Set(state.keys).isSubset(of: ["profiles", "activation"]) else { throw TransportProtocolError.invalidProfileState }
         if state["activation"] == nil { state["activation"] = NSNull() }
-        try SecureCredentialStore.validateProfileFields(state)
-        var decoded = try JSONDecoder().decode(StoredProfileState.self, from: JSONSerialization.data(withJSONObject: state))
-        try SecureCredentialStore.validateProfiles(decoded.profiles)
+        var decoded = try SecureCredentialStore.projectProfileState(state).state
         if var activation = decoded.activation {
             if let profile = decoded.profiles.first(where: { $0.profileId == activation.profileId }),
                profile.revision == activation.profileRevision, profile.kind == activation.kind, profile.endpointFingerprint == activation.endpointFingerprint {

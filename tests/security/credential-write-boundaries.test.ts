@@ -175,3 +175,37 @@ describe("production credential file write boundaries", () => {
     expect(files.contents.size).toBe(0);
   });
 });
+
+it("keeps recovery intents free of draft credentials through cancellation and retry", async () => {
+  const files = new CredentialWriteObserver();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const bridge = new IinaFileRpcBridge(files, {
+      helper: "transport",
+      fileDirectory: "/synthetic/.rpc",
+      maxRequestBytes: 2097152,
+      maxResponseBytes: 4194304,
+      maxConcurrentRequests: 4,
+      timers: { setInterval: () => ({ cancel() {} }) },
+    });
+    const client = new (await import("../../src/transport/client.js")).TransportClient(
+      { port: 12345, token: "synthetic-rpc-token" },
+      bridge,
+    );
+    const pending = client.profileStateRecover(
+      "10000000-0000-4000-8000-000000000009",
+      Date.now() + 15_000,
+    );
+    const rejected = expect(pending).rejects.toThrow();
+    await Promise.resolve();
+    await Promise.resolve();
+    bridge.close();
+    await rejected;
+  }
+  const written = files.writes
+    .filter((entry) => entry.path.endsWith("request.json"))
+    .map((entry) => JSON.parse(entry.content).body);
+  expect(written).toHaveLength(2);
+  expect(JSON.stringify(files.writes)).not.toContain(secret);
+  expect(files.leakedWrites(secret)).toEqual([]);
+  expect(files.contents.size).toBe(0);
+});

@@ -49,6 +49,7 @@ struct ProfileStoreSnapshot: Codable, Equatable, Sendable {
     let credentialConfigured: [String: Bool]
     let invalidActivation: Bool?
     var migration: CredentialMigrationState? = nil
+    var recovery: String? = nil
 }
 
 enum CredentialPersistStage: Sendable {
@@ -70,6 +71,7 @@ struct CredentialProfileSave: Sendable {
 }
 
 protocol CredentialStoreAccess: Sendable {
+    func recoverProfileState(commitID: String, expiresAtMs: Int64) async throws -> ProfileStoreSnapshot
     func readCredential(profileID: String, expectedProfileRevision: Int) async throws -> Data?
     func confirmSave(commitID: String, expectedStoreRevision: Int, requestDigest: String) async throws -> ProfileStoreSnapshot?
     func saveProfile(_ input: CredentialProfileSave, value: Data) async throws -> ProfileStoreSnapshot
@@ -91,6 +93,7 @@ protocol CredentialStoreAccess: Sendable {
 }
 
 extension CredentialStoreAccess {
+    func recoverProfileState(commitID: String, expiresAtMs: Int64) async throws -> ProfileStoreSnapshot { throw TransportProtocolError.invalidRequest }
     func migrateProfileState(commitID: String, profiles: [StoredProviderProfile]?) async throws -> ProfileStoreSnapshot { throw TransportProtocolError.invalidRequest }
     func cleanupProfileState(commitID: String, migrationID: String, preferenceConfirmed: Bool) async throws -> ProfileStoreSnapshot { throw TransportProtocolError.invalidRequest }
 }
@@ -118,6 +121,10 @@ actor SecureCredentialStore: CredentialStoreAccess {
         var lastCommit: StoredCommitReceipt?
         var profileState: StoredProfileState?
         var migration: CredentialMigrationState?
+        var unknownCredentialIDs: Set<String> = []
+        var unsafeCredentialContainer = false
+        var unsafeKeyRing = false
+        var invalidActivation = false
 
         enum CodingKeys: String, CodingKey {
             case formatVersion, storeId, credentials, keyRing, storeRevision, lastCommit, profileState, migration
@@ -162,7 +169,7 @@ actor SecureCredentialStore: CredentialStoreAccess {
         guard directoryFD >= 0 else { throw TransportProtocolError.credentialStoreUnavailable }
         defer { close(directoryFD) }
         var status = stat()
-        guard fstat(directoryFD, &status) == 0, status.st_uid == geteuid(), status.st_mode & S_IFMT == S_IFDIR,
+        guard fstat(directoryFD, &status) == 0, status.st_uid == geteuid(), status.st_mode & S_IFMT == S_IFDIR, status.st_mode & 0o700 == 0o700,
               fchmod(directoryFD, 0o700) == 0 else { throw TransportProtocolError.credentialStoreUnavailable }
         let descriptor = open(self.lockFile.path, O_RDWR | O_CREAT | O_NOFOLLOW, mode_t(S_IRUSR | S_IWUSR))
         guard descriptor >= 0 else { throw TransportProtocolError.credentialStoreUnavailable }
@@ -172,6 +179,38 @@ actor SecureCredentialStore: CredentialStoreAccess {
 
     func readProfileState() throws -> ProfileStoreSnapshot {
         try withLock { snapshot(try load()) }
+    }
+
+    func recoverProfileState(commitID: String, expiresAtMs: Int64) async throws -> ProfileStoreSnapshot {
+        try Self.validateIdentity(commitID)
+        guard expiresAtMs >= 0, expiresAtMs <= Int64(Self.maximumRevision), expiresAtMs <= Self.nowMs + 15000 else { throw TransportProtocolError.invalidRequest }
+        return try withLock(deadlineMs: max(expiresAtMs, Self.nowMs + 1)) {
+            let bytes = try readBytes()
+            if let bytes {
+                if let legacy = try? CredentialMigration.legacy(bytes) { throw CredentialMigrationFailure.required(legacy.sourceLayout) }
+                if let document = try? decodeDocument(bytes) {
+                    var result: ProfileStoreSnapshot
+                    if document.lastCommit?.commitId == commitID {
+                        guard let confirmed = try confirm(document, operation: "recover", commitID: commitID, expectedRevision: 0, requestDigest: Self.recoveryDigest()) else { throw TransportProtocolError.profileStateConflict }
+                        result = confirmed
+                        result.recovery = "reset"
+                    } else {
+                        result = snapshot(document)
+                        result.recovery = "retained"
+                    }
+                    return result
+                }
+            }
+            try Self.checkDeadline(expiresAtMs)
+            var document = Document()
+            document.profileState = StoredProfileState(profiles: [], activation: nil)
+            document.storeRevision = 1
+            document.lastCommit = StoredCommitReceipt(commitId: commitID, operation: "recover", baseRevision: 0, requestDigest: Self.recoveryDigest())
+            try persist(document, deadlineMs: expiresAtMs)
+            var result = snapshot(document)
+            result.recovery = bytes == nil ? "initialized" : "reset"
+            return result
+        }
     }
 
     func migrateProfileState(commitID: String, profiles: [StoredProviderProfile]?) async throws -> ProfileStoreSnapshot {
@@ -237,6 +276,7 @@ actor SecureCredentialStore: CredentialStoreAccess {
             let document = try load()
             guard let profile = document.profileState?.profiles.first(where: { $0.profileId == profileID }), profile.revision == expectedProfileRevision
             else { throw TransportProtocolError.profileStateConflict }
+            guard !document.unknownCredentialIDs.contains(profileID), !document.unsafeKeyRing else { throw TransportProtocolError.credentialStoreUnavailable }
             guard let stored = document.credentials[profileID] else { return nil }
             return try protection.open(stored, storeID: document.storeId, profileID: profileID, slots: document.keyRing)
         }
@@ -275,7 +315,9 @@ actor SecureCredentialStore: CredentialStoreAccess {
                 document.credentials[input.profileID] = encrypted
                 document.keyRing[slot.keyID] = slot
             }
+            document.unknownCredentialIDs.remove(input.profileID)
             document.profileState = input.profileState
+            document.invalidActivation = false
             try Self.validateProfileState(input.profileState, credentials: document.credentials)
         }
     }
@@ -314,6 +356,7 @@ actor SecureCredentialStore: CredentialStoreAccess {
             document.credentials = document.credentials.filter { remaining.contains($0.key) }
             try Self.validateProfileState(profileState, credentials: document.credentials)
             document.profileState = profileState
+            document.invalidActivation = false
         }
     }
 
@@ -352,13 +395,20 @@ actor SecureCredentialStore: CredentialStoreAccess {
         return snapshot(document)
     }
 
-    private func withLock<T>(_ operation: () throws -> T) throws -> T {
+    private func withLock<T>(deadlineMs: Int64 = SecureCredentialStore.nowMs + 15000, _ operation: () throws -> T) throws -> T {
+        let directoryFD = open(directory.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW)
+        guard directoryFD >= 0 else { throw TransportProtocolError.credentialStoreUnavailable }
+        defer { close(directoryFD) }
+        var status = stat()
+        guard fstat(directoryFD, &status) == 0, status.st_uid == geteuid(), status.st_mode & S_IFMT == S_IFDIR, status.st_mode & 0o700 == 0o700 else { throw TransportProtocolError.credentialStoreUnavailable }
         let descriptor = open(lockFile.path, O_RDWR | O_CREAT | O_NOFOLLOW, mode_t(S_IRUSR | S_IWUSR))
         guard descriptor >= 0 else { throw TransportProtocolError.credentialStoreUnavailable }
         defer { close(descriptor) }
         try Self.validateOwnedRegularFile(descriptor)
-        while flock(descriptor, LOCK_EX) != 0 {
-            if errno != EINTR { throw TransportProtocolError.credentialStoreUnavailable }
+        while flock(descriptor, LOCK_EX | LOCK_NB) != 0 {
+            guard errno == EINTR || errno == EWOULDBLOCK else { throw TransportProtocolError.credentialStoreUnavailable }
+            try Self.checkDeadline(deadlineMs)
+            usleep(1000)
         }
         defer { flock(descriptor, LOCK_UN) }
         return try operation()
@@ -373,7 +423,7 @@ actor SecureCredentialStore: CredentialStoreAccess {
         defer { close(descriptor) }
         try Self.validateOwnedRegularFile(descriptor)
         var status = stat()
-        guard fstat(descriptor, &status) == 0, status.st_size > 0, status.st_size <= Self.maximumFileBytes else { throw TransportProtocolError.credentialStoreUnavailable }
+        guard fstat(descriptor, &status) == 0, status.st_size >= 0, status.st_size <= Self.maximumFileBytes else { throw TransportProtocolError.credentialStoreUnavailable }
         var data = Data()
         var buffer = [UInt8](repeating: 0, count: 16384)
         while true {
@@ -388,33 +438,56 @@ actor SecureCredentialStore: CredentialStoreAccess {
 
     private func load() throws -> Document {
         guard let data = try readBytes() else { return Document() }
+        return try decodeDocument(data)
+    }
+
+    private func decodeDocument(_ data: Data) throws -> Document {
         if let legacy = try CredentialMigration.legacy(data) { throw CredentialMigrationFailure.required(legacy.sourceLayout) }
         do {
             let object = try CredentialWire.record(JSONSerialization.jsonObject(with: data), keys: ["formatVersion", "storeId", "storeRevision", "profileState", "keyRing", "credentials", "lastCommit", "migration"])
             guard try CredentialWire.integer(object["formatVersion"]) == 2 else { throw TransportProtocolError.credentialStoreUnavailable }
-            let document = try JSONDecoder().decode(Document.self, from: data)
+            var metadata = object
+            metadata["credentials"] = [String: String]()
+            metadata["keyRing"] = [String: String]()
+            let projectedState = try Self.projectProfileState(object["profileState"])
+            metadata["profileState"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(projectedState.state))
+            var document = try JSONDecoder().decode(Document.self, from: JSONSerialization.data(withJSONObject: metadata))
+            document.invalidActivation = projectedState.invalidActivation
             if let migration = document.migration {
                 _ = try CredentialWire.record(object["migration"] as Any, keys: ["migrationId", "sourceFormat", "sourceLayout", "commitState", "cleanupState", "pendingClasses"])
                 try CredentialMigration.validate(migration)
             }
             try Self.validateIdentity(document.storeId)
             guard (1...Self.maximumRevision).contains(document.storeRevision), let state = document.profileState else { throw TransportProtocolError.credentialStoreUnavailable }
-            try Self.validateProfileFields(object["profileState"])
             try Self.validateProfiles(state.profiles)
             let identities = Set(state.profiles.map(\.profileId))
-            guard Set(document.credentials.keys).isSubset(of: identities) else { throw TransportProtocolError.credentialStoreUnavailable }
-            for (id, value) in document.credentials {
-                try Self.validateIdentity(id)
-                try Self.validateIdentity(value.credentialID)
-                guard value.envelope.utf8.count <= 4 * ((CredentialWire.sealedBytes + 2) / 3) else { throw TransportProtocolError.credentialStoreUnavailable }
-                _ = try CredentialWire.record((object["credentials"] as? [String: Any])?[id] as Any, keys: ["credentialId", "envelope"])
+            if let credentials = object["credentials"] as? [String: Any] {
+                if !Set(credentials.keys).isSubset(of: identities) { document.unsafeCredentialContainer = true }
+                for (id, raw) in credentials where identities.contains(id) {
+                    do {
+                        _ = try CredentialWire.record(raw, keys: ["credentialId", "envelope"])
+                        let value = try JSONDecoder().decode(CredentialStoredValue.self, from: JSONSerialization.data(withJSONObject: raw))
+                        try Self.validateIdentity(value.credentialID)
+                        guard value.envelope.utf8.count <= 4 * ((CredentialWire.sealedBytes + 2) / 3) else { throw TransportProtocolError.credentialStoreUnavailable }
+                        document.credentials[id] = value
+                    } catch { document.unknownCredentialIDs.insert(id) }
+                }
+            } else {
+                document.unknownCredentialIDs = identities
+                document.unsafeCredentialContainer = true
             }
-            for (id, slot) in document.keyRing {
-                try Self.validateIdentity(id)
-                guard slot.keyID == id, slot.wrappedRepresentation.utf8.count <= 4 * ((16384 + 2) / 3) else { throw TransportProtocolError.credentialStoreUnavailable }
-                _ = try CredentialWire.record((object["keyRing"] as? [String: Any])?[id] as Any, keys: ["keyId", "wrappedRepresentation"])
-            }
-            guard let receipt = document.lastCommit, ["open", "initialize", "commit", "save-profile", "migrate", "cleanup"].contains(receipt.operation), receipt.baseRevision >= 0, receipt.baseRevision == document.storeRevision - 1, Self.validDigest(receipt.requestDigest)
+            if let slots = object["keyRing"] as? [String: Any] {
+                for (id, raw) in slots {
+                    do {
+                        try Self.validateIdentity(id)
+                        _ = try CredentialWire.record(raw, keys: ["keyId", "wrappedRepresentation"])
+                        let slot = try JSONDecoder().decode(CredentialDeviceKeySlot.self, from: JSONSerialization.data(withJSONObject: raw))
+                        guard slot.keyID == id, slot.wrappedRepresentation.utf8.count <= 4 * ((16384 + 2) / 3) else { throw TransportProtocolError.credentialStoreUnavailable }
+                        document.keyRing[id] = slot
+                    } catch { document.unsafeKeyRing = true }
+                }
+            } else { document.unsafeKeyRing = true }
+            guard let receipt = document.lastCommit, ["open", "initialize", "commit", "save-profile", "migrate", "cleanup", "recover"].contains(receipt.operation), receipt.baseRevision >= 0, receipt.baseRevision == document.storeRevision - 1, Self.validDigest(receipt.requestDigest)
             else { throw TransportProtocolError.credentialStoreUnavailable }
             try Self.validateIdentity(receipt.commitId)
             _ = try CredentialWire.record(object["lastCommit"] as Any, keys: ["commitId", "operation", "baseRevision", "requestDigest"])
@@ -423,14 +496,17 @@ actor SecureCredentialStore: CredentialStoreAccess {
     }
 
     private func snapshot(_ document: Document) -> ProfileStoreSnapshot {
-        let configured = Dictionary(uniqueKeysWithValues: (document.profileState?.profiles ?? []).map { ($0.profileId, document.credentials[$0.profileId] != nil) })
+        let configured = Dictionary(uniqueKeysWithValues: (document.profileState?.profiles ?? []).map { ($0.profileId, document.credentials[$0.profileId] != nil || document.unknownCredentialIDs.contains($0.profileId)) })
         var state = document.profileState
-        let invalid = state.map { !Self.activationIsValid($0, credentials: document.credentials) } ?? false
+        if let id = state?.activation?.profileId, document.unknownCredentialIDs.contains(id) { state?.activation?.credentialConfigured = true }
+        let invalid = document.invalidActivation || (state.map { !Self.activationIsValid($0, credentials: document.credentials, unknown: document.unknownCredentialIDs) } ?? false)
         if invalid { state?.activation = nil }
         return ProfileStoreSnapshot(initialized: state != nil, storeRevision: document.storeRevision, lastCommit: document.lastCommit, profileState: state, credentialConfigured: configured, invalidActivation: invalid ? true : nil, migration: document.migration)
     }
 
-    private func persist(_ document: Document) throws {
+    private func persist(_ document: Document, deadlineMs: Int64? = nil) throws {
+        guard document.unknownCredentialIDs.isEmpty, !document.unsafeCredentialContainer, !document.unsafeKeyRing else { throw TransportProtocolError.credentialStoreUnavailable }
+        if let deadlineMs { try Self.checkDeadline(deadlineMs) }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
         let data = try encoder.encode(document)
@@ -442,6 +518,7 @@ actor SecureCredentialStore: CredentialStoreAccess {
         defer { close(descriptor); if !renamed { unlink(temporary.path) } }
         try Self.validateOwnedRegularFile(descriptor)
         if fault(.beforeWrite) { throw TransportProtocolError.credentialStoreUnavailable }
+        if let deadlineMs { try Self.checkDeadline(deadlineMs) }
         try data.withUnsafeBytes { buffer in
             guard let address = buffer.baseAddress else { throw TransportProtocolError.credentialStoreUnavailable }
             var offset = 0
@@ -458,6 +535,7 @@ actor SecureCredentialStore: CredentialStoreAccess {
         if fault(.beforeFsync) { throw TransportProtocolError.credentialStoreUnavailable }
         guard fsync(descriptor) == 0 else { throw TransportProtocolError.credentialStoreUnavailable }
         if fault(.beforeRename) { throw TransportProtocolError.credentialStoreUnavailable }
+        if let deadlineMs { try Self.checkDeadline(deadlineMs) }
         _ = try readBytes()
         guard rename(temporary.path, file.path) == 0 else { throw TransportProtocolError.credentialStoreUnavailable }
         renamed = true
@@ -480,7 +558,7 @@ actor SecureCredentialStore: CredentialStoreAccess {
 
     private static func validateOwnedRegularFile(_ descriptor: Int32) throws {
         var status = stat()
-        guard fstat(descriptor, &status) == 0, status.st_uid == geteuid(), status.st_mode & S_IFMT == S_IFREG, status.st_nlink == 1, fchmod(descriptor, 0o600) == 0 else { throw TransportProtocolError.credentialStoreUnavailable }
+        guard fstat(descriptor, &status) == 0, status.st_uid == geteuid(), status.st_mode & S_IFMT == S_IFREG, status.st_nlink == 1, status.st_mode & 0o600 == 0o600, fchmod(descriptor, 0o600) == 0 else { throw TransportProtocolError.credentialStoreUnavailable }
     }
 
     static func validateProfileFields(_ value: Any?) throws {
@@ -497,17 +575,35 @@ actor SecureCredentialStore: CredentialStoreAccess {
         }
     }
 
+    static func projectProfileState(_ value: Any?) throws -> (state: StoredProfileState, invalidActivation: Bool) {
+        var raw = try CredentialWire.record(value as Any, keys: ["profiles", "activation"])
+        let activation = raw["activation"]
+        raw["activation"] = NSNull()
+        try validateProfileFields(raw)
+        var state = try JSONDecoder().decode(StoredProfileState.self, from: JSONSerialization.data(withJSONObject: raw))
+        try validateProfiles(state.profiles)
+        guard !(activation is NSNull) else { return (state, false) }
+        do {
+            let fields = try CredentialWire.record(activation as Any, keys: ["profileId", "profileRevision", "kind", "endpointFingerprint", "credentialConfigured"])
+            _ = try CredentialWire.integer(fields["profileRevision"], minimum: 1)
+            state.activation = try JSONDecoder().decode(StoredActivationReference.self, from: JSONSerialization.data(withJSONObject: fields))
+            return (state, false)
+        } catch { return (state, true) }
+    }
+
     private static func validateProfileState(_ state: StoredProfileState, credentials: [String: CredentialStoredValue]) throws {
         try validateProfiles(state.profiles)
         guard activationIsValid(state, credentials: credentials) else { throw TransportProtocolError.invalidProfileState }
     }
 
     static func validateProfiles(_ profiles: [StoredProviderProfile]) throws {
+        guard profiles.count <= 1024 else { throw TransportProtocolError.invalidProfileState }
         var identities = Set<String>()
         for profile in profiles {
             try validateIdentity(profile.profileId)
             guard identities.insert(profile.profileId).inserted, (1...maximumRevision).contains(profile.revision),
                   !profile.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  profile.displayName.utf16.count <= 128, profile.endpoint.utf16.count <= 8192, (profile.model?.utf16.count ?? 0) <= 1024,
                   ["openai", "claude", "deepseek", "ollama"].contains(profile.kind),
                   let proxyMode = profile.proxyMode, ["system", "direct"].contains(proxyMode),
                   let model = profile.model, !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -523,11 +619,11 @@ actor SecureCredentialStore: CredentialStoreAccess {
         }
     }
 
-    private static func activationIsValid(_ state: StoredProfileState, credentials: [String: CredentialStoredValue]) -> Bool {
+    private static func activationIsValid(_ state: StoredProfileState, credentials: [String: CredentialStoredValue], unknown: Set<String> = []) -> Bool {
         guard let activation = state.activation else { return true }
         guard let profile = state.profiles.first(where: { $0.profileId == activation.profileId }), activation.profileRevision == profile.revision,
               activation.kind == profile.kind, activation.endpointFingerprint == profile.endpointFingerprint else { return false }
-        return activation.credentialConfigured == (credentials[profile.profileId] != nil)
+        return activation.credentialConfigured == (credentials[profile.profileId] != nil || unknown.contains(profile.profileId))
     }
 
     private static func validateIdentity(_ value: String) throws {
@@ -542,5 +638,12 @@ actor SecureCredentialStore: CredentialStoreAccess {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
         return CredentialCryptography.digest(try encoder.encode(value))
+    }
+    private static var nowMs: Int64 { Int64(Date().timeIntervalSince1970 * 1000) }
+    private static func checkDeadline(_ deadlineMs: Int64) throws {
+        guard nowMs < deadlineMs else { throw TransportProtocolError.credentialStoreUnavailable }
+    }
+    private static func recoveryDigest() -> String {
+        CredentialCryptography.digest(Data("{\"action\":\"recover\",\"profileState\":{\"activation\":null,\"profiles\":[]}}".utf8))
     }
 }

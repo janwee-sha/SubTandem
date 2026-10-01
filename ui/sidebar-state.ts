@@ -113,6 +113,7 @@ interface SidebarProfileDrawerState {
 }
 
 interface SidebarCredentialReadOwner {
+  loadId: string | null;
   channelId: string;
   drawerId: string | null;
   sourceProfile: SidebarDrawerSourceProfile | null;
@@ -120,6 +121,16 @@ interface SidebarCredentialReadOwner {
   keyEditEpoch: number;
   submitEpoch: number;
 }
+
+interface SidebarCredentialLoad {
+  loadId: string;
+  drawerId: string;
+  sourceProfile: SidebarDrawerSourceProfile;
+  startedAtMs: number;
+  deadlineMs: number;
+}
+
+type SidebarAutomaticModelTrigger = "open" | "endpoint" | "profile" | "credential";
 
 interface SidebarOverlayPositionState {
   displayPosition: number;
@@ -244,6 +255,9 @@ type SidebarSubtitleStyleSaveResult =
     };
 
 interface SidebarStateSnapshot {
+  profileListPhase: "initializing" | "settled";
+  credentialLoad: SidebarCredentialLoad | null;
+  pendingAutomaticRefresh: { trigger: SidebarAutomaticModelTrigger; notBeforeMs: number } | null;
   profiles: SidebarStateProfile[];
   deletedProfileIds: string[];
   editingProfileId: string | null;
@@ -274,7 +288,11 @@ interface SidebarStateSnapshot {
 }
 
 interface SidebarStateCoordinator {
+  settleProfileList(): void;
   readonly snapshot: SidebarStateSnapshot;
+  finishCredentialLoad(loadId: string): boolean;
+  cancelCredentialLoad(): void;
+  queueAutomaticRefresh(trigger: SidebarAutomaticModelTrigger, notBeforeMs?: number): void;
   applyProfiles(profiles: SidebarStateProfile[]): SidebarStateProfile[];
   reconcileEditingProfile(profile: SidebarStateProfile): SidebarStateProfile;
   setProfileContext(context: {
@@ -459,6 +477,9 @@ function createSubTandemSidebarState(
     backgroundColor: { ...style.backgroundColor },
   });
   const snapshot: SidebarStateSnapshot = {
+    profileListPhase: "initializing",
+    credentialLoad: null,
+    pendingAutomaticRefresh: null,
     profiles: [...initialProfiles],
     deletedProfileIds: [],
     editingProfileId: null,
@@ -597,6 +618,8 @@ function createSubTandemSidebarState(
       snapshot.deleteConfirmation = null;
       if (snapshot.drawer.profileId === confirmation.profileId) snapshot.drawer.deletePhase = null;
     }
+    if (snapshot.drawer.mode === "closed" || snapshot.drawer.validity === "conflict")
+      cancelCredentialLoad();
     return snapshot.profiles;
   };
 
@@ -709,6 +732,7 @@ function createSubTandemSidebarState(
         return JSON.stringify(authority) === JSON.stringify(current);
     }
     snapshot.profileAuthority = cloneProfileAuthority(authority);
+    snapshot.profileListPhase = "settled";
     applyProfiles(authority.profiles);
     const activationMatches = (profileId: string, enabled: boolean): boolean => {
       const active = authority.activation;
@@ -952,6 +976,24 @@ function createSubTandemSidebarState(
     keyEditEpoch: drawer.keyEditEpoch,
     submitEpoch: drawer.submitEpoch,
   });
+  let credentialLoadSequence = 0;
+  const finishCredentialLoad = (loadId: string): boolean => {
+    if (snapshot.credentialLoad?.loadId !== loadId) return false;
+    snapshot.credentialLoad = null;
+    credentialReadOwner = null;
+    return true;
+  };
+  const cancelCredentialLoad = (): void => {
+    snapshot.credentialLoad = null;
+    snapshot.pendingAutomaticRefresh = null;
+    credentialReadOwner = null;
+  };
+  const queueAutomaticRefresh = (trigger: SidebarAutomaticModelTrigger, notBeforeMs = 0): void => {
+    snapshot.pendingAutomaticRefresh = {
+      trigger,
+      notBeforeMs: Math.max(notBeforeMs, snapshot.pendingAutomaticRefresh?.notBeforeMs ?? 0),
+    };
+  };
   const beginCredentialRead = (
     channelId: string,
     expected = snapshot.drawer,
@@ -965,7 +1007,11 @@ function createSubTandemSidebarState(
       JSON.stringify(readContext(drawer)) !== JSON.stringify(readContext(expected))
     )
       return null;
-    credentialReadOwner = { channelId, ...JSON.parse(JSON.stringify(readContext(drawer))) };
+    credentialReadOwner = {
+      loadId: snapshot.credentialLoad?.loadId ?? null,
+      channelId,
+      ...JSON.parse(JSON.stringify(readContext(drawer))),
+    };
     return credentialReadOwner;
   };
   const acceptCredentialRead = (
@@ -974,6 +1020,9 @@ function createSubTandemSidebarState(
   ): boolean => {
     if (
       owner !== credentialReadOwner ||
+      (owner.loadId !== null &&
+        (snapshot.credentialLoad?.loadId !== owner.loadId ||
+          Date.now() >= snapshot.credentialLoad.deadlineMs)) ||
       owner.channelId !== channelId ||
       snapshot.drawer.mode !== "editing" ||
       snapshot.drawer.validity !== "current" ||
@@ -1058,6 +1107,7 @@ function createSubTandemSidebarState(
   });
 
   const resetDrawerDependencies = (): void => {
+    cancelCredentialLoad();
     snapshot.pendingProfileSave = null;
     snapshot.modelControl = {
       value: "",
@@ -1130,6 +1180,20 @@ function createSubTandemSidebarState(
     snapshot.editingProfileId = profileId;
     snapshot.profileEditorContextVersion += 1;
     resetDrawerDependencies();
+    if (
+      profile.credentialConfigured === true &&
+      snapshot.drawer.drawerId &&
+      snapshot.drawer.sourceProfile
+    ) {
+      const startedAtMs = Date.now();
+      snapshot.credentialLoad = {
+        loadId: `load-${++credentialLoadSequence}`,
+        drawerId: snapshot.drawer.drawerId,
+        sourceProfile: { ...snapshot.drawer.sourceProfile },
+        startedAtMs,
+        deadlineMs: startedAtMs + 15_000,
+      };
+    }
     return { changed: true, closed: false, discardedMode, discardedProfileId };
   };
 
@@ -1658,6 +1722,12 @@ function createSubTandemSidebarState(
 
   return {
     snapshot,
+    settleProfileList: () => {
+      snapshot.profileListPhase = "settled";
+    },
+    finishCredentialLoad,
+    cancelCredentialLoad,
+    queueAutomaticRefresh,
     applyProfiles,
     reconcileEditingProfile,
     setProfileContext,

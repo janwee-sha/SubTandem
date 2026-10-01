@@ -277,7 +277,7 @@ describe("encrypted Profile authority lifecycle", () => {
     expect(h.authority.acceptsTranslations).toBe(false);
     expect(save).toHaveBeenCalledTimes(1);
     expect(await h.authority.reconcile()).toBe(false);
-    expect(recover).toHaveBeenCalledTimes(2);
+    expect(recover).toHaveBeenCalledTimes(3);
     await expect(
       h.authority.reserveProfileSave(input, encryptedSaveOwner, "new-save"),
     ).resolves.toMatchObject({ expectedStoreRevision: 3 });

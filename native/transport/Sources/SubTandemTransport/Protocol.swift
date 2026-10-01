@@ -240,6 +240,13 @@ actor ProtocolHandler {
             else { return .json(statusCode: 400, ["error": "invalid-profile-state"]) }
             do {
                 switch action {
+                case "recover":
+                    _ = try CredentialWire.record(json, keys: ["action", "commitId", "expiresAtMs"])
+                    let commitID = try CredentialWire.identity(json["commitId"])
+                    let expiresAtMs = try CredentialWire.integer(json["expiresAtMs"])
+                    let now = Int64(Date().timeIntervalSince1970 * 1000)
+                    guard expiresAtMs >= 0, expiresAtMs <= now + 15000 else { throw TransportProtocolError.invalidRequest }
+                    return Self.storeResponse(try await credentialStore.recoverProfileState(commitID: commitID, expiresAtMs: expiresAtMs), state: "committed")
                 case "migrate" where json.count == 2 || json.count == 3:
                     _ = try CredentialWire.record(json, keys: json["profiles"] == nil ? ["action", "commitId"] : ["action", "commitId", "profiles"])
                     let commitID = try CredentialWire.identity(json["commitId"])

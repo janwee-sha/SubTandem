@@ -228,7 +228,7 @@ describe("production legacy metadata migration", () => {
       expect(migrate.profiles).toEqual(layout === "profile-state" ? undefined : [profile]);
       expect(JSON.stringify(h.calls)).not.toMatch(/synthetic.*old-key|apiKey/);
       expect(h.values.get("providerProfilesJson")).toBe("");
-      expect(h.replies.at(-1)!.data.storageStatus).toBeNull();
+      expect(h.replies.at(-1)!.data.storageStatus).toBeUndefined();
       expect(h.state?.migration?.cleanupState).toBe("clean");
     },
   );
@@ -239,7 +239,7 @@ describe("production legacy metadata migration", () => {
       const h = await globalMigration({ migrationError });
       expect(h.writes).toEqual([]);
       expect(h.calls.map((call) => call.action)).toEqual(["read", "migrate"]);
-      expect(h.replies.at(-1)!.data.storageStatus).toBe(migrationError);
+      expect(h.replies.at(-1)!.data.storageStatus).toBeUndefined();
     },
   );
 
@@ -250,7 +250,7 @@ describe("production legacy metadata migration", () => {
       expect(h.state?.profileState?.profiles).toEqual([profile]);
       expect(h.state?.migration?.pendingClasses).toEqual(["legacy-preferences"]);
       expect(h.replies.at(-1)!.data.profiles).toHaveLength(1);
-      expect(h.replies.at(-1)!.data.storageStatus).toBe("MIGRATION_CLEANUP_PENDING");
+      expect(h.replies.at(-1)!.data.storageStatus).toBeUndefined();
     },
   );
 
@@ -262,7 +262,6 @@ describe("production legacy metadata migration", () => {
     const restarted = await globalMigration({ state });
     expect(restarted.calls.map((call) => call.action)).toEqual([
       "read",
-      "open",
       "preference-set",
       "preference-sync",
       "cleanup",

@@ -155,6 +155,7 @@ export interface TransportSession {
 }
 
 export interface ProfileStateStoreSnapshot {
+  recovery?: "retained" | "initialized" | "reset";
   initialized: boolean;
   storeRevision: number;
   lastCommit: StoreCommitReceipt | null;
@@ -180,6 +181,7 @@ export type ProfileStateCommitResult =
   | ({ state: "reconciling" } & ProfileStateStoreSnapshot);
 
 export interface TransportRpcClient {
+  profileStateRecover?(commitId: string, expiresAtMs: number): Promise<ProfileStateCommitResult>;
   profileStateMigrate?(
     commitId: string,
     profiles?: PersistentProviderProfile[],
@@ -196,7 +198,7 @@ export interface TransportRpcClient {
     owner: CredentialOwner,
     frame: CredentialEnvelope,
   ): Promise<ProfileStateCommitResult>;
-  profileStateRead(): Promise<ProfileStateStoreSnapshot>;
+  profileStateRead(deadlineMs?: number): Promise<ProfileStateStoreSnapshot>;
   profileStateOpen(commitId: string): Promise<ProfileStateCommitResult>;
   profileStateInitialize(
     commitId: string,
@@ -304,10 +306,49 @@ export class TransportClient implements TransportRpcClient {
     return result;
   }
 
-  async profileStateRead(): Promise<ProfileStateStoreSnapshot> {
+  async profileStateRead(
+    deadlineMs = Date.now() + controlRpcTimeoutMs,
+  ): Promise<ProfileStateStoreSnapshot> {
     return parseProfileStateStoreSnapshot(
-      await this.post<unknown>("/v2/profile-state", { action: "read" }),
+      await this.post<unknown>(
+        "/v2/profile-state",
+        { action: "read" },
+        Math.max(1, deadlineMs - Date.now()),
+      ),
     );
+  }
+
+  async profileStateRecover(
+    commitId: string,
+    expiresAtMs: number,
+  ): Promise<ProfileStateCommitResult> {
+    if (
+      !credentialIdentity(commitId) ||
+      !Number.isSafeInteger(expiresAtMs) ||
+      expiresAtMs <= Date.now() ||
+      expiresAtMs > Date.now() + 15_000
+    )
+      protocolFailure();
+    const result = parseProfileStateCommitResult(
+      await this.post<unknown>(
+        "/v2/profile-state",
+        { action: "recover", commitId, expiresAtMs },
+        expiresAtMs - Date.now(),
+      ),
+    );
+    if (!result.recovery || !result.initialized || !result.profileState) protocolFailure();
+    if (
+      result.recovery !== "retained" &&
+      (result.storeRevision !== 1 ||
+        result.profileState.profiles.length !== 0 ||
+        result.profileState.activation !== null ||
+        result.lastCommit?.commitId !== commitId ||
+        result.lastCommit.operation !== "recover" ||
+        result.lastCommit.baseRevision !== 0 ||
+        result.lastCommit.requestDigest !== profileRecoveryRequestDigest())
+    )
+      protocolFailure();
+    return result;
   }
 
   async profileStateMigrate(
@@ -600,7 +641,7 @@ function parseCommitReceipt(value: unknown): StoreCommitReceipt | null {
   if (
     !exactKeys(record, ["commitId", "operation", "baseRevision", "requestDigest"]) ||
     !opaque(record.commitId) ||
-    !["open", "initialize", "commit", "save-profile", "migrate", "cleanup"].includes(
+    !["open", "initialize", "commit", "save-profile", "migrate", "cleanup", "recover"].includes(
       String(record.operation),
     ) ||
     !safeInteger(record.baseRevision) ||
@@ -613,7 +654,9 @@ function parseCommitReceipt(value: unknown): StoreCommitReceipt | null {
 export function parseProfileStateStoreSnapshot(value: unknown): ProfileStateStoreSnapshot {
   if (!value || typeof value !== "object" || Array.isArray(value)) protocolFailure();
   const record = value as Record<string, unknown>;
-  const optional = ["invalidActivation", "migration"].filter((key) => record[key] !== undefined);
+  const optional = ["invalidActivation", "migration", "recovery"].filter(
+    (key) => record[key] !== undefined,
+  );
   if (
     !exactKeys(record, [
       "initialized",
@@ -626,6 +669,8 @@ export function parseProfileStateStoreSnapshot(value: unknown): ProfileStateStor
     typeof record.initialized !== "boolean" ||
     !safeInteger(record.storeRevision) ||
     (record.invalidActivation !== undefined && record.invalidActivation !== true) ||
+    (record.recovery !== undefined &&
+      !["retained", "initialized", "reset"].includes(String(record.recovery))) ||
     !record.credentialConfigured ||
     typeof record.credentialConfigured !== "object" ||
     Array.isArray(record.credentialConfigured)
@@ -650,6 +695,9 @@ export function parseProfileStateStoreSnapshot(value: unknown): ProfileStateStor
     lastCommit: parseCommitReceipt(record.lastCommit),
     profileState,
     credentialConfigured: cloneJson(configured) as Record<string, boolean>,
+    ...(record.recovery === undefined
+      ? {}
+      : { recovery: record.recovery as "retained" | "initialized" | "reset" }),
     ...(record.invalidActivation === true ? { invalidActivation: true as const } : {}),
     ...(record.migration === undefined
       ? {}
@@ -693,4 +741,10 @@ export function parseProfileStateCommitResult(value: unknown): ProfileStateCommi
   const snapshot = { ...record };
   delete snapshot.state;
   return { state: "committed", ...parseProfileStateStoreSnapshot(snapshot) };
+}
+
+export function profileRecoveryRequestDigest(): string {
+  return sha256Hex(
+    canonicalJson({ action: "recover", profileState: { profiles: [], activation: null } }),
+  );
 }

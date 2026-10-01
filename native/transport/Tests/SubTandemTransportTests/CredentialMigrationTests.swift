@@ -43,6 +43,7 @@ private func migrationDocument(_ directory: URL) throws -> [String: Any] {
 }
 
 func runCredentialMigrationTests() async throws {
+    try await migrationPreservesConfigWithBrokenCredentialMetadata()
     let (directory, mailbox) = try migrationDirectories()
     defer { try? FileManager.default.removeItem(at: directory.deletingLastPathComponent()) }
     _ = try migrationFixture(directory)
@@ -66,6 +67,26 @@ func runCredentialMigrationTests() async throws {
     try await migrationUnsafePathsAndDocuments()
     try await migrationProcessExitMatrix()
     try await migrationStopsOnlyLegacyWriter()
+}
+
+private func migrationPreservesConfigWithBrokenCredentialMetadata() async throws {
+    for damaged in ["container", "record", "activation"] {
+        let (directory, mailbox) = try migrationDirectories()
+        defer { try? FileManager.default.removeItem(at: directory.deletingLastPathComponent()) }
+        _ = try migrationFixture(directory)
+        var object = try migrationDocument(directory)
+        object["credentials"] = damaged == "container" ? "broken" : [migrationID: ["unexpected": 42]] as [String: Any]
+        if damaged == "activation" {
+            var state = object["profileState"] as! [String: Any]
+            state["activation"] = "broken"
+            object["profileState"] = state
+        }
+        try JSONSerialization.data(withJSONObject: object).write(to: directory.appendingPathComponent("credentials.json"))
+        let store = try SecureCredentialStore(directory: directory, mailboxDirectory: mailbox, preferenceFile: migrationPreferenceFile(directory))
+        let migrated = try await store.migrateProfileState(commitID: UUID().uuidString, profiles: nil)
+        try check(migrated.profileState?.profiles == [migrationProfile()], "supported legacy configuration must survive credential metadata damage")
+        try check(migrated.credentialConfigured[migrationID] == false, "legacy plaintext must never be imported into v2")
+    }
 }
 
 private func migrationPreferenceReadback() async throws {

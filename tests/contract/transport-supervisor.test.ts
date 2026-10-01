@@ -107,6 +107,37 @@ class FakeTransportClient implements TransportRpcClient {
   }
 }
 
+it("expires a stuck startup, permits retry and disposes a late client", async () => {
+  vi.useFakeTimers();
+  try {
+    let release!: (client: TransportRpcClient) => void;
+    let calls = 0;
+    const late = new FakeTransportClient();
+    const next = new FakeTransportClient();
+    const supervisor = new TransportSupervisor(() =>
+      ++calls === 1
+        ? new Promise((resolve) => {
+            release = resolve;
+          })
+        : Promise.resolve(next),
+    );
+    const first = supervisor.profileStateRead(Date.now() + 1000);
+    const rejected = expect(first).rejects.toThrow();
+    await vi.advanceTimersByTimeAsync(1000);
+    await rejected;
+    await expect(supervisor.profileStateRead(Date.now() + 1000)).resolves.toEqual(
+      next.profileSnapshot,
+    );
+    release(late);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(late.disposeCalls).toBe(1);
+    expect(calls).toBe(2);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
 const providerRequest: TransportRequest = {
   credential: { source: "none" },
   owner: { senderId: "window", requestId: "request" },
@@ -601,4 +632,33 @@ it("blocks a provider send cancelled while its helper is starting", async () => 
   await cancellation;
   expect(await work).toMatchObject({ category: "cancelled" });
   expect(client.requestCalls).toBe(0);
+});
+
+describe("bounded health ownership", () => {
+  it("retires an unresponsive health check and ignores it after a successful new attempt", async () => {
+    vi.useFakeTimers();
+    try {
+      const old = new FakeTransportClient();
+      let release!: () => void;
+      old.health = () =>
+        new Promise((resolve) => {
+          release = resolve;
+        });
+      const fresh = new FakeTransportClient();
+      let attempts = 0;
+      const supervisor = new TransportSupervisor(async () => (++attempts === 1 ? old : fresh));
+      const first = supervisor.profileStateRead(Date.now() + 15_000);
+      const rejected = expect(first).rejects.toMatchObject({ code: "HELPER_UNAVAILABLE" });
+      await vi.advanceTimersByTimeAsync(15_000);
+      await rejected;
+      expect(old.disposeCalls).toBe(1);
+      expect(await supervisor.profileStateRead(Date.now() + 15_000)).toEqual(fresh.profileSnapshot);
+      release();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(await supervisor.profileStateRead(Date.now() + 15_000)).toEqual(fresh.profileSnapshot);
+      expect(attempts).toBe(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

@@ -286,6 +286,22 @@ afterEach(() => {
 });
 
 describe("translation-disabled Main startup", () => {
+  it("settles a completely unresponsive Global locally at the first initialization deadline", async () => {
+    const harness = createHarness({ enabled: false, selection: "external" });
+    await startHarness(harness);
+    harness.triggerSidebar("ui:ready");
+    await vi.advanceTimersByTimeAsync(15_000);
+    harness.triggerSidebar("ui:poll");
+    expect(harness.states().at(-1)).toMatchObject({
+      profileListPhase: "settled",
+      profiles: [],
+      selection: null,
+      status: "disabled",
+    });
+    expect(harness.states().at(-1)?.profileAuthority).toBeUndefined();
+    expect(harness.counts.bootstrapCalls).toBe(0);
+    harness.close();
+  });
   it.each(["external", "embedded", "unsupported"] as const)(
     "does no subtitle work for a persisted disabled %s selection across every loading entry",
     async (selection) => {

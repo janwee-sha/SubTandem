@@ -1,5 +1,6 @@
+import { sidebarHarness } from "../helpers/sidebar-harness.js";
 import { testSavedCredential } from "../contract/provider-test-helpers.js";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { diagnostic } from "../../src/domain/logging.js";
 import {
   parseProviderModelsResult,
@@ -443,4 +444,41 @@ describe("credential and content leakage boundaries", () => {
     });
     for (const value of sensitive) expect(output).not.toContain(value);
   });
+});
+
+it("does not broadcast edited keys when a stalled saved-key load expires or is cancelled", () => {
+  for (const cancel of [false, true]) {
+    const h = sidebarHarness();
+    h.receive("state:update", {
+      profiles: [
+        {
+          profileId: "one",
+          revision: 1,
+          displayName: "Synthetic",
+          kind: "openai",
+          endpoint: "https://example.test/v1",
+          endpointFingerprint: "fp",
+          model: "model",
+          proxyMode: "direct",
+          credentialConfigured: true,
+        },
+      ],
+    });
+    h.evaluate('loadEditor(profiles.get("one"))');
+    const secret = "synthetic-current-private-key";
+    h.element("#provider-key").value = secret;
+    h.element("#provider-key").dispatch("input");
+    if (cancel) h.activate("#cancel-profile");
+    else {
+      const clock = vi.spyOn(Date, "now").mockReturnValue(Date.now() + 15_000);
+      try {
+        h.flush();
+      } finally {
+        clock.mockRestore();
+      }
+    }
+    expect(JSON.stringify(h.messages)).not.toContain(secret);
+    expect(JSON.stringify(h.evaluate("sidebarState.snapshot"))).not.toContain(secret);
+    h.event("pagehide");
+  }
 });

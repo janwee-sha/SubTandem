@@ -17,7 +17,7 @@ const profile = {
 async function editor(connected = true) {
   const h = sidebarHarness();
   const peer = connected ? h.connectCredentials({ readValue: "synthetic-saved-key" }) : null;
-  h.receive("state:update", { profiles: [profile] });
+  h.receive("state:update", { profiles: [{ ...profile, credentialConfigured: connected }] });
   h.evaluate('loadEditor(profiles.get("one"))');
   await h.settleCredentials();
   return { h, peer };

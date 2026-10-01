@@ -10,6 +10,30 @@ function editor() {
   return state;
 }
 describe("credential read ownership", () => {
+  it("creates a load synchronously and terminates it even when strict fill is rejected", () => {
+    const state = editor();
+    const load = state.snapshot.credentialLoad!;
+    expect(load.deadlineMs - load.startedAtMs).toBe(15_000);
+    const owner = state.beginCredentialRead("channel-one")!;
+    state.changeDrawerCredential();
+    state.changeDrawerCredential();
+    expect(state.acceptCredentialRead(owner, "channel-one")).toBe(false);
+    expect(state.finishCredentialLoad(load.loadId)).toBe(true);
+    expect(state.snapshot.credentialLoad).toBeNull();
+    expect(state.finishCredentialLoad(load.loadId)).toBe(false);
+  });
+  it("never lets an old completion terminate a reopened load", () => {
+    const state = editor();
+    const old = state.snapshot.credentialLoad!;
+    state.closeProfileDrawer();
+    state.openProfileDrawer("one");
+    const current = state.snapshot.credentialLoad!;
+    expect(current.loadId).not.toBe(old.loadId);
+    expect(state.finishCredentialLoad(old.loadId)).toBe(false);
+    expect(state.snapshot.credentialLoad).toBe(current);
+    state.applyProfiles([{ profileId: "one", revision: 3 }]);
+    expect(state.snapshot.credentialLoad).toBeNull();
+  });
   it("accepts only the current channel and frozen drawer context once", () => {
     const state = editor();
     const owner = state.beginCredentialRead("channel-one")!;

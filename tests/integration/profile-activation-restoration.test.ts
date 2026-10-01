@@ -1,6 +1,6 @@
 import { saveTestProfile, encryptedSaveOwner } from "../helpers/encrypted-profile-fixture.js";
 import { profileSaveRequestDigest } from "../../src/transport/client.js";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { ActivationReference, ProfileState } from "../../src/domain/types.js";
 import {
   restoreProfileActivationAuthority,
@@ -357,7 +357,7 @@ describe("Profile activation restoration", () => {
     expect(first.snapshot.profiles).toEqual(secondWindow.snapshot.profiles);
   });
 
-  it("imports latest Profiles once as disabled without changing their revisions", async () => {
+  it("initializes missing storage empty without importing legacy preferences", async () => {
     const registry = profiles();
     const store = new RestorationStore();
     let legacyReads = 0;
@@ -374,12 +374,12 @@ describe("Profile activation restoration", () => {
 
     expect(store.calls).toEqual(["read", "initialize"]);
     expect(authority.snapshot).toMatchObject({ ready: true, activation: null });
-    expect(authority.snapshot.profiles[0]?.revision).toBe(3);
+    expect(authority.snapshot.profiles).toEqual([]);
     expect(authority.acceptsTranslations).toBe(false);
-    expect(legacyReads).toBe(1);
+    expect(legacyReads).toBe(0);
   });
 
-  it("opens one startup barrier and gives simultaneous windows the same restored activation", async () => {
+  it("reads a healthy startup snapshot without writing a barrier", async () => {
     const store = new RestorationStore({
       revision: 7,
       initialized: true,
@@ -402,8 +402,8 @@ describe("Profile activation restoration", () => {
     expect(second.accept(authority.snapshot, "get-b")).toBe(true);
     expect(first.snapshot).toEqual(second.snapshot);
     expect(authority.snapshot.profiles[0]?.revision).toBe(3);
-    expect(store.calls).toEqual(["read", "open"]);
-    expect(() => store.lateCommit(7)).toThrow("PROFILE_STATE_CONFLICT");
+    expect(store.calls).toEqual(["read"]);
+    expect(authority.snapshot.stateVersion).toBe(0);
   });
 
   it("atomically clears an invalid activation projection before becoming ready", async () => {
@@ -421,7 +421,7 @@ describe("Profile activation restoration", () => {
       createCommitId: () => "00000000-0000-4000-8000-000000000012",
     });
 
-    expect(store.calls).toEqual(["read", "open", "commit"]);
+    expect(store.calls).toEqual(["read", "commit"]);
     expect(authority.snapshot).toMatchObject({ ready: true, activation: null });
   });
 
@@ -530,3 +530,91 @@ for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
     expect(restarted.snapshot.activation?.profileRevision).toBe(saved.revision + 1);
   });
 }
+
+describe("bounded restoration attempts", () => {
+  it("expires an unresponsive startup and prevents its late result from hydrating a newer base", async () => {
+    vi.useFakeTimers();
+    try {
+      let release!: (snapshot: ProfileStateStoreSnapshot) => void;
+      const store = new RestorationStore({
+        revision: 7,
+        initialized: true,
+        state: { profiles: [profile], activation: activation(false) },
+      });
+      let reads = 0;
+      const current = store.read.bind(store);
+      store.read = () =>
+        ++reads === 1
+          ? new Promise((resolve) => {
+              release = resolve;
+            })
+          : current();
+      const registry = profiles();
+      const loading = restoreProfileActivationAuthority({
+        authorityId: "bounded",
+        profiles: registry,
+        store,
+        createCommitId: () => "10000000-0000-4000-8000-000000000009",
+      });
+      await vi.advanceTimersByTimeAsync(15_000);
+      const authority = await loading;
+      expect(authority.snapshot).toMatchObject({ ready: false, profiles: [], activation: null });
+      expect(await authority.reconcile()).toBe(true);
+      expect(authority.snapshot).toMatchObject({
+        ready: true,
+        profiles: [profile],
+        activation: null,
+        activationGeneration: 0,
+      });
+      const version = authority.snapshot.stateVersion;
+      release({
+        initialized: true,
+        storeRevision: 1,
+        lastCommit: null,
+        profileState: { profiles: [], activation: null },
+        credentialConfigured: {},
+      });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(authority.snapshot.stateVersion).toBe(version);
+      expect(registry.listLatest()).toEqual([profile]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it("retains the readable list when independent cleanup never completes", async () => {
+    vi.useFakeTimers();
+    try {
+      const store = new RestorationStore({
+        revision: 7,
+        initialized: true,
+        state: { profiles: [profile], activation: null },
+      });
+      const read = store.read.bind(store);
+      store.read = async () => ({
+        ...(await read()),
+        migration: {
+          migrationId: "10000000-0000-4000-8000-000000000001",
+          sourceFormat: 1,
+          sourceLayout: "profile-state",
+          commitState: "committed",
+          cleanupState: "pending",
+          pendingClasses: [],
+        },
+      });
+      store.cleanup = () => new Promise(() => {});
+      const loading = restoreProfileActivationAuthority({
+        authorityId: "cleanup",
+        profiles: profiles(),
+        store,
+        createCommitId: () => "10000000-0000-4000-8000-000000000009",
+      });
+      expect((await loading).snapshot).toMatchObject({
+        ready: true,
+        profiles: [profile],
+        activation: null,
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

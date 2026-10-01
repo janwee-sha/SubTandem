@@ -12,7 +12,13 @@ export const nativeLifecycleExecutable = fileURLToPath(
   new URL("../../dist/native/subtandem-transport", import.meta.url),
 );
 
-export async function nativeGlobalLifecycle() {
+export async function nativeGlobalLifecycle(
+  options: {
+    beforeStart?(directory: string): void;
+    beforeRPC?(path: string, body: unknown): Promise<void>;
+  } = {},
+) {
+  if (!existsSync(nativeLifecycleExecutable)) throw new Error("NATIVE_EXECUTABLE_REQUIRED");
   const root = mkdtempSync(join(tmpdir(), "subtandem-native-global-"));
   const directory = join(root, "data");
   const ready = join(directory, ".ready", "transport-lifecycle.json");
@@ -23,6 +29,7 @@ export async function nativeGlobalLifecycle() {
   let runtime: any;
   async function start() {
     rmSync(ready, { force: true });
+    options.beforeStart?.(directory);
     child = spawn(
       nativeLifecycleExecutable,
       [
@@ -55,18 +62,19 @@ export async function nativeGlobalLifecycle() {
         token: string,
         path: string,
         body: unknown,
-        options?: { timeoutMs?: number; assertActive?: () => void },
+        requestOptions?: { timeoutMs?: number; assertActive?: () => void },
       ): Promise<T> {
-        options?.assertActive?.();
+        await options.beforeRPC?.(path, body);
+        requestOptions?.assertActive?.();
         const response = await fetch(`http://127.0.0.1:${port}${path}`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
           body: JSON.stringify(body),
-          signal: AbortSignal.timeout(options?.timeoutMs ?? 1000),
+          signal: AbortSignal.timeout(requestOptions?.timeoutMs ?? 1000),
         });
         const result = await response.json();
         rpc.push({ path, body: structuredClone(body), result: structuredClone(result) });
-        options?.assertActive?.();
+        requestOptions?.assertActive?.();
         if (!response.ok) throw new TransportRpcError(result.error ?? result.code);
         return result as T;
       },
@@ -140,6 +148,42 @@ export async function nativeGlobalLifecycle() {
     };
     const authority = async () => (await send("profile-activation:get", {}))!.data.authority;
     const profiles = async () => (await send("profiles:list", {}))!.data.profiles;
+    const readCredential = async (profile: any) => {
+      const editor = new CredentialEditor({
+        onMessage: (name, callback) => listeners.set(name, callback),
+        postMessage: (name, data) => {
+          void handlers.get(name)?.(data, sender);
+        },
+      });
+      const sourceProfile = {
+        profileId: profile.profileId,
+        profileRevision: profile.revision,
+        endpointFingerprint: profile.endpointFingerprint,
+      };
+      try {
+        return await editor.read(
+          {
+            kind: profile.kind,
+            endpoint: profile.endpoint,
+            model: profile.model ?? null,
+            proxyMode: profile.proxyMode,
+            purpose: "read-edit",
+            sourceProfile,
+            save: null,
+          },
+          {
+            drawerId: `read-${++sequence}`,
+            sourceProfile,
+            draftRevision: 1,
+            keyEditEpoch: 0,
+            submitEpoch: 0,
+          },
+        );
+      } finally {
+        editor.close();
+        listeners.clear();
+      }
+    };
     const save = async (input: SaveProfileInput, value: string) => {
       const current = (await profiles()).find(
         (profile: any) => profile.profileId === input.profileId,
@@ -189,6 +233,7 @@ export async function nativeGlobalLifecycle() {
       authority,
       profiles,
       save,
+      readCredential,
       replies,
       createProvider,
       close: () => closed.forEach((callback) => callback(sender)),
@@ -204,6 +249,8 @@ export async function nativeGlobalLifecycle() {
     throw error;
   }
   return {
+    directory,
+    bytes: () => readFileSync(join(directory, "credentials.json")),
     get global() {
       return runtime;
     },

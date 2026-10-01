@@ -28,6 +28,19 @@ describe("production credential package audit", () => {
       writeFileSync(join(root, "dist/credentials.json"), "{}");
       expect(() => auditCredentialPackage(root, root)).toThrow(/asset/);
     }));
+  it.each(["dist/fixtures/recovery.json", "dist/@data/credentials.json", "dist/recovery.json"])(
+    "rejects recovery state in %s",
+    (name) =>
+      fixture((root) => {
+        const path = join(root, name);
+        mkdirSync(join(path, ".."), { recursive: true });
+        writeFileSync(
+          path,
+          '{"formatVersion":2,"credentials":{"apiKey":"synthetic-recovery-private-key"}}',
+        );
+        expect(() => auditCredentialPackage(root, root)).toThrow(/asset/);
+      }),
+  );
   it("checks production versions before publication", () =>
     fixture((root) => {
       writeFileSync(join(root, "package.json"), '{"version":"0.0.0"}');

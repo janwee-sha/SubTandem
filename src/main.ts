@@ -194,12 +194,15 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     targetLanguages: TARGET_LANGUAGES,
     overlayPosition: overlayPosition.snapshot,
     subtitleStyle: subtitleStyle.snapshot,
+    profileListPhase: "initializing",
   };
   const sidebarMessages = new SidebarMessageBuffer();
   let profileListState = createProfileListSyncState<AuthorityProfile>();
   let profileListRequestTimer: HostTimeout | null = null;
   const activationGetRequestId = `profile-activation.init.${playerId}`;
   const profileActivationSync = new ProfileActivationSync(activationGetRequestId);
+  let profileInitializationTimer: HostTimeout | null = null;
+  let activationGetSequence = 0;
   const modelCatalogSync = new ModelCatalogSync();
 
   const effectiveSubtitleStyle = (): SubtitleTextStyle => {
@@ -232,6 +235,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
   };
 
   const requestProfiles = (): void => {
+    beginProfileInitialization();
     const request = beginProfileListRequest(profileListState, playerId);
     profileListState = request.state;
     runtime.global.postMessage("profiles:list", {
@@ -250,11 +254,34 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
   };
 
   const requestProfileActivation = (): void => {
+    beginProfileInitialization();
+    const requestId =
+      activationGetSequence++ === 0
+        ? activationGetRequestId
+        : `${activationGetRequestId}.${activationGetSequence}`;
+    profileActivationSync.associateGet(requestId);
     runtime.global.postMessage("profile-activation:get", {
-      requestId: activationGetRequestId,
+      requestId,
       revision: 1,
       payload: {},
     });
+  };
+
+  const beginProfileInitialization = (): void => {
+    if (profileActivationSync.profileListPhase === "settled" || profileInitializationTimer) return;
+    const deadlineMs = profileActivationSync.beginInitialization();
+    profileInitializationTimer = hostTimers.setTimeout(
+      () => {
+        profileInitializationTimer = null;
+        if (!profileActivationSync.enterFallback()) return;
+        currentSelection = null;
+        controller.clearProviderSelection();
+        profileListState = { ...profileListState, profiles: [], profileListPhase: "settled" };
+        updateSidebarState({ profiles: [], profileListPhase: "settled", selection: null });
+        flushSidebar();
+      },
+      Math.max(0, deadlineMs - Date.now()),
+    );
   };
 
   const applyProfileAuthority = (
@@ -262,7 +289,12 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     correlatedRequestId?: string,
   ): boolean => {
     if (!profileActivationSync.accept(authority, correlatedRequestId)) return false;
-    const confirmed = profileActivationSync.snapshot!;
+    profileInitializationTimer?.cancel();
+    profileInitializationTimer = null;
+    const confirmed = {
+      ...profileActivationSync.snapshot!,
+      activation: profileActivationSync.effectiveActivation,
+    };
     profileListState = bindProfileAuthority(
       profileListState,
       confirmed.authorityId,
@@ -294,6 +326,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     updateSidebarState({
       profileAuthority: confirmed,
       profiles: profileListState.profiles,
+      profileListPhase: "settled",
       selection: currentSelection,
     });
     queueSidebarMessage("profile-activation:state", confirmed);
@@ -868,7 +901,6 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
       authorityId?: unknown;
       stateVersion?: unknown;
       profiles?: unknown;
-      storageStatus?: unknown;
     };
     if (
       typeof result.requestId !== "string" ||
@@ -891,16 +923,9 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     });
     if (accepted === profileListState) return;
     profileListState = accepted;
-    const storageStatus = [
-      "MIGRATION_CLEANUP_PENDING",
-      "MIGRATION_NOT_COMMITTED",
-      "MIGRATION_UNCONFIRMED",
-    ].includes(String(result.storageStatus))
-      ? result.storageStatus
-      : null;
     updateSidebarState({
       profiles: profileListState.profiles,
-      profileStorageStatus: storageStatus,
+      profileListPhase: "settled",
     });
   });
   runtime.global.onMessage("overlay-position:state", (raw: unknown) => {
@@ -1167,6 +1192,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     modelCatalogSync.remove(playerId);
     sourceSelectionTimer?.cancel();
     profileListRequestTimer?.cancel();
+    profileInitializationTimer?.cancel();
     currentSelection = null;
     targetLanguageSession.close();
     selectedSourceTrackId = null;

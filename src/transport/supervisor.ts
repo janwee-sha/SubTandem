@@ -1,3 +1,4 @@
+import { assertProfileDeadline, withinProfileDeadline } from "./deadline.js";
 import type { CredentialEnvelope, CredentialOwner } from "../../shared/credential-protocol.js";
 import { validateProfileSave } from "./client.js";
 import { SubTandemError } from "../domain/errors.js";
@@ -21,20 +22,25 @@ export class TransportSupervisor implements TransportRpcClient {
 
   constructor(private readonly start: () => Promise<TransportRpcClient>) {}
 
-  private async currentOrStart(): Promise<TransportRpcClient> {
+  private async currentOrStart(deadlineMs = Date.now() + 15_000): Promise<TransportRpcClient> {
+    assertProfileDeadline(deadlineMs);
     if (this.client) return this.client;
-    if (!this.starting) this.starting = this.start();
+    if (!this.starting) {
+      const starting = this.start().then((client) => {
+        if (this.starting !== starting || Date.now() >= deadlineMs) {
+          client.dispose?.();
+          throw new SubTandemError("HELPER_UNAVAILABLE", "network", "RESTART_IINA");
+        }
+        this.client = client;
+        return client;
+      });
+      this.starting = starting;
+    }
     const starting = this.starting;
     try {
-      const client = await starting;
-      if (this.starting === starting) {
-        this.client = client;
-        this.starting = null;
-      }
-      return client;
-    } catch (error) {
+      return await withinProfileDeadline(starting, deadlineMs);
+    } finally {
       if (this.starting === starting) this.starting = null;
-      throw error;
     }
   }
 
@@ -44,30 +50,34 @@ export class TransportSupervisor implements TransportRpcClient {
     client.dispose?.();
   }
 
-  private async liveClient(): Promise<TransportRpcClient> {
-    if (this.checking) return this.checking;
-    const checking = (async () => {
-      let client = await this.currentOrStart();
-      try {
-        await client.health();
-        return client;
-      } catch (error) {
-        if (!isExpiredSession(error)) throw error;
-        this.retireExpiredClient(client);
+  private async liveClient(deadlineMs = Date.now() + 15_000): Promise<TransportRpcClient> {
+    if (this.checking) return withinProfileDeadline(this.checking, deadlineMs);
+    let ownedClient: TransportRpcClient | null = null;
+    const checking = Promise.resolve().then(async () => {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const client = await this.currentOrStart(deadlineMs);
+        ownedClient = client;
+        try {
+          await withinProfileDeadline(client.health(), deadlineMs);
+          assertProfileDeadline(deadlineMs);
+          if (this.checking !== checking)
+            throw new SubTandemError("HELPER_UNAVAILABLE", "network", "RESTART_IINA");
+          return client;
+        } catch (error) {
+          if (!isExpiredSession(error)) throw error;
+          this.retireExpiredClient(client);
+          if (attempt === 1) throw error;
+          assertProfileDeadline(deadlineMs);
+        }
       }
-
-      client = await this.currentOrStart();
-      try {
-        await client.health();
-        return client;
-      } catch (error) {
-        this.retireExpiredClient(client);
-        throw error;
-      }
-    })();
+      throw new SubTandemError("HELPER_UNAVAILABLE", "network", "RESTART_IINA");
+    });
     this.checking = checking;
     try {
-      return await checking;
+      return await withinProfileDeadline(checking, deadlineMs);
+    } catch (error) {
+      if (isExpiredSession(error) && ownedClient) this.retireExpiredClient(ownedClient);
+      throw error;
     } finally {
       if (this.checking === checking) this.checking = null;
     }
@@ -153,16 +163,36 @@ export class TransportSupervisor implements TransportRpcClient {
     }
   }
 
-  async profileStateRead(): Promise<ProfileStateStoreSnapshot> {
-    let client = await this.liveClient();
+  async profileStateRead(deadlineMs = Date.now() + 15_000): Promise<ProfileStateStoreSnapshot> {
+    let client = await this.liveClient(deadlineMs);
     try {
-      return await client.profileStateRead();
+      return await withinProfileDeadline(client.profileStateRead(deadlineMs), deadlineMs);
     } catch (error) {
       if (!isExpiredSession(error)) throw error;
       this.retireExpiredClient(client);
     }
-    client = await this.liveClient();
-    return client.profileStateRead();
+    client = await this.liveClient(deadlineMs);
+    return withinProfileDeadline(client.profileStateRead(deadlineMs), deadlineMs);
+  }
+
+  async profileStateRecover(
+    commitId: string,
+    expiresAtMs: number,
+  ): Promise<ProfileStateCommitResult> {
+    const client = await this.liveClient(expiresAtMs);
+    if (!client.profileStateRecover)
+      throw new SubTandemError("HELPER_PROTOCOL", "protocol", "RESTART_IINA");
+    try {
+      return await withinProfileDeadline(
+        client.profileStateRecover(commitId, expiresAtMs),
+        expiresAtMs,
+      );
+    } catch (error) {
+      if (!(error instanceof SubTandemError) || error.code !== "PROFILE_STATE_UNCONFIRMED")
+        throw error;
+      const snapshot = await this.profileStateRead(expiresAtMs);
+      return { state: "reconciling", ...snapshot };
+    }
   }
 
   profileStateOpen(commitId: string): Promise<ProfileStateCommitResult> {
@@ -246,6 +276,7 @@ export class TransportSupervisor implements TransportRpcClient {
   async shutdown(): Promise<void> {
     const client = this.client;
     this.client = null;
+    this.starting = null;
     this.checking = null;
     if (!client) return;
     try {
