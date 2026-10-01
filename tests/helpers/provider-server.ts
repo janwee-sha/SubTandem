@@ -86,7 +86,9 @@ export class ProviderSimulator {
             this.expectedBearer === null ||
             request.headers.authorization === `Bearer ${this.expectedBearer}`;
           const next = authorized
-            ? (this.responses.shift() ?? this.responseFactory?.(call) ?? this.responseForMode(request.url ?? "/"))
+            ? (this.responses.shift() ??
+              this.responseFactory?.(call) ??
+              this.responseForMode(request.url ?? "/"))
             : { status: 401, body: { error: { code: "invalid_api_key" } } };
           setTimeout(() => {
             response.writeHead(next.status, {

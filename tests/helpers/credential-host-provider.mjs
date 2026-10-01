@@ -17,7 +17,18 @@ const server = http.createServer(async (request, response) => {
   if (request.url.startsWith("/__control?")) {
     const control = new URL(request.url, "http://127.0.0.1");
     const requestedMode = control.searchParams.get("mode") ?? "normal";
-    if (!["normal", "delay", "fail", "reflect-raw", "reflect-escaped", "reflect-nested", "reflect-property"].includes(requestedMode)) return reply(400, { error: "Invalid synthetic mode" });
+    if (
+      ![
+        "normal",
+        "delay",
+        "fail",
+        "reflect-raw",
+        "reflect-escaped",
+        "reflect-nested",
+        "reflect-property",
+      ].includes(requestedMode)
+    )
+      return reply(400, { error: "Invalid synthetic mode" });
     mode = requestedMode;
     delayMs = Math.max(0, Math.min(35000, Number(control.searchParams.get("delayMs")) || 0));
     return reply(200, { mode, delayMs });
@@ -37,7 +48,8 @@ const server = http.createServer(async (request, response) => {
   if (responseMode === "fail") return reply(503, { error: "Synthetic service unavailable" });
   const reflection = `synthetic-host-${kind}-key`;
   if (responseMode === "reflect-raw") return reply(200, { error: reflection });
-  if (responseMode === "reflect-nested") return reply(200, { error: JSON.stringify({ value: reflection }) });
+  if (responseMode === "reflect-nested")
+    return reply(200, { error: JSON.stringify({ value: reflection }) });
   if (responseMode === "reflect-property") return reply(200, { [reflection]: true });
   if (responseMode === "reflect-escaped") {
     response.writeHead(200, { "Content-Type": "application/json" });

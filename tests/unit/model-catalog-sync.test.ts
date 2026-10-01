@@ -24,8 +24,20 @@ describe("per-window model catalog synchronization", () => {
 
   it("keeps an operation-specific model catalog out of reusable cache", () => {
     const sync = new ModelCatalogSync();
-    sync.begin("window-a", { requestId: "draft-a", contextToken: "snapshot-a", trigger: "manual", cacheResult: false });
-    expect(sync.commit("window-a", { requestId: "draft-a", ok: true, contextKey: "snapshot-a", models: ["draft-only"] })).toBe(true);
+    sync.begin("window-a", {
+      requestId: "draft-a",
+      contextToken: "snapshot-a",
+      trigger: "manual",
+      cacheResult: false,
+    });
+    expect(
+      sync.commit("window-a", {
+        requestId: "draft-a",
+        ok: true,
+        contextKey: "snapshot-a",
+        models: ["draft-only"],
+      }),
+    ).toBe(true);
     sync.invalidate("window-a", "saved-context");
     sync.invalidate("window-a", "snapshot-a");
     expect(sync.snapshot("window-a").catalog).toBeNull();

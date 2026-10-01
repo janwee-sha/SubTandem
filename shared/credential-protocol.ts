@@ -129,9 +129,28 @@ export type CredentialReference =
   SavedCredentialReference | DraftOperationReference | { source: "none" };
 
 export function parseDraftOperationReference(value: unknown): DraftOperationReference {
-  const r = credentialRecord(value, ["source", "operationId", "channelId", "requestId", "owner", "purpose", "snapshotDigest", "deadlineMs"]);
+  const r = credentialRecord(value, [
+    "source",
+    "operationId",
+    "channelId",
+    "requestId",
+    "owner",
+    "purpose",
+    "snapshotDigest",
+    "deadlineMs",
+  ]);
   const owner = credentialRecord(r.owner, ["senderId", "sidebarInstanceId", "drawerId"]);
-  credentialAssert(r.source === "draft" && credentialIdentity(r.operationId) && credentialIdentity(r.channelId) && credentialIdentity(r.requestId) && Object.values(owner).every(credentialIdentity) && ["draft-test", "draft-models"].includes(String(r.purpose)) && typeof r.snapshotDigest === "string" && /^[a-f0-9]{64}$/.test(r.snapshotDigest) && credentialInteger(r.deadlineMs, 1));
+  credentialAssert(
+    r.source === "draft" &&
+      credentialIdentity(r.operationId) &&
+      credentialIdentity(r.channelId) &&
+      credentialIdentity(r.requestId) &&
+      Object.values(owner).every(credentialIdentity) &&
+      ["draft-test", "draft-models"].includes(String(r.purpose)) &&
+      typeof r.snapshotDigest === "string" &&
+      /^[a-f0-9]{64}$/.test(r.snapshotDigest) &&
+      credentialInteger(r.deadlineMs, 1),
+  );
   return JSON.parse(JSON.stringify(r)) as DraftOperationReference;
 }
 

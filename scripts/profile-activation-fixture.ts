@@ -46,7 +46,10 @@ function parseOptions(argv: readonly string[]): FixtureOptions {
   let lockHeld = false;
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
-    if (argument === "--lock-held") { lockHeld = true; continue; }
+    if (argument === "--lock-held") {
+      lockHeld = true;
+      continue;
+    }
     if (argument === "--delay-ms") {
       const value = Number(argv[++index]);
       if (!Number.isSafeInteger(value) || value < 0 || value > 60_000)
@@ -70,9 +73,21 @@ function parseDocument(path: string): CredentialDocument {
   let value: unknown;
   try {
     const stat = fstatSync(descriptor);
-    if (!stat.isFile() || stat.uid !== process.getuid!() || stat.nlink !== 1 || stat.size > 1_048_576) throw new Error("INVALID_FILE");
-    try { value = JSON.parse(readFileSync(descriptor, "utf8")); } catch { throw new Error("INVALID_DOCUMENT"); }
-  } finally { closeSync(descriptor); }
+    if (
+      !stat.isFile() ||
+      stat.uid !== process.getuid!() ||
+      stat.nlink !== 1 ||
+      stat.size > 1_048_576
+    )
+      throw new Error("INVALID_FILE");
+    try {
+      value = JSON.parse(readFileSync(descriptor, "utf8"));
+    } catch {
+      throw new Error("INVALID_DOCUMENT");
+    }
+  } finally {
+    closeSync(descriptor);
+  }
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("INVALID_DOCUMENT");
   const document = value as Partial<CredentialDocument>;
@@ -80,8 +95,12 @@ function parseDocument(path: string): CredentialDocument {
   if (
     document.formatVersion !== 2 ||
     typeof document.storeId !== "string" ||
-    !Number.isSafeInteger(document.storeRevision) || document.storeRevision! < 1 || document.storeRevision! >= Number.MAX_SAFE_INTEGER ||
-    !document.lastCommit || document.lastCommit.baseRevision !== document.storeRevision! - 1 || !/^[a-f0-9]{64}$/.test(document.lastCommit.requestDigest) ||
+    !Number.isSafeInteger(document.storeRevision) ||
+    document.storeRevision! < 1 ||
+    document.storeRevision! >= Number.MAX_SAFE_INTEGER ||
+    !document.lastCommit ||
+    document.lastCommit.baseRevision !== document.storeRevision! - 1 ||
+    !/^[a-f0-9]{64}$/.test(document.lastCommit.requestDigest) ||
     !profileState ||
     !Array.isArray(profileState.profiles) ||
     !profileState.activation ||
@@ -91,11 +110,22 @@ function parseDocument(path: string): CredentialDocument {
   )
     throw new Error("INVALID_DOCUMENT");
   const record = value as Record<string, unknown>;
-  for (const [field, keys] of [["credentials", ["credentialId", "envelope"]], ["keyRing", ["keyId", "wrappedRepresentation"]]] as const) {
+  for (const [field, keys] of [
+    ["credentials", ["credentialId", "envelope"]],
+    ["keyRing", ["keyId", "wrappedRepresentation"]],
+  ] as const) {
     const entries = record[field];
-    if (!entries || typeof entries !== "object" || Array.isArray(entries)) throw new Error("INVALID_DOCUMENT");
+    if (!entries || typeof entries !== "object" || Array.isArray(entries))
+      throw new Error("INVALID_DOCUMENT");
     for (const entry of Object.values(entries)) {
-      if (!entry || typeof entry !== "object" || Array.isArray(entry) || Object.keys(entry).sort().join(",") !== [...keys].sort().join(",") || Object.values(entry).some((part) => typeof part !== "string")) throw new Error("INVALID_DOCUMENT");
+      if (
+        !entry ||
+        typeof entry !== "object" ||
+        Array.isArray(entry) ||
+        Object.keys(entry).sort().join(",") !== [...keys].sort().join(",") ||
+        Object.values(entry).some((part) => typeof part !== "string")
+      )
+        throw new Error("INVALID_DOCUMENT");
     }
   }
   const profile = profileState.profiles.find(
@@ -113,17 +143,44 @@ function parseDocument(path: string): CredentialDocument {
 function invalidateRestoration(path: string, lockHeld: boolean): void {
   parseDocument(path);
   if (!lockHeld) {
-    const lock = openSync(join(dirname(path), ".credentials.lock"), constants.O_RDWR | constants.O_CREAT | constants.O_NOFOLLOW, 0o600);
+    const lock = openSync(
+      join(dirname(path), ".credentials.lock"),
+      constants.O_RDWR | constants.O_CREAT | constants.O_NOFOLLOW,
+      0o600,
+    );
     try {
       const stat = fstatSync(lock);
-      if (!stat.isFile() || stat.uid !== process.getuid!() || stat.nlink !== 1) throw new Error("INVALID_LOCK");
-      const result = spawnSync("/usr/bin/lockf", ["-k", "-t", "0", "/dev/fd/3", process.execPath, ...process.execArgv, process.argv[1]!, ...process.argv.slice(2), "--lock-held"], { stdio: ["inherit", "inherit", "inherit", lock] });
+      if (!stat.isFile() || stat.uid !== process.getuid!() || stat.nlink !== 1)
+        throw new Error("INVALID_LOCK");
+      const result = spawnSync(
+        "/usr/bin/lockf",
+        [
+          "-k",
+          "-t",
+          "0",
+          "/dev/fd/3",
+          process.execPath,
+          ...process.execArgv,
+          process.argv[1]!,
+          ...process.argv.slice(2),
+          "--lock-held",
+        ],
+        { stdio: ["inherit", "inherit", "inherit", lock] },
+      );
       if (result.error || result.status !== 0) throw new Error("FIXTURE_LOCK_OR_UPDATE_FAILED");
-    } finally { closeSync(lock); }
+    } finally {
+      closeSync(lock);
+    }
     return;
   }
   const locked = lstatSync(join(dirname(path), ".credentials.lock"));
-  if (!locked.isFile() || locked.isSymbolicLink() || locked.uid !== process.getuid!() || locked.nlink !== 1) throw new Error("INVALID_LOCK");
+  if (
+    !locked.isFile() ||
+    locked.isSymbolicLink() ||
+    locked.uid !== process.getuid!() ||
+    locked.nlink !== 1
+  )
+    throw new Error("INVALID_LOCK");
   const document = parseDocument(path);
   const directory = dirname(path);
   const backup = join(directory, `.${basename(path)}.v2-activation-backup-${randomUUID()}`);
@@ -140,15 +197,31 @@ function invalidateRestoration(path: string, lockHeld: boolean): void {
   document.storeRevision += 1;
   const canonical = (value: unknown): string => {
     if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
-    if (value && typeof value === "object") return `{${Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, entry]) => `${JSON.stringify(key)}:${canonical(entry)}`).join(",")}}`;
+    if (value && typeof value === "object")
+      return `{${Object.entries(value)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, entry]) => `${JSON.stringify(key)}:${canonical(entry)}`)
+        .join(",")}}`;
     return JSON.stringify(value);
   };
-  document.lastCommit = { commitId: randomUUID(), operation: "commit", baseRevision, requestDigest: createHash("sha256").update(canonical(document.profileState)).digest("hex") };
+  document.lastCommit = {
+    commitId: randomUUID(),
+    operation: "commit",
+    baseRevision,
+    requestDigest: createHash("sha256").update(canonical(document.profileState)).digest("hex"),
+  };
   let descriptor: number | null = null;
-  const directoryFD = openSync(directory, constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW);
+  const directoryFD = openSync(
+    directory,
+    constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW,
+  );
   try {
     const backupFD = openSync(backup, constants.O_RDONLY | constants.O_NOFOLLOW);
-    try { fsyncSync(backupFD); } finally { closeSync(backupFD); }
+    try {
+      fsyncSync(backupFD);
+    } finally {
+      closeSync(backupFD);
+    }
     fsyncSync(directoryFD);
     descriptor = openSync(temporary, "wx", 0o600);
     writeFileSync(descriptor, `${JSON.stringify(document)}\n`);
@@ -158,12 +231,15 @@ function invalidateRestoration(path: string, lockHeld: boolean): void {
     renameSync(temporary, path);
     chmodSync(path, 0o600);
     fsyncSync(directoryFD);
-    if (readFileSync(path, "utf8") !== `${JSON.stringify(document)}\n`) throw new Error("FIXTURE_UNCONFIRMED");
+    if (readFileSync(path, "utf8") !== `${JSON.stringify(document)}\n`)
+      throw new Error("FIXTURE_UNCONFIRMED");
   } catch (error) {
     if (descriptor !== null) closeSync(descriptor);
     if (existsSync(temporary)) unlinkSync(temporary);
     throw error;
-  } finally { closeSync(directoryFD); }
+  } finally {
+    closeSync(directoryFD);
+  }
   process.stdout.write(`Backup: ${backup}\n`);
 }
 

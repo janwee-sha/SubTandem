@@ -9,7 +9,10 @@ import type { ProfileState } from "../../src/domain/types.js";
 import type { ProfileStateCommitResult } from "../../src/transport/client.js";
 import { encryptedSaveFrame, encryptedSaveOwner } from "../helpers/encrypted-profile-fixture.js";
 import { existsSync } from "node:fs";
-import { nativeGlobalLifecycle, nativeLifecycleExecutable } from "../helpers/native-global-lifecycle.js";
+import {
+  nativeGlobalLifecycle,
+  nativeLifecycleExecutable,
+} from "../helpers/native-global-lifecycle.js";
 import { ProviderSimulator } from "../helpers/provider-server.js";
 import { PlaybackController } from "../../src/app/controller.js";
 
@@ -305,89 +308,236 @@ describe("encrypted Profile authority lifecycle", () => {
   });
 });
 
-describe.skipIf(process.platform !== "darwin" || !existsSync(nativeLifecycleExecutable))("Global lifecycle with the built native helper and local provider", () => {
-  it.for(["openai", "claude", "deepseek", "ollama"] as const)("atomically saves, uses, replaces, clears and reloads %s without JS credentials", { timeout: 30_000 }, async (kind, { skip }) => {
-    const server = new ProviderSimulator();
-    await server.start();
-    const h = await nativeGlobalLifecycle().catch(async (error) => { await server.close(); throw error; });
-    const firstKey = "synthetic-native-lifecycle-first-key";
-    const nextKey = "synthetic-native-lifecycle-next-key";
-    const candidate = { displayName: "Native lifecycle", kind, endpoint: `${server.url}/${kind}${kind === "openai" || kind === "deepseek" ? "/v1" : ""}`, model: "model-a", proxyMode: "direct" as const };
-    const connection = { kind, endpoint: candidate.endpoint, model: candidate.model, proxyMode: candidate.proxyMode };
-    server.respondWith((call) => {
-      if (call.path.endsWith("/api/version")) return { status: 200, body: { version: "synthetic" } };
-      if (call.path.endsWith("/api/tags")) return { status: 200, body: { models: [{ model: "model-a" }] } };
-      const body = JSON.parse(call.body);
-      const prompt = body.messages.map((message: any) => String(message.content)).join("\n");
-      const id = /"id"\s*:\s*"probe"/.test(prompt) ? "probe" : "c1";
-      const content = JSON.stringify({ translations: [{ id, text: "hola" }] });
-      return { status: 200, body: kind === "claude" ? { type: "message", role: "assistant", content: [{ type: "text", text: content }], stop_reason: "end_turn" } : kind === "ollama" ? { message: { content }, done: true } : { choices: [{ message: { content }, finish_reason: "stop" }] } };
-    });
-    const header = () => server.calls.at(-1)!.headers[kind === "claude" ? "x-api-key" : "authorization"];
-    try {
-      expect((await h.global.authority()).profiles).toEqual([]);
-      const created = (await h.global.save(candidate, firstKey).catch((error: unknown) => {
-        if (h.rpc.some((entry) => (entry.result as { error?: string })?.error === "credential-hardware-unavailable")) {
+describe.skipIf(process.platform !== "darwin" || !existsSync(nativeLifecycleExecutable))(
+  "Global lifecycle with the built native helper and local provider",
+  () => {
+    it.for(["openai", "claude", "deepseek", "ollama"] as const)(
+      "atomically saves, uses, replaces, clears and reloads %s without JS credentials",
+      { timeout: 30_000 },
+      async (kind, { skip }) => {
+        const server = new ProviderSimulator();
+        await server.start();
+        const h = await nativeGlobalLifecycle().catch(async (error) => {
+          await server.close();
+          throw error;
+        });
+        const firstKey = "synthetic-native-lifecycle-first-key";
+        const nextKey = "synthetic-native-lifecycle-next-key";
+        const candidate = {
+          displayName: "Native lifecycle",
+          kind,
+          endpoint: `${server.url}/${kind}${kind === "openai" || kind === "deepseek" ? "/v1" : ""}`,
+          model: "model-a",
+          proxyMode: "direct" as const,
+        };
+        const connection = {
+          kind,
+          endpoint: candidate.endpoint,
+          model: candidate.model,
+          proxyMode: candidate.proxyMode,
+        };
+        server.respondWith((call) => {
+          if (call.path.endsWith("/api/version"))
+            return { status: 200, body: { version: "synthetic" } };
+          if (call.path.endsWith("/api/tags"))
+            return { status: 200, body: { models: [{ model: "model-a" }] } };
+          const body = JSON.parse(call.body);
+          const prompt = body.messages.map((message: any) => String(message.content)).join("\n");
+          const id = /"id"\s*:\s*"probe"/.test(prompt) ? "probe" : "c1";
+          const content = JSON.stringify({ translations: [{ id, text: "hola" }] });
+          return {
+            status: 200,
+            body:
+              kind === "claude"
+                ? {
+                    type: "message",
+                    role: "assistant",
+                    content: [{ type: "text", text: content }],
+                    stop_reason: "end_turn",
+                  }
+                : kind === "ollama"
+                  ? { message: { content }, done: true }
+                  : { choices: [{ message: { content }, finish_reason: "stop" }] },
+          };
+        });
+        const header = () =>
+          server.calls.at(-1)!.headers[kind === "claude" ? "x-api-key" : "authorization"];
+        try {
+          expect((await h.global.authority()).profiles).toEqual([]);
+          const created = (
+            await h.global.save(candidate, firstKey).catch((error: unknown) => {
+              if (
+                h.rpc.some(
+                  (entry) =>
+                    (entry.result as { error?: string })?.error ===
+                    "credential-hardware-unavailable",
+                )
+              ) {
+                expect(h.snapshot().credentials).toEqual({});
+                skip(
+                  "Secure Enclave is unavailable; nonempty native lifecycle is not verified in this environment",
+                );
+              }
+              throw error;
+            })
+          ).profile;
+          expect(created).toMatchObject({ revision: 1, credentialConfigured: true });
+          const test = await h.global.send("provider:test", {
+            ...connection,
+            sourceProfile: {
+              profileId: created.profileId,
+              profileRevision: created.revision,
+              endpointFingerprint: created.endpointFingerprint,
+            },
+            drawerId: "saved-test",
+            draftRevision: 1,
+            credential: { source: "saved" },
+          });
+          expect(test?.data).toMatchObject({ ok: true });
+          expect(header()).toBe(kind === "claude" ? firstKey : `Bearer ${firstKey}`);
+          const enable = async (profile: any) => {
+            const authority = await h.global.authority();
+            const result = await h.global.send("profile-activation:set", {
+              authorityId: authority.authorityId,
+              profileId: profile.profileId,
+              profileRevision: profile.revision,
+              endpointFingerprint: profile.endpointFingerprint,
+              enabled: true,
+            });
+            expect(result?.data.outcome).toBe("changed");
+            return await h.global.authority();
+          };
+          const attempt = (profile: any, authority: any, requestId: string) =>
+            h.global.send(
+              "provider:attempt",
+              {
+                playerId: "native-lifecycle-window",
+                requestId,
+                batchId: `batch.${requestId}`,
+                sessionId: "native-lifecycle-session",
+                sessionEpoch: 1,
+                windowEpoch: 1,
+                authorityId: authority.authorityId,
+                activationGeneration: authority.activationGeneration,
+                profileId: profile.profileId,
+                profileRevision: profile.revision,
+                endpointFingerprint: profile.endpointFingerprint,
+                targetLanguage: "zh-Hans",
+                items: [{ id: "probe", text: "hello" }],
+              },
+              requestId,
+            );
+          const selected = await enable(created);
+          expect((await attempt(created, selected, "translation.first"))?.name).toBe(
+            "provider:attempt-result",
+          );
+          const replaced = (
+            await h.global.save(
+              { ...candidate, profileId: created.profileId, expectedRevision: 1 },
+              nextKey,
+            )
+          ).profile;
+          expect(replaced).toMatchObject({ revision: 2, credentialConfigured: true });
+          expect((await h.global.authority()).activation).toBeNull();
+          const before = server.requestCount;
+          expect((await attempt(created, selected, "translation.stale"))?.name).toBe(
+            "provider:attempt-error",
+          );
+          expect(server.requestCount).toBe(before);
+          await h.global.send("provider:test", {
+            ...connection,
+            sourceProfile: {
+              profileId: replaced.profileId,
+              profileRevision: 2,
+              endpointFingerprint: replaced.endpointFingerprint,
+            },
+            drawerId: "saved-replacement",
+            draftRevision: 1,
+            credential: { source: "saved" },
+          });
+          expect(header()).toBe(kind === "claude" ? nextKey : `Bearer ${nextKey}`);
+          const cleared = (
+            await h.global.save(
+              { ...candidate, profileId: created.profileId, expectedRevision: 2 },
+              "",
+            )
+          ).profile;
+          expect(cleared).toMatchObject({ revision: 3, credentialConfigured: false });
+          await h.restart();
+          expect(await h.global.profiles()).toMatchObject([
+            { profileId: created.profileId, revision: 3, credentialConfigured: false },
+          ]);
+          expect((await h.global.authority()).activation).toBeNull();
+          const reselected = await enable(cleared);
+          expect((await attempt(cleared, reselected, "translation.empty"))?.name).toBe(
+            "provider:attempt-result",
+          );
+          expect(header()).toBeUndefined();
+          let visible: readonly string[] = [];
+          const controller = new PlaybackController({
+            playerId: "native-lifecycle-controller",
+            provider: await h.global.createProvider("native-lifecycle-controller"),
+            overlay: {
+              show: (lines) => {
+                visible = lines;
+              },
+              clear: () => {
+                visible = [];
+              },
+            },
+            targetLanguage: "zh-Hans",
+            requiresProviderSelection: true,
+          });
+          controller.setProviderSelection({
+            ...cleared,
+            authorityId: reselected.authorityId,
+            activationGeneration: reselected.activationGeneration,
+          });
+          controller.setSource({
+            format: "srt",
+            contentHash: "native-lifecycle-source",
+            cues: [
+              {
+                id: "probe",
+                index: 0,
+                startMs: 0,
+                endMs: 1000,
+                sourceText: "hello",
+                normalizedText: "hello",
+              },
+            ],
+          });
+          controller.setEnabled(false);
+          const disabledCount = server.requestCount;
+          controller.tick(0);
+          await controller.whenIdle();
+          expect(server.requestCount).toBe(disabledCount);
+          controller.setEnabled(true);
+          controller.tick(0);
+          await controller.whenIdle();
+          expect(visible).toEqual(["hola"]);
+          expect(server.requestCount).toBeGreaterThan(disabledCount);
+          controller.setEnabled(false);
+          expect(visible).toEqual([]);
+          expect((await h.global.authority()).activation.profileId).toBe(cleared.profileId);
+          await h.global.send("profile:delete", {
+            profileId: created.profileId,
+            expectedRevision: 3,
+            displayName: candidate.displayName,
+          });
+          expect(await h.global.profiles()).toEqual([]);
           expect(h.snapshot().credentials).toEqual({});
-          skip("Secure Enclave is unavailable; nonempty native lifecycle is not verified in this environment");
+          expect(JSON.stringify(h.rpc)).not.toMatch(
+            /synthetic-native-lifecycle-(first|next)-key|"apiKey"/,
+          );
+          expect(JSON.stringify(h.global.replies)).not.toMatch(
+            /synthetic-native-lifecycle-(first|next)-key|"apiKey"/,
+          );
+        } finally {
+          await h.close();
+          await server.close();
         }
-        throw error;
-      })).profile;
-      expect(created).toMatchObject({ revision: 1, credentialConfigured: true });
-      const test = await h.global.send("provider:test", { ...connection, sourceProfile: { profileId: created.profileId, profileRevision: created.revision, endpointFingerprint: created.endpointFingerprint }, drawerId: "saved-test", draftRevision: 1, credential: { source: "saved" } });
-      expect(test?.data).toMatchObject({ ok: true });
-      expect(header()).toBe(kind === "claude" ? firstKey : `Bearer ${firstKey}`);
-      const enable = async (profile: any) => {
-        const authority = await h.global.authority();
-        const result = await h.global.send("profile-activation:set", { authorityId: authority.authorityId, profileId: profile.profileId, profileRevision: profile.revision, endpointFingerprint: profile.endpointFingerprint, enabled: true });
-        expect(result?.data.outcome).toBe("changed");
-        return (await h.global.authority());
-      };
-      const attempt = (profile: any, authority: any, requestId: string) => h.global.send("provider:attempt", {
-        playerId: "native-lifecycle-window", requestId, batchId: `batch.${requestId}`, sessionId: "native-lifecycle-session", sessionEpoch: 1, windowEpoch: 1,
-        authorityId: authority.authorityId, activationGeneration: authority.activationGeneration, profileId: profile.profileId, profileRevision: profile.revision, endpointFingerprint: profile.endpointFingerprint,
-        targetLanguage: "zh-Hans", items: [{ id: "probe", text: "hello" }],
-      }, requestId);
-      const selected = await enable(created);
-      expect((await attempt(created, selected, "translation.first"))?.name).toBe("provider:attempt-result");
-      const replaced = (await h.global.save({ ...candidate, profileId: created.profileId, expectedRevision: 1 }, nextKey)).profile;
-      expect(replaced).toMatchObject({ revision: 2, credentialConfigured: true });
-      expect((await h.global.authority()).activation).toBeNull();
-      const before = server.requestCount;
-      expect((await attempt(created, selected, "translation.stale"))?.name).toBe("provider:attempt-error");
-      expect(server.requestCount).toBe(before);
-      await h.global.send("provider:test", { ...connection, sourceProfile: { profileId: replaced.profileId, profileRevision: 2, endpointFingerprint: replaced.endpointFingerprint }, drawerId: "saved-replacement", draftRevision: 1, credential: { source: "saved" } });
-      expect(header()).toBe(kind === "claude" ? nextKey : `Bearer ${nextKey}`);
-      const cleared = (await h.global.save({ ...candidate, profileId: created.profileId, expectedRevision: 2 }, "")).profile;
-      expect(cleared).toMatchObject({ revision: 3, credentialConfigured: false });
-      await h.restart();
-      expect((await h.global.profiles())).toMatchObject([{ profileId: created.profileId, revision: 3, credentialConfigured: false }]);
-      expect((await h.global.authority()).activation).toBeNull();
-      const reselected = await enable(cleared);
-      expect((await attempt(cleared, reselected, "translation.empty"))?.name).toBe("provider:attempt-result");
-      expect(header()).toBeUndefined();
-      let visible: readonly string[] = [];
-      const controller = new PlaybackController({ playerId: "native-lifecycle-controller", provider: await h.global.createProvider("native-lifecycle-controller"), overlay: { show: (lines) => { visible = lines; }, clear: () => { visible = []; } }, targetLanguage: "zh-Hans", requiresProviderSelection: true });
-      controller.setProviderSelection({ ...cleared, authorityId: reselected.authorityId, activationGeneration: reselected.activationGeneration });
-      controller.setSource({ format: "srt", contentHash: "native-lifecycle-source", cues: [{ id: "probe", index: 0, startMs: 0, endMs: 1000, sourceText: "hello", normalizedText: "hello" }] });
-      controller.setEnabled(false);
-      const disabledCount = server.requestCount;
-      controller.tick(0);
-      await controller.whenIdle();
-      expect(server.requestCount).toBe(disabledCount);
-      controller.setEnabled(true);
-      controller.tick(0);
-      await controller.whenIdle();
-      expect(visible).toEqual(["hola"]);
-      expect(server.requestCount).toBeGreaterThan(disabledCount);
-      controller.setEnabled(false);
-      expect(visible).toEqual([]);
-      expect((await h.global.authority()).activation.profileId).toBe(cleared.profileId);
-      await h.global.send("profile:delete", { profileId: created.profileId, expectedRevision: 3, displayName: candidate.displayName });
-      expect(await h.global.profiles()).toEqual([]);
-      expect(h.snapshot().credentials).toEqual({});
-      expect(JSON.stringify(h.rpc)).not.toMatch(/synthetic-native-lifecycle-(first|next)-key|"apiKey"/);
-      expect(JSON.stringify(h.global.replies)).not.toMatch(/synthetic-native-lifecycle-(first|next)-key|"apiKey"/);
-    } finally { await h.close(); await server.close(); }
-  });
-});
+      },
+    );
+  },
+);

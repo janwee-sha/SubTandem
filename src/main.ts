@@ -1028,33 +1028,42 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
   const trackPlayerEvent = (name: string, id: string): void => {
     playerEventListeners.push({ name, id });
   };
-  trackPlayerEvent("iina.file-loaded", runtime.event.on("iina.file-loaded", () => {
-    mediaEpoch += 1;
-    sourceSelectionTimer?.cancel();
-    invalidatePreparation();
-    selectedSourceTrackId = null;
-    selectedSourceContentHash = null;
-    controller.endFile();
-    if (sourceLoadingAllowed()) {
-      updateSidebarState({ source: null, sourceIssue: null, sourcePreparation: null });
+  trackPlayerEvent(
+    "iina.file-loaded",
+    runtime.event.on("iina.file-loaded", () => {
+      mediaEpoch += 1;
+      sourceSelectionTimer?.cancel();
+      invalidatePreparation();
+      selectedSourceTrackId = null;
+      selectedSourceContentHash = null;
+      controller.endFile();
+      if (sourceLoadingAllowed()) {
+        updateSidebarState({ source: null, sourceIssue: null, sourcePreparation: null });
+        scheduleSourceReload();
+      } else {
+        suspendSourceLoading();
+      }
+    }),
+  );
+  trackPlayerEvent(
+    "mpv.sid.changed",
+    runtime.event.on("mpv.sid.changed", () => {
+      if (!sourceLoadingAllowed()) {
+        suspendSourceLoading();
+        return;
+      }
+      const selectedId = runtime.core.subtitle.id;
+      if (selectedId === selectedSourceTrackId) return;
       scheduleSourceReload();
-    } else {
-      suspendSourceLoading();
-    }
-  }));
-  trackPlayerEvent("mpv.sid.changed", runtime.event.on("mpv.sid.changed", () => {
-    if (!sourceLoadingAllowed()) {
-      suspendSourceLoading();
-      return;
-    }
-    const selectedId = runtime.core.subtitle.id;
-    if (selectedId === selectedSourceTrackId) return;
-    scheduleSourceReload();
-  }));
-  trackPlayerEvent("mpv.track-list.changed", runtime.event.on("mpv.track-list.changed", () => {
-    if (sourceLoadingAllowed()) scheduleSourceReload();
-    else suspendSourceLoading();
-  }));
+    }),
+  );
+  trackPlayerEvent(
+    "mpv.track-list.changed",
+    runtime.event.on("mpv.track-list.changed", () => {
+      if (sourceLoadingAllowed()) scheduleSourceReload();
+      else suspendSourceLoading();
+    }),
+  );
   const overlayRegionListeners = [
     {
       name: "mpv.sub-margin-x.changed",
@@ -1094,19 +1103,28 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     overlayRegion.close();
   };
   trackPlayerEvent("mpv.shutdown", runtime.event.on("mpv.shutdown", closeOverlayRegion));
-  trackPlayerEvent("mpv.seek", runtime.event.on("mpv.seek", () => {
-    preparation?.onSeek();
-    controller.onSeek(
-      finitePosition(
-        runtime.core.status.position === null ? null : runtime.core.status.position * 1_000,
-      ),
-    );
-  }));
-  trackPlayerEvent("mpv.end-file", runtime.event.on("mpv.end-file", () => {
-    mediaEpoch += 1;
-    invalidatePreparation();
-  }));
-  trackPlayerEvent("mpv.end-file", runtime.event.on("mpv.end-file", () => controller.endFile()));
+  trackPlayerEvent(
+    "mpv.seek",
+    runtime.event.on("mpv.seek", () => {
+      preparation?.onSeek();
+      controller.onSeek(
+        finitePosition(
+          runtime.core.status.position === null ? null : runtime.core.status.position * 1_000,
+        ),
+      );
+    }),
+  );
+  trackPlayerEvent(
+    "mpv.end-file",
+    runtime.event.on("mpv.end-file", () => {
+      mediaEpoch += 1;
+      invalidatePreparation();
+    }),
+  );
+  trackPlayerEvent(
+    "mpv.end-file",
+    runtime.event.on("mpv.end-file", () => controller.endFile()),
+  );
   const translationTickTimer = hostTimers.setInterval(() => {
     controller.session.setPaused(runtime.core.status.paused);
     controller.tick(
@@ -1170,7 +1188,8 @@ let initializePlayerTimer: ReturnType<typeof setTimeout> | null = null;
 let playerClosedOnce = false;
 // IINA 1.4.0 reports visible=false for an onscreen player. Later versions
 // expose visibility correctly, including when a closed player is reused.
-const legacyWindowVisibility = typeof iina !== "undefined" && iina.core.getVersion().iina === "1.4.0";
+const legacyWindowVisibility =
+  typeof iina !== "undefined" && iina.core.getVersion().iina === "1.4.0";
 let legacyWindowClosed = false;
 const initializePlayer = (): void => {
   initializePlayerTimer = null;
@@ -1179,7 +1198,8 @@ const initializePlayer = (): void => {
     !iina.core.window.loaded ||
     legacyWindowClosed ||
     (playerClosedOnce && !legacyWindowVisibility && !iina.core.window.visible)
-  ) return;
+  )
+    return;
   playerWired = true;
   wirePlayer(iina, createMailboxPlayerId());
 };

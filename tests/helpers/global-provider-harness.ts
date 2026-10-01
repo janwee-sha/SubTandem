@@ -169,26 +169,55 @@ export async function globalProviderHarness(
     draftCalls,
     draftValues,
     draftStarts,
-    holdDraftBegins() { pauseDraftBegin = true; },
-    async openDraft(sender = "draft-window", source: CredentialSourceProfile | null = null, drawerId = "draft-drawer") {
+    holdDraftBegins() {
+      pauseDraftBegin = true;
+    },
+    async openDraft(
+      sender = "draft-window",
+      source: CredentialSourceProfile | null = null,
+      drawerId = "draft-drawer",
+    ) {
       const channel = new SidebarCredentialChannel("synthetic-sidebar", drawerId, source);
-      await handlers.get("credential-channel:open")!({ requestId: "draft-open", revision: 1, payload: channel.opening }, sender);
+      await handlers.get("credential-channel:open")!(
+        { requestId: "draft-open", revision: 1, payload: channel.opening },
+        sender,
+      );
       const confirmation = channel.acceptOffer(replies.at(-1)!.data.payload);
-      await handlers.get("credential-channel:confirm")!({ requestId: "draft-confirm", revision: 1, payload: confirmation }, sender);
+      await handlers.get("credential-channel:confirm")!(
+        { requestId: "draft-confirm", revision: 1, payload: confirmation },
+        sender,
+      );
       channel.confirm(replies.at(-1)!.data.payload);
       return {
         channel,
-        seal(value: string, snapshot: CredentialOperationSnapshot, requestId = "draft-request", deadlineMs = Date.now() + 30_000) {
+        seal(
+          value: string,
+          snapshot: CredentialOperationSnapshot,
+          requestId = "draft-request",
+          deadlineMs = Date.now() + 30_000,
+        ) {
           return {
             sidebarInstanceId: channel.opening.sidebarInstanceId,
             drawerId,
-            frame: channel.seal(value, {
-              requestId, draftRevision: 1, keyEditEpoch: 1, submitEpoch: 0,
-              purpose: snapshot.purpose, sourceProfile: source,
-              kind: snapshot.kind,
-              endpointFingerprint: identityHash({ kind: snapshot.kind, endpoint: snapshot.endpoint, proxyMode: snapshot.proxyMode }),
-              expiresAtMs: deadlineMs,
-            }, snapshot),
+            frame: channel.seal(
+              value,
+              {
+                requestId,
+                draftRevision: 1,
+                keyEditEpoch: 1,
+                submitEpoch: 0,
+                purpose: snapshot.purpose,
+                sourceProfile: source,
+                kind: snapshot.kind,
+                endpointFingerprint: identityHash({
+                  kind: snapshot.kind,
+                  endpoint: snapshot.endpoint,
+                  proxyMode: snapshot.proxyMode,
+                }),
+                expiresAtMs: deadlineMs,
+              },
+              snapshot,
+            ),
           };
         },
       };

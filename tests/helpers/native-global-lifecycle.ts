@@ -8,7 +8,9 @@ import { vi } from "vitest";
 import { CredentialEditor } from "../../ui/credential-editor.js";
 import type { SaveProfileInput } from "../../src/providers/profiles.js";
 
-export const nativeLifecycleExecutable = fileURLToPath(new URL("../../dist/native/subtandem-transport", import.meta.url));
+export const nativeLifecycleExecutable = fileURLToPath(
+  new URL("../../dist/native/subtandem-transport", import.meta.url),
+);
 
 export async function nativeGlobalLifecycle() {
   const root = mkdtempSync(join(tmpdir(), "subtandem-native-global-"));
@@ -21,19 +23,47 @@ export async function nativeGlobalLifecycle() {
   let runtime: any;
   async function start() {
     rmSync(ready, { force: true });
-    child = spawn(nativeLifecycleExecutable, ["serve", "--data-directory", directory, "--ready-file", ready, "--rpc-session", `${Date.now().toString(36)}-1-lifecycle`, "--parent-pid", String(process.pid)], { stdio: "ignore" });
+    child = spawn(
+      nativeLifecycleExecutable,
+      [
+        "serve",
+        "--data-directory",
+        directory,
+        "--ready-file",
+        ready,
+        "--rpc-session",
+        `${Date.now().toString(36)}-1-lifecycle`,
+        "--parent-pid",
+        String(process.pid),
+      ],
+      { stdio: "ignore" },
+    );
     let launchError: unknown;
-    child.once("error", (error) => { launchError = error; });
+    child.once("error", (error) => {
+      launchError = error;
+    });
     for (let n = 0; !existsSync(ready); n++) {
-      if (launchError || child.exitCode !== null || n > 150) throw new Error("NATIVE_LIFECYCLE_START_FAILED");
+      if (launchError || child.exitCode !== null || n > 150)
+        throw new Error("NATIVE_LIFECYCLE_START_FAILED");
       await delay(20);
     }
     const session = JSON.parse(readFileSync(ready, "utf8"));
     const { TransportClient, TransportRpcError } = await import("../../src/transport/client.js");
     client = new TransportClient(session, {
-      async post<T>(port: number, token: string, path: string, body: unknown, options?: { timeoutMs?: number; assertActive?: () => void }): Promise<T> {
+      async post<T>(
+        port: number,
+        token: string,
+        path: string,
+        body: unknown,
+        options?: { timeoutMs?: number; assertActive?: () => void },
+      ): Promise<T> {
         options?.assertActive?.();
-        const response = await fetch(`http://127.0.0.1:${port}${path}`, { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(options?.timeoutMs ?? 1000) });
+        const response = await fetch(`http://127.0.0.1:${port}${path}`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(options?.timeoutMs ?? 1000),
+        });
         const result = await response.json();
         rpc.push({ path, body: structuredClone(body), result: structuredClone(result) });
         options?.assertActive?.();
@@ -44,10 +74,17 @@ export async function nativeGlobalLifecycle() {
     await client.health();
   }
   async function stop() {
-    try { await client?.shutdown(); } catch (error) { void error; }
+    try {
+      await client?.shutdown();
+    } catch (error) {
+      void error;
+    }
     if (child && child.exitCode === null) {
       child.kill("SIGTERM");
-      await Promise.race([new Promise<void>((resolve) => child!.once("exit", () => resolve())), delay(3000)]);
+      await Promise.race([
+        new Promise<void>((resolve) => child!.once("exit", () => resolve())),
+        delay(3000),
+      ]);
       if (child.exitCode === null) child.kill("SIGKILL");
     }
     child = undefined;
@@ -58,16 +95,39 @@ export async function nativeGlobalLifecycle() {
     const replies: Array<{ name: string; data: any; sender: unknown }> = [];
     const listeners = new Map<string, (data: unknown) => void>();
     const closed: Array<(sender: string) => void> = [];
-    vi.stubGlobal("iina", { preferences: { get: () => undefined, set() {}, sync() {} }, file: {}, utils: {} });
-    vi.doMock("../../src/adapters/iina/global-mailbox.js", () => ({ GlobalMailbox: class {
-      onMessage(name: string, callback: (data: unknown, sender?: string) => unknown) { handlers.set(name, callback); }
-      onSessionClose(callback: (sender: string) => void) { closed.push(callback); }
-      postMessage(sender: unknown, name: string, data: unknown) { replies.push({ name, data, sender }); listeners.get(name)?.(structuredClone(data)); }
-    }, IinaGlobalMailboxFileStore: class {} }));
-    vi.doMock("../../src/adapters/iina/host-timers.js", () => ({ hostTimers: { setTimeout: () => ({ cancel() {} }), setInterval: () => ({ cancel() {} }) } }));
+    vi.stubGlobal("iina", {
+      preferences: { get: () => undefined, set() {}, sync() {} },
+      file: {},
+      utils: {},
+    });
+    vi.doMock("../../src/adapters/iina/global-mailbox.js", () => ({
+      GlobalMailbox: class {
+        onMessage(name: string, callback: (data: unknown, sender?: string) => unknown) {
+          handlers.set(name, callback);
+        }
+        onSessionClose(callback: (sender: string) => void) {
+          closed.push(callback);
+        }
+        postMessage(sender: unknown, name: string, data: unknown) {
+          replies.push({ name, data, sender });
+          listeners.get(name)?.(structuredClone(data));
+        }
+      },
+      IinaGlobalMailboxFileStore: class {},
+    }));
+    vi.doMock("../../src/adapters/iina/host-timers.js", () => ({
+      hostTimers: { setTimeout: () => ({ cancel() {} }), setInterval: () => ({ cancel() {} }) },
+    }));
     vi.doMock("../../src/transport/supervisor.js", async (original) => {
       const module = await original<any>();
-      return { ...module, TransportSupervisor: class extends module.TransportSupervisor { constructor() { super(async () => client); } } };
+      return {
+        ...module,
+        TransportSupervisor: class extends module.TransportSupervisor {
+          constructor() {
+            super(async () => client);
+          }
+        },
+      };
     });
     await import("../../src/global.js");
     let sequence = 0;
@@ -81,30 +141,89 @@ export async function nativeGlobalLifecycle() {
     const authority = async () => (await send("profile-activation:get", {}))!.data.authority;
     const profiles = async () => (await send("profiles:list", {}))!.data.profiles;
     const save = async (input: SaveProfileInput, value: string) => {
-      const current = (await profiles()).find((profile: any) => profile.profileId === input.profileId);
-      const editor = new CredentialEditor({ onMessage: (name, callback) => listeners.set(name, callback), postMessage: (name, data) => { void handlers.get(name)?.(data, sender); } });
+      const current = (await profiles()).find(
+        (profile: any) => profile.profileId === input.profileId,
+      );
+      const editor = new CredentialEditor({
+        onMessage: (name, callback) => listeners.set(name, callback),
+        postMessage: (name, data) => {
+          void handlers.get(name)?.(data, sender);
+        },
+      });
       try {
-        return await editor.save(value, { ...input, model: input.model ?? "", proxyMode: input.proxyMode ?? "direct" }, {
-          drawerId: `lifecycle-drawer-${++sequence}`, sourceProfile: current ? { profileId: current.profileId, profileRevision: current.revision, endpointFingerprint: current.endpointFingerprint } : null,
-          draftRevision: 1, keyEditEpoch: 1, submitEpoch: 1,
-        }, `lifecycle.save.${++sequence}`);
-      } finally { editor.close(); listeners.clear(); }
+        return await editor.save(
+          value,
+          { ...input, model: input.model ?? "", proxyMode: input.proxyMode ?? "direct" },
+          {
+            drawerId: `lifecycle-drawer-${++sequence}`,
+            sourceProfile: current
+              ? {
+                  profileId: current.profileId,
+                  profileRevision: current.revision,
+                  endpointFingerprint: current.endpointFingerprint,
+                }
+              : null,
+            draftRevision: 1,
+            keyEditEpoch: 1,
+            submitEpoch: 1,
+          },
+          `lifecycle.save.${++sequence}`,
+        );
+      } finally {
+        editor.close();
+        listeners.clear();
+      }
     };
     const createProvider = async (playerId = sender) => {
-      const { GlobalProviderClient } = await import("../../src/adapters/iina/global-provider-client.js");
-      return new GlobalProviderClient({ onMessage: (name, callback) => listeners.set(name, callback), postMessage: (name, data) => { void handlers.get(name)?.(data, playerId); } });
+      const { GlobalProviderClient } =
+        await import("../../src/adapters/iina/global-provider-client.js");
+      return new GlobalProviderClient({
+        onMessage: (name, callback) => listeners.set(name, callback),
+        postMessage: (name, data) => {
+          void handlers.get(name)?.(data, playerId);
+        },
+      });
     };
-    return { send, authority, profiles, save, replies, createProvider, close: () => closed.forEach((callback) => callback(sender)) };
+    return {
+      send,
+      authority,
+      profiles,
+      save,
+      replies,
+      createProvider,
+      close: () => closed.forEach((callback) => callback(sender)),
+    };
   }
   try {
     await start();
     runtime = await loadGlobal();
     await runtime.authority();
-  } catch (error) { await stop(); rmSync(root, { recursive: true, force: true }); throw error; }
+  } catch (error) {
+    await stop();
+    rmSync(root, { recursive: true, force: true });
+    throw error;
+  }
   return {
-    get global() { return runtime; }, rpc,
+    get global() {
+      return runtime;
+    },
+    rpc,
     snapshot: () => JSON.parse(readFileSync(join(directory, "credentials.json"), "utf8")),
-    async restart() { runtime.close(); await stop(); await start(); runtime = await loadGlobal(); await runtime.authority(); },
-    async close() { runtime?.close(); await stop(); rmSync(root, { recursive: true, force: true }); vi.unstubAllGlobals(); vi.doUnmock("../../src/adapters/iina/global-mailbox.js"); vi.doUnmock("../../src/adapters/iina/host-timers.js"); vi.doUnmock("../../src/transport/supervisor.js"); },
+    async restart() {
+      runtime.close();
+      await stop();
+      await start();
+      runtime = await loadGlobal();
+      await runtime.authority();
+    },
+    async close() {
+      runtime?.close();
+      await stop();
+      rmSync(root, { recursive: true, force: true });
+      vi.unstubAllGlobals();
+      vi.doUnmock("../../src/adapters/iina/global-mailbox.js");
+      vi.doUnmock("../../src/adapters/iina/host-timers.js");
+      vi.doUnmock("../../src/transport/supervisor.js");
+    },
   };
 }

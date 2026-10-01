@@ -113,8 +113,16 @@ export function removeStaleHelperFiles(
       const createdAtMs = Number.parseInt(match[1]!, 36);
       if (!Number.isSafeInteger(createdAtMs) || createdAtMs > nowMs - 300_000) continue;
       if (directory === ".ready" && entry.filename.startsWith("transport-")) {
-        try { parseReadyFrame(store.read(`${normalizedRoot}/${directory}/${entry.filename}`) ?? "", 0, nowMs, 2); }
-        catch { continue; }
+        try {
+          parseReadyFrame(
+            store.read(`${normalizedRoot}/${directory}/${entry.filename}`) ?? "",
+            0,
+            nowMs,
+            2,
+          );
+        } catch {
+          continue;
+        }
       }
       removeReadyFile(store, `${normalizedRoot}/${directory}/${entry.filename}`);
     }

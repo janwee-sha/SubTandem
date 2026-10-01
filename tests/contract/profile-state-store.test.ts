@@ -137,45 +137,69 @@ describe("versioned Profile state transport", () => {
     });
   });
 
-  it.each(["commitId", "operation", "baseRevision", "requestDigest", "storeRevision", "profileState"])(
-    "rejects an otherwise valid Save confirmation with a different %s",
-    async (field) => {
-      const profileState = { profiles: [{ ...profile, revision: 4 }], activation: null };
-      const frame = encryptedSaveFrame(profileState);
-      const response = {
-        ...snapshot(), state: "committed", profileState, storeRevision: 8,
-        lastCommit: {
-          commitId: "00000000-0000-4000-8000-000000000098",
-          operation: "save-profile", baseRevision: 7,
-          requestDigest: profileSaveRequestDigest(encryptedSaveOwner, frame),
-        },
-      };
-      if (field === "storeRevision") response.storeRevision = 9;
-      else if (field === "profileState") response.profileState.profiles[0]!.displayName = "Different";
-      else if (field === "baseRevision") response.lastCommit.baseRevision = 6;
-      else if (field === "operation") response.lastCommit.operation = "commit";
-      else if (field === "requestDigest") response.lastCommit.requestDigest = "0".repeat(64);
-      else response.lastCommit.commitId = "00000000-0000-4000-8000-000000000097";
-      const client = new TransportClient({ port: 49152, token: "opaque-token" }, new ProfileStateBridge(response));
-      await expect(client.profileStateSave(encryptedSaveOwner, frame)).rejects.toMatchObject({ code: "HELPER_PROTOCOL" });
-    },
-  );
+  it.each([
+    "commitId",
+    "operation",
+    "baseRevision",
+    "requestDigest",
+    "storeRevision",
+    "profileState",
+  ])("rejects an otherwise valid Save confirmation with a different %s", async (field) => {
+    const profileState = { profiles: [{ ...profile, revision: 4 }], activation: null };
+    const frame = encryptedSaveFrame(profileState);
+    const response = {
+      ...snapshot(),
+      state: "committed",
+      profileState,
+      storeRevision: 8,
+      lastCommit: {
+        commitId: "00000000-0000-4000-8000-000000000098",
+        operation: "save-profile",
+        baseRevision: 7,
+        requestDigest: profileSaveRequestDigest(encryptedSaveOwner, frame),
+      },
+    };
+    if (field === "storeRevision") response.storeRevision = 9;
+    else if (field === "profileState") response.profileState.profiles[0]!.displayName = "Different";
+    else if (field === "baseRevision") response.lastCommit.baseRevision = 6;
+    else if (field === "operation") response.lastCommit.operation = "commit";
+    else if (field === "requestDigest") response.lastCommit.requestDigest = "0".repeat(64);
+    else response.lastCommit.commitId = "00000000-0000-4000-8000-000000000097";
+    const client = new TransportClient(
+      { port: 49152, token: "opaque-token" },
+      new ProfileStateBridge(response),
+    );
+    await expect(client.profileStateSave(encryptedSaveOwner, frame)).rejects.toMatchObject({
+      code: "HELPER_PROTOCOL",
+    });
+  });
 
   it("accepts the exact recent confirmation repeatedly and rejects a later revision using the old receipt", async () => {
     const profileState = { profiles: [{ ...profile, revision: 4 }], activation: null };
     const frame = encryptedSaveFrame(profileState);
     const bridge = new ProfileStateBridge({
-      ...snapshot(), state: "committed", profileState, storeRevision: 8,
+      ...snapshot(),
+      state: "committed",
+      profileState,
+      storeRevision: 8,
       lastCommit: {
-        commitId: "00000000-0000-4000-8000-000000000098", operation: "save-profile",
-        baseRevision: 7, requestDigest: profileSaveRequestDigest(encryptedSaveOwner, frame),
+        commitId: "00000000-0000-4000-8000-000000000098",
+        operation: "save-profile",
+        baseRevision: 7,
+        requestDigest: profileSaveRequestDigest(encryptedSaveOwner, frame),
       },
     });
     const client = new TransportClient({ port: 49152, token: "opaque-token" }, bridge);
-    await expect(client.profileStateSave(encryptedSaveOwner, frame)).resolves.toEqual(bridge.response);
-    await expect(client.profileStateSave(encryptedSaveOwner, frame)).resolves.toEqual(bridge.response);
+    await expect(client.profileStateSave(encryptedSaveOwner, frame)).resolves.toEqual(
+      bridge.response,
+    );
+    await expect(client.profileStateSave(encryptedSaveOwner, frame)).resolves.toEqual(
+      bridge.response,
+    );
     bridge.response = { ...(bridge.response as object), storeRevision: 9 };
-    await expect(client.profileStateSave(encryptedSaveOwner, frame)).rejects.toMatchObject({ code: "HELPER_PROTOCOL" });
+    await expect(client.profileStateSave(encryptedSaveOwner, frame)).rejects.toMatchObject({
+      code: "HELPER_PROTOCOL",
+    });
   });
   it("keeps a missing disabled activation as a strict protocol failure and blocks restoration saves", async () => {
     const swiftCodableOmission = {

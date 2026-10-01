@@ -94,7 +94,8 @@ export class TransportSupervisor implements TransportRpcClient {
 
   async draftOperation(action: string, payload: unknown): Promise<unknown> {
     const client = await this.liveClient();
-    if (!client.draftOperation) throw new SubTandemError("HELPER_PROTOCOL", "protocol", "RESTART_IINA");
+    if (!client.draftOperation)
+      throw new SubTandemError("HELPER_PROTOCOL", "protocol", "RESTART_IINA");
     return client.draftOperation(action, payload);
   }
 
@@ -145,14 +146,21 @@ export class TransportSupervisor implements TransportRpcClient {
     return this.localMutation((client) => client.profileStateOpen(commitId));
   }
 
-  profileStateMigrate(commitId: string, profiles?: PersistentProviderProfile[]): Promise<ProfileStateCommitResult> {
+  profileStateMigrate(
+    commitId: string,
+    profiles?: PersistentProviderProfile[],
+  ): Promise<ProfileStateCommitResult> {
     return this.localMutation((client) => {
       if (!client.profileStateMigrate) throw new Error("MIGRATION_UNAVAILABLE");
       return client.profileStateMigrate(commitId, profiles);
     });
   }
 
-  profileStateCleanup(commitId: string, migrationId: string, preferenceConfirmed: boolean): Promise<ProfileStateCommitResult> {
+  profileStateCleanup(
+    commitId: string,
+    migrationId: string,
+    preferenceConfirmed: boolean,
+  ): Promise<ProfileStateCommitResult> {
     return this.localMutation((client) => {
       if (!client.profileStateCleanup) throw new Error("MIGRATION_UNAVAILABLE");
       return client.profileStateCleanup(commitId, migrationId, preferenceConfirmed);

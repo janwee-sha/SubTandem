@@ -175,15 +175,17 @@ for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
         ...input("test"),
         credential: { source: "entered", apiKey: "synthetic-entered-key" },
       });
-      await expect(h.send("provider:models-preview", {
-        kind,
-        endpoint: saved.endpoint,
-        proxyMode: "direct",
-        trigger: "manual",
-        draftCredentialEpoch: 1,
-        sourceProfile,
-        credential: { apiKey: "synthetic-entered-key" },
-      })).rejects.toThrow("MISSING_HANDLER");
+      await expect(
+        h.send("provider:models-preview", {
+          kind,
+          endpoint: saved.endpoint,
+          proxyMode: "direct",
+          trigger: "manual",
+          draftCredentialEpoch: 1,
+          sourceProfile,
+          credential: { apiKey: "synthetic-entered-key" },
+        }),
+      ).rejects.toThrow("MISSING_HANDLER");
       expect(h.transport.calls).toEqual([]);
       expect(JSON.stringify(h.replies)).not.toContain("synthetic-entered-key");
     });

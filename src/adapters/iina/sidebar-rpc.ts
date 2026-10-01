@@ -44,12 +44,21 @@ export class SidebarRpc {
   }
 }
 
-export function installCredentialMainRelay(sidebar: SidebarPort, global: SidebarPort, options: { onDraftModels?(message: ProviderDraftRequest): boolean } = {}): void {
+export function installCredentialMainRelay(
+  sidebar: SidebarPort,
+  global: SidebarPort,
+  options: { onDraftModels?(message: ProviderDraftRequest): boolean } = {},
+): void {
   let current: { sidebarInstanceId: string; drawerId: string } | null = null;
   const requests = new Set<string>();
   global.onMessage("credential-channel:revoked", (raw) => {
     const identity = raw as { sidebarInstanceId?: string; drawerId?: string };
-    if (!current || identity?.sidebarInstanceId !== current.sidebarInstanceId || identity.drawerId !== current.drawerId) return;
+    if (
+      !current ||
+      identity?.sidebarInstanceId !== current.sidebarInstanceId ||
+      identity.drawerId !== current.drawerId
+    )
+      return;
     current = null;
     requests.clear();
     sidebar.postMessage("credential-channel:revoked", raw);
@@ -59,11 +68,19 @@ export function installCredentialMainRelay(sidebar: SidebarPort, global: Sidebar
     sidebar.onMessage(event, (raw) => {
       try {
         const message = parseProviderDraftRequest(raw, purpose);
-        credentialAssert(current && message.payload.sidebarInstanceId === current.sidebarInstanceId && message.payload.drawerId === current.drawerId);
+        credentialAssert(
+          current &&
+            message.payload.sidebarInstanceId === current.sidebarInstanceId &&
+            message.payload.drawerId === current.drawerId,
+        );
         if (purpose === "draft-models" && options.onDraftModels?.(message) === false) return;
         global.postMessage(event, message);
       } catch {
-        sidebar.postMessage("operation:error", { requestId: (raw as { requestId?: unknown })?.requestId, code: "INVALID_MESSAGE", userAction: "NONE" });
+        sidebar.postMessage("operation:error", {
+          requestId: (raw as { requestId?: unknown })?.requestId,
+          code: "INVALID_MESSAGE",
+          userAction: "NONE",
+        });
       }
     });
   }
@@ -83,10 +100,11 @@ export function installCredentialMainRelay(sidebar: SidebarPort, global: Sidebar
         } else if (name === "confirm") payload = parseCredentialHandshake(payload);
         else if (name === "operation") {
           const frame = parseCredentialEnvelope(payload);
-          credentialAssert(frame.context.purpose === "read-edit" && frame.context.requestId === message.requestId);
+          credentialAssert(
+            frame.context.purpose === "read-edit" && frame.context.requestId === message.requestId,
+          );
           payload = frame;
-        }
-        else {
+        } else {
           const closing = credentialRecord(payload, ["sidebarInstanceId", "drawerId"]);
           credentialAssert(
             current &&

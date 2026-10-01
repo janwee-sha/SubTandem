@@ -134,7 +134,10 @@ export class CredentialChannelRelay {
           ? !owner.confirmed
           : name === "credential-channel:operation" && owner.confirmed,
       );
-      if ("context" in frame) credentialAssert(frame.context.purpose === "read-edit" && frame.context.requestId === requestId);
+      if ("context" in frame)
+        credentialAssert(
+          frame.context.purpose === "read-edit" && frame.context.requestId === requestId,
+        );
       const identity = {
         senderId,
         sidebarInstanceId: owner.opening.sidebarInstanceId,
@@ -214,7 +217,9 @@ export class CredentialChannelRelay {
         })
         .catch(() => undefined);
       this.closings.set(senderId, closing);
-      void closing.finally(() => { if (this.closings.get(senderId) === closing) this.closings.delete(senderId); });
+      void closing.finally(() => {
+        if (this.closings.get(senderId) === closing) this.closings.delete(senderId);
+      });
     }
   }
   private reply(

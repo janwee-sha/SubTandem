@@ -45,9 +45,12 @@ describe("IINA sidebar lifecycle contract", () => {
         ]),
     ] as const;
     for (const [path, source] of sources) {
-      const managed = path === "src/main.ts"
-        ? source.replace("setTimeout(initializePlayer, 100)", "").replace("clearTimeout(initializePlayerTimer)", "")
-        : source;
+      const managed =
+        path === "src/main.ts"
+          ? source
+              .replace("setTimeout(initializePlayer, 100)", "")
+              .replace("clearTimeout(initializePlayerTimer)", "")
+          : source;
       expect(managed, path).not.toMatch(/(?<![.A-Za-z])setTimeout\(/);
       expect(managed, path).not.toMatch(/(?<![.A-Za-z])clearTimeout\(/);
       expect(managed, path).not.toMatch(/(?<![.A-Za-z])setInterval\(/);
@@ -304,9 +307,9 @@ describe("IINA sidebar lifecycle contract", () => {
   it("waits for IINA's player window before loading the sidebar webview", () => {
     expect(mainSource).toContain("iina.core.window.loaded");
     expect(mainSource).toContain('iina.event.on("iina.window-loaded", () => {');
-    expect(
-      mainSource.indexOf('iina.event.on("iina.window-loaded", () => {'),
-    ).toBeLessThan(mainSource.lastIndexOf("scheduleInitializePlayer();"));
+    expect(mainSource.indexOf('iina.event.on("iina.window-loaded", () => {')).toBeLessThan(
+      mainSource.lastIndexOf("scheduleInitializePlayer();"),
+    );
     expect(mainSource).toContain("setTimeout(initializePlayer, 100)");
     expect(mainSource).toContain('iina.event.on("iina.window-will-close"');
     expect(mainSource).toContain("clearTimeout(initializePlayerTimer)");

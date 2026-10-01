@@ -45,13 +45,13 @@ describe.each(["openai", "claude", "deepseek", "ollama"])(
     );
     it("keeps a newer busy state after late success and cancels on pagehide", async () => {
       const h = sidebarHarness();
-        h.connectCredentials();
-        h.evaluate("sidebarState.openNewProfileDrawer()");
+      h.connectCredentials();
+      h.evaluate("sidebarState.openNewProfileDrawer()");
       h.evaluate(
         `providerKind.value = ${JSON.stringify(kind)}; applyProviderKind(); requestModels("manual");`,
       );
       await h.settleCredentials();
-        const old = h.messages.filter((m) => m.name === "provider:draft-models").at(-1)!;
+      const old = h.messages.filter((m) => m.name === "provider:draft-models").at(-1)!;
       h.evaluate('requestModels("manual")');
       await h.settleCredentials();
       const next = h.messages.filter((m) => m.name === "provider:draft-models").at(-1)!;

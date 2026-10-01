@@ -1,7 +1,4 @@
-import type {
-  ProviderModelsRequestPayload,
-  ProviderModelsResult,
-} from "../../domain/messages.js";
+import type { ProviderModelsRequestPayload, ProviderModelsResult } from "../../domain/messages.js";
 
 type SidebarModelTrigger = "open" | "endpoint" | "profile" | "credential" | "manual";
 
