@@ -217,6 +217,13 @@ button {
   box-shadow: none;
 }
 
+@media (prefers-color-scheme: light) {
+  .profile-drawer input:enabled::placeholder {
+    color: #424242;
+    opacity: 1;
+  }
+}
+
 button {
   color: var(--accent-label);
   background: var(--accent);
@@ -1165,7 +1172,6 @@ dd {
   min-height: 80px;
   aspect-ratio: 3.7;
   box-sizing: border-box;
-  border: 1px solid var(--separator);
   display: grid;
   place-items: center;
   padding: 16px;
