@@ -42,6 +42,7 @@ SubTandem conserve les sous-titres d'origine et affiche séparément leur traduc
 ## ✅ Configuration requise
 
 - macOS 12 ou version ultérieure
+- Un Mac doté de Secure Enclave pour enregistrer ou utiliser une API key non vide ; les services qui n’en demandent pas restent pris en charge.
 - IINA 1.4.0 ou version ultérieure
 - Une piste texte intégrée locale prise en charge ou une piste externe SRT/ASS/SSA lisible
 - Un service OpenAI, Claude, DeepSeek ou Ollama et un modèle auquel vous avez accès. Consultez les instructions de configuration ci-dessous.
@@ -105,6 +106,8 @@ Quelle que soit la méthode choisie, approuvez les autorisations demandées si I
 
 Développez le résumé d'un Profile pour le modifier sur place. La ligne d'actions place **Test** à gauche puis **Cancel**, **Delete**, **Save** à droite ; un nouveau brouillon n'affiche pas Delete. Testez les valeurs courantes, enregistrez-les, puis activez la nouvelle révision.
 
+À l’ouverture d’un Profile existant avec une API key enregistrée, l’actualisation des modèles, **Test** et **Save** attendent la fin de la lecture de la clé. Vous pouvez toujours modifier les champs, utiliser **Delete** ou **Cancel**, ou fermer le tiroir. Si la lecture échoue ou dure 15 secondes, les commandes redeviennent disponibles avec un champ API key vide et modifiable. Les nouveaux Profile et ceux sans clé enregistrée n’ont pas d’attente supplémentaire.
+
 ## ⚙️ Services de traduction
 
 ### OpenAI
@@ -137,7 +140,7 @@ Les nouveaux Profile utilisent **Connect directly** par défaut. Choisissez **Us
 
 - SubTandem envoie uniquement au Profile explicitement sélectionné le texte des cue proches, la langue cible exacte, des identifiants de cue opaques et un contexte voisin limité. Le service comprend la langue source dans cette même requête. Aucun contenu vidéo ou audio n'est envoyé.
 - L'autorisation `video-overlay` affiche la traduction actuelle dans un Overlay local et non interactif. Cet Overlay n'accepte aucune saisie ni déplacement sur la vidéo, n'utilise ni réseau ni stockage WebView et est effacé avec la session de lecture.
-- Les API key sont conservées sous forme de données chiffrées authentifiées dans le fichier privé `credentials.json`, avec les paramètres Profile et les éléments de restauration liés au matériel. Secure Enclave protège les clés de chiffrement. En l’absence de cette protection matérielle, l’enregistrement d’une API key non vide et l’utilisation d’une API key enregistrée échouent. Une API key vide et sa suppression explicite restent possibles. Les API key ne sont inscrites ni dans les preferences IINA, ni dans les journaux, diagnostics ou le paquet.
+- Les API key sont conservées sous forme de données chiffrées authentifiées dans le fichier privé `credentials.json`, avec les paramètres Profile et les éléments de restauration liés au matériel. Secure Enclave protège les clés de chiffrement. En l’absence de cette protection matérielle, l’enregistrement d’une API key non vide et l’utilisation d’une API key enregistrée échouent. Une API key vide et sa suppression explicite restent possibles. Les API key ne sont inscrites ni dans les preferences IINA, ni dans les journaux, diagnostics ou le paquet. Sur le même Mac et le même compte utilisateur, avec des clés système valides, les API key nouvellement enregistrées restent utilisables après le redémarrage d’IINA, le redémarrage du Mac suivi de la connexion, ou les mises à niveau ultérieures du plugin, sans autorisation supplémentaire, mot de passe principal ni demande biométrique.
 - Ouvrez un Profile pour modifier son API key enregistrée. Elle est masquée par défaut ; **Show API key** la révèle uniquement dans le tiroir courant. **Save** la remplace par la saisie actuelle ; enregistrer un champ vide la supprime. Une lecture échouée laisse un champ vide modifiable sans changer les données enregistrées. **Cancel** abandonne les modifications.
 - La mise à niveau depuis l’ancien format en clair conserve les paramètres Profile et une sélection activée valide, mais efface les API key enregistrées. Saisissez-les à nouveau au besoin. SubTandem nettoie les copies qu’il gère ; les instantanés APFS/Time Machine, copies hors ligne et autres sauvegardes peuvent conserver les anciennes API key. Renouvelez-les auprès de votre service.
 - Sauvegardez le fichier `credentials.json` complet avec ses éléments de restauration associés. La restauration exige l’appareil et l’utilisateur d’origine ainsi qu’un environnement de clés système valide ; elle n’est pas garantie même dans ces conditions. Un autre appareil ou utilisateur ne peut pas récupérer les API key enregistrées ; saisissez-les à nouveau pour chaque Profile.
@@ -153,6 +156,7 @@ SubTandem n'effectue pas de transcription audio, d'OCR ou d'extraction de sous-t
 
 - **Select a supported text subtitle :** sélectionnez une piste locale intégrée SubRip/ASS/SSA/`mov_text` ou un SRT/ASS externe. Les pistes graphiques et intégrées distantes ne sont pas prises en charge ; suivez l'état pour resélectionner ou utiliser Retry après un échec.
 - **Échec de la traduction :** suivez l'action précise indiquée dans Session. Selon la cause, testez le Profile et vérifiez son endpoint, son Model ID exact, son API key, sa route réseau, les limites du compte ou le processus Ollama. La lecture et les sous-titres d'origine continuent normalement.
+- **Liste de Profile vide au démarrage :** si les paramètres enregistrés ne se chargent pas, **New profile** reste disponible. Les paramètres endommagés peuvent être réinitialisés ; créez et enregistrez un nouveau Profile pour continuer. Un problème d’accès temporaire préserve les Profile valides, qui peuvent réapparaître lorsque l’accès est rétabli. Un échec d’enregistrement conserve le brouillon pour réessayer. L’échec de lecture d’une seule API key ne réinitialise pas la liste.
 - **Credential could not be saved :** installez le paquet Release plutôt qu'une copie de développement incomplète, vérifiez que le répertoire de données du plugin est accessible en écriture, puis quittez complètement et relancez IINA.
 - **Aucune traduction affichée :** vérifiez que l'interrupteur du Profile voulu et **Translate** sont tous deux activés et que la lecture se trouve dans l'intervalle d'un cue déjà traduit.
 - **Problème de réseau ou de proxy :** les nouveaux Profile se connectent directement. Si votre réseau exige un proxy, choisissez **Use macOS proxy settings** pour ce Profile, puis enregistrez-le, testez-le et activez la nouvelle révision.

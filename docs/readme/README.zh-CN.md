@@ -42,6 +42,7 @@ SubTandem 保留原字幕，同时在你选择的位置独立显示译文。
 ## ✅ 使用要求
 
 - macOS 12 或更高版本
+- 保存或使用非空 API key 需要配备 Secure Enclave 的 Mac；不需要 API key 的服务仍受支持。
 - IINA 1.4.0 或更高版本
 - 受支持的本地内嵌文本字幕，或可读取的外部 SRT/ASS/SSA 字幕
 - 可使用的 OpenAI、Claude、DeepSeek 或 Ollama 翻译服务及模型；各服务的配置方法见下文。
@@ -105,6 +106,8 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 
 展开 Profile 摘要即可就地编辑。操作行左侧是 **Test**，右侧依次是 **Cancel**、**Delete**、**Save**；新草稿不显示 Delete。测试当前值并保存后，再启用新修订版。
 
+打开已有且保存了 API key 的 Profile 时，模型刷新、**Test** 和 **Save** 会等待读取结束。期间仍可编辑字段、使用 **Delete** 或 **Cancel**，或关闭抽屉。读取失败或等待达到 15 秒后，这些操作恢复可用，API key 显示为可编辑的空字段；新建 Profile 和未保存 API key 的 Profile 无需额外等待。
+
 ## ⚙️ 翻译服务
 
 ### OpenAI
@@ -137,7 +140,7 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 
 - SubTandem 只向你明确全局启用的唯一 Profile 发送播放位置附近的字幕文字、准确的目标语言、不透明的字幕 ID 和少量相邻上下文；服务会在该翻译请求内理解源语言。SubTandem 不会发送视频或音频内容。
 - `video-overlay` 权限只用于在本地非交互式 Overlay 中显示当前译文。Overlay 不接受输入，不支持在播放器画面拖动，不使用网络或 WebView storage，并随播放会话清理。
-- API key 以认证密文保存在插件私有的 `credentials.json` 中，与 Profile 设置及硬件绑定的恢复材料一同保存。Secure Enclave 保护加密密钥；所需硬件保护不可用时，非空 API key 的保存和已保存 API key 的使用会失败。空 API key 和明确清除仍可用。API key 不会写入 IINA preferences、日志、诊断或安装包。
+- API key 以认证密文保存在插件私有的 `credentials.json` 中，与 Profile 设置及硬件绑定的恢复材料一同保存。Secure Enclave 保护加密密钥；所需硬件保护不可用时，非空 API key 的保存和已保存 API key 的使用会失败。空 API key 和明确清除仍可用。API key 不会写入 IINA preferences、日志、诊断或安装包。 在同一 Mac、同一用户且系统密钥有效时，新保存的 API key 在重启 IINA、重启 Mac 并登录或后续插件升级后仍可用，无需额外授权、主密码或生物识别。
 - 打开 Profile 可编辑已保存的 API key。默认遮罩，**Show API key** 仅在当前抽屉显示原值。**Save** 以当前输入替换原值，空值保存会清除；读取失败时仍显示可编辑的空字段，不改变已保存数据。**Cancel** 丢弃修改。
 - 从原明文格式升级会保留 Profile 设置和有效启用选择，但清空已保存的 API key，请按需重新录入。SubTandem 清理其受管副本；APFS/Time Machine 快照、离线副本和其他备份仍可能保留旧 API key。建议在服务端轮换旧 API key。
 - 备份时保留完整的 `credentials.json` 及其中配套恢复材料。恢复依赖原设备、原用户和有效的系统密钥环境，即使条件满足也不保证成功。其他设备或用户无法恢复已保存的 API key，请为各 Profile 重新录入。
@@ -154,6 +157,7 @@ SubTandem 不提供音频转写、图形字幕 OCR/提取、远程媒体内嵌�
 
 - **Select a supported text subtitle：** 在 IINA 中选择本地内嵌 SubRip/ASS/SSA/`mov_text` 或外部 SRT/ASS 作为主字幕。远程内嵌和图形字幕不受支持；可按状态提示重新选轨，或对失败的准备操作执行 Retry。
 - **翻译失败：** 按照 Session 显示的具体操作处理。根据失败原因测试 Profile，并检查 endpoint、准确的 Model ID、API key、网络路由、账户限额或 Ollama 进程。视频和原字幕会继续正常播放。
+- **启动后出现空 Profile 列表：** 无法加载已保存设置时，仍可使用 **New profile**。损坏的设置可能被重置，可新建并保存 Profile 后继续使用。暂时访问失败不会覆盖有效的已保存 Profile，访问恢复后它们可以重新出现。保存失败会保留草稿供重试。单条 API key 读取失败不会重置列表。
 - **Credential could not be saved：** 使用正式 Release 安装包，不要使用内容不完整的开发副本；确认插件数据目录可写，并完全退出后重启 IINA。
 - **没有显示译文：** 确认目标 Profile 开关和 **Translate** 均已开启；播放位置还需要处于已有译文的字幕时段内。
 - **网络或代理故障：** 新 Profile 默认直连。若网络需要代理，请为该 Profile 选择 **Use macOS proxy settings**，然后保存、测试并启用新修订版。

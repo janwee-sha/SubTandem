@@ -42,6 +42,7 @@ SubTandem keeps the original subtitle visible while independently displaying the
 ## ✅ Requirements
 
 - macOS 12 or later
+- A Mac with Secure Enclave to save or use a nonempty API key; services that do not require one remain supported.
 - IINA 1.4.0 or later
 - A supported local embedded text subtitle or readable external SRT/ASS/SSA track
 - An OpenAI, Claude, DeepSeek, or Ollama service with a model you can use. See the setup guidance below for each service.
@@ -105,6 +106,8 @@ After any installation method, approve the requested plugin permissions if promp
 
 Expand a profile summary to edit it in place. The action row keeps **Test** on the left and **Cancel**, **Delete**, **Save** on the right; a new draft omits Delete. Test the current values, save the update, and enable the new revision before translating.
 
+When you open an existing Profile with a saved API key, model refresh, **Test**, and **Save** wait until the key has been read. You can still edit fields, use **Delete** or **Cancel**, or close the drawer. If the read fails or takes 15 seconds, the controls become available with an editable empty API key field; new Profiles and Profiles without a saved key need no extra wait.
+
 ## ⚙️ Translation Services
 
 ### OpenAI
@@ -137,7 +140,7 @@ New Profiles use **Connect directly** by default. Choose **Use macOS proxy setti
 
 - SubTandem sends only nearby subtitle cue text, the exact target language, opaque cue identifiers, and limited neighboring context to the one profile you explicitly enable. The service understands the source language inside that translation request. It does not send video or audio content.
 - The `video-overlay` permission displays the current translation in a local, non-interactive overlay. The overlay does not accept input or enable dragging on the video, does not use network or WebView storage, and is cleared with the playback session.
-- API keys are stored as authenticated encrypted data in the plugin’s private `credentials.json`, alongside Profile settings and hardware-bound recovery material. Secure Enclave protects the encryption keys; saving a nonempty API key or using a saved API key fails when the required hardware protection is unavailable. Empty API keys and explicitly clearing one remain supported. API keys stay out of IINA preferences, logs, diagnostics and the plugin package.
+- API keys are stored as authenticated encrypted data in the plugin’s private `credentials.json`, alongside Profile settings and hardware-bound recovery material. Secure Enclave protects the encryption keys; saving a nonempty API key or using a saved API key fails when the required hardware protection is unavailable. Empty API keys and explicitly clearing one remain supported. API keys stay out of IINA preferences, logs, diagnostics and the plugin package. On the same Mac and user account with valid system keys, newly saved API keys remain available after restarting IINA, restarting the Mac and signing in, or later plugin upgrades, without extra authorization, a master password, or biometric prompts.
 - Open a Profile to edit its saved API key. It starts masked; **Show API key** reveals it only in the current drawer. **Save** replaces it with the current input, and saving an empty field clears it. A failed read leaves an editable empty field without changing the saved data. **Cancel** discards edits.
 - Upgrading from the previous plaintext format preserves Profile settings and a valid enabled selection but clears saved API keys. Enter them again when needed. SubTandem cleans copies it manages; APFS/Time Machine snapshots, offline copies and other backups can still contain old API keys. Rotate old API keys with your service.
 - Back up the complete `credentials.json` with its paired recovery material. Recovery requires the original device, user and a valid system key environment, and is not guaranteed even there. Another device or user cannot recover the saved API keys; re-enter them for each Profile.
@@ -154,6 +157,7 @@ SubTandem does not perform audio transcription, OCR or extraction of image-based
 
 - **Select a supported text subtitle:** Select a local embedded SubRip/ASS/SSA/`mov_text` track or an external SRT/ASS track as IINA's primary subtitle. Remote embedded and image-based tracks are not supported; use the displayed state to reselect a text track or retry a failed preparation.
 - **Translation failed:** Follow the specific action shown in Session. Depending on the failure, test the Profile and check its endpoint, exact model ID, API key, network route, account limits, or Ollama process. Playback and the original subtitle continue normally.
+- **An empty Profile list after startup:** If saved settings cannot load, **New profile** remains available. Damaged settings may be reset; create and save a new Profile to continue. A temporary access problem preserves valid saved Profiles, which can reappear when access returns. If saving fails, your draft remains available for retry. A failed read of one API key does not reset the list.
 - **Credential could not be saved:** Install the release package rather than using an incomplete development copy, make sure the plugin data directory is writable, and fully restart IINA.
 - **No rendered translation:** Confirm that the intended Profile switch and **Translate** are both enabled. Playback must also be within the time range of an available translated cue.
 - **Network or proxy trouble:** New Profiles connect directly. If your network needs a proxy, choose **Use macOS proxy settings** for that Profile. Save, test, and enable the new revision.
