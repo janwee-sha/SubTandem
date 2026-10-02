@@ -149,6 +149,19 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarCss).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
   });
 
+  it("uses the same centered empty surface in initial markup and settled lists", () => {
+    expect(html).toMatch(/id="profiles"[^>]*data-empty="true"/);
+    expect(html).toContain('<p class="empty">No profiles yet.</p>');
+    const surface = sidebarCss.match(/\.profiles\[data-empty="true"\]\s*{([^}]+)}/)?.[1] ?? "";
+    expect(surface).toContain("min-height: 80px");
+    expect(surface).toContain("aspect-ratio: 3.7");
+    expect(surface).toContain("padding: 16px");
+    expect(surface).toContain("place-items: center");
+    const hint = sidebarCss.match(/\.profiles\[data-empty="true"\] \.empty\s*{([^}]+)}/)?.[1] ?? "";
+    expect(hint).toContain("margin: 0");
+    expect(hint).toContain("text-align: center");
+  });
+
   it("groups Profiles and session status on native sidebar surfaces", () => {
     expect(html).not.toContain("IINA live translation");
     expect(html).toContain('<label class="setting-row">');
