@@ -77,6 +77,9 @@ jobs:
           test -x "$app/Contents/MacOS/iina-plugin"
           echo "IINA_PLUGIN_BIN=$app/Contents/MacOS/iina-plugin" >> "$GITHUB_ENV"
 
+      - name: Build native helper
+        run: npm run build:native
+
       - name: Run TypeScript tests
         run: npm run test
 
@@ -88,9 +91,6 @@ jobs:
 
       - name: Check formatting
         run: npm run format:check
-
-      - name: Build native helper
-        run: npm run build:native
 
       - name: Run native tests
         run: npm run test:native

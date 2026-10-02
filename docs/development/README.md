@@ -15,11 +15,11 @@ This guide explains how to build, test, package, and validate the plugin.
 ```sh
 npm ci
 export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+npm run build:native
 npm run test
 npm run typecheck
 npm run lint
 npm run format:check
-npm run build:native
 npm run test:native
 npm run build
 npm run verify:package
@@ -29,7 +29,7 @@ npm run pack
 The main commands perform the following tasks:
 
 - `npm ci`: Installs the locked dependencies.
-- `npm run test`: Runs the TypeScript automated tests.
+- `npm run test`: Runs the TypeScript automated tests, including integration tests that require the built native helpers.
 - `npm run typecheck`: Checks the TypeScript types for the plugin runtime and Sidebar.
 - `npm run lint`: Runs ESLint.
 - `npm run build:native`: Validates `native/ffmpeg.lock.json`, builds static FFmpeg for macOS 12 on arm64 and x86_64 from the locked source,
