@@ -30,7 +30,6 @@ class FakeBridge implements LocalRpcBridge {
     timeoutMs?: number;
   }> = [];
   unavailable = false;
-  credentials = new Map<string, Record<string, string>>();
 
   async post<T>(
     port: number,
@@ -41,52 +40,9 @@ class FakeBridge implements LocalRpcBridge {
   ): Promise<T> {
     if (this.unavailable) throw new Error("connection refused with private body");
     this.calls.push({ port, path, token, body, timeoutMs: options?.timeoutMs });
-    if (path === "/v1/health") return { state: "ok" } as T;
-    if (path === "/v1/credentials") {
-      const request = body as {
-        action?: string;
-        profileId?: string;
-        fields?: Record<string, string>;
-        commitId?: string;
-        expectedStoreRevision?: number;
-        expectedProfileRevision?: number;
-      };
-      if (request.action === "write" && request.profileId && request.fields) {
-        this.credentials.set(request.profileId, { ...request.fields });
-        return {
-          state: "committed",
-          initialized: true,
-          storeRevision: 2,
-          lastCommit: {
-            commitId: request.commitId,
-            operation: "credential-write",
-            baseRevision: request.expectedStoreRevision,
-            requestDigest: "safe",
-          },
-          profileState: {
-            profiles: [
-              {
-                profileId: request.profileId,
-                revision: request.expectedProfileRevision,
-                displayName: "A",
-                kind: "openai",
-                endpoint: "https://example.test/v1",
-                endpointFingerprint: "fingerprint",
-                proxyMode: "direct",
-                model: "model-a",
-              },
-            ],
-            activation: null,
-          },
-          credentialConfigured: { [request.profileId]: true },
-        } as T;
-      }
-      if (request.action === "read" && request.profileId) {
-        return { fields: this.credentials.get(request.profileId) ?? null } as T;
-      }
-    }
-    if (path === "/v1/cancel") return { state: "cancelled" } as T;
-    if (path === "/v1/shutdown") return { state: "shutting-down" } as T;
+    if (path === "/v2/health") return { state: "ok", protocolVersion: 2 } as T;
+    if (path === "/v2/cancel") return { state: "cancelled" } as T;
+    if (path === "/v2/shutdown") return { state: "shutting-down" } as T;
     return {
       jobId: "job-1",
       transportState: "completed",
@@ -157,12 +113,12 @@ class RetainingTimerApi implements HostTimerApi {
   }
 }
 
-function readyFrame(createdAtMs = Date.now()): string {
+function readyFrame(createdAtMs = Date.now(), protocolVersion = 2): string {
   return `${JSON.stringify({
     type: "ready",
     port: 49152,
     token: "abcDEF123_-",
-    protocolVersion: 1,
+    protocolVersion,
     createdAtMs,
   })}\n`;
 }
@@ -194,11 +150,11 @@ describe("transport helper client", () => {
     );
   });
   it("accepts only one exact framed ready object", () => {
-    expect(parseReadyFrame(readyFrame(10_000), 9_000, 10_000)).toEqual({
+    expect(parseReadyFrame(readyFrame(10_000), 9_000, 10_000, 2)).toEqual({
       type: "ready",
       port: 49152,
       token: "abcDEF123_-",
-      protocolVersion: 1,
+      protocolVersion: 2,
       createdAtMs: 10_000,
     });
     expect(() => parseReadyFrame("debug\n{}")).toThrow();
@@ -400,7 +356,8 @@ describe("transport helper client", () => {
     const old = (now - 600_000).toString(36);
     const recent = (now - 10_000).toString(36);
     const files = new Map<string, string>([
-      [`/private/plugin/.ready/transport-${old}-1-old.json`, "old"],
+      [`/private/plugin/.ready/transport-${old}-1-old.json`, readyFrame(now - 600_000)],
+      [`/private/plugin/.ready/transport-${old}-2-legacy.json`, readyFrame(now - 600_000, 1)],
       [`/private/plugin/.ready/transport-${recent}-2-new.json`, "new"],
       [`/private/plugin/.rpc/extractor-${old}-3-old.request.json`, "private"],
       [`/private/plugin/.rpc/transport-${old}-5-old.processing.json`, "private"],
@@ -428,9 +385,10 @@ describe("transport helper client", () => {
     expect(deleted).toEqual([
       `/private/plugin/.ready/transport-${old}-1-old.json`,
       `/private/plugin/.rpc/extractor-${old}-3-old.request.json`,
-      `/private/plugin/.rpc/transport-${old}-5-old.processing.json`,
-      `/private/plugin/.rpc/transport-${old}-6-old.request.ready`,
     ]);
+    expect(files.has(`/private/plugin/.ready/transport-${old}-2-legacy.json`)).toBe(true);
+    expect(files.has(`/private/plugin/.rpc/transport-${old}-5-old.processing.json`)).toBe(true);
+    expect(files.has(`/private/plugin/.rpc/transport-${old}-6-old.request.ready`)).toBe(true);
     expect(files.has(`/private/plugin/.ready/transport-${recent}-2-new.json`)).toBe(true);
     expect(files.has(`/private/plugin/.rpc/unrelated-${old}-4-old.response.json`)).toBe(true);
   });
@@ -442,7 +400,10 @@ describe("transport helper client", () => {
       launch: async (executable: string, args: string[], onStdout?: (data: string) => void) => {
         launches.push({ executable, args, hooked: onStdout !== undefined });
         const readyPath = args[4]!;
-        readyFiles.files.set(readyPath, readyFrame());
+        readyFiles.files.set(
+          readyPath,
+          readyFrame(Date.now(), executable.includes("subtitle-extractor") ? 1 : 2),
+        );
         return { status: 0 };
       },
     };
@@ -463,7 +424,7 @@ describe("transport helper client", () => {
       expect.objectContaining({
         port: 49152,
         token: "abcDEF123_-",
-        rpcDirectory: expect.stringMatching(/\.rpc\/transport-[0-9a-z-]+$/),
+        rpcDirectory: expect.stringMatching(/\.rpc\/transport-v2-[0-9a-z-]+$/),
       }),
       expect.objectContaining({
         port: 49152,
@@ -482,12 +443,21 @@ describe("transport helper client", () => {
     expect(readyFiles.files.size).toBe(0);
   });
 
-  it("sends bearer-authenticated health/credential/request/cancel RPC to loopback", async () => {
+  it("sends bearer-authenticated health/reference/request/cancel RPC to loopback", async () => {
     const bridge = new FakeBridge();
     const client = new TransportClient({ port: 49152, token: "session-token" }, bridge);
     await expect(client.health()).resolves.toBeUndefined();
     await expect(
       client.request({
+        credential: { source: "none" },
+        owner: { senderId: "window", requestId: "request" },
+        purpose: "test",
+        provider: {
+          kind: "openai",
+          endpoint: "https://example.test",
+          model: "model",
+          proxyMode: "system",
+        },
         jobId: "job-1",
         method: "POST",
         url: "https://example.test",
@@ -498,25 +468,15 @@ describe("transport helper client", () => {
       }),
     ).resolves.toMatchObject({ statusCode: 200 });
     await expect(client.cancel("job-1")).resolves.toBe("cancelled");
-    const profileId = "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae";
-    await expect(
-      client.credentialWrite(
-        profileId,
-        { apiKey: "private-key" },
-        "00000000-0000-4000-8000-000000000001",
-        1,
-        1,
-      ),
-    ).resolves.toMatchObject({ state: "committed", storeRevision: 2 });
-    await expect(client.credentialRead(profileId)).resolves.toEqual({ apiKey: "private-key" });
-    expect(client).not.toHaveProperty("credentialDelete");
+    expect(client).not.toHaveProperty("credentialRead");
+    expect(client).not.toHaveProperty("credentialWrite");
     expect(bridge.calls.every((call) => call.token === "session-token")).toBe(true);
     expect(bridge.calls.every((call) => call.port === 49152)).toBe(true);
-    expect(bridge.calls.every((call) => call.path.startsWith("/v1/"))).toBe(true);
-    expect(bridge.calls.find((call) => call.path === "/v1/request")?.timeoutMs).toBe(130_000);
+    expect(bridge.calls.every((call) => call.path.startsWith("/v2/"))).toBe(true);
+    expect(bridge.calls.find((call) => call.path === "/v2/request")?.timeoutMs).toBe(130_000);
     expect(
       bridge.calls
-        .filter((call) => call.path !== "/v1/request")
+        .filter((call) => call.path !== "/v2/request")
         .every((call) => call.timeoutMs === 1_000),
     ).toBe(true);
   });
@@ -527,6 +487,15 @@ describe("transport helper client", () => {
     const helperJobId = "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae";
     const transport = new HelperProviderTransport(client, () => helperJobId);
     await transport.request({
+      credential: { source: "none" },
+      owner: { senderId: "window", requestId: "request" },
+      purpose: "test",
+      provider: {
+        kind: "ollama",
+        endpoint: "http://127.0.0.1:11434",
+        model: "model",
+        proxyMode: "system",
+      },
       jobId: "probe-version",
       method: "GET",
       url: "http://127.0.0.1:11434/api/version",
@@ -545,6 +514,99 @@ describe("transport helper client", () => {
     await expect(client.cancel("job-1")).rejects.not.toThrow(/private body|secret-token/);
   });
 
+  it("expires a queued health RPC without publishing it or waiting for provider slots", async () => {
+    const files = new MemoryReadyFiles();
+    const timerApi = new RetainingTimerApi();
+    const bridge = new IinaFileRpcBridge(files, {
+      helper: "transport",
+      fileDirectory: "@data/.rpc",
+      maxRequestBytes: 65_536,
+      maxResponseBytes: 65_536,
+      maxConcurrentRequests: 1,
+      timers: new HostTimers(timerApi),
+    });
+    const now = Date.now();
+    const clock = vi.spyOn(Date, "now").mockReturnValue(now);
+    const stalled = bridge.post(49152, "secret-token", "/v2/request", {}).catch((e) => e);
+    await Promise.resolve();
+    const queued = bridge.post(49152, "secret-token", "/v2/health", {}, { timeoutMs: 1_000 });
+    const result = queued.catch((e) => e);
+    let settled = false;
+    void result.then(() => {
+      settled = true;
+    });
+    try {
+      clock.mockReturnValue(now + 999);
+      timerApi.fireIntervals();
+      await Promise.resolve();
+      expect(settled).toBe(false);
+      clock.mockReturnValue(now + 1_000);
+      timerApi.fireIntervals();
+      for (let step = 0; step < 10; step++) await Promise.resolve();
+      expect(settled).toBe(true);
+      expect(await result).toMatchObject({ message: "HELPER_RPC_TIMEOUT" });
+      expect([...files.files.values()].filter((value) => value.includes("/v2/health"))).toEqual([]);
+    } finally {
+      bridge.close();
+      await Promise.all([stalled, result]);
+      clock.mockRestore();
+    }
+    expect(files.files.size).toBe(0);
+    expect(timerApi.intervals.size).toBe(0);
+  });
+
+  it("counts time spent queued against the published RPC deadline", async () => {
+    const files = new MemoryReadyFiles();
+    const timerApi = new RetainingTimerApi();
+    const bridge = new IinaFileRpcBridge(files, {
+      helper: "transport",
+      fileDirectory: "@data/.rpc",
+      maxRequestBytes: 65_536,
+      maxResponseBytes: 65_536,
+      maxConcurrentRequests: 1,
+      timers: new HostTimers(timerApi),
+    });
+    const now = Date.now();
+    const clock = vi.spyOn(Date, "now").mockReturnValue(now);
+    const first = bridge.post(49152, "secret-token", "/v2/request", {}).catch((e) => e);
+    await Promise.resolve();
+    const second = bridge.post(49152, "secret-token", "/v2/health", {}, { timeoutMs: 1_000 });
+    const result = second.catch((e) => e);
+    let settled = false;
+    void result.then(() => {
+      settled = true;
+    });
+    try {
+      clock.mockReturnValue(now + 500);
+      const ready = [...files.files.keys()].find((path) => path.endsWith(".request.ready"))!;
+      files.write(
+        ready.replace(".request.ready", ".response.json"),
+        JSON.stringify({
+          type: "response",
+          protocolVersion: 2,
+          createdAtMs: Date.now(),
+          statusCode: 200,
+          body: {},
+        }),
+      );
+      timerApi.fireIntervals();
+      await first;
+      for (let step = 0; step < 10; step++) await Promise.resolve();
+      expect([...files.files.values()].some((value) => value.includes("/v2/health"))).toBe(true);
+      clock.mockReturnValue(now + 1_000);
+      timerApi.fireIntervals();
+      for (let step = 0; step < 10; step++) await Promise.resolve();
+      expect(settled).toBe(true);
+      expect(await result).toMatchObject({ message: "HELPER_RPC_TIMEOUT" });
+    } finally {
+      bridge.close();
+      await Promise.all([first, result]);
+      clock.mockRestore();
+    }
+    expect(files.files.size).toBe(0);
+    expect(timerApi.intervals.size).toBe(0);
+  });
+
   it("handles 300 delayed file RPC posts with one bounded shared poller", async () => {
     const files = new MemoryReadyFiles();
     const timerApi = new RetainingTimerApi();
@@ -556,10 +618,10 @@ describe("transport helper client", () => {
       const request = JSON.parse(files.files.get(requestPath)!) as Record<string, unknown>;
       expect(request).toMatchObject({
         type: "request",
-        protocolVersion: 1,
+        protocolVersion: 2,
         port: 49152,
         token: "secret-token",
-        path: "/v1/health",
+        path: "/v2/health",
         body: {},
       });
     };
@@ -573,7 +635,7 @@ describe("transport helper client", () => {
     });
 
     const requests = Promise.all(
-      Array.from({ length: 300 }, () => bridge.post(49152, "secret-token", "/v1/health", {})),
+      Array.from({ length: 300 }, () => bridge.post(49152, "secret-token", "/v2/health", {})),
     );
     let completed = false;
     void requests.then(() => {
@@ -588,7 +650,7 @@ describe("transport helper client", () => {
           requestPath.replace(".request.json", ".response.json"),
           JSON.stringify({
             type: "response",
-            protocolVersion: 1,
+            protocolVersion: 2,
             createdAtMs: Date.now(),
             statusCode: 200,
             body: { state: "ok" },
@@ -685,7 +747,7 @@ describe("transport helper client", () => {
         maxConcurrentRequests: 8,
         timers: new HostTimers(timerApi),
       });
-      const request = bridge.post(49152, "secret-token", "/v1/health", {}, { timeoutMs: 1_000 });
+      const request = bridge.post(49152, "secret-token", "/v2/health", {}, { timeoutMs: 1_000 });
       const rejected = expect(request).rejects.toThrow("HELPER_RPC_TIMEOUT");
       await Promise.resolve();
       vi.setSystemTime(Date.now() + 1_001);
@@ -698,6 +760,56 @@ describe("transport helper client", () => {
     }
   });
 
+  it.each([20, 999, 1_000, 1_001])(
+    "uses the helper completion time when a response is consumed late: %s ms",
+    async (completionMs) => {
+      vi.useFakeTimers();
+      const timerApi = new RetainingTimerApi();
+      const files = new MemoryReadyFiles();
+      const bridge = new IinaFileRpcBridge(files, {
+        helper: "transport",
+        fileDirectory: "@data/.rpc/generation",
+        maxRequestBytes: 65_536,
+        maxResponseBytes: 65_536,
+        maxConcurrentRequests: 1,
+        timers: new HostTimers(timerApi),
+      });
+      try {
+        const started = Date.now();
+        const request = bridge
+          .post(49152, "synthetic-token", "/v2/health", {}, { timeoutMs: 1_000 })
+          .then(
+            (value) => ({ value }),
+            (error: Error) => ({ error: error.message }),
+          );
+        await Promise.resolve();
+        const path = [...files.files.keys()].find((path) => path.endsWith(".request.json"))!;
+        files.write(
+          path.replace(".request.json", ".response.json"),
+          JSON.stringify({
+            type: "response",
+            protocolVersion: 2,
+            createdAtMs: started + completionMs,
+            statusCode: 200,
+            body: { state: "ok", protocolVersion: 2 },
+          }),
+        );
+        vi.setSystemTime(started + 1_500);
+        timerApi.fireIntervals();
+        expect(await request).toEqual(
+          completionMs < 1_000
+            ? { value: { state: "ok", protocolVersion: 2 } }
+            : { error: "HELPER_RPC_TIMEOUT" },
+        );
+        expect(files.files.size).toBe(0);
+        expect(timerApi.intervals.size).toBe(0);
+      } finally {
+        bridge.close();
+        vi.useRealTimers();
+      }
+    },
+  );
+
   it("aborts pending and queued files when a helper generation is retired", async () => {
     const timerApi = new RetainingTimerApi();
     const files = new MemoryReadyFiles();
@@ -709,8 +821,8 @@ describe("transport helper client", () => {
       maxConcurrentRequests: 1,
       timers: new HostTimers(timerApi),
     });
-    const first = bridge.post(49152, "secret-token", "/v1/health", {}, { timeoutMs: 1_000 });
-    const second = bridge.post(49152, "secret-token", "/v1/health", {}, { timeoutMs: 1_000 });
+    const first = bridge.post(49152, "secret-token", "/v2/health", {}, { timeoutMs: 1_000 });
+    const second = bridge.post(49152, "secret-token", "/v2/health", {}, { timeoutMs: 1_000 });
     await Promise.resolve();
     const request = [...files.files.keys()].find((path) => path.endsWith(".request.json"))!;
     const processing = request.replace(".request.json", ".processing.json");
@@ -746,6 +858,15 @@ describe("transport helper client", () => {
       const client = new TransportClient({ port: 49152, token: "session-token" }, bridge);
       await expect(
         client.request({
+          credential: { source: "none" },
+          owner: { senderId: "window", requestId: "request" },
+          purpose: "test",
+          provider: {
+            kind: "openai",
+            endpoint: "https://example.test",
+            model: "model",
+            proxyMode: "system",
+          },
           jobId: "job-1",
           method: "POST",
           url: "https://example.test",
@@ -765,17 +886,17 @@ describe("transport helper client", () => {
         expect(requestEntry).toBeDefined();
         expect(JSON.parse(requestEntry![1])).toMatchObject({
           type: "request",
-          protocolVersion: 1,
+          protocolVersion: 2,
           port: 49152,
           token: "secret-token",
-          path: "/v1/health",
+          path: "/v2/health",
           body: {},
         });
         files.write(
           requestEntry![0].replace(".request.json", ".response.json"),
           JSON.stringify({
             type: "response",
-            protocolVersion: 1,
+            protocolVersion: 2,
             createdAtMs: Date.now(),
             statusCode: 200,
             body: { state: "ok" },
@@ -791,7 +912,7 @@ describe("transport helper client", () => {
       maxConcurrentRequests: 8,
     });
 
-    await expect(bridge.post(49152, "secret-token", "/v1/health", {})).resolves.toEqual({
+    await expect(bridge.post(49152, "secret-token", "/v2/health", {})).resolves.toEqual({
       state: "ok",
     });
     expect(files.files.size).toBe(0);
@@ -806,7 +927,7 @@ describe("transport helper client", () => {
           requestPath.replace(".request.json", ".response.json"),
           JSON.stringify({
             type: "response",
-            protocolVersion: 1,
+            protocolVersion: 2,
             createdAtMs: Date.now(),
             statusCode: 504,
             body: { error: "upstream-timeout", detail: "private provider response" },
@@ -825,6 +946,15 @@ describe("transport helper client", () => {
 
     await expect(
       client.request({
+        credential: { source: "none" },
+        owner: { senderId: "window", requestId: "request" },
+        purpose: "test",
+        provider: {
+          kind: "openai",
+          endpoint: "https://example.test",
+          model: "model",
+          proxyMode: "system",
+        },
         jobId: "job-1",
         method: "POST",
         url: "https://example.test",
@@ -852,7 +982,7 @@ it("rechecks cancellation after a file RPC queue slot becomes available", async 
       `${stem}.response.json`,
       JSON.stringify({
         type: "response",
-        protocolVersion: 1,
+        protocolVersion: 2,
         createdAtMs: Date.now(),
         statusCode: 200,
         body: { state: "ok" },
@@ -874,13 +1004,13 @@ it("rechecks cancellation after a file RPC queue slot becomes available", async 
     maxConcurrentRequests: 1,
     timers: new HostTimers(timerApi),
   });
-  const first = bridge.post(49152, "secret-token", "/v1/health", {});
+  const first = bridge.post(49152, "secret-token", "/v2/health", {});
   let allowed = true;
   const queued = bridge
     .post(
       49152,
       "secret-token",
-      "/v1/request",
+      "/v2/request",
       { private: "queued-subtitle" },
       {
         assertActive: () => {
@@ -895,7 +1025,7 @@ it("rechecks cancellation after a file RPC queue slot becomes available", async 
   timerApi.fireIntervals();
   await first;
   expect(await queued).toMatchObject({ category: "cancelled" });
-  expect(sent).toEqual(["/v1/health"]);
+  expect(sent).toEqual(["/v2/health"]);
   expect(files.files.size).toBe(0);
   expect(timerApi.intervals.size).toBe(0);
 });

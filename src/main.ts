@@ -1,3 +1,4 @@
+import { installCredentialMainRelay } from "./adapters/iina/sidebar-rpc.js";
 import { PlaybackController } from "./app/controller.js";
 import { GlobalProviderClient } from "./adapters/iina/global-provider-client.js";
 import { finitePosition } from "./adapters/iina/runtime.js";
@@ -26,7 +27,6 @@ import { EpochBootstrapGate } from "./app/epoch-bootstrap-gate.js";
 import {
   parseProviderModelsRequest,
   parseProviderModelsCancelRequest,
-  parseProviderModelsPreviewRequest,
   parseProviderModelsResult,
   parseProviderTestCancelRequest,
   parseProviderTestRequest,
@@ -50,11 +50,7 @@ import {
   parseTargetLanguageSave,
   parseTargetLanguageSaved,
 } from "./domain/messages.js";
-import {
-  ModelCatalogSync,
-  modelCatalogContextToken,
-  modelCatalogPreviewContextToken,
-} from "./adapters/iina/model-catalog-sync.js";
+import { ModelCatalogSync, modelCatalogContextToken } from "./adapters/iina/model-catalog-sync.js";
 import { TARGET_LANGUAGES } from "./domain/target-languages.js";
 import { TargetLanguagePreferences } from "./adapters/iina/target-language-preferences.js";
 import { TargetLanguageSession } from "./app/target-language-session.js";
@@ -69,7 +65,7 @@ import { OverlayRegionRuntime } from "./adapters/iina/overlay-region-runtime.js"
 import { SidebarMessageBuffer } from "./adapters/iina/sidebar-message-buffer.js";
 import { ProfileActivationSync } from "./adapters/iina/profile-activation-sync.js";
 import { TranslationEnabledPreferences } from "./adapters/iina/translation-enabled-preferences.js";
-import { hostTimers, type HostTimeout } from "./adapters/iina/host-timers.js";
+import { hostClock, hostTimers, type HostTimeout } from "./adapters/iina/host-timers.js";
 import {
   createMailboxPlayerId,
   IinaGlobalMailboxFileStore,
@@ -92,6 +88,7 @@ interface MainRuntime {
   console: IINA.API.Console;
   core: IINA.API.Core;
   event: IINA.API.Event;
+  global?: { postMessage(name: string, data: unknown): void };
   file: IINA.API.File;
   mpv: IINA.API.MPV;
   overlay: IINA.API.Overlay;
@@ -149,6 +146,10 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     runtime.overlay,
     runtime.event,
     (message) => runtime.console.log(message),
+    () => {
+      hostClock.pulse();
+      hostRuntime.global?.postMessage("runtime:tick", {});
+    },
   );
   const overlayRegion = new OverlayRegionRuntime(runtime.mpv, runtime.core.window.fullscreen);
   const overlayPosition = new OverlayPositionFollower();
@@ -193,12 +194,15 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     targetLanguages: TARGET_LANGUAGES,
     overlayPosition: overlayPosition.snapshot,
     subtitleStyle: subtitleStyle.snapshot,
+    profileListPhase: "initializing",
   };
   const sidebarMessages = new SidebarMessageBuffer();
   let profileListState = createProfileListSyncState<AuthorityProfile>();
   let profileListRequestTimer: HostTimeout | null = null;
   const activationGetRequestId = `profile-activation.init.${playerId}`;
   const profileActivationSync = new ProfileActivationSync(activationGetRequestId);
+  let profileInitializationTimer: HostTimeout | null = null;
+  let activationGetSequence = 0;
   const modelCatalogSync = new ModelCatalogSync();
 
   const effectiveSubtitleStyle = (): SubtitleTextStyle => {
@@ -231,6 +235,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
   };
 
   const requestProfiles = (): void => {
+    beginProfileInitialization();
     const request = beginProfileListRequest(profileListState, playerId);
     profileListState = request.state;
     runtime.global.postMessage("profiles:list", {
@@ -249,11 +254,34 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
   };
 
   const requestProfileActivation = (): void => {
+    beginProfileInitialization();
+    const requestId =
+      activationGetSequence++ === 0
+        ? activationGetRequestId
+        : `${activationGetRequestId}.${activationGetSequence}`;
+    profileActivationSync.associateGet(requestId);
     runtime.global.postMessage("profile-activation:get", {
-      requestId: activationGetRequestId,
+      requestId,
       revision: 1,
       payload: {},
     });
+  };
+
+  const beginProfileInitialization = (): void => {
+    if (profileActivationSync.profileListPhase === "settled" || profileInitializationTimer) return;
+    const deadlineMs = profileActivationSync.beginInitialization();
+    profileInitializationTimer = hostTimers.setTimeout(
+      () => {
+        profileInitializationTimer = null;
+        if (!profileActivationSync.enterFallback()) return;
+        currentSelection = null;
+        controller.clearProviderSelection();
+        profileListState = { ...profileListState, profiles: [], profileListPhase: "settled" };
+        updateSidebarState({ profiles: [], profileListPhase: "settled", selection: null });
+        flushSidebar();
+      },
+      Math.max(0, deadlineMs - Date.now()),
+    );
   };
 
   const applyProfileAuthority = (
@@ -261,7 +289,12 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     correlatedRequestId?: string,
   ): boolean => {
     if (!profileActivationSync.accept(authority, correlatedRequestId)) return false;
-    const confirmed = profileActivationSync.snapshot!;
+    profileInitializationTimer?.cancel();
+    profileInitializationTimer = null;
+    const confirmed = {
+      ...profileActivationSync.snapshot!,
+      activation: profileActivationSync.effectiveActivation,
+    };
     profileListState = bindProfileAuthority(
       profileListState,
       confirmed.authorityId,
@@ -293,6 +326,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     updateSidebarState({
       profileAuthority: confirmed,
       profiles: profileListState.profiles,
+      profileListPhase: "settled",
       selection: currentSelection,
     });
     queueSidebarMessage("profile-activation:state", confirmed);
@@ -315,11 +349,15 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     });
   };
 
-  const flushSidebar = (): void => {
-    runtime.sidebar.postMessage("state:update", sidebarState);
+  const flushSidebarMessages = (): void => {
     for (const message of sidebarMessages.drain()) {
       runtime.sidebar.postMessage(message.name, message.data);
     }
+  };
+
+  const flushSidebar = (): void => {
+    runtime.sidebar.postMessage("state:update", sidebarState);
+    flushSidebarMessages();
   };
 
   const invalidatePreparation = (): void => {
@@ -582,7 +620,30 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
   };
 
   runtime.sidebar.loadFile("dist/ui/sidebar.html");
+  installCredentialMainRelay(
+    {
+      onMessage: (name, callback) => runtime.sidebar.onMessage(name, callback),
+      postMessage: queueSidebarMessage,
+    },
+    runtime.global,
+    {
+      onDraftModels: (message) =>
+        modelCatalogSync.begin(playerId, {
+          requestId: message.requestId,
+          contextToken: message.payload.frame.context.snapshotDigest,
+          trigger: "manual",
+          cacheResult: false,
+        }).forwarded,
+    },
+  );
   runtime.sidebar.onMessage("ui:ready", () => {
+    if (!playerWired) {
+      if (legacyWindowVisibility && legacyWindowClosed) {
+        legacyWindowClosed = false;
+        scheduleInitializePlayer();
+      }
+      return;
+    }
     if (sourceLoadingAllowed()) scheduleSourceReload();
     else if (!sourceLoadingAllowed()) suspendSourceLoading();
     requestProfileActivation();
@@ -591,8 +652,20 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     flushSidebar();
   });
   runtime.sidebar.onMessage("ui:poll", () => {
+    if (!playerWired) {
+      if (!legacyWindowVisibility && hostRuntime.core.window.visible) scheduleInitializePlayer();
+      return;
+    }
+    hostClock.pulse();
+    hostRuntime.global?.postMessage("runtime:tick", {});
     updateSidebarState();
     flushSidebar();
+  });
+  runtime.sidebar.onMessage("runtime:tick", () => {
+    if (!playerWired) return;
+    hostClock.pulse();
+    hostRuntime.global?.postMessage("runtime:tick", {});
+    flushSidebarMessages();
   });
   runtime.sidebar.onMessage("overlay-position:preview", (raw: unknown) => {
     try {
@@ -725,15 +798,6 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     flushSidebar();
   });
 
-  const forward: Array<[string, string]> = [
-    ["profile:save", "profile:create-revision"],
-    ["secret:set", "credential:set"],
-  ];
-  for (const [sidebarName, globalName] of forward) {
-    runtime.sidebar.onMessage(sidebarName, (raw: unknown) =>
-      runtime.global.postMessage(globalName, raw),
-    );
-  }
   runtime.sidebar.onMessage("provider:test", (raw: unknown) => {
     try {
       runtime.global.postMessage("provider:test", parseProviderTestRequest(raw));
@@ -783,24 +847,6 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
         trigger: message.payload.trigger,
       });
       if (started.forwarded) runtime.global.postMessage("provider:models", message);
-    } catch {
-      queueSidebarMessage("operation:error", {
-        requestId: (raw as { requestId?: unknown })?.requestId,
-        code: "INVALID_MESSAGE",
-        userAction: "NONE",
-      });
-    }
-  });
-  runtime.sidebar.onMessage("provider:models-preview", (raw: unknown) => {
-    try {
-      const message = parseProviderModelsPreviewRequest(raw);
-      const started = modelCatalogSync.begin(playerId, {
-        requestId: message.requestId,
-        contextToken: modelCatalogPreviewContextToken(message.payload),
-        trigger: message.payload.trigger,
-        cacheResult: false,
-      });
-      if (started.forwarded) runtime.global.postMessage("provider:models-preview", message);
     } catch {
       queueSidebarMessage("operation:error", {
         requestId: (raw as { requestId?: unknown })?.requestId,
@@ -877,7 +923,10 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     });
     if (accepted === profileListState) return;
     profileListState = accepted;
-    updateSidebarState({ profiles: profileListState.profiles });
+    updateSidebarState({
+      profiles: profileListState.profiles,
+      profileListPhase: "settled",
+    });
   });
   runtime.global.onMessage("overlay-position:state", (raw: unknown) => {
     try {
@@ -954,15 +1003,6 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
       return;
     }
   });
-  runtime.global.onMessage("profile:revision-created", (raw: unknown) => {
-    queueSidebarMessage("profile:revision-created", raw);
-  });
-  runtime.global.onMessage("credential:result", (raw: unknown) => {
-    queueSidebarMessage("credential:state", raw);
-  });
-  runtime.global.onMessage("credential:state", (raw: unknown) =>
-    queueSidebarMessage("credential:state", raw),
-  );
   runtime.global.onMessage("provider:test-result", (raw: unknown) => {
     try {
       queueSidebarMessage("provider:test-result", parseProviderTestResult(raw));
@@ -1019,33 +1059,46 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
   });
   requestProfileActivation();
 
-  runtime.event.on("iina.file-loaded", () => {
-    mediaEpoch += 1;
-    sourceSelectionTimer?.cancel();
-    invalidatePreparation();
-    selectedSourceTrackId = null;
-    selectedSourceContentHash = null;
-    controller.endFile();
-    if (sourceLoadingAllowed()) {
-      updateSidebarState({ source: null, sourceIssue: null, sourcePreparation: null });
+  const playerEventListeners: Array<{ name: string; id: string }> = [];
+  const trackPlayerEvent = (name: string, id: string): void => {
+    playerEventListeners.push({ name, id });
+  };
+  trackPlayerEvent(
+    "iina.file-loaded",
+    runtime.event.on("iina.file-loaded", () => {
+      mediaEpoch += 1;
+      sourceSelectionTimer?.cancel();
+      invalidatePreparation();
+      selectedSourceTrackId = null;
+      selectedSourceContentHash = null;
+      controller.endFile();
+      if (sourceLoadingAllowed()) {
+        updateSidebarState({ source: null, sourceIssue: null, sourcePreparation: null });
+        scheduleSourceReload();
+      } else {
+        suspendSourceLoading();
+      }
+    }),
+  );
+  trackPlayerEvent(
+    "mpv.sid.changed",
+    runtime.event.on("mpv.sid.changed", () => {
+      if (!sourceLoadingAllowed()) {
+        suspendSourceLoading();
+        return;
+      }
+      const selectedId = runtime.core.subtitle.id;
+      if (selectedId === selectedSourceTrackId) return;
       scheduleSourceReload();
-    } else {
-      suspendSourceLoading();
-    }
-  });
-  runtime.event.on("mpv.sid.changed", () => {
-    if (!sourceLoadingAllowed()) {
-      suspendSourceLoading();
-      return;
-    }
-    const selectedId = runtime.core.subtitle.id;
-    if (selectedId === selectedSourceTrackId) return;
-    scheduleSourceReload();
-  });
-  runtime.event.on("mpv.track-list.changed", () => {
-    if (sourceLoadingAllowed()) scheduleSourceReload();
-    else suspendSourceLoading();
-  });
+    }),
+  );
+  trackPlayerEvent(
+    "mpv.track-list.changed",
+    runtime.event.on("mpv.track-list.changed", () => {
+      if (sourceLoadingAllowed()) scheduleSourceReload();
+      else suspendSourceLoading();
+    }),
+  );
   const overlayRegionListeners = [
     {
       name: "mpv.sub-margin-x.changed",
@@ -1084,20 +1137,29 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     for (const listener of overlayRegionListeners) runtime.event.off(listener.name, listener.id);
     overlayRegion.close();
   };
-  runtime.event.on("mpv.shutdown", closeOverlayRegion);
-  runtime.event.on("mpv.seek", () => {
-    preparation?.onSeek();
-    controller.onSeek(
-      finitePosition(
-        runtime.core.status.position === null ? null : runtime.core.status.position * 1_000,
-      ),
-    );
-  });
-  runtime.event.on("mpv.end-file", () => {
-    mediaEpoch += 1;
-    invalidatePreparation();
-  });
-  runtime.event.on("mpv.end-file", () => controller.endFile());
+  trackPlayerEvent("mpv.shutdown", runtime.event.on("mpv.shutdown", closeOverlayRegion));
+  trackPlayerEvent(
+    "mpv.seek",
+    runtime.event.on("mpv.seek", () => {
+      preparation?.onSeek();
+      controller.onSeek(
+        finitePosition(
+          runtime.core.status.position === null ? null : runtime.core.status.position * 1_000,
+        ),
+      );
+    }),
+  );
+  trackPlayerEvent(
+    "mpv.end-file",
+    runtime.event.on("mpv.end-file", () => {
+      mediaEpoch += 1;
+      invalidatePreparation();
+    }),
+  );
+  trackPlayerEvent(
+    "mpv.end-file",
+    runtime.event.on("mpv.end-file", () => controller.endFile()),
+  );
   const translationTickTimer = hostTimers.setInterval(() => {
     controller.session.setPaused(runtime.core.status.paused);
     controller.tick(
@@ -1107,7 +1169,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     );
     updateSidebarState();
   }, 350);
-  runtime.event.on("iina.window-will-close", () => {
+  const closeListenerId = runtime.event.on("iina.window-will-close", () => {
     closeOverlayRegion();
     translationTickTimer.cancel();
     translationOverlay.close();
@@ -1130,6 +1192,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     modelCatalogSync.remove(playerId);
     sourceSelectionTimer?.cancel();
     profileListRequestTimer?.cancel();
+    profileInitializationTimer?.cancel();
     currentSelection = null;
     targetLanguageSession.close();
     selectedSourceTrackId = null;
@@ -1142,6 +1205,8 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     controller.endFile();
     controller.clearProviderSelection();
     updateSidebarState({ source: null, sourceIssue: null, selection: null });
+    for (const listener of playerEventListeners) runtime.event.off(listener.name, listener.id);
+    runtime.event.off("iina.window-will-close", closeListenerId);
   });
   if (sourceLoadingAllowed()) {
     scheduleSourceReload();
@@ -1155,18 +1220,45 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
 }
 
 let playerWired = false;
-let initializePlayerTimer: HostTimeout | null = null;
+let initializePlayerTimer: ReturnType<typeof setTimeout> | null = null;
+let playerClosedOnce = false;
+// IINA 1.4.0 reports visible=false for an onscreen player. Later versions
+// expose visibility correctly, including when a closed player is reused.
+const legacyWindowVisibility =
+  typeof iina !== "undefined" && iina.core.getVersion().iina === "1.4.0";
+let legacyWindowClosed = false;
 const initializePlayer = (): void => {
   initializePlayerTimer = null;
-  if (playerWired || !iina.core.window.loaded) return;
+  if (
+    playerWired ||
+    !iina.core.window.loaded ||
+    legacyWindowClosed ||
+    (playerClosedOnce && !legacyWindowVisibility && !iina.core.window.visible)
+  )
+    return;
   playerWired = true;
   wirePlayer(iina, createMailboxPlayerId());
 };
 const scheduleInitializePlayer = (): void => {
-  if (initializePlayerTimer !== null) return;
-  initializePlayerTimer = hostTimers.setTimeout(initializePlayer, 100);
+  if (playerWired || initializePlayerTimer !== null) return;
+  initializePlayerTimer = setTimeout(initializePlayer, 100);
 };
 if (typeof iina !== "undefined") {
-  iina.event.on("iina.window-loaded", scheduleInitializePlayer);
+  iina.event.on("iina.window-loaded", () => {
+    legacyWindowClosed = false;
+    scheduleInitializePlayer();
+  });
+  iina.event.on("iina.file-started", () => {
+    if (!legacyWindowVisibility || !legacyWindowClosed) return;
+    legacyWindowClosed = false;
+    scheduleInitializePlayer();
+  });
+  iina.event.on("iina.window-will-close", () => {
+    if (initializePlayerTimer !== null) clearTimeout(initializePlayerTimer);
+    initializePlayerTimer = null;
+    playerWired = false;
+    playerClosedOnce = true;
+    legacyWindowClosed = legacyWindowVisibility;
+  });
   scheduleInitializePlayer();
 }

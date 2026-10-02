@@ -20,7 +20,7 @@ export interface RpcFileStore {
 
 interface FileRpcFrame {
   type: "response";
-  protocolVersion: 1;
+  protocolVersion: 1 | 2;
   createdAtMs: number;
   statusCode: number;
   body: unknown;
@@ -35,6 +35,7 @@ interface PendingFileRpc {
 }
 
 interface FileRpcWaiter {
+  deadlineMs: number;
   resolve(): void;
   reject(error: unknown): void;
 }
@@ -65,7 +66,7 @@ function privateRpcPaths(
   processingFile: string;
 } {
   const stem = [
-    helper,
+    helper === "transport" ? "transport-v2" : helper,
     Date.now().toString(36),
     (++rpcSequence).toString(36),
     Math.random().toString(36).slice(2, 14),
@@ -82,6 +83,7 @@ function parseFileRpcFrame(
   value: string,
   startedAtMs: number,
   maxResponseBytes: number,
+  expectedVersion: 1 | 2,
 ): FileRpcFrame {
   if (utf8Length(value) > maxResponseBytes) throw new Error("HELPER_RPC_MALFORMED");
   let parsed: unknown;
@@ -96,7 +98,7 @@ function parseFileRpcFrame(
   if (
     Object.keys(frame).sort().join(",") !== "body,createdAtMs,protocolVersion,statusCode,type" ||
     frame.type !== "response" ||
-    frame.protocolVersion !== 1 ||
+    frame.protocolVersion !== expectedVersion ||
     !Number.isInteger(frame.createdAtMs) ||
     (frame.createdAtMs as number) < startedAtMs - 1_000 ||
     (frame.createdAtMs as number) > Date.now() + 1_000 ||
@@ -152,11 +154,17 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
     options?: { timeoutMs?: number; assertActive?: () => void },
   ): Promise<T> {
     options?.assertActive?.();
-    await this.acquire();
+    const deadlineMs =
+      Date.now() +
+      (Number.isFinite(options?.timeoutMs) && Number(options?.timeoutMs) >= 50
+        ? Number(options?.timeoutMs)
+        : rpcResponseTimeoutMs[this.options.helper]);
+    await this.acquire(deadlineMs);
     try {
       options?.assertActive?.();
       if (this.closed) throw new Error("HELPER_RPC_CLOSED");
-      return await this.execute<T>(port, bearerToken, path, body, options?.timeoutMs);
+      if (Date.now() >= deadlineMs) throw new Error("HELPER_RPC_TIMEOUT");
+      return await this.execute<T>(port, bearerToken, path, body, deadlineMs);
     } finally {
       this.release();
     }
@@ -167,7 +175,7 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
     bearerToken: string,
     path: string,
     body: unknown,
-    timeoutMs?: number,
+    deadlineMs: number,
   ): Promise<T> {
     const paths = privateRpcPaths(
       this.options.fileDirectory.replace(/\/+$/, ""),
@@ -176,7 +184,7 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
     const startedAtMs = Date.now();
     const request = JSON.stringify({
       type: "request",
-      protocolVersion: 1,
+      protocolVersion: this.options.helper === "transport" ? 2 : 1,
       createdAtMs: startedAtMs,
       port,
       token: bearerToken,
@@ -198,11 +206,7 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
         this.pending.set(paths.responseFile, {
           paths,
           startedAtMs,
-          deadlineMs:
-            Date.now() +
-            (Number.isFinite(timeoutMs) && Number(timeoutMs) >= 50
-              ? Number(timeoutMs)
-              : rpcResponseTimeoutMs[this.options.helper]),
+          deadlineMs,
           resolve: (value) => resolve(value as T),
           reject,
         });
@@ -217,6 +221,7 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
   }
 
   private pollPending(): void {
+    this.expireWaiters();
     for (const pending of [...this.pending.values()].slice(0, this.options.maxConcurrentRequests)) {
       try {
         if (this.files.exists(pending.paths.responseFile)) {
@@ -226,7 +231,9 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
             response,
             pending.startedAtMs,
             this.options.maxResponseBytes,
+            this.options.helper === "transport" ? 2 : 1,
           );
+          if (frame.createdAtMs >= pending.deadlineMs) throw new Error("HELPER_RPC_TIMEOUT");
           if (frame.statusCode < 200 || frame.statusCode >= 300) {
             const error =
               frame.body && typeof frame.body === "object" && !Array.isArray(frame.body)
@@ -239,9 +246,7 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
             );
           }
           this.settle(pending, frame.body);
-        } else if (Date.now() >= pending.deadlineMs) {
-          throw new Error("HELPER_RPC_TIMEOUT");
-        }
+        } else if (Date.now() >= pending.deadlineMs) throw new Error("HELPER_RPC_TIMEOUT");
       } catch (error) {
         this.settle(pending, undefined, error);
       }
@@ -249,7 +254,7 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
     if (this.pending.size === 0 && this.waiters.length === 0) {
       this.poller?.cancel();
       this.poller = null;
-    } else if (this.pending.size > 0 && this.poller === null) {
+    } else if (this.poller === null) {
       this.poller = this.timers.setInterval(() => this.pollPending(), 20);
     }
   }
@@ -268,16 +273,30 @@ export class IinaFileRpcBridge implements LocalRpcBridge {
     removeRpcFile(this.files, paths.responseFile);
   }
 
-  private acquire(): Promise<void> {
+  private expireWaiters(): void {
+    const now = Date.now();
+    for (let index = this.waiters.length - 1; index >= 0; index--) {
+      if (now < this.waiters[index]!.deadlineMs) continue;
+      const [waiter] = this.waiters.splice(index, 1);
+      waiter!.reject(new Error("HELPER_RPC_TIMEOUT"));
+    }
+  }
+
+  private acquire(deadlineMs: number): Promise<void> {
     if (this.closed) return Promise.reject(new Error("HELPER_RPC_CLOSED"));
+    if (Date.now() >= deadlineMs) return Promise.reject(new Error("HELPER_RPC_TIMEOUT"));
     if (this.activeRequests < this.options.maxConcurrentRequests) {
       this.activeRequests += 1;
       return Promise.resolve();
     }
-    return new Promise((resolve, reject) => this.waiters.push({ resolve, reject }));
+    return new Promise((resolve, reject) => {
+      this.waiters.push({ deadlineMs, resolve, reject });
+      this.pollPending();
+    });
   }
 
   private release(): void {
+    this.expireWaiters();
     const next = this.waiters.shift();
     if (next) {
       next.resolve();

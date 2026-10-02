@@ -1,3 +1,4 @@
+import { testSavedCredential } from "./provider-test-helpers.js";
 import { registerLifecycleContract } from "../helpers/provider-lifecycle-contract.js";
 import { registerFailureContract } from "../helpers/provider-failure-contract.js";
 import { registerProbeContract } from "../helpers/provider-probe-contract.js";
@@ -48,7 +49,7 @@ function provider(
     {
       endpoint,
       model: "exact-model-id",
-      apiKey: "fictional-key",
+      credential: testSavedCredential("claude"),
       proxyMode: "system",
     },
     transport,
@@ -119,7 +120,6 @@ describe("Claude provider", () => {
     for (const request of requests) {
       expect(request.headers).toEqual({
         "Content-Type": "application/json",
-        "x-api-key": "fictional-key",
         "anthropic-version": "2023-06-01",
       });
       const body = request.body as Record<string, unknown>;

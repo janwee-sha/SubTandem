@@ -72,7 +72,7 @@ describe.each(kinds)("%s Global models lifecycle", (kind) => {
 for (const kind of kinds) {
   it(`${kind} suppresses a credential-epoch response while cancellation is still pending`, async () => {
     const { ProviderProfiles } = await import("../../src/providers/profiles.js");
-    const store = new ProviderProfiles(() => "saved");
+    const store = new ProviderProfiles(() => "10000000-0000-4000-8000-000000000001");
     const profile = store.save({
       kind,
       endpoint: "https://fixture.test",
@@ -88,24 +88,25 @@ for (const kind of kinds) {
       endpointFingerprint: profile.endpointFingerprint,
     };
     const old = h.send("provider:models", input, "window", "old");
-    await h.secrets.waitForPending();
-    h.secrets.releaseNext({ apiKey: "old-key" });
     await h.transport.responses.waitForPending();
     h.transport.holdCancellation = true;
-    const mutation = h.send(
-      "credential:set",
-      {
-        profileId: profile.profileId,
-        expectedRevision: profile.revision,
-        fields: { apiKey: "new-key" },
-      },
+    const mutation = h.save(
+      { ...profile, expectedRevision: profile.revision },
+      "synthetic-new-key",
       "other",
-      "change",
     );
     await h.transport.cancellations.waitForPending();
-    const next = h.send("provider:models", input, "window", "next");
-    await h.secrets.waitForPending();
-    h.secrets.releaseNext({ apiKey: "new-key" });
+    const latest = h.profiles.get(profile.profileId)!;
+    const next = h.send(
+      "provider:models",
+      {
+        ...input,
+        profileRevision: latest.revision,
+        endpointFingerprint: latest.endpointFingerprint,
+      },
+      "window",
+      "next",
+    );
     await h.transport.responses.waitForPending(2);
     h.transport.responses.releaseNext(response(kind));
     h.transport.responses.releaseNext(response(kind));

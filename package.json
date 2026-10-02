@@ -1,6 +1,6 @@
 {
   "name": "subtandem",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "private": true,
   "license": "GPL-3.0-only",
   "description": "Real-time bilingual subtitle translation for IINA 1.4+",
@@ -46,7 +46,10 @@
       "distDir": "dist/ui",
       "publicUrl": "./",
       "sourceMap": false,
-      "optimize": false
+      "optimize": false,
+      "outputFormat": "global",
+      "isLibrary": false,
+      "includeNodeModules": true
     },
     "overlay": {
       "source": "ui/overlay.html",
@@ -57,6 +60,8 @@
     }
   },
   "dependencies": {
+    "@noble/ciphers": "2.4.0",
+    "@noble/curves": "2.4.0",
     "@noble/hashes": "2.4.0"
   },
   "devDependencies": {

@@ -26,6 +26,7 @@ export class ProviderBroker {
     private readonly authority: ProfileActivationAuthority,
     private readonly createProvider: (
       profile: ProviderProfileSnapshot,
+      senderId: string,
     ) => TranslationProvider | Promise<TranslationProvider>,
   ) {}
 
@@ -62,7 +63,7 @@ export class ProviderBroker {
     };
     try {
       guard();
-      const provider = await this.createProvider(profile);
+      const provider = await this.createProvider(profile, authoritativePlayerId);
       guard();
       this.requests.track(owner, providerRequestId, () => provider.cancel?.(providerRequestId));
       const result = await provider.attempt(
@@ -96,7 +97,7 @@ export class ProviderBroker {
     await this.requests.cancelWhere((owner) => owner.context.profileId === profileId);
   }
 
-  async releaseSender(senderId: string): Promise<void> {
-    await this.requests.releaseSender(senderId);
+  async releaseSender(senderId: string, permanent = true): Promise<void> {
+    await this.requests.releaseSender(senderId, permanent);
   }
 }

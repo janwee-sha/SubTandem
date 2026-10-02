@@ -283,7 +283,7 @@ describe("Sidebar operation feedback ownership", () => {
       credentialDisplayProfileId: "retained",
     });
     state.setProfileTest("retained", { revision: 1, state: "passed" });
-    state.beginProfileSave("profile-save", true);
+    state.beginProfileSave("profile-save");
     state.beginOperation(
       {
         requestId: "language-request",
@@ -944,7 +944,7 @@ describe("Sidebar model catalog state", () => {
 });
 
 describe("Sidebar Profile name source", () => {
-  it("tracks Claude system ownership, credential pending and exact model controls", () => {
+  it("tracks Claude system ownership, atomic saving and exact model controls", () => {
     const state = createState();
     state.resetProfileName("OpenAI");
     state.changeServiceTypeLabel("Claude");
@@ -953,10 +953,9 @@ describe("Sidebar Profile name source", () => {
       mode: "system",
       serviceTypeLabel: "Claude",
     });
-    state.beginProfileSave("claude-save", true);
+    state.beginProfileSave("claude-save");
     expect(state.snapshot.pendingProfileSave).toMatchObject({
       requestId: "claude-save",
-      credentialPending: true,
     });
     state.setModelContext("claude-context", "custom-claude-model");
     state.applyModelCatalog("claude-context", ["catalog-model"]);
@@ -1024,26 +1023,18 @@ describe("Sidebar Profile name source", () => {
   });
 });
 
-describe("Sidebar two-stage Profile Update", () => {
+describe("Sidebar atomic Profile Update", () => {
   it("keeps the editing revision stable until its correlated save response arrives", () => {
     const state = createState();
     const editingProfile = { profileId: "retained", revision: 1, displayName: "Before" };
     state.setProfileContext({ editingProfileId: editingProfile.profileId });
-    state.beginProfileSave("save-request", false);
+    state.beginProfileSave("save-request");
     state.applyProfiles([
       { profileId: "deleted", revision: 2 },
       { profileId: "retained", revision: 2, displayName: "After" },
     ]);
-
     expect(state.reconcileEditingProfile(editingProfile)).toEqual(editingProfile);
-
-    state.profileRevisionCreated("save-request", {
-      profileId: "retained",
-      revision: 2,
-      selectionInvalidated: true,
-    });
-    state.completeProfileSave("save-request", "Profile saved.");
-
+    expect(state.completeProfileSave("save-request", "")).toBe("");
     expect(state.reconcileEditingProfile(editingProfile)).toEqual({
       profileId: "retained",
       revision: 2,
@@ -1051,26 +1042,17 @@ describe("Sidebar two-stage Profile Update", () => {
     });
   });
 
-  it.each([false, true])(
-    "preserves selection invalidation through credentialPending=%s",
-    (credentialPending) => {
-      const state = createState();
-      state.beginProfileSave("save-request", credentialPending);
-      expect(
-        state.profileRevisionCreated("save-request", {
-          profileId: "retained",
-          revision: 2,
-          selectionInvalidated: true,
-        }),
-      ).toEqual({ accepted: true, waitingForCredential: credentialPending });
-      expect(state.snapshot.pendingProfileSave?.selectionInvalidated).toBe(true);
-
-      expect(state.completeProfileSave("save-request", "Profile saved.")).toBe(
-        "Profile updated. Enable it when you are ready.",
-      );
-      expect(state.snapshot.pendingProfileSave).toBeNull();
-    },
-  );
+  it("accepts only the correlated terminal result without success text", () => {
+    const state = createState();
+    state.openProfileDrawer("retained");
+    state.beginProfileSave("save-request");
+    expect(state.completeProfileSave("stale-save", "")).toBeNull();
+    expect(state.snapshot.pendingProfileSave).toEqual({ requestId: "save-request" });
+    expect(state.snapshot.drawer.mode).toBe("editing");
+    expect(state.completeProfileSave("save-request", "")).toBe("");
+    expect(state.snapshot.pendingProfileSave).toBeNull();
+    expect(state.snapshot.drawer.mode).toBe("closed");
+  });
 });
 
 describe("Sidebar translation position state", () => {
@@ -1525,56 +1507,36 @@ describe("Sidebar Profile drawer identity", () => {
 });
 
 describe("Sidebar Profile drawer save lifecycle", () => {
-  it("keeps a new drawer open through profile creation and closes only at terminal success", () => {
+  it("keeps a new drawer open until the atomic commit completes", () => {
     const state = createState();
     state.openNewProfileDrawer();
     const drawerId = state.snapshot.drawer.drawerId;
-
-    state.beginProfileSave("save-new", true);
+    state.beginProfileSave("save-new");
     expect(state.snapshot.drawer).toMatchObject({ drawerId, savePhase: "profile", mode: "new" });
-    expect(
-      state.profileRevisionCreated("save-new", {
-        profileId: "created",
-        revision: 1,
-        endpointFingerprint: "created-fingerprint",
-        selectionInvalidated: false,
-      }),
-    ).toEqual({ accepted: true, waitingForCredential: true });
-    expect(state.snapshot.drawer).toMatchObject({
-      drawerId,
-      mode: "editing",
-      profileId: "created",
-      savePhase: "credential",
-      sourceProfile: {
-        profileId: "created",
-        profileRevision: 1,
-        endpointFingerprint: "created-fingerprint",
-      },
-    });
-
-    expect(state.completeProfileSave("save-new", "Saved.", true)).toBe("Saved.");
+    expect(state.snapshot.profiles.some((profile) => profile.profileId === "created")).toBe(false);
+    expect(state.completeProfileSave("stale-new", "")).toBeNull();
+    expect(state.snapshot.drawer.mode).toBe("new");
+    expect(state.completeProfileSave("save-new", "", true)).toBe("");
     expect(state.snapshot.drawer).toMatchObject({ mode: "closed", drawerId: null });
   });
 
-  it("retains a retryable editing drawer after credential failure without recreating", () => {
+  it("retains the original editing revision after an atomic save failure", () => {
     const state = createState();
-    state.openNewProfileDrawer();
-    state.beginProfileSave("save-partial", true);
-    state.profileRevisionCreated("save-partial", {
-      profileId: "created",
-      revision: 1,
-      endpointFingerprint: "created-fingerprint",
-      selectionInvalidated: false,
-    });
-
-    expect(state.completeProfileSave("save-partial", "Credential failed.", false)).toBe(
-      "Credential failed.",
+    state.openProfileDrawer("retained");
+    const sourceProfile = state.snapshot.drawer.sourceProfile;
+    state.beginProfileSave("save-failure");
+    expect(state.completeProfileSave("save-failure", "Profile could not be saved.", false)).toBe(
+      "Profile could not be saved.",
     );
     expect(state.snapshot.drawer).toMatchObject({
       mode: "editing",
-      profileId: "created",
+      profileId: "retained",
+      sourceProfile,
       savePhase: null,
       validity: "current",
     });
+    expect(
+      state.snapshot.profiles.find((profile) => profile.profileId === "retained")?.revision,
+    ).toBe(1);
   });
 });

@@ -1,3 +1,4 @@
+import { testSavedCredential } from "./provider-test-helpers.js";
 import { registerLifecycleContract } from "../helpers/provider-lifecycle-contract.js";
 import { registerFailureContract } from "../helpers/provider-failure-contract.js";
 import { registerProbeContract } from "../helpers/provider-probe-contract.js";
@@ -160,7 +161,7 @@ describe("OpenAI-compatible provider", () => {
       {
         endpoint: "https://example.test/v1",
         model: "model",
-        apiKey: "key",
+        credential: testSavedCredential("openai"),
         sessionId: "session",
       },
       transport,
@@ -175,7 +176,7 @@ describe("OpenAI-compatible provider", () => {
       {
         endpoint: "https://example.test/v1/",
         model: "model",
-        apiKey: "key",
+        credential: testSavedCredential("openai"),
         capability: "strict-json-schema",
         sessionId: "session",
       },
@@ -208,7 +209,8 @@ describe("OpenAI-compatible provider", () => {
     expect(calls).toHaveLength(1);
     expect(calls[0]).toMatchObject({
       url: "https://example.test/v1/chat/completions",
-      headers: { Authorization: "Bearer key" },
+      headers: { "Content-Type": "application/json", "X-Session-Id": "session" },
+      credential: testSavedCredential("openai"),
       body: { model: "model", stream: false },
     });
     const userMessage = (
@@ -657,7 +659,7 @@ describe("OpenAI-compatible provider", () => {
         {
           endpoint: "https://example.test/v1",
           model: "model",
-          apiKey: "secret",
+          credential: testSavedCredential("openai"),
           sessionId: "session",
         },
         {
@@ -683,7 +685,7 @@ describe("OpenAI-compatible provider", () => {
       {
         endpoint: "https://example.test/v1",
         model: "model",
-        apiKey: "secret",
+        credential: testSavedCredential("openai"),
         capability: "json-object",
         sessionId: "session",
       },
@@ -789,7 +791,7 @@ describe("OpenAI-compatible provider", () => {
         {
           endpoint: "http://api.example.test:8080/custom/root/",
           model: "model",
-          apiKey: "key",
+          credential: testSavedCredential("openai"),
           capability: "json-object",
           proxyMode,
           sessionId: "session",
@@ -837,7 +839,7 @@ describe("OpenAI-compatible provider", () => {
         calls.map(() => ({
           url: "http://api.example.test:8080/custom/root/chat/completions",
           proxyMode,
-          authorization: "Bearer key",
+          authorization: undefined,
         })),
       );
     },

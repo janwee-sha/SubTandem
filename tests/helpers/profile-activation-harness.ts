@@ -84,7 +84,7 @@ export function createTestProfileAuthority(
 ): ProfileActivationAuthority {
   let commitSequence = 0;
   let storeRevision = 0;
-  return new ProfileActivationAuthority({
+  const authority = new ProfileActivationAuthority({
     authorityId: "test-authority",
     profiles,
     storeRevision,
@@ -92,7 +92,7 @@ export function createTestProfileAuthority(
     activation: null,
     createCommitId: () => `00000000-0000-4000-8000-${String(++commitSequence).padStart(12, "0")}`,
     commit: async (input): Promise<ProfileStateCommitResult> => {
-      storeRevision += 1;
+      storeRevision = input.expectedStoreRevision + 1;
       return {
         state: "committed",
         initialized: true,
@@ -104,10 +104,17 @@ export function createTestProfileAuthority(
           requestDigest: "safe",
         },
         profileState: structuredClone(input.profileState),
-        credentialConfigured: { ...credentialConfigured },
+        credentialConfigured: Object.fromEntries(
+          input.profileState.profiles.map((profile) => [
+            profile.profileId,
+            authority.snapshot.profiles.find((current) => current.profileId === profile.profileId)
+              ?.credentialConfigured ?? false,
+          ]),
+        ),
       };
     },
   });
+  return authority;
 }
 
 export async function activateTestProfile(

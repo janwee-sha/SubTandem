@@ -1,3 +1,5 @@
+import type { CredentialReference } from "../../shared/credential-protocol.js";
+import { providerRequestAuthority } from "./transport.js";
 import { RequestLifecycle, type RequestOwner } from "./request-lifecycle.js";
 import type { ConfiguredProvider } from "./provider.js";
 import type {
@@ -17,7 +19,6 @@ const REQUEST_TIMEOUT_MS = 60_000;
 
 export class ClaudeProvider implements ConfiguredProvider {
   private readonly messagesUrl: string;
-  private readonly apiKey: string;
   private readonly requests = new RequestLifecycle<undefined>();
   private thinkingCapability: "disabled" | "omitted" = "disabled";
   private structuredOutputCapability: "json-schema" | "omitted" = "json-schema";
@@ -26,19 +27,19 @@ export class ClaudeProvider implements ConfiguredProvider {
     private readonly config: {
       endpoint: string;
       model: string;
-      apiKey?: string;
+      credential?: CredentialReference;
+      senderId?: string;
       proxyMode?: "system" | "direct";
     },
     private readonly transport: ProviderTransport,
   ) {
     this.messagesUrl = claudeApiUrl(config.endpoint, "messages");
-    this.apiKey = config.apiKey?.trim() ?? "";
     if (!config.model.trim()) throw new Error("MODEL_REQUIRED");
   }
 
   async testConnection(testId: string): Promise<{ model: string }> {
     const owner = this.requests.beginRequired({
-      senderId: "provider",
+      senderId: this.config.senderId ?? "provider",
       operation: "test",
       requestId: testId,
       context: undefined,
@@ -65,7 +66,7 @@ export class ClaudeProvider implements ConfiguredProvider {
     assertAuthorized?: () => void,
   ): Promise<TranslationBatchResult> {
     const owner = this.requests.beginRequired({
-      senderId: "provider",
+      senderId: this.config.senderId ?? "provider",
       operation: "translation",
       requestId: request.requestId,
       context: undefined,
@@ -98,8 +99,8 @@ export class ClaudeProvider implements ConfiguredProvider {
 
   async cancel(requestId: string): Promise<void> {
     await Promise.allSettled([
-      this.requests.cancel("provider", "test", requestId),
-      this.requests.cancel("provider", "translation", requestId),
+      this.requests.cancel(this.config.senderId ?? "provider", "test", requestId),
+      this.requests.cancel(this.config.senderId ?? "provider", "translation", requestId),
     ]);
   }
 
@@ -154,10 +155,11 @@ export class ClaudeProvider implements ConfiguredProvider {
     structuredOutputCapability: "json-schema" | "omitted",
   ): Promise<ProviderTransportResponse> {
     return this.requests.transport(owner, this.transport).request({
+      ...providerRequestAuthority(this.config, "claude", owner),
       jobId,
       method: "POST",
       url: this.messagesUrl,
-      headers: claudeRequestHeaders(this.apiKey),
+      headers: claudeRequestHeaders(),
       proxyMode: this.config.proxyMode ?? "system",
       body: {
         model: this.config.model,

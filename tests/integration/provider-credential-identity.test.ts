@@ -2,9 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ProviderProfiles } from "../../src/providers/profiles.js";
 import { globalProviderHarness } from "../helpers/global-provider-harness.js";
 
-const variants = [
-  "  HTTPS://EXAMPLE.TEST:443/Root/%41///  ",
-  "https://example.test:443/Root/%41",
+const changedEndpoints = [
   "http://example.test:443/Root/%41",
   "https://other.test:443/Root/%41",
   "https://example.test/Root/%41",
@@ -15,13 +13,8 @@ const variants = [
   "https://example.test:443/./Root/%41",
   "https://example.test:443/v1/Root/%41",
 ];
-const flush = async () => {
-  for (let i = 0; i < 8; i++) await Promise.resolve();
-};
-
 for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
-  const profiles = new ProviderProfiles(() => "saved");
-  const saved = profiles.save({
+  const saved = new ProviderProfiles(() => "10000000-0000-4000-8000-000000000001").save({
     kind,
     endpoint: "https://Example.test:443/Root/%41",
     proxyMode: "direct",
@@ -33,268 +26,168 @@ for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
     profileRevision: saved.revision,
     endpointFingerprint: saved.endpointFingerprint,
   };
-  describe(`${kind} saved credential boundary`, () => {
-    for (const operation of ["test", "automatic", "manual"] as const) {
-      it.each(variants)(`${operation} uses the saved Key at %s`, async (endpoint) => {
-        const h = await globalProviderHarness([saved]);
-        const payload =
-          operation === "test"
-            ? {
-                kind,
-                endpoint,
-                proxyMode: "direct",
-                model: "changed-model",
-                sourceProfile,
-                drawerId: "drawer",
-                draftRevision: 1,
-                credential: { source: "saved" },
-              }
-            : {
-                kind,
-                endpoint,
-                proxyMode: "direct",
-                trigger: operation === "manual" ? "manual" : "endpoint",
-                ...sourceProfile,
-              };
-        const work = h.send(operation === "test" ? "provider:test" : "provider:models", payload);
-        await flush();
-        expect(h.reads).toEqual(["saved"]);
-        h.secrets.releaseNext({ apiKey: "saved-key" });
-        await flush();
-        expect(h.transport.calls).toHaveLength(1);
-        const header = kind === "claude" ? "x-api-key" : "Authorization";
-        expect(h.transport.calls[0]!.headers[header]).toBe(
-          kind === "claude" ? "saved-key" : "Bearer saved-key",
-        );
-        expect(h.transport.calls[0]!.url).toContain(endpoint.trim().replace(/\/+$/, ""));
-        const cancelName = operation === "test" ? "provider:test-cancel" : "provider:models-cancel";
-        await h.send(
-          cancelName,
-          operation === "test" ? { testRequestId: "request" } : { modelRequestId: "request" },
-          "window",
-          "cancel",
-        );
-        h.transport.responses.releaseNext({ statusCode: 200, headers: {}, bodyText: "{}" });
-        await work;
-      });
-    }
-    for (const operation of ["test", "automatic", "manual"] as const) {
-      it(`${operation} uses the saved Key on a changed route`, async () => {
-        const h = await globalProviderHarness([saved]);
-        const payload =
-          operation === "test"
-            ? {
-                kind,
-                endpoint: "https://other.test:443/Root/%41",
-                proxyMode: "system",
-                model: "model",
-                sourceProfile,
-                drawerId: "drawer",
-                draftRevision: 1,
-                credential: { source: "saved" },
-              }
-            : {
-                kind,
-                endpoint: "https://other.test:443/Root/%41",
-                proxyMode: "system",
-                trigger: operation === "manual" ? "manual" : "endpoint",
-                ...sourceProfile,
-              };
-        const work = h.send(operation === "test" ? "provider:test" : "provider:models", payload);
-        await h.secrets.waitForPending();
-        h.secrets.releaseNext({ apiKey: "saved-key" });
-        await flush();
-        expect(h.transport.calls[0]).toMatchObject({ proxyMode: "system" });
-        expect(h.transport.calls[0]!.url).toContain("https://other.test:443/Root/%41");
-        expect(
-          h.transport.calls[0]!.headers[kind === "claude" ? "x-api-key" : "Authorization"],
-        ).toContain("saved-key");
-        await h.send(
-          operation === "test" ? "provider:test-cancel" : "provider:models-cancel",
-          operation === "test" ? { testRequestId: "request" } : { modelRequestId: "request" },
-          "window",
-          "cancel",
-        );
-        h.transport.responses.releaseNext({ statusCode: 200, headers: {}, bodyText: "{}" });
-        await work;
-      });
-    }
-    it.each(["models", "test"] as const)(
-      "does not use a Key read before %s baseline invalidation",
-      async (operation) => {
-        const h = await globalProviderHarness([saved]);
-        const payload =
-          operation === "test"
-            ? {
-                kind,
-                endpoint: saved.endpoint,
-                proxyMode: "direct",
-                model: "model",
-                sourceProfile,
-                drawerId: "drawer",
-                draftRevision: 1,
-                credential: { source: "saved" },
-              }
-            : {
-                kind,
-                endpoint: saved.endpoint,
-                proxyMode: "direct",
-                trigger: "manual",
-                ...sourceProfile,
-              };
-        const work = h.send(`provider:${operation}`, payload);
-        await h.secrets.waitForPending();
-        h.profiles.delete(saved.profileId);
-        h.secrets.releaseNext({ apiKey: "old-key" });
-        await work;
-        expect(h.transport.calls).toHaveLength(0);
-        expect(h.replies.some((reply) => reply.data.ok === true)).toBe(false);
-      },
-    );
-    it.each(["models", "test"] as const)(
-      "invalidates %s before a stale Key read completes",
-      async (operation) => {
-        const h = await globalProviderHarness([saved]);
-        const payload =
-          operation === "test"
-            ? {
-                kind,
-                endpoint: saved.endpoint,
-                proxyMode: "direct",
-                model: "model",
-                sourceProfile,
-                drawerId: "drawer",
-                draftRevision: 1,
-                credential: { source: "saved" },
-              }
-            : {
-                kind,
-                endpoint: saved.endpoint,
-                proxyMode: "direct",
-                trigger: "manual",
-                ...sourceProfile,
-              };
-        const work = h.send(`provider:${operation}`, payload);
-        await h.secrets.waitForPending();
-        await h.send(
-          "credential:set",
-          {
-            profileId: saved.profileId,
-            expectedRevision: saved.revision,
-            fields: { apiKey: "replacement-key" },
-          },
-          "other-window",
-          "change",
-        );
-        expect(h.replies.some((reply) => reply.name === "credential:result")).toBe(true);
-        h.secrets.releaseNext({ apiKey: "old-key" });
-        await work;
-        expect(h.transport.calls).toHaveLength(0);
-        expect(h.replies.some((reply) => reply.data.ok === true)).toBe(false);
-      },
-    );
-    it.each(["kind", "revision", "fingerprint", "profile"] as const)(
-      "rejects saved Test with changed %s before reading credentials",
-      async (field) => {
-        const h = await globalProviderHarness([saved]);
-        await h.send("provider:test", {
-          kind: field === "kind" ? (kind === "ollama" ? "openai" : "ollama") : kind,
-          endpoint: saved.endpoint,
+  const input = (operation: "test" | "models", endpoint = saved.endpoint) =>
+    operation === "test"
+      ? {
+          kind,
+          endpoint,
           proxyMode: "direct",
           model: "model",
-          sourceProfile: {
-            ...sourceProfile,
-            ...(field === "revision" ? { profileRevision: 9 } : {}),
-            ...(field === "fingerprint" ? { endpointFingerprint: "stale" } : {}),
-            ...(field === "profile" ? { profileId: "different" } : {}),
-          },
+          sourceProfile,
           drawerId: "drawer",
           draftRevision: 1,
           credential: { source: "saved" },
-        });
-        expect(h.reads).toEqual([]);
-        expect(h.transport.calls).toHaveLength(0);
-      },
-    );
-    it("does not use the saved Key after a draft Service type switch", async () => {
+        }
+      : { kind, endpoint, proxyMode: "direct", trigger: "manual", ...sourceProfile };
+  describe(`${kind} native saved credential authority`, () => {
+    it("clears an existing credential after the native bridge reorders reservation fields", async () => {
       const h = await globalProviderHarness([saved]);
-      const nextKind = kind === "ollama" ? "openai" : "ollama";
-      const work = h.send("provider:models", {
-        kind: nextKind,
-        endpoint: "https://other.test:443/Root/%41",
-        proxyMode: "system",
-        trigger: "manual",
-        ...sourceProfile,
-      });
-      await flush();
-      expect(h.reads).toEqual([]);
-      expect(h.transport.calls).toHaveLength(1);
-      expect(h.transport.calls[0]!.headers["Authorization"]).toBeUndefined();
-      await h.send("provider:models-cancel", { modelRequestId: "request" }, "window", "cancel");
-      h.transport.responses.releaseNext({ statusCode: 200, headers: {}, bodyText: "{}" });
-      await work;
+      const result = await h.save(
+        {
+          displayName: saved.displayName,
+          kind,
+          endpoint: saved.endpoint,
+          proxyMode: saved.proxyMode,
+          model: saved.model,
+          profileId: saved.profileId,
+          expectedRevision: saved.revision,
+        },
+        "",
+      );
+      expect(result.profile).toMatchObject({ revision: 2, credentialConfigured: false });
+      expect(h.saveCalls).toHaveLength(1);
     });
-    it("uses a manual entered Key without reading the saved Key", async () => {
-      const h = await globalProviderHarness([saved]);
-      const work = h.send("provider:models-preview", {
-        kind,
-        endpoint: "https://other.test:443/Root/%41",
-        proxyMode: "system",
-        trigger: "manual",
-        draftCredentialEpoch: 1,
-        credential: { apiKey: "entered-key" },
-        sourceProfile,
-      });
-      await flush();
-      expect(h.reads).toEqual([]);
-      expect(h.transport.calls).toHaveLength(1);
-      expect(
-        h.transport.calls[0]!.headers[kind === "claude" ? "x-api-key" : "Authorization"],
-      ).toContain("entered-key");
-      expect(h.transport.calls[0]).toMatchObject({ proxyMode: "system" });
-      expect(h.transport.calls[0]!.url).toContain("https://other.test:443/Root/%41");
-      await h.send("provider:models-cancel", { modelRequestId: "request" }, "window", "cancel");
-      h.transport.responses.releaseNext({ statusCode: 200, headers: {}, bodyText: "{}" });
-      await work;
-    });
-    it("prefers the entered Test Key at the selected Endpoint and route", async () => {
-      const h = await globalProviderHarness([saved]);
+    it("tests an unchanged saved Profile whose credential is confirmed absent", async () => {
+      const h = await globalProviderHarness([saved], false, false, { [saved.profileId]: false });
       const work = h.send("provider:test", {
-        kind,
-        endpoint: "https://other.test:443/Root/%41",
-        proxyMode: "system",
-        model: "model",
-        sourceProfile,
-        drawerId: "drawer",
-        draftRevision: 1,
-        credential: { source: "entered", apiKey: "entered-key" },
+        ...input("test"),
+        credential: { source: "none" },
       });
-      await flush();
-      expect(h.reads).toEqual([]);
-      expect(h.transport.calls).toHaveLength(1);
-      expect(h.transport.calls[0]).toMatchObject({ proxyMode: "system" });
-      expect(h.transport.calls[0]!.url).toContain("https://other.test:443/Root/%41");
-      expect(
-        h.transport.calls[0]!.headers[kind === "claude" ? "x-api-key" : "Authorization"],
-      ).toContain("entered-key");
+      await Promise.race([work, h.transport.responses.waitForPending()]);
+      expect(h.transport.calls[0]).toMatchObject({
+        credential: { source: "saved", ...sourceProfile, kind },
+        provider: { kind, endpoint: saved.endpoint, model: "model", proxyMode: "direct" },
+      });
       await h.send("provider:test-cancel", { testRequestId: "request" }, "window", "cancel");
       h.transport.responses.releaseNext({ statusCode: 200, headers: {}, bodyText: "{}" });
       await work;
     });
-    it("validates the baseline even for a manual entered Key", async () => {
+    it("rejects an unsealed empty draft when the saved Profile still has a credential", async () => {
       const h = await globalProviderHarness([saved]);
-      h.profiles.delete(saved.profileId);
-      await h.send("provider:models-preview", {
-        kind,
-        endpoint: saved.endpoint,
-        proxyMode: "direct",
-        trigger: "manual",
-        draftCredentialEpoch: 1,
-        credential: { apiKey: "entered-key" },
-        sourceProfile,
+      await h.send("provider:test", { ...input("test"), credential: { source: "none" } });
+      expect(h.transport.calls).toEqual([]);
+      expect(h.replies.at(-1)?.data).toMatchObject({ ok: false });
+    });
+    for (const operation of ["test", "models"] as const) {
+      it.each([saved.endpoint, " HTTPS://EXAMPLE.TEST:443/Root/%41/// "])(
+        `${operation} binds an equivalent endpoint to the persisted configuration: %s`,
+        async (endpoint) => {
+          const h = await globalProviderHarness([saved]);
+          const work = h.send(`provider:${operation}`, input(operation, endpoint));
+          await h.transport.responses.waitForPending();
+          expect(h.transport.calls[0]).toMatchObject({
+            credential: { source: "saved", ...sourceProfile, kind },
+            provider: { kind, endpoint: saved.endpoint, model: saved.model, proxyMode: "direct" },
+            owner: { senderId: "window" },
+            purpose: operation,
+          });
+          expect(h.transport.calls[0]!.headers).not.toHaveProperty("Authorization");
+          expect(h.transport.calls[0]!.headers).not.toHaveProperty("x-api-key");
+          expect(h.reads).toEqual([]);
+          await h.send(
+            operation === "test" ? "provider:test-cancel" : "provider:models-cancel",
+            operation === "test" ? { testRequestId: "request" } : { modelRequestId: "request" },
+            "window",
+            "cancel",
+          );
+          h.transport.responses.releaseNext({ statusCode: 200, headers: {}, bodyText: "{}" });
+          await work;
+        },
+      );
+      it.each(changedEndpoints)(
+        `${operation} rejects a saved reference at a changed endpoint: %s`,
+        async (endpoint) => {
+          const h = await globalProviderHarness([saved]);
+          await h.send(`provider:${operation}`, input(operation, endpoint));
+          expect(h.transport.calls).toEqual([]);
+          expect(h.replies.at(-1)?.data).toMatchObject({ ok: false });
+        },
+      );
+      it(`${operation} rejects changed proxy routing and a deleted baseline`, async () => {
+        const h = await globalProviderHarness([saved]);
+        await h.send(`provider:${operation}`, { ...input(operation), proxyMode: "system" });
+        h.profiles.delete(saved.profileId);
+        await h.send(`provider:${operation}`, input(operation), "window", "after-delete");
+        expect(h.transport.calls).toEqual([]);
       });
-      expect(h.reads).toEqual([]);
-      expect(h.transport.calls).toHaveLength(0);
+      it(`${operation} discards late results after a committed encrypted replacement`, async () => {
+        const h = await globalProviderHarness([saved]);
+        const work = h.send(`provider:${operation}`, input(operation));
+        await h.transport.responses.waitForPending();
+        await h.save(
+          {
+            profileId: saved.profileId,
+            expectedRevision: 1,
+            displayName: saved.displayName,
+            kind,
+            endpoint: saved.endpoint,
+            model: "model",
+            proxyMode: "direct",
+          },
+          "synthetic-replacement-key",
+        );
+        h.transport.responses.releaseNext({ statusCode: 200, headers: {}, bodyText: "{}" });
+        await work;
+        expect(h.transport.cancelled).toHaveLength(1);
+        expect(
+          h.replies.filter(
+            (reply) => reply.name === `provider:${operation}-result` && reply.data.ok === true,
+          ),
+        ).toEqual([]);
+        expect(h.authority.snapshot.profiles[0]).toMatchObject({
+          revision: 2,
+          credentialConfigured: true,
+        });
+        expect(JSON.stringify(h.saveCalls)).not.toContain("synthetic-replacement-key");
+      });
+    }
+    it.each(["kind", "revision", "fingerprint", "profile", "model"])(
+      "rejects a saved Test with changed %s",
+      async (field) => {
+        const h = await globalProviderHarness([saved]);
+        await h.send("provider:test", {
+          ...input("test"),
+          kind: field === "kind" ? (kind === "ollama" ? "openai" : "ollama") : kind,
+          model: field === "model" ? "other-model" : "model",
+          sourceProfile: {
+            ...sourceProfile,
+            ...(field === "revision" ? { profileRevision: 9 } : {}),
+            ...(field === "fingerprint" ? { endpointFingerprint: "stale" } : {}),
+            ...(field === "profile" ? { profileId: "other" } : {}),
+          },
+        });
+        expect(h.transport.calls).toEqual([]);
+      },
+    );
+    it("rejects plaintext entered drafts at both request boundaries", async () => {
+      const h = await globalProviderHarness([saved]);
+      await h.send("provider:test", {
+        ...input("test"),
+        credential: { source: "entered", apiKey: "synthetic-entered-key" },
+      });
+      await expect(
+        h.send("provider:models-preview", {
+          kind,
+          endpoint: saved.endpoint,
+          proxyMode: "direct",
+          trigger: "manual",
+          draftCredentialEpoch: 1,
+          sourceProfile,
+          credential: { apiKey: "synthetic-entered-key" },
+        }),
+      ).rejects.toThrow("MISSING_HANDLER");
+      expect(h.transport.calls).toEqual([]);
+      expect(JSON.stringify(h.replies)).not.toContain("synthetic-entered-key");
     });
   });
 }

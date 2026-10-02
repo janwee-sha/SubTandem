@@ -45,16 +45,16 @@ func runFileRPCClientTests() async throws {
     defer { worker.cancel() }
 
     let createdAt = String(Int64(Date().timeIntervalSince1970 * 1_000), radix: 36)
-    let stem = "transport-\(createdAt)-1-test"
+    let stem = "transport-v2-\(createdAt)-1-test"
     let requestFile = rpcDirectory.appendingPathComponent("\(stem).request.json")
     let responseFile = rpcDirectory.appendingPathComponent("\(stem).response.json")
     let request: [String: Any] = [
         "type": "request",
-        "protocolVersion": 1,
+        "protocolVersion": 2,
         "createdAtMs": Int64(Date().timeIntervalSince1970 * 1_000),
         "port": Int(port),
         "token": "correct-token",
-        "path": "/v1/health",
+        "path": "/v2/health",
         "body": [:],
     ]
     try JSONSerialization.data(withJSONObject: request).write(to: requestFile)
@@ -76,7 +76,7 @@ func runFileRPCClientTests() async throws {
     let response = try JSONSerialization.jsonObject(with: Data(contentsOf: responseFile)) as? [String: Any]
     let body = response?["body"] as? [String: Any]
     try check(response?["type"] as? String == "response", "RPC response must use the strict frame")
-    try check(response?["protocolVersion"] as? Int == 1, "RPC response version must be one")
+    try check(response?["protocolVersion"] as? Int == 2, "RPC response version must be one")
     try check(response?["statusCode"] as? Int == 200, "RPC health must preserve status")
     try check(body?["state"] as? String == "ok", "RPC health must preserve its body")
     let responseEntries = try FileManager.default.contentsOfDirectory(
@@ -88,7 +88,7 @@ func runFileRPCClientTests() async throws {
         "RPC response publication must remove its temporary file"
     )
 
-    let unauthorizedStem = "transport-\(createdAt)-2-test"
+    let unauthorizedStem = "transport-v2-\(createdAt)-2-test"
     let unauthorizedRequest = rpcDirectory.appendingPathComponent("\(unauthorizedStem).request.json")
     let unauthorizedResponse = rpcDirectory.appendingPathComponent("\(unauthorizedStem).response.json")
     var unauthorizedFrame = request
@@ -120,7 +120,7 @@ func runFileRPCClientTests() async throws {
         )
     }
 
-    let symlinkStem = "transport-\(createdAt)-3-test"
+    let symlinkStem = "transport-v2-\(createdAt)-3-test"
     let symlinkTarget = root.appendingPathComponent("symlink-target.json")
     let symlinkRequest = rpcDirectory.appendingPathComponent("\(symlinkStem).request.json")
     let symlinkMarker = rpcDirectory.appendingPathComponent("\(symlinkStem).request.ready")
@@ -159,7 +159,7 @@ func runFileRPCClientTests() async throws {
     defer { concurrencyWorker.cancel() }
     var concurrencyResponses: [URL] = []
     for index in 0..<12 {
-        let concurrentStem = "transport-\(createdAt)-\(String(index + 10, radix: 36))-test"
+        let concurrentStem = "transport-v2-\(createdAt)-\(String(index + 10, radix: 36))-test"
         let concurrentRequest = concurrencyDirectory
             .appendingPathComponent("\(concurrentStem).request.json")
         let concurrentMarker = concurrencyDirectory

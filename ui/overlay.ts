@@ -103,3 +103,6 @@ resizeObserver.observe(translationText);
 const postReady = (): void => window.iina?.postMessage("overlay:ready", {});
 window.iina?.onMessage("overlay:initialize", postReady);
 postReady();
+
+const runtimeTick = window.setInterval(() => window.iina?.postMessage("runtime:tick", {}), 20);
+window.addEventListener("pagehide", () => window.clearInterval(runtimeTick));

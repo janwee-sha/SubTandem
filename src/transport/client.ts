@@ -1,4 +1,18 @@
+import type { ProviderRequestAuthority } from "../providers/transport.js";
 import { SubTandemError } from "../domain/errors.js";
+import {
+  CREDENTIAL_ERRORS,
+  CREDENTIAL_LIMITS,
+  credentialDecode,
+  credentialIdentity,
+  credentialRecord,
+  credentialText,
+  parseCredentialEnvelope,
+  parseCredentialSnapshot,
+  parseDraftOperationReference,
+} from "../../shared/credential-protocol.js";
+import type { CredentialEnvelope, CredentialOwner } from "../../shared/credential-protocol.js";
+import { canonicalJson, identityHash, sha256Hex } from "../domain/identity.js";
 import type {
   ActivationReference,
   PersistentProviderProfile,
@@ -38,6 +52,12 @@ export const TRANSPORT_RPC_ERROR_CODES = [
   "not-found",
   "invalid-credential-request",
   "credential-store-unavailable",
+  "profile-state-unconfirmed",
+  "legacy-preferences-required",
+  "legacy-profile-state-required",
+  "migration-not-committed",
+  "migration-unconfirmed",
+  ...CREDENTIAL_ERRORS,
   "profile-state-conflict",
   "invalid-profile-state",
   "invalid-cancel-request",
@@ -71,6 +91,30 @@ function rpcError(error: TransportRpcError): SubTandemError {
       return new SubTandemError("REQUEST_CANCELLED", "cancelled", "NONE");
     case "response-too-large":
       return new SubTandemError("HELPER_RESPONSE_TOO_LARGE", "protocol", "CHECK_ENDPOINT");
+    case "credential-hardware-unavailable":
+      return new SubTandemError("CREDENTIAL_HARDWARE_UNAVAILABLE", "configuration", "NONE");
+    case "credential-authentication-failed":
+    case "credential-replay":
+    case "credential-owner-mismatch":
+    case "credential-channel-expired":
+    case "invalid-credential-message":
+    case "credential-too-large":
+    case "credential-protocol-mismatch":
+      return new SubTandemError("CREDENTIAL_OPERATION_REJECTED", "configuration", "NONE");
+    case "credential-reflection":
+      return new SubTandemError("CREDENTIAL_REFLECTION", "protocol", "CHECK_ENDPOINT");
+    case "credential-unavailable":
+      return new SubTandemError("CREDENTIAL_UNAVAILABLE", "configuration", "NONE");
+    case "profile-state-unconfirmed":
+      return new SubTandemError("PROFILE_STATE_UNCONFIRMED", "configuration", "NONE", true);
+    case "legacy-preferences-required":
+      return new SubTandemError("LEGACY_PREFERENCES_REQUIRED", "configuration", "NONE");
+    case "legacy-profile-state-required":
+      return new SubTandemError("LEGACY_PROFILE_STATE_REQUIRED", "configuration", "NONE");
+    case "migration-not-committed":
+      return new SubTandemError("MIGRATION_NOT_COMMITTED", "configuration", "NONE", true);
+    case "migration-unconfirmed":
+      return new SubTandemError("MIGRATION_UNCONFIRMED", "configuration", "NONE", true);
     case "credential-store-unavailable":
       return new SubTandemError("CREDENTIAL_STORE_UNAVAILABLE", "configuration", "RESTART_IINA");
     case "profile-state-conflict":
@@ -86,7 +130,7 @@ function rpcError(error: TransportRpcError): SubTandemError {
   }
 }
 
-export interface TransportRequest {
+export interface TransportRequest extends ProviderRequestAuthority {
   jobId: string;
   method: "GET" | "POST";
   url: string;
@@ -111,12 +155,25 @@ export interface TransportSession {
 }
 
 export interface ProfileStateStoreSnapshot {
+  recovery?: "retained" | "initialized" | "reset";
   initialized: boolean;
   storeRevision: number;
   lastCommit: StoreCommitReceipt | null;
   profileState: ProfileState | null;
   credentialConfigured: Record<string, boolean>;
   invalidActivation?: true;
+  migration?: CredentialMigrationState;
+}
+
+export interface CredentialMigrationState {
+  migrationId: string;
+  sourceFormat: 1;
+  sourceLayout: "profile-state" | "credentials-only";
+  commitState: "committed";
+  cleanupState: "pending" | "clean";
+  pendingClasses: Array<
+    "legacy-credentials" | "legacy-rpc" | "legacy-mailbox" | "legacy-preferences"
+  >;
 }
 
 export type ProfileStateCommitResult =
@@ -124,16 +181,24 @@ export type ProfileStateCommitResult =
   | ({ state: "reconciling" } & ProfileStateStoreSnapshot);
 
 export interface TransportRpcClient {
-  health(): Promise<void>;
-  credentialRead(profileId: string): Promise<Record<string, string> | null>;
-  credentialWrite(
-    profileId: string,
-    fields: Record<string, string>,
+  profileStateRecover?(commitId: string, expiresAtMs: number): Promise<ProfileStateCommitResult>;
+  profileStateMigrate?(
     commitId: string,
-    expectedStoreRevision: number,
-    expectedProfileRevision: number,
+    profiles?: PersistentProviderProfile[],
   ): Promise<ProfileStateCommitResult>;
-  profileStateRead(): Promise<ProfileStateStoreSnapshot>;
+  profileStateCleanup?(
+    commitId: string,
+    migrationId: string,
+    preferenceConfirmed: boolean,
+  ): Promise<ProfileStateCommitResult>;
+  health(): Promise<void>;
+  credentialChannel?(action: string, payload: unknown): Promise<unknown>;
+  draftOperation?(action: string, payload: unknown): Promise<unknown>;
+  profileStateSave?(
+    owner: CredentialOwner,
+    frame: CredentialEnvelope,
+  ): Promise<ProfileStateCommitResult>;
+  profileStateRead(deadlineMs?: number): Promise<ProfileStateStoreSnapshot>;
   profileStateOpen(commitId: string): Promise<ProfileStateCommitResult>;
   profileStateInitialize(
     commitId: string,
@@ -189,46 +254,134 @@ export class TransportClient implements TransportRpcClient {
   }
 
   async health(): Promise<void> {
-    const response = await this.post<{ state: "ok" }>("/v1/health", {});
-    if (response.state !== "ok")
+    const response = await this.post<{ state: "ok"; protocolVersion: 2 }>("/v2/health", {});
+    if (response.state !== "ok" || response.protocolVersion !== 2)
       throw new SubTandemError("HELPER_PROTOCOL", "protocol", "RESTART_IINA");
   }
 
-  async credentialRead(profileId: string): Promise<Record<string, string> | null> {
-    const response = await this.post<{ fields: Record<string, string> | null }>("/v1/credentials", {
-      action: "read",
-      profileId,
-    });
-    return response.fields ? { ...response.fields } : null;
+  credentialChannel(action: string, payload: unknown): Promise<unknown> {
+    return this.post("/v2/credential-channel", { action, payload });
   }
 
-  async credentialWrite(
-    profileId: string,
-    fields: Record<string, string>,
-    commitId: string,
-    expectedStoreRevision: number,
-    expectedProfileRevision: number,
+  async draftOperation(action: string, payload: unknown): Promise<unknown> {
+    const r = credentialRecord(payload, ["owner"], ["frame", "reference"]);
+    credentialRecord(r.owner, ["senderId", "sidebarInstanceId", "drawerId"]);
+    if (
+      !["begin", "finish", "cancel"].includes(action) ||
+      (r.frame === undefined) === (r.reference === undefined) ||
+      (action === "begin" && r.frame === undefined) ||
+      (action === "finish" && r.reference === undefined)
+    )
+      protocolFailure();
+    if (r.frame !== undefined) parseCredentialEnvelope(r.frame);
+    if (r.reference !== undefined) parseDraftOperationReference(r.reference);
+    const result = await this.post<unknown>("/v2/draft-operation", { action, ...r });
+    if (action === "begin") return parseDraftOperationReference(result);
+    if (credentialRecord(result, ["state"]).state !== "closed") protocolFailure();
+    return result;
+  }
+
+  async profileStateSave(
+    owner: CredentialOwner,
+    frame: CredentialEnvelope,
   ): Promise<ProfileStateCommitResult> {
-    const response = await this.post<unknown>("/v1/credentials", {
-      action: "write",
-      profileId,
-      fields,
-      commitId,
-      expectedStoreRevision,
-      expectedProfileRevision,
-    });
-    return parseProfileStateCommitResult(response);
+    const snapshot = validateProfileSave(owner, frame);
+    const result = parseProfileStateCommitResult(
+      await this.post<unknown>("/v2/profile-state", {
+        action: "save",
+        owner,
+        frame,
+      }),
+    );
+    const save = snapshot.save!;
+    if (
+      result.lastCommit?.commitId !== save.commitId ||
+      result.lastCommit.operation !== "save-profile" ||
+      result.lastCommit.baseRevision !== save.expectedStoreRevision ||
+      result.lastCommit.requestDigest !== profileSaveRequestDigest(owner, frame) ||
+      result.storeRevision !== save.expectedStoreRevision + 1 ||
+      canonicalJson(result.profileState) !== canonicalJson(save.profileState)
+    )
+      protocolFailure();
+    return result;
   }
 
-  async profileStateRead(): Promise<ProfileStateStoreSnapshot> {
+  async profileStateRead(
+    deadlineMs = Date.now() + controlRpcTimeoutMs,
+  ): Promise<ProfileStateStoreSnapshot> {
     return parseProfileStateStoreSnapshot(
-      await this.post<unknown>("/v1/profile-state", { action: "read" }),
+      await this.post<unknown>(
+        "/v2/profile-state",
+        { action: "read" },
+        Math.max(1, deadlineMs - Date.now()),
+      ),
+    );
+  }
+
+  async profileStateRecover(
+    commitId: string,
+    expiresAtMs: number,
+  ): Promise<ProfileStateCommitResult> {
+    if (
+      !credentialIdentity(commitId) ||
+      !Number.isSafeInteger(expiresAtMs) ||
+      expiresAtMs <= Date.now() ||
+      expiresAtMs > Date.now() + 15_000
+    )
+      protocolFailure();
+    const result = parseProfileStateCommitResult(
+      await this.post<unknown>(
+        "/v2/profile-state",
+        { action: "recover", commitId, expiresAtMs },
+        expiresAtMs - Date.now(),
+      ),
+    );
+    if (!result.recovery || !result.initialized || !result.profileState) protocolFailure();
+    if (
+      result.recovery !== "retained" &&
+      (result.storeRevision !== 1 ||
+        result.profileState.profiles.length !== 0 ||
+        result.profileState.activation !== null ||
+        result.lastCommit?.commitId !== commitId ||
+        result.lastCommit.operation !== "recover" ||
+        result.lastCommit.baseRevision !== 0 ||
+        result.lastCommit.requestDigest !== profileRecoveryRequestDigest())
+    )
+      protocolFailure();
+    return result;
+  }
+
+  async profileStateMigrate(
+    commitId: string,
+    profiles?: PersistentProviderProfile[],
+  ): Promise<ProfileStateCommitResult> {
+    return parseProfileStateCommitResult(
+      await this.post<unknown>("/v2/profile-state", {
+        action: "migrate",
+        commitId,
+        ...(profiles ? { profiles } : {}),
+      }),
+    );
+  }
+
+  async profileStateCleanup(
+    commitId: string,
+    migrationId: string,
+    preferenceConfirmed: boolean,
+  ): Promise<ProfileStateCommitResult> {
+    return parseProfileStateCommitResult(
+      await this.post<unknown>("/v2/profile-state", {
+        action: "cleanup",
+        commitId,
+        migrationId,
+        preferenceConfirmed,
+      }),
     );
   }
 
   async profileStateOpen(commitId: string): Promise<ProfileStateCommitResult> {
     return parseProfileStateCommitResult(
-      await this.post<unknown>("/v1/profile-state", { action: "open", commitId }),
+      await this.post<unknown>("/v2/profile-state", { action: "open", commitId }),
     );
   }
 
@@ -238,7 +391,7 @@ export class TransportClient implements TransportRpcClient {
     profiles: PersistentProviderProfile[],
   ): Promise<ProfileStateCommitResult> {
     return parseProfileStateCommitResult(
-      await this.post<unknown>("/v1/profile-state", {
+      await this.post<unknown>("/v2/profile-state", {
         action: "initialize",
         commitId,
         expectedStoreRevision,
@@ -253,7 +406,7 @@ export class TransportClient implements TransportRpcClient {
     profileState: ProfileState,
   ): Promise<ProfileStateCommitResult> {
     return parseProfileStateCommitResult(
-      await this.post<unknown>("/v1/profile-state", {
+      await this.post<unknown>("/v2/profile-state", {
         action: "commit",
         commitId,
         expectedStoreRevision,
@@ -264,12 +417,17 @@ export class TransportClient implements TransportRpcClient {
 
   request(request: TransportRequest, assertActive?: () => void): Promise<TransportResponse> {
     assertActive?.();
-    return this.post("/v1/request", request, providerRpcTimeoutMs, assertActive);
+    return this.post(
+      "/v2/request",
+      validateTransportRequest(request),
+      providerRpcTimeoutMs,
+      assertActive,
+    );
   }
 
   async cancel(jobId: string): Promise<"cancelled" | "already-completed" | "unknown"> {
     const response = await this.post<{ state: "cancelled" | "already-completed" | "unknown" }>(
-      "/v1/cancel",
+      "/v2/cancel",
       { jobId },
     );
     return response.state;
@@ -277,7 +435,7 @@ export class TransportClient implements TransportRpcClient {
 
   async shutdown(): Promise<void> {
     try {
-      await this.post("/v1/shutdown", {});
+      await this.post("/v2/shutdown", {});
     } finally {
       this.dispose();
     }
@@ -286,6 +444,105 @@ export class TransportClient implements TransportRpcClient {
   dispose(): void {
     this.bridge.close?.();
   }
+}
+
+export function validateTransportRequest(request: TransportRequest): TransportRequest {
+  try {
+    const r = credentialRecord(
+      request,
+      [
+        "jobId",
+        "method",
+        "url",
+        "headers",
+        "timeoutMs",
+        "maxResponseBytes",
+        "credential",
+        "provider",
+        "owner",
+        "purpose",
+      ],
+      ["body", "proxyMode"],
+    );
+    const provider = credentialRecord(r.provider, ["kind", "endpoint", "model", "proxyMode"]);
+    const owner = credentialRecord(r.owner, ["senderId", "requestId"]);
+    if (
+      !credentialIdentity(owner.senderId) ||
+      !credentialIdentity(owner.requestId) ||
+      !["models", "test", "translation"].includes(String(r.purpose)) ||
+      !["openai", "claude", "deepseek", "ollama"].includes(String(provider.kind)) ||
+      typeof provider.endpoint !== "string" ||
+      provider.endpoint.length > 8192 ||
+      (provider.model !== null &&
+        (typeof provider.model !== "string" || provider.model.length > 1024)) ||
+      !["system", "direct"].includes(String(provider.proxyMode)) ||
+      (r.proxyMode ?? "system") !== provider.proxyMode ||
+      typeof r.url !== "string" ||
+      !["GET", "POST"].includes(String(r.method)) ||
+      !r.headers ||
+      typeof r.headers !== "object" ||
+      Array.isArray(r.headers)
+    )
+      protocolFailure();
+    const headers = r.headers as Record<string, unknown>;
+    const names = Object.keys(headers).map((name) => name.toLowerCase());
+    if (
+      new Set(names).size !== names.length ||
+      !names.every((name) =>
+        ["content-type", "accept", "anthropic-version", "x-session-id"].includes(name),
+      ) ||
+      !Object.values(headers).every(
+        (value) => typeof value === "string" && value.length <= 8192 && !/[\r\n\0]/.test(value),
+      )
+    )
+      protocolFailure();
+    const credential = r.credential as Record<string, unknown>;
+    if (credential?.source === "none") credentialRecord(credential, ["source"]);
+    else if (credential?.source === "saved") {
+      credentialRecord(credential, [
+        "source",
+        "profileId",
+        "profileRevision",
+        "kind",
+        "endpointFingerprint",
+      ]);
+      if (
+        !credentialIdentity(credential.profileId) ||
+        !safeInteger(credential.profileRevision, 1) ||
+        !credentialIdentity(credential.endpointFingerprint) ||
+        credential.kind !== provider.kind
+      )
+        protocolFailure();
+    } else if (credential?.source === "draft") parseDraftOperationReference(credential);
+    else protocolFailure();
+    return { ...cloneJson(request), proxyMode: request.proxyMode ?? "system" };
+  } catch {
+    return protocolFailure();
+  }
+}
+
+export function profileSaveRequestDigest(
+  owner: CredentialOwner,
+  frame: CredentialEnvelope,
+): string {
+  return identityHash({ operation: "save-profile", owner, frame });
+}
+
+export function validateProfileSave(owner: CredentialOwner, frame: CredentialEnvelope) {
+  credentialRecord(owner, ["senderId", "sidebarInstanceId", "drawerId"]);
+  if (!Object.values(owner).every(credentialIdentity)) protocolFailure();
+  parseCredentialEnvelope(frame);
+  const bytes = credentialDecode(frame.snapshotBytes, CREDENTIAL_LIMITS.documentBytes);
+  const snapshot = parseCredentialSnapshot(JSON.parse(credentialText(bytes)));
+  if (
+    snapshot.purpose !== "save-profile" ||
+    frame.context.purpose !== "save-profile" ||
+    sha256Hex(bytes) !== frame.context.snapshotDigest ||
+    snapshot.kind !== frame.context.kind ||
+    canonicalJson(snapshot.sourceProfile) !== canonicalJson(frame.context.sourceProfile)
+  )
+    protocolFailure();
+  return snapshot;
 }
 
 function protocolFailure(): never {
@@ -384,7 +641,9 @@ function parseCommitReceipt(value: unknown): StoreCommitReceipt | null {
   if (
     !exactKeys(record, ["commitId", "operation", "baseRevision", "requestDigest"]) ||
     !opaque(record.commitId) ||
-    !["open", "initialize", "commit", "credential-write"].includes(String(record.operation)) ||
+    !["open", "initialize", "commit", "save-profile", "migrate", "cleanup", "recover"].includes(
+      String(record.operation),
+    ) ||
     !safeInteger(record.baseRevision) ||
     !opaque(record.requestDigest)
   )
@@ -395,7 +654,9 @@ function parseCommitReceipt(value: unknown): StoreCommitReceipt | null {
 export function parseProfileStateStoreSnapshot(value: unknown): ProfileStateStoreSnapshot {
   if (!value || typeof value !== "object" || Array.isArray(value)) protocolFailure();
   const record = value as Record<string, unknown>;
-  const optional = record.invalidActivation === undefined ? [] : ["invalidActivation"];
+  const optional = ["invalidActivation", "migration", "recovery"].filter(
+    (key) => record[key] !== undefined,
+  );
   if (
     !exactKeys(record, [
       "initialized",
@@ -408,6 +669,8 @@ export function parseProfileStateStoreSnapshot(value: unknown): ProfileStateStor
     typeof record.initialized !== "boolean" ||
     !safeInteger(record.storeRevision) ||
     (record.invalidActivation !== undefined && record.invalidActivation !== true) ||
+    (record.recovery !== undefined &&
+      !["retained", "initialized", "reset"].includes(String(record.recovery))) ||
     !record.credentialConfigured ||
     typeof record.credentialConfigured !== "object" ||
     Array.isArray(record.credentialConfigured)
@@ -432,8 +695,43 @@ export function parseProfileStateStoreSnapshot(value: unknown): ProfileStateStor
     lastCommit: parseCommitReceipt(record.lastCommit),
     profileState,
     credentialConfigured: cloneJson(configured) as Record<string, boolean>,
+    ...(record.recovery === undefined
+      ? {}
+      : { recovery: record.recovery as "retained" | "initialized" | "reset" }),
     ...(record.invalidActivation === true ? { invalidActivation: true as const } : {}),
+    ...(record.migration === undefined
+      ? {}
+      : { migration: parseCredentialMigrationState(record.migration) }),
   };
+}
+
+function parseCredentialMigrationState(value: unknown): CredentialMigrationState {
+  try {
+    const record = credentialRecord(value, [
+      "migrationId",
+      "sourceFormat",
+      "sourceLayout",
+      "commitState",
+      "cleanupState",
+      "pendingClasses",
+    ]);
+    credentialIdentity(record.migrationId);
+    const classes = ["legacy-credentials", "legacy-rpc", "legacy-mailbox", "legacy-preferences"];
+    if (
+      record.sourceFormat !== 1 ||
+      !["profile-state", "credentials-only"].includes(String(record.sourceLayout)) ||
+      record.commitState !== "committed" ||
+      !["pending", "clean"].includes(String(record.cleanupState)) ||
+      !Array.isArray(record.pendingClasses) ||
+      new Set(record.pendingClasses).size !== record.pendingClasses.length ||
+      record.pendingClasses.some((entry) => !classes.includes(String(entry))) ||
+      (record.cleanupState === "clean") !== (record.pendingClasses.length === 0)
+    )
+      protocolFailure();
+    return cloneJson(record) as unknown as CredentialMigrationState;
+  } catch {
+    return protocolFailure();
+  }
 }
 
 export function parseProfileStateCommitResult(value: unknown): ProfileStateCommitResult {
@@ -443,4 +741,10 @@ export function parseProfileStateCommitResult(value: unknown): ProfileStateCommi
   const snapshot = { ...record };
   delete snapshot.state;
   return { state: "committed", ...parseProfileStateStoreSnapshot(snapshot) };
+}
+
+export function profileRecoveryRequestDigest(): string {
+  return sha256Hex(
+    canonicalJson({ action: "recover", profileState: { profiles: [], activation: null } }),
+  );
 }

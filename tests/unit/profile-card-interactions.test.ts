@@ -172,6 +172,7 @@ describe("Profile Test button label", () => {
     const originalChildren = button.children;
     const runtime = loadSidebarFunctions(["setActionBusy"], {
       controlForAction: () => button,
+      renderDrawerAvailability: () => undefined,
       HTMLButtonElement: Button,
     });
     runtime.setActionBusy("test", undefined, true, "Testing…");

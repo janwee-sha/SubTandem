@@ -45,8 +45,9 @@ final class RedirectDelegate: NSObject, URLSessionTaskDelegate, @unchecked Senda
     private let originalURL: URL
     private let lock = NSLock()
     private var redirects = 0
+    private let restricted: Bool
 
-    init(originalURL: URL) { self.originalURL = originalURL }
+    init(originalURL: URL, restricted: Bool = false) { self.originalURL = originalURL; self.restricted = restricted }
 
     func urlSession(
         _ session: URLSession,
@@ -59,7 +60,7 @@ final class RedirectDelegate: NSObject, URLSessionTaskDelegate, @unchecked Senda
             redirects += 1
             return redirects
         }
-        guard redirectCount <= 3, let target = request.url,
+        guard !restricted, redirectCount <= 3, let target = request.url,
               (try? UpstreamPolicy.validate(target)) != nil,
               UpstreamPolicy.sameOrigin(originalURL, target)
         else {
@@ -282,14 +283,14 @@ final class HTTPClient: @unchecked Sendable {
         proxyMode == "direct" ? .libcurl : .urlSession
     }
 
-    func perform(_ rawRequest: TransportRequest) async throws -> TransportResponse {
+    func perform(_ rawRequest: TransportRequest, authorize: @escaping @Sendable () async throws -> Void = {}) async throws -> TransportResponse {
         let request = try rawRequest.validated()
         let job = try register(jobID: request.jobID)
         return try await withTaskCancellationHandler {
             do {
                 let response = try await Self.transportKind(for: request.proxyMode) == .libcurl
-                    ? performDirect(request, job: job)
-                    : performURLSession(request, job: job)
+                    ? performDirect(request, job: job, authorize: authorize)
+                    : performURLSession(request, job: job, authorize: authorize)
                 guard finish(jobID: request.jobID) else { throw CancellationError() }
                 return response
             } catch {
@@ -303,7 +304,8 @@ final class HTTPClient: @unchecked Sendable {
 
     private func performURLSession(
         _ request: TransportRequest,
-        job: ActiveJob
+        job: ActiveJob,
+        authorize: @escaping @Sendable () async throws -> Void
     ) async throws -> TransportResponse {
         guard let url = URL(string: request.url) else { throw TransportProtocolError.invalidRequest }
         var urlRequest = URLRequest(url: url)
@@ -313,10 +315,12 @@ final class HTTPClient: @unchecked Sendable {
         for (name, value) in request.headers { urlRequest.setValue(value, forHTTPHeaderField: name) }
         urlRequest.setValue(nil, forHTTPHeaderField: "Connection")
 
-        let delegate = RedirectDelegate(originalURL: url)
+        let delegate = RedirectDelegate(originalURL: url, restricted: request.restrictRedirects)
         let task = Task {
             let permit = try await upstreamRequestLimiter.acquire(host: url.host?.lowercased() ?? "")
             defer { permit.release() }
+            try Task.checkCancellation()
+            try await authorize()
             try Task.checkCancellation()
             return try await systemSession.data(for: urlRequest, delegate: delegate)
         }
@@ -334,12 +338,15 @@ final class HTTPClient: @unchecked Sendable {
                 transportState: "completed",
                 statusCode: http.statusCode,
                 headers: UpstreamPolicy.selectedHeaders(http.allHeaderFields),
-                body: body
+                body: body,
+                rawHeaders: http.allHeaderFields.map { "\($0.key): \($0.value)" }
             )
         } catch let error as URLError {
             throw error.code == .cancelled ? CancellationError() : Self.classify(error)
         } catch is CancellationError {
             throw CancellationError()
+        } catch let error as CredentialFailure {
+            throw error
         } catch let error as TransportProtocolError {
             throw error
         } catch {
@@ -349,7 +356,8 @@ final class HTTPClient: @unchecked Sendable {
 
     private func performDirect(
         _ request: TransportRequest,
-        job: ActiveJob
+        job: ActiveJob,
+        authorize: @escaping @Sendable () async throws -> Void
     ) async throws -> TransportResponse {
         guard let url = URL(string: request.url), let host = url.host?.lowercased() else {
             throw TransportProtocolError.invalidRequest
@@ -360,6 +368,8 @@ final class HTTPClient: @unchecked Sendable {
         let task = Task {
             let permit = try await requestLimiter.acquire(host: host)
             defer { permit.release() }
+            try Task.checkCancellation()
+            try await authorize()
             try Task.checkCancellation()
             return try await transport.perform(request, context: context)
         }

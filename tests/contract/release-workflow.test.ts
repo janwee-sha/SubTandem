@@ -15,11 +15,11 @@ const publishScript = readFileSync(
 );
 
 const sharedGates = [
+  "run: npm run build:native\n",
   "run: npm run test\n",
   "run: npm run typecheck\n",
   "run: npm run lint\n",
   "run: npm run format:check\n",
-  "run: npm run build:native\n",
   "run: npm run test:native\n",
   "run: npm run build\n",
   "run: npm run verify:package\n",
@@ -30,6 +30,17 @@ const gatePositions = (source: string, gates: string[]): number[] =>
 
 const actionCommit = (source: string, action: string): string | undefined =>
   source.match(new RegExp(`uses:\\s+${action}@([0-9a-f]{40})`))?.[1];
+
+it.each([
+  ["pull request", pullRequestWorkflow],
+  ["release", workflow],
+])("builds native helpers before TypeScript integration tests in the %s workflow", (_, source) => {
+  const buildPosition = source.indexOf("run: npm run build:native\n");
+  const testPosition = source.indexOf("run: npm run test\n");
+
+  expect(buildPosition).toBeGreaterThanOrEqual(0);
+  expect(testPosition).toBeGreaterThan(buildPosition);
+});
 
 describe("automatic release workflow", () => {
   it("runs only for main pushes or main manual retries", () => {

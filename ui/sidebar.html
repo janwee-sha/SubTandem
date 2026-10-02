@@ -301,8 +301,8 @@
           </div>
           <button id="new-profile" class="secondary" type="button">New profile</button>
         </div>
-        <div id="profiles" class="profiles group-surface">
-          <p class="empty">No saved profiles yet.</p>
+        <div id="profiles" class="profiles group-surface" data-empty="true">
+          <p class="empty">No profiles yet.</p>
         </div>
         <div id="profile-drawer" class="profile-drawer" hidden>
           <div class="profile-drawer-form">
@@ -386,21 +386,38 @@
                 settings.</small
               >
             </label>
-            <label id="credential-row" class="field">
-              <span>API key</span>
-              <input
-                id="provider-key"
-                type="password"
-                autocomplete="new-password"
-                placeholder="Not shown after saving"
-                aria-describedby="credential-hint"
-                maxlength="8192"
-              />
-              <small id="credential-hint"
-                >Write-only; optional when unauthenticated. Enter a key if the service requires
-                one.</small
-              >
-            </label>
+            <div id="credential-row" class="field">
+              <label for="provider-key">API key</label>
+              <div class="credential-input">
+                <input
+                  id="provider-key"
+                  type="password"
+                  autocomplete="off"
+                  placeholder="Optional"
+                  aria-describedby="credential-hint"
+                  maxlength="8192"
+                />
+                <button
+                  id="toggle-provider-key"
+                  type="button"
+                  aria-label="Show API key"
+                  aria-pressed="false"
+                  disabled
+                >
+                  <svg
+                    class="credential-eye"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                    <circle cx="12" cy="12" r="3" />
+                    <path class="credential-eye-slash" d="m3 3 18 18" />
+                  </svg>
+                </button>
+              </div>
+              <small id="credential-hint">Enter an API key if the service requires one.</small>
+            </div>
           </div>
           <div class="profile-drawer-actions">
             <div class="profile-drawer-test-row">
@@ -433,9 +450,6 @@
             role="status"
             aria-live="polite"
           ></p>
-          <p id="credential-state" class="credential-state">
-            Saved API keys use SubTandem's private local file (mode 0600).
-          </p>
         </div>
       </section>
 
@@ -509,6 +523,7 @@
     <script src="./sidebar-state.ts"></script>
     <script src="./profile-card-interactions.ts"></script>
     <script src="./session-status.ts"></script>
+    <script type="module" src="./credential-editor-entry.ts"></script>
     <script src="./sidebar.ts"></script>
   </body>
 </html>

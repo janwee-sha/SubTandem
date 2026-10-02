@@ -48,6 +48,7 @@ export class WebViewTranslationOverlay {
     private readonly overlay: TranslationOverlayWebView,
     private readonly lifecycle: TranslationOverlayLifecycle,
     private readonly report: (message: string) => void = () => undefined,
+    private readonly tick: () => void = () => undefined,
   ) {
     try {
       this.overlay.setClickable(false);
@@ -122,6 +123,9 @@ export class WebViewTranslationOverlay {
     this.detachLifecycle();
     try {
       this.overlay.loadFile("dist/ui/overlay.html");
+      this.overlay.onMessage("runtime:tick", () => {
+        if (this.active) this.tick();
+      });
       this.overlay.onMessage("overlay:ready", (raw) => this.acceptReady(raw));
       this.post("overlay:initialize", {});
       this.report("Translation overlay WebView warmup completed.");

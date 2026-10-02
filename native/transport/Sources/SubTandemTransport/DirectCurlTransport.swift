@@ -6,6 +6,9 @@ final class CurlRequestContext: @unchecked Sendable {
     private(set) var body = Data()
     private(set) var headers: [String: String] = [:]
     private(set) var responseTooLarge = false
+    private(set) var rawHeaders: [String] = []
+    private(set) var headerInspectionOverflow = false
+    private var headerBytes = 0
     private var cancelled = false
     let maximumResponseBytes: Int
 
@@ -29,7 +32,14 @@ final class CurlRequestContext: @unchecked Sendable {
 
     func consumeHeader(_ bytes: UnsafeRawPointer, count: Int) -> Int {
         let data = Data(bytes: bytes, count: count)
-        guard let line = String(data: data, encoding: .utf8) else { return count }
+        guard let line = String(data: data, encoding: .utf8) else { lock.withLock { headerInspectionOverflow = true }; return 0 }
+        let accepted = lock.withLock {
+            headerBytes += count
+            if headerBytes > CredentialResponseGuard.maximumHeaderBytes { headerInspectionOverflow = true; return false }
+            rawHeaders.append(line)
+            return true
+        }
+        guard accepted else { return 0 }
         let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.hasPrefix("HTTP/") {
             lock.withLock { headers.removeAll(keepingCapacity: true) }
@@ -158,6 +168,7 @@ final class DirectCurlTransport: @unchecked Sendable {
         }
 
         if result != CURLE_OK {
+            if context.headerInspectionOverflow { throw CredentialFailure.reflection }
             if context.responseTooLarge { throw TransportProtocolError.responseTooLarge }
             if context.isCancelled() { throw CancellationError() }
             if result == CURLE_OPERATION_TIMEDOUT { throw TransportProtocolError.timedOut }
@@ -172,7 +183,8 @@ final class DirectCurlTransport: @unchecked Sendable {
             transportState: "completed",
             statusCode: statusCode,
             headers: context.headers,
-            body: context.body
+            body: context.body,
+            rawHeaders: context.rawHeaders
         )
     }
 

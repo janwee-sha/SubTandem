@@ -161,6 +161,7 @@ describe("latest provider Profiles", () => {
       endpoint: "https://api.anthropic.com",
       endpointFingerprint: "fingerprint",
       model: "model",
+      credentialConfigured: true,
       credential: { apiKey: "private-key" },
     });
     expect(view.credentialConfigured).toBe(true);

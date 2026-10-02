@@ -8,7 +8,7 @@ import {
 } from "../../src/domain/messages.js";
 
 describe("authoritative global RPC routing", () => {
-  it("keeps every Main and Global message off IINA's synchronous cross-context bridge", () => {
+  it("keeps business messages off the synchronous bridge and allows only clock pulses", () => {
     const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
     const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
     const mailboxSource = readFileSync(
@@ -16,7 +16,11 @@ describe("authoritative global RPC routing", () => {
       "utf8",
     );
     for (const source of [mainSource, globalSource, mailboxSource]) {
-      expect(source).not.toMatch(/iina\.global\.(?:postMessage|onMessage)/);
+      const bridgeCalls =
+        source.match(/(?:iina|hostRuntime)\.global\??\.(?:postMessage|onMessage)\([\s\S]*?\);/g) ??
+        [];
+      for (const call of bridgeCalls) expect(call).toContain('"runtime:tick"');
+      expect(source).not.toMatch(/iina\.global\.postMessage\(\s*"(?:profile|provider|credential)/);
     }
     expect(mainSource).toContain("new MainGlobalMailbox(");
     expect(globalSource).toContain("new GlobalMailbox(");
@@ -27,11 +31,7 @@ describe("authoritative global RPC routing", () => {
     expect(source).toContain('import { ClaudeProvider } from "./providers/claude.js"');
     expect(source).toContain('case "claude"');
     expect(source).toContain("new ClaudeProvider(");
-    expect(source).toContain('value.kind !== "claude"');
-    expect(source).toContain('value === "claude"');
     for (const name of [
-      "profile:create-revision",
-      "credential:set",
       "provider:models",
       "provider:test",
       "profile-activation:get",
@@ -43,10 +43,10 @@ describe("authoritative global RPC routing", () => {
     expect(source).not.toContain('onMessage("claude:');
   });
 
-  it("runs a keyless Claude draft through the production Global handler", async () => {
+  it("rejects an unsealed Claude draft before dispatch", async () => {
     const { globalProviderHarness } = await import("../helpers/global-provider-harness.js");
     const h = await globalProviderHarness();
-    const work = h.send("provider:test", {
+    await h.send("provider:test", {
       kind: "claude",
       endpoint: "https://fixture.test",
       model: "model",
@@ -55,23 +55,8 @@ describe("authoritative global RPC routing", () => {
       draftRevision: 1,
       credential: { source: "none" },
     });
-    await h.transport.responses.waitForPending();
-    expect(h.reads).toEqual([]);
-    expect(h.transport.calls[0]!.headers["x-api-key"]).toBeUndefined();
-    h.transport.responses.releaseNext({
-      statusCode: 200,
-      headers: {},
-      bodyText: JSON.stringify({
-        type: "message",
-        role: "assistant",
-        stop_reason: "end_turn",
-        content: [
-          { type: "text", text: JSON.stringify({ translations: [{ id: "c1", text: "hola" }] }) },
-        ],
-      }),
-    });
-    await work;
-    expect(h.replies.at(-1)).toMatchObject({ name: "provider:test-result", data: { ok: true } });
+    expect(h.transport.calls).toEqual([]);
+    expect(h.replies.at(-1)).toMatchObject({ name: "provider:test-result", data: { ok: false } });
   });
 
   it("invalidates obsolete Provider work before publishing without waiting for slow cancellation", () => {
@@ -103,8 +88,6 @@ describe("authoritative global RPC routing", () => {
     });
     const h = await globalProviderHarness([saved]);
     await h.startup[0]!();
-    await h.secrets.waitForPending();
-    h.secrets.releaseNext({ apiKey: "saved-key" });
     await h.transport.responses.waitForPending();
     const startupJob = h.transport.calls[0]!.jobId;
     const drawer = h.send("provider:models", {
@@ -134,30 +117,32 @@ describe("authoritative global RPC routing", () => {
 
   it("invalidates every cached revision and credential context after replacement", () => {
     const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
-    expect(source).toContain("clearProfileProviderCache(secret.profileId)");
-    expect(source).toContain("clearProfileModelCatalogs(secret.profileId)");
-    expect(source).toContain("cancelProfileModelRequests(secret.profileId)");
+    expect(source).toContain("clearProfileProviderCache(profile.profileId)");
+    expect(source).toContain("clearProfileModelCatalogs(profile.profileId)");
+    expect(source).toContain("cancelProfileModelRequests(profile.profileId)");
     expect(source).toContain("modelCredentialEpochs.set(");
-    expect(source).toContain("invalidateProfileConnectionTests(secret.profileId)");
-    expect(source).toContain("broker.cancelProfile(secret.profileId)");
+    expect(source).toContain("invalidateProfileConnectionTests(profile.profileId)");
+    expect(source).toContain("broker.cancelProfile(profile.profileId)");
   });
 
-  it("commits a converted revision, advances credential ownership, then clears runtime owners", () => {
-    const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
-    const start = source.indexOf('onMessage("profile:create-revision"');
-    const end = source.indexOf('onMessage("profile:delete"', start);
-    const handler = source.slice(start, end);
-    const kindChange = handler.indexOf("currentProfile.kind !== kind");
-    const save = handler.indexOf("profileAuthority.saveProfile", kindChange);
-    const epoch = handler.indexOf("advanceCredentialEpoch(profile.profileId)", save);
-    const cancel = handler.indexOf("broker.cancelProfile(profile.profileId)", epoch);
-
-    expect(kindChange).toBeGreaterThan(-1);
-    expect(save).toBeGreaterThan(kindChange);
-    expect(epoch).toBeGreaterThan(save);
-    expect(cancel).toBeGreaterThan(epoch);
-    expect(handler).toContain("invalidateProfileConnectionTests(profile.profileId)");
-    expect(handler).not.toContain("deleteSecret");
+  it("commits an encrypted revision before invalidating runtime owners", async () => {
+    const { globalProviderHarness } = await import("../helpers/global-provider-harness.js");
+    const h = await globalProviderHarness();
+    const result = await h.save(
+      {
+        displayName: "Synthetic",
+        kind: "claude",
+        endpoint: "https://fixture.test",
+        model: "model",
+        proxyMode: "direct",
+      },
+      "synthetic-global-key",
+    );
+    expect(result.profile).toMatchObject({ revision: 1, credentialConfigured: true });
+    expect(h.saveCalls).toHaveLength(1);
+    expect(JSON.stringify(h.saveCalls)).not.toContain("synthetic-global-key");
+    expect(JSON.stringify(h.replies)).not.toContain("synthetic-global-key");
+    expect(h.authority.snapshot.activation).toBeNull();
   });
 
   it("advances credential ownership when a Profile is deleted", () => {
@@ -172,8 +157,8 @@ describe("authoritative global RPC routing", () => {
   it("allows model refresh across both runtime message boundaries", () => {
     expect(SIDEBAR_MESSAGE_NAMES).toContain("provider:models");
     expect(GLOBAL_MESSAGE_NAMES).toContain("provider:models");
-    expect(SIDEBAR_MESSAGE_NAMES).toContain("provider:models-preview");
-    expect(GLOBAL_MESSAGE_NAMES).toContain("provider:models-preview");
+    expect(SIDEBAR_MESSAGE_NAMES).toContain("provider:draft-models");
+    expect(GLOBAL_MESSAGE_NAMES).toContain("provider:draft-models");
   });
 
   it("keeps DeepSeek on the existing provider RPC names", () => {
@@ -184,28 +169,22 @@ describe("authoritative global RPC routing", () => {
     );
   });
 
-  it("routes draft credentials only through the strict preview handler", async () => {
+  it("rejects plaintext preview credentials without network execution", async () => {
     const { globalProviderHarness } = await import("../helpers/global-provider-harness.js");
     const h = await globalProviderHarness();
-    const preview = h.send("provider:models-preview", {
-      trigger: "manual",
-      kind: "openai",
-      endpoint: "https://fixture.test",
-      proxyMode: "direct",
-      draftCredentialEpoch: 1,
-      credential: { apiKey: "entered-key" },
-    });
-    await h.transport.responses.waitForPending();
-    expect(h.transport.calls[0]!.headers.Authorization).toBe("Bearer entered-key");
-    expect(h.reads).toEqual([]);
-    h.transport.responses.releaseNext({
-      statusCode: 200,
-      headers: {},
-      bodyText: '{"data":[{"id":"model"}]}',
-    });
-    await preview;
-    expect(h.replies.at(-1)?.data).toMatchObject({ ok: true, models: ["model"] });
+    await expect(
+      h.send("provider:models-preview", {
+        trigger: "manual",
+        kind: "openai",
+        endpoint: "https://fixture.test",
+        proxyMode: "direct",
+        draftCredentialEpoch: 1,
+        credential: { apiKey: "entered-key" },
+      }),
+    ).rejects.toThrow("MISSING_HANDLER");
+    expect(h.transport.calls).toEqual([]);
     expect(h.profiles.listLatest()).toEqual([]);
+    expect(h.replies).toEqual([]);
     expect(JSON.stringify(h.replies)).not.toContain("entered-key");
   });
 

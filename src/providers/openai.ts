@@ -1,3 +1,5 @@
+import type { CredentialReference } from "../../shared/credential-protocol.js";
+import { providerRequestAuthority } from "./transport.js";
 import { RequestLifecycle, type RequestOwner } from "./request-lifecycle.js";
 import type { ConfiguredProvider } from "./provider.js";
 import type {
@@ -26,7 +28,8 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
     private readonly config: {
       endpoint: string;
       model: string;
-      apiKey?: string;
+      credential?: CredentialReference;
+      senderId?: string;
       capability?: Capability;
       proxyMode?: "system" | "direct";
       sessionId: string;
@@ -45,7 +48,7 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
 
   async testConnection(testId: string): Promise<Capability> {
     const owner = this.requests.beginRequired({
-      senderId: "provider",
+      senderId: this.config.senderId ?? "provider",
       operation: "test",
       requestId: testId,
       context: undefined,
@@ -107,7 +110,7 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
     assertAuthorized?: () => void,
   ): Promise<TranslationBatchResult> {
     const owner = this.requests.beginRequired({
-      senderId: "provider",
+      senderId: this.config.senderId ?? "provider",
       operation: "translation",
       requestId: request.requestId,
       context: undefined,
@@ -150,8 +153,8 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
 
   async cancel(requestId: string): Promise<void> {
     await Promise.allSettled([
-      this.requests.cancel("provider", "test", requestId),
-      this.requests.cancel("provider", "translation", requestId),
+      this.requests.cancel(this.config.senderId ?? "provider", "test", requestId),
+      this.requests.cancel(this.config.senderId ?? "provider", "translation", requestId),
     ]);
   }
 
@@ -179,12 +182,12 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
           ? { type: "json_object" }
           : undefined;
     return this.requests.transport(owner, this.transport).request({
+      ...providerRequestAuthority(this.config, "openai", owner),
       jobId,
       method: "POST",
       url: `${apiRoot}/chat/completions`,
       headers: {
         "Content-Type": "application/json",
-        ...(this.config.apiKey ? { Authorization: `Bearer ${this.config.apiKey}` } : {}),
         "X-Session-Id": this.config.sessionId,
       },
       proxyMode: this.config.proxyMode ?? "system",

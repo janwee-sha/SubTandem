@@ -113,4 +113,10 @@ if find "$PACKAGE_DIR/dist" -type f \( -name '*.a' -o -name '*.o' -o -name '*.h'
   exit 1
 fi
 
+if [ "$PACKAGE_DIR" = "$PROJECT_DIR" ]; then
+  node "$PROJECT_DIR/scripts/audit-credential-package.mjs" "$PACKAGE_DIR" "$PROJECT_DIR"
+else
+  node "$PROJECT_DIR/scripts/audit-credential-package.mjs" "$PACKAGE_DIR" "$PROJECT_DIR" --strict
+fi
+
 echo "Package verification passed"

@@ -1,3 +1,12 @@
+import { withinProfileDeadline } from "../transport/deadline.js";
+import {
+  CREDENTIAL_LIMITS,
+  credentialIdentity,
+  type CredentialSourceProfile,
+} from "../../shared/credential-protocol.js";
+import { canonicalJson } from "../domain/identity.js";
+import { profileSaveRequestDigest, validateProfileSave } from "../transport/client.js";
+import { SubTandemError } from "../domain/errors.js";
 import type {
   ActivationReference,
   AuthorityProfile,
@@ -9,6 +18,20 @@ import type { ProfileStateCommitResult, ProfileStateStoreSnapshot } from "../tra
 import type { ProviderProfiles } from "./profiles.js";
 import type { SaveProfileInput } from "./profiles.js";
 import type { ProviderProfileSnapshot } from "./types.js";
+import type { CredentialEnvelope, CredentialOwner } from "../../shared/credential-protocol.js";
+
+export interface ProfileSaveReservation {
+  reservationId: string;
+  owner: CredentialOwner;
+  requestId: string;
+  expiresAtMs: number;
+  commitId: string;
+  expectedStoreRevision: number;
+  expectedProfileRevision: number | null;
+  profile: ProviderProfileSnapshot;
+  profileState: ProfileState;
+  sourceProfile: CredentialSourceProfile | null;
+}
 
 export interface ProfileActivationSetInput {
   senderId: string;
@@ -27,7 +50,17 @@ export interface ProfileActivationCommitInput {
 }
 
 export interface ProfileActivationStore {
-  read(): Promise<ProfileStateStoreSnapshot>;
+  migrate?(
+    commitId: string,
+    profiles?: ProfileState["profiles"],
+  ): Promise<ProfileStateCommitResult>;
+  cleanup?(
+    commitId: string,
+    migrationId: string,
+    preferenceConfirmed: boolean,
+  ): Promise<ProfileStateCommitResult>;
+  read(deadlineMs?: number): Promise<ProfileStateStoreSnapshot>;
+  recover?(commitId: string, expiresAtMs: number): Promise<ProfileStateCommitResult>;
   open(commitId: string): Promise<ProfileStateCommitResult>;
   initialize(
     commitId: string,
@@ -48,10 +81,12 @@ interface ProfileActivationAuthorityOptions {
   credentialConfigured: Record<string, boolean>;
   activation: ActivationReference | null;
   ready?: boolean;
+  fallbackEntered?: boolean;
   stateVersion?: number;
   activationGeneration?: number;
   commit(input: ProfileActivationCommitInput): Promise<ProfileStateCommitResult>;
   createCommitId(): string;
+  recover?(commitId: string): Promise<ProfileStateCommitResult>;
 }
 
 export type ProfileMutationResult =
@@ -106,7 +141,6 @@ function sameProfiles(left: ProfileState["profiles"], right: ProfileState["profi
 function persistentProfiles(profiles: ProviderProfiles): ProfileState["profiles"] {
   return profiles.listLatest().map((profile) => {
     const stored = { ...profile };
-    delete stored.credential;
     delete stored.modelCatalog;
     return stored;
   });
@@ -147,64 +181,108 @@ export async function restoreProfileActivationAuthority(options: {
   profiles: ProviderProfiles;
   store: ProfileActivationStore;
   createCommitId(): string;
-  loadLegacyProfiles?(): ProfileState["profiles"];
+  deadlineMs?: number;
+  loadLegacyProfiles?(required?: boolean): ProfileState["profiles"];
+  clearLegacyPreferences?(): boolean;
 }): Promise<ProfileActivationAuthority> {
-  const create = (
-    snapshot: ProfileStateStoreSnapshot,
-    ready: boolean,
-  ): ProfileActivationAuthority =>
-    new ProfileActivationAuthority({
-      authorityId: options.authorityId,
-      profiles: options.profiles,
-      storeRevision: snapshot.storeRevision,
-      credentialConfigured: snapshot.credentialConfigured,
-      activation: snapshot.profileState?.activation ?? null,
-      ready,
-      commit: (input) =>
-        options.store.commit(input.commitId, input.expectedStoreRevision, input.profileState),
-      createCommitId: options.createCommitId,
-    });
-  try {
-    const current = await options.store.read();
-    if (!current.initialized && options.loadLegacyProfiles)
-      options.profiles.hydrate(options.loadLegacyProfiles());
-    let restored = current.initialized
-      ? await options.store.open(options.createCommitId())
-      : await options.store.initialize(
-          options.createCommitId(),
-          current.storeRevision,
-          persistentProfiles(options.profiles),
-        );
-    if (!restored.profileState) throw new Error("PROFILE_STATE_UNAVAILABLE");
-    const mustClearActivation =
-      restored.invalidActivation === true ||
-      !validRestoredActivation(restored, restored.profileState.activation);
-    if (mustClearActivation && restored.state === "committed") {
-      restored = await options.store.commit(options.createCommitId(), restored.storeRevision, {
-        profiles: restored.profileState.profiles,
-        activation: null,
-      });
+  const load = async (
+    commitId: string,
+    deadlineMs: number,
+    acceptReadable?: (result: ProfileStateCommitResult) => void,
+  ): Promise<ProfileStateCommitResult> => {
+    const bounded = <T>(operation: Promise<T>) => withinProfileDeadline(operation, deadlineMs);
+    let restored: ProfileStateCommitResult;
+    try {
+      const current = await bounded(options.store.read(deadlineMs));
+      if (current.initialized) restored = { state: "committed", ...current };
+      else
+        restored = options.store.recover
+          ? await bounded(options.store.recover(commitId, deadlineMs))
+          : await bounded(options.store.initialize(commitId, current.storeRevision, []));
+    } catch (error) {
+      if (
+        error instanceof SubTandemError &&
+        options.store.migrate &&
+        ["LEGACY_PREFERENCES_REQUIRED", "LEGACY_PROFILE_STATE_REQUIRED"].includes(error.code)
+      ) {
+        const legacy =
+          error.code === "LEGACY_PREFERENCES_REQUIRED"
+            ? options.loadLegacyProfiles?.(true)
+            : undefined;
+        if (error.code === "LEGACY_PREFERENCES_REQUIRED" && legacy === undefined) throw error;
+        restored = await bounded(options.store.migrate(commitId, legacy));
+      } else {
+        if (!options.store.recover || Date.now() >= deadlineMs) throw error;
+        restored = await bounded(options.store.recover(commitId, deadlineMs));
+      }
     }
     if (!restored.profileState) throw new Error("PROFILE_STATE_UNAVAILABLE");
-    options.profiles.hydrate(restored.profileState.profiles);
-    const ready =
-      restored.state === "committed" &&
-      restored.invalidActivation !== true &&
-      validRestoredActivation(restored, restored.profileState.activation);
-    return create(restored, ready);
-  } catch {
-    options.profiles.hydrate([]);
-    return create(
-      {
-        initialized: false,
-        storeRevision: 0,
-        lastCommit: null,
-        profileState: null,
-        credentialConfigured: {},
-      },
-      false,
+    if (
+      restored.invalidActivation === true ||
+      !validRestoredActivation(restored, restored.profileState.activation)
+    ) {
+      const sanitized = { profiles: restored.profileState.profiles, activation: null };
+      const readable = { ...restored, profileState: sanitized };
+      delete readable.invalidActivation;
+      acceptReadable?.(readable);
+      try {
+        restored = await bounded(
+          options.store.commit(options.createCommitId(), restored.storeRevision, sanitized),
+        );
+      } catch {
+        restored = { ...restored, profileState: sanitized };
+        delete restored.invalidActivation;
+      }
+    }
+    acceptReadable?.(restored);
+    return restored;
+  };
+  const deadlineMs = options.deadlineMs ?? Date.now() + 15_000;
+  let restored: ProfileStateCommitResult | null = null;
+  let readable: ProfileStateCommitResult | null = null;
+  try {
+    restored = await withinProfileDeadline(
+      load(options.createCommitId(), deadlineMs, (result) => {
+        readable = result;
+      }),
+      deadlineMs,
+    );
+  } catch (error) {
+    void error;
+    restored = readable;
+  }
+  const ready = restored?.state === "committed" && restored.profileState !== null;
+  options.profiles.hydrate(ready ? restored!.profileState!.profiles : []);
+  const authority = new ProfileActivationAuthority({
+    authorityId: options.authorityId,
+    profiles: options.profiles,
+    storeRevision: ready ? restored!.storeRevision : 0,
+    credentialConfigured: ready ? restored!.credentialConfigured : {},
+    activation: ready ? restored!.profileState!.activation : null,
+    activationGeneration: 0,
+    ready,
+    fallbackEntered: !ready,
+    commit: (input) =>
+      options.store.commit(input.commitId, input.expectedStoreRevision, input.profileState),
+    createCommitId: options.createCommitId,
+    recover: (commitId) => load(commitId, Date.now() + 15_000),
+  });
+  if (ready && restored?.migration?.cleanupState === "pending" && options.store.cleanup) {
+    const migration = restored.migration;
+    const preferenceConfirmed =
+      !migration.pendingClasses.includes("legacy-preferences") ||
+      options.clearLegacyPreferences?.() === true;
+    void authority.maintain(
+      () =>
+        options.store.cleanup!(
+          options.createCommitId(),
+          migration.migrationId,
+          preferenceConfirmed,
+        ),
+      deadlineMs,
     );
   }
+  return authority;
 }
 
 export class ProfileActivationAuthority {
@@ -217,14 +295,22 @@ export class ProfileActivationAuthority {
   private readonly credentialConfigured = new Map<string, boolean>();
   private readonly pendingBySender = new Map<string, string>();
   private readonly requests = new Map<string, Promise<ProfileActivationResult>>();
+  private readonly reservations = new Map<
+    string,
+    { reservation: ProfileSaveReservation; input: string }
+  >();
   private tail: Promise<void> = Promise.resolve();
   private storeRevision: number;
   private stateVersion: number;
   private activationGeneration: number;
   private activation: ActivationReference | null;
   private ready: boolean;
+  private readonly fallbackEntered: boolean;
+  private recoveryGeneration = 0;
   private committing = false;
   private reconciling = false;
+  private recoveryCommitId: string | null = null;
+  private readonly recover: ((commitId: string) => Promise<ProfileStateCommitResult>) | undefined;
 
   constructor(options: ProfileActivationAuthorityOptions) {
     this.authorityId = options.authorityId;
@@ -233,11 +319,13 @@ export class ProfileActivationAuthority {
     this.credentialConfigured = new Map(Object.entries(options.credentialConfigured));
     this.activation = options.activation ? { ...options.activation } : null;
     this.ready = options.ready ?? true;
+    this.fallbackEntered = options.fallbackEntered ?? !this.ready;
     this.stateVersion = options.stateVersion ?? 0;
     this.activationGeneration =
       options.activationGeneration ?? (options.activation === null ? 0 : 1);
     this.commit = options.commit;
     this.createCommitId = options.createCommitId;
+    this.recover = options.recover;
   }
 
   get snapshot(): AuthoritySnapshot {
@@ -246,10 +334,14 @@ export class ProfileActivationAuthority {
       stateVersion: this.stateVersion,
       ready: this.ready,
       activationGeneration: this.activationGeneration,
-      activation: this.activation ? { ...this.activation } : null,
+      activation:
+        this.fallbackEntered && this.activationGeneration === 0
+          ? null
+          : this.activation
+            ? { ...this.activation }
+            : null,
       profiles: this.profiles.listLatest().map((profile): AuthorityProfile => {
         const safe = { ...profile };
-        delete safe.credential;
         delete safe.modelCatalog;
         return {
           ...safe,
@@ -269,7 +361,7 @@ export class ProfileActivationAuthority {
   }
 
   get acceptsTranslations(): boolean {
-    return this.ready && !this.committing && !this.reconciling && this.activation !== null;
+    return this.ready && !this.committing && !this.reconciling && this.snapshot.activation !== null;
   }
 
   isAuthorized(input: {
@@ -318,23 +410,241 @@ export class ProfileActivationAuthority {
     return result;
   }
 
-  saveProfile(input: SaveProfileInput): Promise<ProfileMutationResult> {
-    return this.enqueueMutation(async () => {
+  reserveProfileSave(
+    input: SaveProfileInput,
+    owner: CredentialOwner,
+    requestId: string,
+  ): Promise<ProfileSaveReservation> {
+    const operation = this.tail.then(async () => {
+      if (!this.ready || this.reconciling) await this.verifyBase();
+      if (
+        !this.ready ||
+        this.reconciling ||
+        !credentialIdentity(requestId) ||
+        ![owner.senderId, owner.sidebarInstanceId, owner.drawerId].every(credentialIdentity)
+      )
+        throw new Error("PROFILE_SAVE_UNAVAILABLE");
+      const now = Date.now();
+      const inputBytes = canonicalJson(input);
+      for (const [id, entry] of this.reservations) {
+        if (entry.reservation.expiresAtMs <= now) {
+          this.reservations.delete(id);
+          continue;
+        }
+        if (canonicalJson(entry.reservation.owner) !== canonicalJson(owner)) continue;
+        if (entry.reservation.requestId === requestId) {
+          if (entry.input !== inputBytes) throw new Error("PROFILE_SAVE_CONFLICT");
+          return JSON.parse(JSON.stringify(entry.reservation)) as ProfileSaveReservation;
+        }
+        this.reservations.delete(id);
+      }
+      if (this.reservations.size >= 64) throw new Error("PROFILE_SAVE_UNAVAILABLE");
       const candidate = this.profiles.createSaveCandidate(input);
-      const nextProfiles = persistentProfiles(this.profiles);
-      const index = nextProfiles.findIndex((profile) => profile.profileId === candidate.profileId);
-      if (index === -1) nextProfiles.unshift(candidate);
-      else nextProfiles[index] = candidate;
-      const nextActivation =
-        this.activation?.profileId === candidate.profileId ? null : this.activation;
-      const result = await this.commitState({ profiles: nextProfiles, activation: nextActivation });
-      if (result !== "changed") return { outcome: result, authority: this.snapshot };
-      return {
-        outcome: "changed",
-        authority: this.snapshot,
-        profile: this.profiles.get(candidate.profileId, candidate.revision)!,
+      const previous = this.profiles.get(candidate.profileId);
+      const profiles = persistentProfiles(this.profiles);
+      const index = profiles.findIndex((profile) => profile.profileId === candidate.profileId);
+      if (index === -1) profiles.unshift(candidate);
+      else profiles[index] = candidate;
+      const reservation: ProfileSaveReservation = {
+        reservationId: this.createCommitId(),
+        owner: { ...owner },
+        requestId,
+        expiresAtMs: now + Math.min(60_000, CREDENTIAL_LIMITS.idleMs),
+        commitId: this.createCommitId(),
+        expectedStoreRevision: this.storeRevision,
+        expectedProfileRevision: previous?.revision ?? null,
+        profile: { ...candidate },
+        profileState: {
+          profiles,
+          activation:
+            this.activation?.profileId === candidate.profileId
+              ? null
+              : this.activation
+                ? { ...this.activation }
+                : null,
+        },
+        sourceProfile: previous
+          ? {
+              profileId: previous.profileId,
+              profileRevision: previous.revision,
+              endpointFingerprint: previous.endpointFingerprint,
+            }
+          : null,
       };
+      this.reservations.set(reservation.reservationId, { reservation, input: inputBytes });
+      return JSON.parse(JSON.stringify(reservation)) as ProfileSaveReservation;
     });
+    this.tail = operation.then(
+      () => undefined,
+      () => undefined,
+    );
+    return operation;
+  }
+
+  completeProfileSave(
+    reservationId: string,
+    owner: CredentialOwner,
+    frame: CredentialEnvelope,
+    save: (owner: CredentialOwner, frame: CredentialEnvelope) => Promise<ProfileStateCommitResult>,
+  ): Promise<ProfileMutationResult> {
+    return this.enqueueMutation(async () => {
+      const reservation = this.reservations.get(reservationId)?.reservation;
+      if (!reservation || canonicalJson(reservation.owner) !== canonicalJson(owner))
+        return { outcome: "failed", authority: this.snapshot };
+      this.reservations.delete(reservationId);
+      try {
+        const snapshot = validateProfileSave(owner, frame);
+        if (
+          reservation.expiresAtMs <= Date.now() ||
+          this.storeRevision !== reservation.expectedStoreRevision ||
+          frame.context.requestId !== reservation.requestId ||
+          frame.context.expiresAtMs > reservation.expiresAtMs ||
+          frame.context.expiresAtMs <= Date.now() ||
+          frame.context.kind !== reservation.profile.kind ||
+          frame.context.endpointFingerprint !== reservation.profile.endpointFingerprint ||
+          snapshot.endpoint !== reservation.profile.endpoint ||
+          snapshot.model !== reservation.profile.model ||
+          snapshot.proxyMode !== reservation.profile.proxyMode ||
+          canonicalJson(snapshot.sourceProfile) !== canonicalJson(reservation.sourceProfile) ||
+          canonicalJson(snapshot.save) !==
+            canonicalJson({
+              commitId: reservation.commitId,
+              expectedStoreRevision: reservation.expectedStoreRevision,
+              expectedProfileRevision: reservation.expectedProfileRevision,
+              profileState: reservation.profileState,
+            })
+        )
+          return { outcome: "failed", authority: this.snapshot };
+      } catch {
+        return { outcome: "failed", authority: this.snapshot };
+      }
+      const previousActivation = this.activation ? { ...this.activation } : null;
+      this.beginCommit();
+      try {
+        const result = await save(owner, frame);
+        if (
+          result.state === "reconciling" ||
+          !this.matchesState(result, reservation.profileState) ||
+          result.lastCommit?.commitId !== reservation.commitId ||
+          result.lastCommit.operation !== "save-profile" ||
+          result.lastCommit.baseRevision !== reservation.expectedStoreRevision ||
+          result.lastCommit.requestDigest !== profileSaveRequestDigest(owner, frame)
+        ) {
+          this.enterReconciliation(previousActivation);
+          return { outcome: "pending", authority: this.snapshot };
+        }
+        this.applyCommitted(result);
+        if (!sameActivation(previousActivation, this.activation)) this.activationGeneration += 1;
+        this.finishCommit();
+        return {
+          outcome: "changed",
+          authority: this.snapshot,
+          profile: this.profiles.get(reservation.profile.profileId, reservation.profile.revision)!,
+        };
+      } catch (error) {
+        if (
+          error instanceof SubTandemError &&
+          [
+            "PROFILE_STATE_CONFLICT",
+            "INVALID_PROFILE_STATE",
+            "CREDENTIAL_HARDWARE_UNAVAILABLE",
+            "CREDENTIAL_OPERATION_REJECTED",
+          ].includes(error.code)
+        ) {
+          this.failCommit(previousActivation);
+          return { outcome: "failed", authority: this.snapshot };
+        }
+        this.enterReconciliation(previousActivation);
+        return { outcome: "pending", authority: this.snapshot };
+      } finally {
+        this.committing = false;
+      }
+    });
+  }
+
+  private async verifyBase(): Promise<boolean> {
+    if ((this.ready && !this.reconciling) || !this.recover) return false;
+    this.recoveryCommitId ??= this.createCommitId();
+    const generation = ++this.recoveryGeneration;
+    const version = this.stateVersion;
+    const wasReconciling = this.reconciling;
+    const previous = this.activation;
+    try {
+      const result = await withinProfileDeadline(
+        this.recover(this.recoveryCommitId),
+        Date.now() + 15_000,
+      );
+      if (
+        generation !== this.recoveryGeneration ||
+        version !== this.stateVersion ||
+        result.state !== "committed" ||
+        !result.initialized ||
+        !result.profileState ||
+        result.storeRevision < this.storeRevision ||
+        result.invalidActivation === true ||
+        !validRestoredActivation(result, result.profileState.activation)
+      )
+        return false;
+      this.applyCommitted(result);
+      if (wasReconciling && !sameActivation(previous, this.activation))
+        this.activationGeneration += 1;
+      this.reservations.clear();
+      this.requests.clear();
+      this.reconciling = false;
+      this.recoveryCommitId = null;
+      this.finishCommit();
+      return true;
+    } catch {
+      return false;
+    } finally {
+      if (this.recoveryGeneration === generation) this.recoveryGeneration += 1;
+    }
+  }
+
+  maintain(operation: () => Promise<ProfileStateCommitResult>, deadlineMs: number): Promise<void> {
+    const maintenance = this.tail.then(async () => {
+      const version = this.stateVersion;
+      try {
+        if (!this.ready || Date.now() >= deadlineMs) return;
+        const result = await withinProfileDeadline(operation(), deadlineMs);
+        if (
+          this.stateVersion !== version ||
+          result.state !== "committed" ||
+          !result.initialized ||
+          !result.profileState ||
+          result.storeRevision < this.storeRevision ||
+          result.invalidActivation === true ||
+          !sameProfiles(result.profileState.profiles, persistentProfiles(this.profiles)) ||
+          !sameActivation(result.profileState.activation, this.activation)
+        )
+          return;
+        this.applyCommitted(result);
+        this.finishCommit();
+      } catch (error) {
+        void error;
+      }
+    });
+    this.tail = maintenance;
+    return maintenance;
+  }
+
+  reconcile(): Promise<boolean> {
+    const operation = this.tail.then(() => this.verifyBase());
+    this.tail = operation.then(
+      () => undefined,
+      () => undefined,
+    );
+    return operation;
+  }
+
+  cancelProfileSave(owner: CredentialOwner, reservationId?: string): void {
+    for (const [id, entry] of this.reservations) {
+      if (
+        (reservationId === undefined || reservationId === id) &&
+        canonicalJson(entry.reservation.owner) === canonicalJson(owner)
+      )
+        this.reservations.delete(id);
+    }
   }
 
   deleteProfile(profileId: string, expectedRevision: number): Promise<ProfileMutationResult> {
@@ -347,47 +657,6 @@ export class ProfileActivationAuthority {
       const nextActivation = this.activation?.profileId === profileId ? null : this.activation;
       const result = await this.commitState({ profiles: nextProfiles, activation: nextActivation });
       return { outcome: result, authority: this.snapshot };
-    });
-  }
-
-  writeCredential(
-    profileId: string,
-    expectedRevision: number,
-    write: (
-      commitId: string,
-      expectedStoreRevision: number,
-      expectedProfileRevision: number,
-    ) => Promise<ProfileStateCommitResult>,
-  ): Promise<ProfileMutationResult> {
-    return this.enqueueMutation(async () => {
-      if (!this.profiles.get(profileId, expectedRevision))
-        return { outcome: "failed", authority: this.snapshot };
-      const activeCredentialChanged = this.activation?.profileId === profileId;
-      const confirmedActivation = this.activation ? { ...this.activation } : null;
-      this.beginCommit();
-      try {
-        const result = await write(this.createCommitId(), this.storeRevision, expectedRevision);
-        if (result.state === "reconciling" || !result.profileState) {
-          this.enterReconciliation(confirmedActivation);
-          return { outcome: "pending", authority: this.snapshot };
-        }
-        if (
-          result.storeRevision !== this.storeRevision + 1 ||
-          !sameProfiles(result.profileState.profiles, persistentProfiles(this.profiles))
-        ) {
-          this.enterReconciliation(confirmedActivation);
-          return { outcome: "pending", authority: this.snapshot };
-        }
-        this.applyCommitted(result);
-        if (activeCredentialChanged) this.activationGeneration += 1;
-        this.finishCommit();
-        return { outcome: "changed", authority: this.snapshot };
-      } catch {
-        this.failCommit(confirmedActivation);
-        return { outcome: "failed", authority: this.snapshot };
-      } finally {
-        this.committing = false;
-      }
     });
   }
 
@@ -493,7 +762,10 @@ export class ProfileActivationAuthority {
         return { requestId: input.requestId, outcome: "unchanged", authority: this.snapshot };
       candidate = null;
     }
-    if (sameActivation(this.activation, candidate))
+    if (
+      !(this.fallbackEntered && this.activationGeneration === 0) &&
+      sameActivation(this.activation, candidate)
+    )
       return { requestId: input.requestId, outcome: "unchanged", authority: this.snapshot };
     const confirmedActivation = this.activation ? { ...this.activation } : null;
     this.beginCommit();

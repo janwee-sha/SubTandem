@@ -70,7 +70,6 @@ const saveProfileButton = document.querySelector<HTMLButtonElement>("#save-profi
 const newProfileButton = document.querySelector<HTMLButtonElement>("#new-profile")!;
 const profilesElement = document.querySelector<HTMLElement>("#profiles")!;
 const requestUrl = document.querySelector<HTMLElement>("#request-url")!;
-const credentialState = document.querySelector<HTMLElement>("#credential-state")!;
 const translationPosition = document.querySelector<HTMLInputElement>("#translation-position")!;
 const translationPositionValue = document.querySelector<HTMLOutputElement>(
   "#translation-position-value",
@@ -222,9 +221,6 @@ const profiles = new Map<string, ProfileView>();
 const sidebarState = window.createSubTandemSidebarState();
 const profileCardInteractions = new ProfileCardInteractionCoordinator();
 const profileDeleteDialogInteractions = new ProfileDeleteDialogInteractionCoordinator();
-const profileUpdatedSelectionMessage = "Profile updated. Enable it when you are ready.";
-const profileCredentialPartialFailureMessage =
-  "Profile saved, but the credential was not saved. Review the credential status and retry the profile update.";
 const profileRows = new Map<string, HTMLElement>();
 let newProfileRow: HTMLElement | null = null;
 const pendingOperations = new Set<string>();
@@ -240,11 +236,128 @@ let activeProviderKind: ProviderKind = "openai";
 let editingProfile: ProfileView | null = null;
 let pendingProfileSave: {
   requestId: string;
-  secret: string | null;
   contextSignature: string;
   profileId: string | null;
   revision: number | null;
 } | null = null;
+const toggleProviderKey = document.querySelector<HTMLButtonElement>("#toggle-provider-key")!;
+function renderCredentialVisibility(): void {
+  const masked = sidebarState.snapshot.drawer.masked;
+  providerKey.type = masked ? "password" : "text";
+  toggleProviderKey.disabled = providerKey.value.length === 0;
+  toggleProviderKey.setAttribute("aria-label", masked ? "Show API key" : "Hide API key");
+  toggleProviderKey.setAttribute("aria-pressed", String(!masked));
+}
+toggleProviderKey.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+});
+toggleProviderKey.addEventListener("click", () => {
+  if (toggleProviderKey.disabled) return;
+  const start = providerKey.selectionStart,
+    end = providerKey.selectionEnd,
+    direction = providerKey.selectionDirection;
+  const scrollLeft = providerKey.scrollLeft;
+  sidebarState.setDrawerMasked(!sidebarState.snapshot.drawer.masked);
+  renderCredentialVisibility();
+  if (start !== null && end !== null)
+    providerKey.setSelectionRange(start, end, direction ?? "none");
+  providerKey.scrollLeft = scrollLeft;
+});
+function clearCredentialInput(): void {
+  providerKey.value = "";
+  sidebarState.setDrawerMasked(true);
+  renderCredentialVisibility();
+}
+async function readEditorCredential(): Promise<void> {
+  const frozen = JSON.parse(
+    JSON.stringify(sidebarState.snapshot.drawer),
+  ) as SidebarProfileDrawerState;
+  const load = sidebarState.snapshot.credentialLoad;
+  if (!load || !frozen.drawerId || !frozen.sourceProfile || !editingProfile) return;
+  const input = {
+    kind: editingProfile.kind,
+    endpoint: editingProfile.endpoint,
+    model: editingProfile.model ?? null,
+    proxyMode: editingProfile.proxyMode,
+    purpose: "read-edit" as const,
+    sourceProfile: frozen.sourceProfile,
+    save: null,
+  };
+  try {
+    const editor = currentCredentialEditor();
+    await editor.open(frozen.drawerId, frozen.sourceProfile, load.deadlineMs);
+    if (
+      sidebarState.snapshot.credentialLoad?.loadId !== load.loadId ||
+      Date.now() >= load.deadlineMs
+    )
+      return;
+    if (!editor.channelId) return;
+    const owner = sidebarState.beginCredentialRead(editor.channelId, frozen);
+    if (!owner) return;
+    let value = await editor.read(input, { ...frozen, drawerId: frozen.drawerId }, load.deadlineMs);
+    if (sidebarState.acceptCredentialRead(owner, editor.channelId)) {
+      providerKey.value = value;
+      renderCredentialVisibility();
+    }
+    value = "";
+  } catch {
+    return;
+  } finally {
+    finishEditorCredentialLoad(load.loadId);
+  }
+}
+
+let credentialLoadTimer: {
+  loadId: string;
+  timer: ReturnType<typeof setTimeout>;
+  drawerId: string;
+} | null = null;
+
+function finishEditorCredentialLoad(loadId: string): void {
+  if (!sidebarState.finishCredentialLoad(loadId)) return;
+  if (credentialLoadTimer?.loadId === loadId) clearTimeout(credentialLoadTimer.timer);
+  credentialLoadTimer = null;
+  renderDrawerAvailability();
+  flushAutomaticModelRefresh();
+}
+
+function cancelEditorCredentialLoad(): void {
+  const pending = credentialLoadTimer;
+  credentialLoadTimer = null;
+  if (pending) clearTimeout(pending.timer);
+  sidebarState.cancelCredentialLoad();
+  if (endpointRefreshTimer !== null) clearTimeout(endpointRefreshTimer);
+  endpointRefreshTimer = null;
+  credentialEditor?.close();
+}
+
+function startEditorCredentialLoad(): void {
+  const load = sidebarState.snapshot.credentialLoad;
+  renderDrawerAvailability();
+  if (!load) return;
+  credentialLoadTimer = {
+    loadId: load.loadId,
+    drawerId: load.drawerId,
+    timer: setTimeout(
+      () => {
+        if (sidebarState.snapshot.credentialLoad?.loadId !== load.loadId) return;
+        credentialEditor?.close(load.drawerId);
+        finishEditorCredentialLoad(load.loadId);
+      },
+      Math.max(0, load.deadlineMs - Date.now()),
+    ),
+  };
+}
+
+let credentialEditor: ReturnType<Window["subtandemCredentialEditor"]["create"]> | null = null;
+function currentCredentialEditor() {
+  if (!credentialEditor) {
+    if (!window.iina || !window.subtandemCredentialEditor)
+      throw new Error("CREDENTIAL_CHANNEL_UNAVAILABLE");
+    credentialEditor = window.subtandemCredentialEditor.create(window.iina);
+  }
+  return credentialEditor;
+}
 let renderedAssistiveFeedbackSignature = "";
 let requestSequence = 0;
 let renderedProfilesSignature = "";
@@ -257,6 +370,13 @@ let renderedLanguageCatalogSignature = "";
 let subtitleRetryAvailable = false;
 let subtitleDetailsVisible = false;
 let endpointRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+const drawerTestTimeoutMs = 10_000;
+let drawerRuntimeTick: ReturnType<typeof setInterval> | null = null;
+let pendingDrawerTestDeadline: {
+  requestId: string;
+  expiresAtMs: number;
+  timer: ReturnType<typeof setTimeout>;
+} | null = null;
 let draftCredentialEpoch = 1;
 let pendingModelRefresh: {
   requestId: string;
@@ -564,7 +684,10 @@ function setActionBusy(
   control.disabled = busy;
   if (busy) control.setAttribute("aria-busy", "true");
   else control.removeAttribute("aria-busy");
-  if (actionId === "test") return;
+  if (actionId === "test") {
+    renderDrawerAvailability();
+    return;
+  }
   if (control instanceof HTMLButtonElement) {
     const label = control.querySelector<HTMLElement>(".profile-action-label");
     if (label) label.textContent = busy ? busyLabel : idleLabelForAction(actionId);
@@ -728,6 +851,7 @@ function cancelPendingProfileSaveForContextChange(): void {
   if (!pendingProfileSave) return;
   const requestId = pendingProfileSave.requestId;
   pendingProfileSave = null;
+  credentialEditor?.close();
   sidebarState.cancelProfileSave(requestId);
   finishOperation(
     requestId,
@@ -736,7 +860,37 @@ function cancelPendingProfileSaveForContextChange(): void {
   );
 }
 
+function clearDrawerTestDeadline(): void {
+  if (pendingDrawerTestDeadline) clearTimeout(pendingDrawerTestDeadline.timer);
+  pendingDrawerTestDeadline = null;
+}
+
+function expireDrawerTest(): void {
+  const pending = pendingDrawerTestDeadline;
+  if (!pending || Date.now() < pending.expiresAtMs) return;
+  clearDrawerTestDeadline();
+  const current = sidebarState.snapshot.drawer.test;
+  if (!current || current.requestId !== pending.requestId || current.phase !== "testing") return;
+  const message = window.subtandemProviderTestStatusMessage({ category: "timeout" });
+  if (
+    !sidebarState.finishDrawerTest(
+      current.requestId,
+      false,
+      message,
+      current.drawerId,
+      current.draftRevision,
+    )
+  )
+    return;
+  setActionBusy("test", undefined, false);
+  profileTestStatus.dataset.state = "error";
+  profileTestStatus.textContent = message;
+  credentialEditor?.close();
+  window.iina?.postMessage("provider:test-cancel", envelope({ testRequestId: current.requestId }));
+}
+
 function clearDrawerTestFeedback(): void {
+  clearDrawerTestDeadline();
   setActionBusy("test", undefined, false);
   delete profileTestStatus.dataset.state;
   profileTestStatus.textContent = "";
@@ -770,13 +924,15 @@ function reconcileDrawerAfterAuthority(previousTest: SidebarDrawerTestState | nu
     clearDrawerTestFeedback();
   }
   if (drawer.validity === "conflict") {
+    cancelEditorCredentialLoad();
     invalidatePendingModelRefresh();
-    providerKey.value = "";
+    clearCredentialInput();
     draftCredentialEpoch += 1;
   }
   if (drawer.mode === "closed") {
+    cancelEditorCredentialLoad();
     editingProfile = null;
-    providerKey.value = "";
+    clearCredentialInput();
     sidebarState.setProfileContext({ credentialDisplayProfileId: null });
   }
   renderDrawerAvailability();
@@ -818,7 +974,33 @@ function modelRefreshPayload(trigger: "open" | "endpoint" | "profile" | "credent
   };
 }
 
+function flushAutomaticModelRefresh(): void {
+  const intent = sidebarState.snapshot.pendingAutomaticRefresh;
+  if (!intent || sidebarState.snapshot.credentialLoad) return;
+  if (endpointRefreshTimer !== null) clearTimeout(endpointRefreshTimer);
+  endpointRefreshTimer = null;
+  if (Date.now() < intent.notBeforeMs) {
+    endpointRefreshTimer = setTimeout(flushAutomaticModelRefresh, intent.notBeforeMs - Date.now());
+    return;
+  }
+  sidebarState.snapshot.pendingAutomaticRefresh = null;
+  requestModels(intent.trigger);
+}
+
 function requestModels(trigger: "open" | "endpoint" | "profile" | "credential" | "manual"): void {
+  const drawer = sidebarState.snapshot.drawer;
+  if (drawer.mode === "closed") return;
+  if (sidebarState.snapshot.credentialLoad) {
+    if (trigger !== "manual") sidebarState.queueAutomaticRefresh(trigger);
+    return;
+  }
+  if (trigger !== "manual" && sidebarState.snapshot.pendingAutomaticRefresh) {
+    sidebarState.queueAutomaticRefresh(trigger);
+    flushAutomaticModelRefresh();
+    return;
+  }
+  if (drawer.savePhase || drawer.deletePhase === "deleting" || drawer.test?.phase === "testing")
+    return;
   if (!validModelEndpoint() || sidebarState.snapshot.drawer.validity !== "current") return;
   const contextSignature = modelContextKey();
   if (
@@ -831,7 +1013,7 @@ function requestModels(trigger: "open" | "endpoint" | "profile" | "credential" |
   invalidatePendingModelRefresh();
   const requestId = nextRequestId();
   const enteredApiKey = providerKey.value;
-  const usesDraftCredential = trigger === "manual" && Boolean(enteredApiKey.trim());
+  const usesDraftCredential = trigger === "manual";
   const matchesSaved = canUseSavedDraftCredential();
   pendingModelRefresh = {
     requestId,
@@ -849,26 +1031,54 @@ function requestModels(trigger: "open" | "endpoint" | "profile" | "credential" |
   };
   setModelRefreshFeedback("busy");
   if (usesDraftCredential) {
-    window.iina?.postMessage(
-      "provider:models-preview",
-      envelope(
-        {
-          trigger: "manual",
-          kind: providerKind.value,
-          endpoint: providerEndpoint.value.trim(),
-          proxyMode: providerProxyMode.value,
-          draftCredentialEpoch,
-          credential: { apiKey: enteredApiKey },
-          ...(sidebarState.snapshot.drawer.sourceProfile
-            ? { sourceProfile: sidebarState.snapshot.drawer.sourceProfile }
-            : {}),
-        },
-        requestId,
-      ),
-    );
+    void sealDrawerOperation(enteredApiKey, "draft-models", requestId)
+      .then((operation) => {
+        if (pendingModelRefresh?.requestId !== requestId || contextSignature !== modelContextKey())
+          return;
+        window.iina?.postMessage("provider:draft-models", envelope(operation, requestId));
+      })
+      .catch(() => {
+        if (pendingModelRefresh?.requestId !== requestId) return;
+        pendingModelRefresh = null;
+        setModelRefreshFeedback("error", "Model refresh failed. Try again.");
+      });
     return;
   }
   window.iina?.postMessage("provider:models", envelope(modelRefreshPayload(trigger), requestId));
+}
+
+function sealDrawerOperation(
+  value: string,
+  purpose: "draft-test" | "draft-models",
+  requestId: string,
+  expiresAtMs = Date.now() + 10_000,
+) {
+  const drawer = sidebarState.snapshot.drawer;
+  if (!drawer.drawerId) return Promise.reject(new Error("CREDENTIAL_CHANNEL_UNAVAILABLE"));
+  return currentCredentialEditor().sealOperation(
+    value,
+    {
+      kind: providerKind.value as ProviderKind,
+      endpoint: normalizeProviderEndpoint(
+        providerKind.value as ProviderKind,
+        providerEndpoint.value,
+      ),
+      model: sidebarState.snapshot.modelControl.value.trim() || null,
+      proxyMode: providerProxyMode.value === "direct" ? "direct" : "system",
+      purpose,
+      sourceProfile: drawer.sourceProfile,
+      save: null,
+    },
+    {
+      drawerId: drawer.drawerId,
+      sourceProfile: drawer.sourceProfile,
+      draftRevision: drawer.draftRevision,
+      keyEditEpoch: drawer.keyEditEpoch,
+      submitEpoch: drawer.submitEpoch,
+    },
+    requestId,
+    expiresAtMs,
+  );
 }
 
 function invalidatePendingModelRefresh(): void {
@@ -888,11 +1098,9 @@ function scheduleEndpointModelRefresh(): void {
     invalidatePendingModelRefresh();
   }
   setModelContext(sidebarState.snapshot.modelControl.value);
+  sidebarState.queueAutomaticRefresh("endpoint", Date.now() + 400);
   if (!validModelEndpoint()) return;
-  endpointRefreshTimer = setTimeout(() => {
-    endpointRefreshTimer = null;
-    requestModels("endpoint");
-  }, 400);
+  endpointRefreshTimer = setTimeout(flushAutomaticModelRefresh, 400);
 }
 
 function renderModelControl(): void {
@@ -957,21 +1165,21 @@ function applyProviderKind(): void {
   document.querySelector<HTMLElement>("#model-hint")!.textContent = providerUi[kind].modelHint;
   providerModel.placeholder = providerUi[kind].modelPlaceholder;
   document.querySelector<HTMLElement>("#credential-hint")!.textContent =
-    editingProfile?.kind === kind && editingProfile.credentialConfigured
-      ? "Write-only. Leave blank to keep the saved API key."
-      : "Write-only; optional when unauthenticated. Enter a key if the service requires one.";
+    "Enter an API key if the service requires one.";
   setModelContext(providerDrafts[kind].model);
   updateRequestUrl();
 }
 
 providerKind.addEventListener("change", () => {
+  cancelEditorCredentialLoad();
   invalidateDrawerTestField();
   cancelPendingProfileSaveForContextChange();
   invalidatePendingModelRefresh();
   saveActiveDraft();
   draftCredentialEpoch += 1;
-  providerKey.value = "";
+  clearCredentialInput();
   applyProviderKind();
+  renderDrawerAvailability();
   requestModels("profile");
 });
 providerEndpoint.addEventListener("input", () => {
@@ -1003,6 +1211,7 @@ providerKey.addEventListener("input", () => {
   cancelPendingProfileSaveForContextChange();
   invalidatePendingModelRefresh();
   draftCredentialEpoch += 1;
+  renderCredentialVisibility();
   setModelContext(sidebarState.snapshot.modelControl.value);
   setModelRefreshFeedback("idle");
 });
@@ -1039,10 +1248,11 @@ function clearProfileDrawer(focus = true): void {
   cancelActiveDrawerTest();
   cancelPendingProfileSaveForContextChange();
   invalidatePendingModelRefresh();
+  cancelEditorCredentialLoad();
   const target = sidebarState.closeProfileDrawer();
   editingProfile = null;
   draftCredentialEpoch += 1;
-  providerKey.value = "";
+  clearCredentialInput();
   profileTestStatus.textContent = "";
   sidebarState.setProfileContext({ credentialDisplayProfileId: null });
   profileDrawer.hidden = true;
@@ -1080,13 +1290,14 @@ function loadEditor(profile: ProfileView, preservePendingSave = false): void {
     cancelActiveDrawerTest();
     cancelPendingProfileSaveForContextChange();
     invalidatePendingModelRefresh();
+    cancelEditorCredentialLoad();
   }
   const activation = preservePendingSave
     ? { changed: false, closed: false }
     : sidebarState.openProfileDrawer(profile.profileId);
   if (activation.closed) {
     editingProfile = null;
-    providerKey.value = "";
+    clearCredentialInput();
     mountProfileDrawer();
     profileRows.get(profile.profileId)?.querySelector<HTMLElement>(".profile-disclosure")?.focus();
     return;
@@ -1097,10 +1308,11 @@ function loadEditor(profile: ProfileView, preservePendingSave = false): void {
     !preservePendingSave
   )
     return;
+  credentialEditor?.close();
   resetProviderDrafts();
   editingProfile = profile;
   draftCredentialEpoch += 1;
-  providerKey.value = "";
+  clearCredentialInput();
   sidebarState.setProfileContext({ credentialDisplayProfileId: profile.profileId });
   providerKind.value = profile.kind;
   sidebarState.loadProfileName(profile.displayName, selectedServiceTypeLabel());
@@ -1113,13 +1325,13 @@ function loadEditor(profile: ProfileView, preservePendingSave = false): void {
   };
   applyProviderKind();
   setModelContext(profile.model ?? "", profile.modelCatalog);
-  providerKey.placeholder = profile.credentialConfigured
-    ? "Leave blank to keep saved key"
-    : "Not shown after saving";
+  providerKey.placeholder = "Optional";
   deleteProfileButton.hidden = false;
   saveProfileButton.textContent = "Save";
   mountProfileDrawer();
-  if (!preservePendingSave) requestModels("profile");
+  startEditorCredentialLoad();
+  requestModels("open");
+  if (!preservePendingSave) void readEditorCredential();
 }
 
 function openNewProfile(): void {
@@ -1133,17 +1345,19 @@ function openNewProfile(): void {
   cancelActiveDrawerTest();
   cancelPendingProfileSaveForContextChange();
   invalidatePendingModelRefresh();
+  cancelEditorCredentialLoad();
   sidebarState.openNewProfileDrawer();
+  credentialEditor?.close();
   resetProviderDrafts();
   editingProfile = null;
   draftCredentialEpoch += 1;
-  providerKey.value = "";
+  clearCredentialInput();
   providerKind.value = "openai";
   activeProviderKind = "openai";
   sidebarState.setProfileContext({ credentialDisplayProfileId: null });
   sidebarState.resetProfileName("OpenAI");
   profileName.value = sidebarState.snapshot.profileName.value;
-  providerKey.placeholder = "Not shown after saving";
+  providerKey.placeholder = "Optional";
   deleteProfileButton.hidden = true;
   saveProfileButton.textContent = "Save";
   applyProviderKind();
@@ -1178,7 +1392,7 @@ function finishSuccessfulProfileSave(profile: ProfileView): void {
   const created = !profiles.has(profile.profileId);
   profiles.set(profile.profileId, profile);
   editingProfile = null;
-  providerKey.value = "";
+  clearCredentialInput();
   setProfileSaveLocked(false);
   renderProfiles(
     created
@@ -1350,6 +1564,8 @@ retrySubtitleButton.addEventListener("click", () => {
 });
 
 testProfileButton.addEventListener("click", () => {
+  renderDrawerAvailability();
+  if (testProfileButton.disabled) return;
   const drawer = sidebarState.snapshot.drawer;
   if (drawer.mode === "closed" || drawer.validity !== "current") return;
   if (!validModelEndpoint()) {
@@ -1368,36 +1584,52 @@ testProfileButton.addEventListener("click", () => {
     return;
   }
   const enteredApiKey = providerKey.value.trim();
-  const credential = enteredApiKey
-    ? { source: "entered" as const, apiKey: enteredApiKey }
-    : canUseSavedDraftCredential()
-      ? { source: "saved" as const }
-      : { source: "none" as const };
   const requestId = nextRequestId();
   const started = sidebarState.beginDrawerTest(requestId);
   if (!started) return;
+  clearDrawerTestDeadline();
+  const expiresAtMs = Date.now() + drawerTestTimeoutMs;
+  pendingDrawerTestDeadline = {
+    requestId,
+    expiresAtMs,
+    timer: setTimeout(expireDrawerTest, drawerTestTimeoutMs),
+  };
   profileTestStatus.dataset.state = "busy";
   profileTestStatus.textContent = "Testing…";
   setActionBusy("test", undefined, true);
-  window.iina?.postMessage(
-    "provider:test",
-    envelope(
-      {
-        drawerId: started.drawerId,
-        draftRevision: started.draftRevision,
-        kind: providerKind.value,
-        endpoint: providerEndpoint.value.trim(),
-        proxyMode: providerProxyMode.value,
-        model,
-        ...(drawer.sourceProfile ? { sourceProfile: drawer.sourceProfile } : {}),
-        credential,
-      },
-      requestId,
-    ),
-  );
+  void sealDrawerOperation(enteredApiKey, "draft-test", requestId, expiresAtMs)
+    .then((operation) => {
+      if (
+        sidebarState.snapshot.drawer.test?.requestId !== requestId ||
+        sidebarState.snapshot.drawer.test.phase !== "testing" ||
+        sidebarState.snapshot.drawer.draftRevision !== started.draftRevision
+      )
+        return;
+      window.iina?.postMessage("provider:draft-test", envelope(operation, requestId));
+    })
+    .catch(() => {
+      if (
+        sidebarState.snapshot.drawer.test?.requestId !== requestId ||
+        sidebarState.snapshot.drawer.test.phase !== "testing"
+      )
+        return;
+      sidebarState.finishDrawerTest(
+        requestId,
+        false,
+        "Test failed. Try again.",
+        started.drawerId,
+        started.draftRevision,
+      );
+      clearDrawerTestFeedback();
+      profileTestStatus.dataset.state = "error";
+      profileTestStatus.textContent = "Test failed. Try again.";
+    });
 });
 
-saveProfileButton.addEventListener("click", () => {
+saveProfileButton.addEventListener("click", async () => {
+  renderDrawerAvailability();
+  if (saveProfileButton.disabled || sidebarState.snapshot.drawer.mode === "closed") return;
+  if (sidebarState.snapshot.drawer.savePhase) return;
   cancelPendingProfileSaveForContextChange();
   const model = sidebarState.modelForSave();
   if (!model) {
@@ -1418,29 +1650,54 @@ saveProfileButton.addEventListener("click", () => {
   );
   pendingProfileSave = {
     requestId,
-    secret: providerKey.value.trim() || null,
     contextSignature: editorContextSignature(),
     profileId: editingProfile?.profileId ?? null,
     revision: editingProfile?.revision ?? null,
   };
-  sidebarState.beginProfileSave(requestId, Boolean(pendingProfileSave.secret));
+  sidebarState.beginProfileSave(requestId);
+  const value = providerKey.value;
   setProfileSaveLocked(true);
-  window.iina?.postMessage(
-    "profile:save",
-    envelope(
+  const drawer = sidebarState.snapshot.drawer;
+  const pending = pendingProfileSave;
+  try {
+    if (!drawer.drawerId) throw new Error("PROFILE_SAVE_FAILED");
+    const result = await currentCredentialEditor().save(
+      value,
       {
         ...(editingProfile
           ? { profileId: editingProfile.profileId, expectedRevision: editingProfile.revision }
           : {}),
         displayName: profileName.value.trim(),
-        kind: providerKind.value,
+        kind: providerKind.value as ProviderKind,
         endpoint: providerEndpoint.value.trim(),
-        proxyMode: providerProxyMode.value,
+        proxyMode: providerProxyMode.value as "system" | "direct",
         model,
       },
+      {
+        drawerId: drawer.drawerId,
+        sourceProfile: drawer.sourceProfile,
+        draftRevision: drawer.draftRevision,
+        keyEditEpoch: drawer.keyEditEpoch,
+        submitEpoch: drawer.submitEpoch,
+      },
       requestId,
-    ),
-  );
+    );
+    if (pendingProfileSave !== pending || pending.contextSignature !== editorContextSignature())
+      return;
+    sidebarState.completeProfileSave(requestId, "");
+    finishOperation(requestId, "");
+    pendingProfileSave = null;
+    credentialEditor?.close();
+    finishSuccessfulProfileSave(result.profile as ProfileView);
+    window.iina?.postMessage("ui:ready", envelope({}));
+  } catch {
+    if (pendingProfileSave !== pending) return;
+    sidebarState.completeProfileSave(requestId, "Profile could not be saved.", false);
+    finishOperation(requestId, "Profile could not be saved.", "error");
+    pendingProfileSave = null;
+    credentialEditor?.close();
+    setProfileSaveLocked(false);
+  }
 });
 
 newProfileButton.addEventListener("click", openNewProfile);
@@ -1527,6 +1784,13 @@ profilesElement.addEventListener("pointerup", (event) => {
   if (profile) loadEditor(profile);
 });
 
+profilesElement.addEventListener("click", (event) => {
+  if (event.detail !== 0) return;
+  const entry = (event.target as HTMLElement).closest<HTMLElement>(".profile-details");
+  const profile = entry ? profiles.get(entry.dataset.profileId ?? "") : null;
+  if (profile) loadEditor(profile);
+});
+
 profilesElement.addEventListener("pointercancel", () => profileCardInteractions.cancel());
 window.addEventListener("scroll", () => profileCardInteractions.cancel(), true);
 
@@ -1582,53 +1846,6 @@ profilesElement.addEventListener("change", (event) => {
   );
 });
 
-window.iina?.onMessage("profile:revision-created", (raw: unknown) => {
-  const result = raw as {
-    requestId?: string;
-    profile?: ProfileView;
-    selectionInvalidated?: boolean;
-  };
-  if (
-    !result.profile ||
-    !pendingProfileSave ||
-    result.requestId !== pendingProfileSave.requestId ||
-    pendingProfileSave.contextSignature !== editorContextSignature()
-  )
-    return;
-  const transition = sidebarState.profileRevisionCreated(result.requestId, {
-    profileId: result.profile.profileId,
-    revision: result.profile.revision,
-    endpointFingerprint: result.profile.endpointFingerprint,
-    selectionInvalidated: result.selectionInvalidated === true,
-  });
-  if (!transition.accepted) return;
-  pendingProfileSave.profileId = result.profile.profileId;
-  pendingProfileSave.revision = result.profile.revision;
-  loadEditor(result.profile, true);
-  pendingProfileSave.contextSignature = editorContextSignature();
-  if (pendingProfileSave.secret) {
-    window.iina?.postMessage(
-      "secret:set",
-      envelope(
-        {
-          profileId: result.profile.profileId,
-          expectedRevision: result.profile.revision,
-          fields: { apiKey: pendingProfileSave.secret },
-        },
-        pendingProfileSave.requestId,
-      ),
-    );
-  } else {
-    const message =
-      sidebarState.completeProfileSave(result.requestId, "Profile saved.") ??
-      profileUpdatedSelectionMessage;
-    finishOperation(result.requestId, message);
-    pendingProfileSave = null;
-    finishSuccessfulProfileSave(result.profile);
-  }
-  window.iina?.postMessage("ui:ready", envelope({}));
-});
-
 window.iina?.onMessage("profile-activation:state", (raw: unknown) => {
   if (!sidebarState.applyProfileAuthority(raw as SidebarProfileAuthority)) return;
   clearConfirmedProfileActivationTimeouts();
@@ -1671,6 +1888,7 @@ window.iina?.onMessage("profile:deleted", (raw: unknown) => {
 });
 
 window.iina?.onMessage("provider:test-result", (raw: unknown) => {
+  expireDrawerTest();
   const result = raw as {
     requestId?: string;
     drawerId?: string;
@@ -1688,6 +1906,7 @@ window.iina?.onMessage("provider:test-result", (raw: unknown) => {
     typeof result.drawerId !== "string" ||
     typeof result.draftRevision !== "number" ||
     !currentTest ||
+    currentTest.phase !== "testing" ||
     currentTest.requestId !== result.requestId ||
     currentTest.drawerId !== result.drawerId ||
     currentTest.draftRevision !== result.draftRevision
@@ -1705,6 +1924,8 @@ window.iina?.onMessage("provider:test-result", (raw: unknown) => {
     result.draftRevision,
   );
   if (!accepted) return;
+  clearDrawerTestDeadline();
+  if (result.code === "TEST_INVALIDATED") credentialEditor?.close();
   setActionBusy("test", undefined, false);
   profileTestStatus.dataset.state =
     result.ok === true ? "success" : result.code === "TEST_INVALIDATED" ? "pending" : "error";
@@ -1756,43 +1977,6 @@ window.iina?.onMessage("provider:models-result", (raw: unknown) => {
     credentialSource,
   });
   setModelRefreshFeedback("error", message);
-});
-
-window.iina?.onMessage("credential:state", (raw: unknown) => {
-  const result = raw as {
-    requestId?: string;
-    state?: string;
-    code?: string;
-    userAction?: string;
-    profileId?: string;
-  };
-  const ready = result.state === "ready";
-  const message = window.subtandemCredentialStatusMessage(result);
-  if (
-    pendingProfileSave &&
-    result.requestId === pendingProfileSave.requestId &&
-    pendingProfileSave.contextSignature === editorContextSignature() &&
-    (result.profileId === undefined || result.profileId === pendingProfileSave.profileId)
-  ) {
-    if (result.profileId !== undefined && result.profileId !== pendingProfileSave.profileId) return;
-    credentialState.textContent = message;
-    if (ready && editingProfile && editingProfile.profileId === pendingProfileSave.profileId) {
-      editingProfile = { ...editingProfile, credentialConfigured: true };
-      profiles.set(editingProfile.profileId, editingProfile);
-      document.querySelector<HTMLElement>("#credential-hint")!.textContent =
-        "Write-only. Leave blank to keep the saved API key.";
-    }
-    const saveMessage = sidebarState.completeProfileSave(
-      result.requestId,
-      ready ? "Profile and local credential saved." : profileCredentialPartialFailureMessage,
-      ready,
-    );
-    finishOperation(result.requestId, saveMessage ?? message, ready ? "success" : "error");
-    pendingProfileSave = null;
-    if (ready && editingProfile) finishSuccessfulProfileSave(editingProfile);
-    else setProfileSaveLocked(false);
-  }
-  if (ready) window.iina?.postMessage("ui:ready", envelope({}));
 });
 
 window.iina?.onMessage("operation:result", (raw: unknown) => {
@@ -1970,8 +2154,7 @@ function createProfileRow(profile: ProfileView): HTMLElement {
   article.className = "profile";
   article.innerHTML = `<div class="profile-heading"><div class="profile-details profile-disclosure"><span class="disclosure-indicator" aria-hidden="true"></span><span class="profile-copy"><strong></strong><span class="profile-summary"></span><code></code></span></div><label class="switch profile-activation"><input type="checkbox"></label></div><p class="operation-status profile-operation-status" role="status" aria-live="polite"></p>`;
   const disclosure = article.querySelector<HTMLElement>(".profile-disclosure")!;
-  disclosure.className = "profile-disclosure";
-  disclosure.classList.add("profile-details");
+  disclosure.className = "profile-disclosure profile-details";
   disclosure.tabIndex = 0;
   disclosure.setAttribute("role", "button");
   const activation = article.querySelector<HTMLInputElement>(".profile-activation input")!;
@@ -2029,8 +2212,18 @@ function createNewProfileRow(): HTMLElement {
   return article;
 }
 
+function syncDrawerRuntimeTick(active: boolean): void {
+  if (!active) {
+    if (drawerRuntimeTick !== null) window.clearInterval(drawerRuntimeTick);
+    drawerRuntimeTick = null;
+  } else if (drawerRuntimeTick === null) {
+    drawerRuntimeTick = window.setInterval(() => window.iina?.postMessage("runtime:tick", {}), 20);
+  }
+}
+
 function mountProfileDrawer(): void {
   const drawer = sidebarState.snapshot.drawer;
+  syncDrawerRuntimeTick(drawer.mode !== "closed");
   for (const [profileId, article] of profileRows) {
     const expanded = drawer.mode === "editing" && drawer.profileId === profileId;
     article.classList.toggle("is-editing", expanded);
@@ -2058,23 +2251,23 @@ function mountProfileDrawer(): void {
   profileDrawer.setAttribute("aria-labelledby", disclosure.id || `${panelId}-summary`);
   if (!disclosure.id) disclosure.id = `${panelId}-summary`;
   profileDrawer.hidden = false;
-  article.append(profileDrawer);
+  if (profileDrawer.parentElement !== article) article.append(profileDrawer);
   renderDrawerAvailability();
 }
 
 function renderDrawerAvailability(): void {
   const drawer = sidebarState.snapshot.drawer;
-  const unavailable = sidebarState.snapshot.profileAuthority?.ready === false;
   const conflict = drawer.validity === "conflict";
   const saving = drawer.savePhase !== null;
   const deleting = drawer.deletePhase === "deleting";
   const testing = drawer.test?.phase === "testing";
-  testProfileButton.disabled = unavailable || conflict || saving || deleting || testing;
-  saveProfileButton.disabled = unavailable || conflict || saving || deleting;
-  deleteProfileButton.disabled = unavailable || conflict || saving || deleting;
+  const loading = sidebarState.snapshot.credentialLoad !== null;
+  testProfileButton.disabled = loading || conflict || saving || deleting || testing;
+  saveProfileButton.disabled = loading || conflict || saving || deleting;
+  deleteProfileButton.disabled = conflict || saving || deleting;
   cancelProfileButton.disabled = saving || deleting;
-  refreshModelsButton.disabled = unavailable || conflict || saving || deleting;
-  newProfileButton.disabled = unavailable || saving;
+  refreshModelsButton.disabled = loading || conflict || saving || deleting || testing;
+  newProfileButton.disabled = saving;
   if (conflict) {
     profileEditorStatus.dataset.conflict = "true";
     profileEditorStatus.dataset.state = "error";
@@ -2130,7 +2323,7 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
   const drawer = sidebarState.snapshot.drawer;
   if (drawer.mode === "new") {
     newProfileRow ??= createNewProfileRow();
-    profilesElement.append(newProfileRow);
+    if (newProfileRow.parentElement !== profilesElement) profilesElement.append(newProfileRow);
   } else if (newProfileRow) {
     newProfileRow.remove();
     newProfileRow = null;
@@ -2143,20 +2336,16 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
     profilesElement.append(article);
     syncProfileOverflow(article);
   }
+  const settled = sidebarState.snapshot.profileListPhase === "settled";
+  const emptyList = settled && !viewProfiles.length && drawer.mode !== "new";
+  profilesElement.dataset.empty = String(emptyList);
   const existingEmpty = profilesElement.querySelector<HTMLElement>(":scope > .empty");
-  if (!viewProfiles.length && drawer.mode !== "new") {
+  if (emptyList) {
     const empty = existingEmpty ?? document.createElement("p");
     empty.className = "empty";
-    const unavailable = sidebarState.snapshot.profileAuthority?.ready === false;
-    empty.textContent = unavailable
-      ? "Profiles unavailable (HELPER_UNAVAILABLE). Restart IINA."
-      : "No saved profiles yet.";
-    if (unavailable) empty.dataset.state = "error";
-    else delete empty.dataset.state;
+    empty.textContent = "No profiles yet.";
     profilesElement.append(empty);
-  } else {
-    existingEmpty?.remove();
-  }
+  } else existingEmpty?.remove();
   renderActiveFeedback();
   mountProfileDrawer();
   renderProfileActivationControls();
@@ -2210,6 +2399,7 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     cacheSize?: number;
     profiles?: ProfileView[];
     profileAuthority?: SidebarProfileAuthority;
+    profileListPhase?: "initializing" | "settled";
     sourceIssue?: string | null;
     providerError?: SessionProviderError | null;
     sourcePreparation?: {
@@ -2223,6 +2413,7 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     overlayPosition?: SidebarOverlayPositionAuthorityState;
     subtitleStyle?: SidebarSubtitleStyleAuthorityState | null;
   };
+  if (view.profileListPhase === "settled") sidebarState.settleProfileList();
   if (view.overlayPosition && sidebarState.applyOverlayPositionState(view.overlayPosition))
     renderOverlayPosition();
   if (view.subtitleStyle && sidebarState.applySubtitleStyleState(view.subtitleStyle))
@@ -2313,6 +2504,7 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     ) as unknown as ProfileView[];
     reconcileDrawerAfterAuthority(previousTest);
     const signature = JSON.stringify({
+      profileListPhase: sidebarState.snapshot.profileListPhase,
       profileAuthority: sidebarState.snapshot.profileAuthority,
       profileActivationRequests: sidebarState.snapshot.profileActivationRequests,
       deletedProfileIds: sidebarState.snapshot.deletedProfileIds,
@@ -2339,8 +2531,13 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
 });
 
 window.iina?.postMessage("ui:ready", envelope({}));
-window.setInterval(() => window.iina?.postMessage("ui:poll", envelope({})), 750);
+window.setInterval(() => {
+  expireDrawerTest();
+  window.iina?.postMessage("ui:poll", envelope({}));
+}, 750);
 window.addEventListener("pagehide", () => {
+  syncDrawerRuntimeTick(false);
+  cancelEditorCredentialLoad();
   for (const article of profileRows.values()) clearProfileOverflow(article);
   if (endpointRefreshTimer !== null) clearTimeout(endpointRefreshTimer);
   invalidatePendingModelRefresh();
@@ -2348,6 +2545,8 @@ window.addEventListener("pagehide", () => {
   if (!requestId) return;
   window.iina?.postMessage("provider:test-cancel", envelope({ testRequestId: requestId }));
 });
+window.addEventListener("pageshow", () => {
+  syncDrawerRuntimeTick(sidebarState.snapshot.drawer.mode !== "closed");
+});
 renderSubtitleStyle();
 applyProviderKind();
-requestModels("open");

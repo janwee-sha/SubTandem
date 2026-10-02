@@ -1,3 +1,4 @@
+import { testSavedCredential } from "./provider-test-helpers.js";
 import { registerLifecycleContract } from "../helpers/provider-lifecycle-contract.js";
 import { registerFailureContract } from "../helpers/provider-failure-contract.js";
 import { registerProbeContract } from "../helpers/provider-probe-contract.js";
@@ -88,7 +89,11 @@ describe("DeepSeek provider", () => {
   it("uses the fixed JSON object dialect, disabled thinking and JSON-only instructions", async () => {
     const requests: ProviderTransportRequest[] = [];
     const provider = new DeepSeekProvider(
-      { endpoint: "https://api.deepseek.com", model: "exact-model", apiKey: "secret" },
+      {
+        endpoint: "https://api.deepseek.com",
+        model: "exact-model",
+        credential: testSavedCredential("deepseek"),
+      },
       { request: async (request) => (requests.push(request), successResponse(request)) },
     );
 
@@ -99,7 +104,6 @@ describe("DeepSeek provider", () => {
     for (const request of requests) {
       expect(request.headers).toEqual({
         "Content-Type": "application/json",
-        Authorization: "Bearer secret",
       });
       const body = request.body as Record<string, unknown>;
       expect(body).toMatchObject({
@@ -141,7 +145,7 @@ describe("DeepSeek provider", () => {
       {
         endpoint: "https://api.deepseek.com/",
         model: "exact-model",
-        apiKey: "secret",
+        credential: testSavedCredential("deepseek"),
       },
       { request: async (request) => (requests.push(request), successResponse(request)) },
     );
@@ -154,9 +158,12 @@ describe("DeepSeek provider", () => {
     expect(
       requests.every((request) => request.url === "https://api.deepseek.com/chat/completions"),
     ).toBe(true);
-    expect(requests.every((request) => request.headers.Authorization === "Bearer secret")).toBe(
-      true,
-    );
+    expect(
+      requests.every(
+        (request) =>
+          request.headers.Authorization === undefined && request.credential.source === "saved",
+      ),
+    ).toBe(true);
     expect(requests.some((request) => request.jobId.includes("probe"))).toBe(false);
   });
 

@@ -26,9 +26,11 @@ interface RuntimeHarness {
   counts: Counts;
   trace: string[];
   setSelection(kind: SelectionKind): void;
+  setVisible(visible: boolean): void;
   triggerEvent(name: string, ...args: unknown[]): void;
   triggerSidebar(name: string, data?: unknown): void;
   states(): Array<Record<string, unknown>>;
+  messages(): Array<{ name: string; data: unknown }>;
   close(): void;
 }
 
@@ -46,6 +48,7 @@ interface MainPlayerDependencies {
 interface HarnessOptions {
   enabled: boolean;
   selection: SelectionKind;
+  iinaVersion?: string;
   createCoordinator?: () => Promise<SubtitlePreparationCoordinator>;
 }
 
@@ -92,10 +95,12 @@ function createHarness(options: HarnessOptions): RuntimeHarness {
   const sidebarListeners = new Map<string, (data: unknown) => void>();
   const sidebarMessages: Array<{ name: string; data: unknown }> = [];
   const files = new Map<string, string>();
+  const windowState = { fullscreen: false, loaded: true, visible: true };
   let nextListenerId = 0;
   const runtime: Record<PropertyKey, unknown> = {
     console: { log: () => undefined },
     core: {
+      getVersion: () => ({ iina: options.iinaVersion ?? "1.4.4", build: "", mpv: "" }),
       status: {
         url: "file:///private/movie.mkv",
         isNetworkResource: false,
@@ -107,7 +112,7 @@ function createHarness(options: HarnessOptions): RuntimeHarness {
         tracks: [{ id: 7, isExternal: selection === "external", title: "English" }],
         currentTrack: { id: 7, isExternal: selection === "external", title: "English" },
       },
-      window: { fullscreen: false, loaded: true },
+      window: windowState,
     },
     event: {
       on: (name: string, callback: (...args: unknown[]) => void) => {
@@ -154,7 +159,10 @@ function createHarness(options: HarnessOptions): RuntimeHarness {
       sync: () => undefined,
     },
     sidebar: {
-      loadFile: () => undefined,
+      loadFile: () => {
+        trace.push("sidebar:load");
+        sidebarListeners.clear();
+      },
       onMessage: (name: string, callback: (data: unknown) => void) =>
         sidebarListeners.set(name, callback),
       postMessage: (name: string, data: unknown) => sidebarMessages.push({ name, data }),
@@ -235,15 +243,20 @@ function createHarness(options: HarnessOptions): RuntimeHarness {
     setSelection: (kind) => {
       selection = kind;
     },
+    setVisible: (visible) => {
+      windowState.visible = visible;
+    },
     triggerEvent: (name, ...args) => {
       for (const callback of eventListeners.get(name)?.values() ?? []) callback(...args);
     },
     triggerSidebar: (name, data = {}) => sidebarListeners.get(name)?.(data),
+    messages: () => sidebarMessages,
     states: () =>
       sidebarMessages
         .filter((message) => message.name === "state:update")
         .map((message) => message.data as Record<string, unknown>),
     close: () => {
+      windowState.visible = false;
       for (const callback of eventListeners.get("iina.window-will-close")?.values() ?? [])
         callback();
     },
@@ -273,6 +286,22 @@ afterEach(() => {
 });
 
 describe("translation-disabled Main startup", () => {
+  it("settles a completely unresponsive Global locally at the first initialization deadline", async () => {
+    const harness = createHarness({ enabled: false, selection: "external" });
+    await startHarness(harness);
+    harness.triggerSidebar("ui:ready");
+    await vi.advanceTimersByTimeAsync(15_000);
+    harness.triggerSidebar("ui:poll");
+    expect(harness.states().at(-1)).toMatchObject({
+      profileListPhase: "settled",
+      profiles: [],
+      selection: null,
+      status: "disabled",
+    });
+    expect(harness.states().at(-1)?.profileAuthority).toBeUndefined();
+    expect(harness.counts.bootstrapCalls).toBe(0);
+    harness.close();
+  });
   it.each(["external", "embedded", "unsupported"] as const)(
     "does no subtitle work for a persisted disabled %s selection across every loading entry",
     async (selection) => {
@@ -539,4 +568,112 @@ describe("translation-disabled Main startup", () => {
     disabled.close();
     enabled.close();
   });
+});
+
+it("keeps credential handlers active after the host clears listeners when loading Sidebar", async () => {
+  const harness = createHarness({ enabled: false, selection: "external" });
+  await startHarness(harness);
+  harness.triggerSidebar("credential-channel:open", {
+    requestId: "invalid-open-after-load",
+    revision: 1,
+    payload: {},
+  });
+  harness.triggerSidebar("ui:poll");
+  expect(harness.messages()).toContainEqual({
+    name: "credential-channel:result",
+    data: {
+      requestId: "invalid-open-after-load",
+      ok: false,
+      error: "invalid-credential-message",
+    },
+  });
+  harness.close();
+});
+
+it("advances the host clocks from Sidebar ticks without flushing UI and ignores a closed player", async () => {
+  const harness = createHarness({ enabled: false, selection: "external" });
+  const tick = vi.fn();
+  harness.runtime.global = { postMessage: tick };
+  await startHarness(harness);
+  const { hostClock } = await import("../../src/adapters/iina/host-timers.js");
+  const callback = vi.fn();
+  const interval = hostClock.setInterval(callback, 20);
+  const before = harness.messages().length;
+  await vi.advanceTimersByTimeAsync(20);
+  harness.triggerSidebar("runtime:tick");
+  expect(callback).toHaveBeenCalledOnce();
+  expect(tick).toHaveBeenCalledExactlyOnceWith("runtime:tick", {});
+  expect(harness.messages()).toHaveLength(before);
+  harness.close();
+  await vi.advanceTimersByTimeAsync(20);
+  harness.triggerSidebar("runtime:tick");
+  expect(callback).toHaveBeenCalledOnce();
+  expect(tick).toHaveBeenCalledOnce();
+  hostClock.clearInterval(interval);
+});
+
+it("rewires a reused player when its hidden window becomes visible without window-loaded", async () => {
+  const harness = createHarness({ enabled: false, selection: "external" });
+  await startHarness(harness);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(1);
+
+  harness.close();
+  harness.triggerSidebar("ui:poll");
+  await vi.advanceTimersByTimeAsync(200);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(1);
+
+  harness.setVisible(true);
+  harness.triggerSidebar("ui:poll");
+  await vi.advanceTimersByTimeAsync(100);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(2);
+  harness.triggerSidebar("credential-channel:open", {
+    requestId: "invalid-open-after-reopen",
+    revision: 1,
+    payload: {},
+  });
+  harness.triggerSidebar("ui:poll");
+  expect(harness.messages()).toContainEqual({
+    name: "credential-channel:result",
+    data: {
+      requestId: "invalid-open-after-reopen",
+      ok: false,
+      error: "invalid-credential-message",
+    },
+  });
+  harness.close();
+});
+
+it("loads a first player even when visibility lags behind window.loaded", async () => {
+  const harness = createHarness({ enabled: false, selection: "external" });
+  harness.setVisible(false);
+  await startHarness(harness);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(1);
+
+  harness.close();
+  harness.triggerSidebar("ui:poll");
+  await vi.advanceTimersByTimeAsync(200);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(1);
+
+  harness.setVisible(true);
+  harness.triggerSidebar("ui:poll");
+  await vi.advanceTimersByTimeAsync(100);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(2);
+  harness.close();
+});
+
+it("boots on IINA 1.4.0 despite its false window visibility and waits for reopen", async () => {
+  const harness = createHarness({ enabled: false, selection: "external", iinaVersion: "1.4.0" });
+  harness.setVisible(false);
+  await startHarness(harness);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(1);
+
+  harness.close();
+  harness.triggerSidebar("ui:poll");
+  await vi.advanceTimersByTimeAsync(200);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(1);
+
+  harness.triggerSidebar("ui:ready");
+  await vi.advanceTimersByTimeAsync(100);
+  expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(2);
+  harness.close();
 });

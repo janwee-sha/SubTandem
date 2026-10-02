@@ -1,3 +1,4 @@
+import { testSavedCredential } from "../contract/provider-test-helpers.js";
 import { describe, expect, it } from "vitest";
 import { ProviderBroker } from "../../src/providers/broker.js";
 import { ProviderProfiles } from "../../src/providers/profiles.js";
@@ -119,7 +120,11 @@ describe("US3 provider broker integration", () => {
       }),
     };
     const actualClaude = new ClaudeProvider(
-      { endpoint: claude.endpoint, model: claude.model!, apiKey: "fictional-key" },
+      {
+        endpoint: claude.endpoint,
+        model: claude.model!,
+        credential: testSavedCredential("claude"),
+      },
       transport,
     );
     await expect(actualClaude.attempt(request)).resolves.toMatchObject({
@@ -235,11 +240,11 @@ describe("US3 provider broker integration", () => {
     expect(paths).toEqual(["/models", "/chat/completions", "/chat/completions"]);
   });
 
-  it("uses one Ollama Bearer for Refresh, Test and translation", async () => {
+  it("uses the same native credential reference for Ollama Refresh, Test and translation", async () => {
     const paths: string[] = [];
     const transport: ProviderTransport = {
       request: async (request) => {
-        if (request.headers.Authorization !== "Bearer remote-secret")
+        if (request.credential.source !== "saved")
           return { statusCode: 401, headers: {}, bodyText: "{}" };
         paths.push(new URL(request.url).pathname);
         if (request.url.endsWith("/api/version"))
@@ -272,7 +277,7 @@ describe("US3 provider broker integration", () => {
           jobId: "refresh",
           kind: "ollama",
           endpoint: "https://ollama.example.test",
-          apiKey: "remote-secret",
+          credential: testSavedCredential("ollama"),
         },
         transport,
       ),
@@ -281,7 +286,7 @@ describe("US3 provider broker integration", () => {
       {
         endpoint: "https://ollama.example.test",
         model: "qwen",
-        apiKey: "remote-secret",
+        credential: testSavedCredential("ollama"),
       },
       transport,
     );
@@ -297,11 +302,12 @@ describe("US3 provider broker integration", () => {
     ]);
   });
 
-  it("uses one Bearer with prompt-only JSON across official Ollama Cloud flows", async () => {
+  it("uses one credential reference with prompt-only JSON across official Ollama Cloud flows", async () => {
     const requests: Array<{ path: string; body?: Record<string, unknown> }> = [];
     const transport: ProviderTransport = {
       request: async (request) => {
-        expect(request.headers.Authorization).toBe("Bearer cloud-secret");
+        expect(request.headers.Authorization).toBeUndefined();
+        expect(request.credential).toEqual(testSavedCredential("ollama"));
         requests.push({
           path: new URL(request.url).pathname,
           ...(request.body ? { body: request.body as Record<string, unknown> } : {}),
@@ -341,7 +347,7 @@ describe("US3 provider broker integration", () => {
           jobId: "cloud-refresh",
           kind: "ollama",
           endpoint: "https://ollama.com",
-          apiKey: "cloud-secret",
+          credential: testSavedCredential("ollama"),
         },
         transport,
       ),
@@ -350,7 +356,7 @@ describe("US3 provider broker integration", () => {
       {
         endpoint: "https://ollama.com",
         model: "cloud-model",
-        apiKey: "cloud-secret",
+        credential: testSavedCredential("ollama"),
       },
       transport,
     );
@@ -376,7 +382,7 @@ describe("US3 provider broker integration", () => {
 
   it("does not let an Ollama Test continue with a Provider built across credential replacement", async () => {
     let epoch = 0;
-    let apiKey = "old-secret";
+    let credential = testSavedCredential("ollama");
     let release!: () => void;
     const gate = new Promise<void>((resolve) => {
       release = resolve;
@@ -387,17 +393,18 @@ describe("US3 provider broker integration", () => {
       endpoint: "https://ollama.example.test",
       model: "qwen",
     } as Parameters<CredentialScopedProviderCache["get"]>[0];
-    const seenHeaders: string[] = [];
+    const seenReferences: unknown[] = [];
     const cache = new CredentialScopedProviderCache(
       () => epoch,
       async (value) => {
-        const capturedKey = apiKey;
+        const captured = { ...credential };
         await gate;
         return new OllamaProvider(
-          { endpoint: value.endpoint, model: value.model!, apiKey: capturedKey },
+          { endpoint: value.endpoint, model: value.model!, credential: captured },
           {
             request: async (request) => {
-              seenHeaders.push(request.headers.Authorization ?? "");
+              expect(request.headers.Authorization).toBeUndefined();
+              seenReferences.push(request.credential);
               if (request.url.endsWith("/api/version"))
                 return { statusCode: 200, headers: {}, bodyText: '{"version":"0.10"}' };
               if (request.url.endsWith("/api/tags"))
@@ -415,7 +422,7 @@ describe("US3 provider broker integration", () => {
     );
 
     const stale = cache.get(profile);
-    apiKey = "new-secret";
+    credential = { ...credential, profileRevision: 4 };
     epoch = 1;
     cache.clearProfile(profile.profileId);
     release();
@@ -423,7 +430,7 @@ describe("US3 provider broker integration", () => {
     await expect(stale).rejects.toMatchObject({ providerCode: "CREDENTIAL_CONTEXT_CHANGED" });
     const current = await cache.get(profile);
     await expect(current.testConnection("fresh-test")).resolves.toMatchObject({ model: "qwen" });
-    expect(seenHeaders).toEqual(["Bearer new-secret", "Bearer new-secret", "Bearer new-secret"]);
+    expect(seenReferences).toEqual([credential, credential, credential]);
   });
 
   it("keeps a deleted profile removed across late lists, duplicate success and Sidebar reopen", () => {

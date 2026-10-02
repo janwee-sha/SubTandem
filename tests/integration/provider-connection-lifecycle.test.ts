@@ -606,6 +606,7 @@ describe.each(["openai", "claude", "deepseek", "ollama"] as const)(
         "provider:test",
         {
           ...payload,
+          credential: { source: "saved" },
           sourceProfile: {
             profileId: saved.profileId,
             profileRevision: saved.revision,

@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { saveTestProfile, encryptedSaveOwner } from "../helpers/encrypted-profile-fixture.js";
+import { describe, expect, it, vi } from "vitest";
 import type { ProfileState } from "../../src/domain/types.js";
 import { ProfileActivationAuthority } from "../../src/providers/profile-activation.js";
 import { ProviderProfiles } from "../../src/providers/profiles.js";
@@ -16,7 +17,9 @@ function setup(
   }) => Promise<ProfileStateCommitResult> = async (input) => committed(input),
 ) {
   let commitSequence = 0;
-  const profiles = new ProviderProfiles(() => `profile-${profiles.listLatest().length + 1}`);
+  const profiles = new ProviderProfiles(
+    () => `00000000-0000-4000-8000-${String(profiles.listLatest().length + 1).padStart(12, "0")}`,
+  );
   const a = profiles.save({
     displayName: "A",
     kind: "openai",
@@ -91,10 +94,58 @@ function request(
 }
 
 describe("ProfileActivationAuthority", () => {
+  it("verifies an unavailable base before reserving and merges the real list", async () => {
+    const persisted = setup();
+    const profiles = new ProviderProfiles(() => "10000000-0000-4000-8000-000000000099");
+    let reads = 0;
+    const authority = new ProfileActivationAuthority({
+      authorityId: "fallback",
+      profiles,
+      storeRevision: 0,
+      credentialConfigured: {},
+      activation: null,
+      ready: false,
+      createCommitId: () => "00000000-0000-4000-8000-000000000099",
+      commit: async (input) => committed(input),
+      recover: async () => {
+        reads++;
+        return {
+          state: "committed",
+          initialized: true,
+          storeRevision: 9,
+          lastCommit: null,
+          profileState: {
+            profiles: persisted.authority.snapshot.profiles.map(
+              ({ credentialConfigured: configured, ...profile }) => {
+                void configured;
+                return profile;
+              },
+            ),
+            activation: null,
+          },
+          credentialConfigured: { [persisted.a.profileId]: false, [persisted.b.profileId]: false },
+        };
+      },
+    });
+    const reserved = await authority.reserveProfileSave(
+      { displayName: "New", kind: "openai", endpoint: "https://new.test", model: "model" },
+      encryptedSaveOwner,
+      "save-after-fallback",
+    );
+    expect(reads).toBe(1);
+    expect(reserved.expectedStoreRevision).toBe(9);
+    expect(reserved.profileState.profiles.map((profile) => profile.displayName)).toEqual([
+      "New",
+      "A",
+      "B",
+    ]);
+    expect(authority.snapshot.authorityId).toBe("fallback");
+    expect(authority.snapshot.activation).toBeNull();
+  });
   it("places a new Profile first, keeps updates in place and never enables on save", async () => {
     const { authority, a, b } = setup();
 
-    const created = await authority.saveProfile({
+    const created = await saveTestProfile(authority, {
       displayName: "Created",
       kind: "ollama",
       endpoint: "http://127.0.0.1:11434",
@@ -109,7 +160,7 @@ describe("ProfileActivationAuthority", () => {
     ]);
     expect(authority.snapshot.activation).toBeNull();
 
-    await authority.saveProfile({
+    await saveTestProfile(authority, {
       profileId: a.profileId,
       expectedRevision: a.revision,
       displayName: "A updated",
@@ -221,4 +272,52 @@ describe("ProfileActivationAuthority", () => {
     });
     expect(pending.authority.acceptsTranslations).toBe(false);
   });
+});
+
+it("releases a timed out recovery queue and rejects its result after a newer verified base", async () => {
+  vi.useFakeTimers();
+  try {
+    const registry = new ProviderProfiles(() => "10000000-0000-4000-8000-000000000099");
+    let release!: (result: ProfileStateCommitResult) => void;
+    let attempts = 0;
+    const real = setup().authority.snapshot.profiles.map(({ credentialConfigured, ...profile }) => {
+      void credentialConfigured;
+      return profile;
+    });
+    const fresh: ProfileStateCommitResult = {
+      state: "committed",
+      initialized: true,
+      storeRevision: 9,
+      lastCommit: null,
+      profileState: { profiles: real, activation: null },
+      credentialConfigured: {},
+    };
+    const authority = new ProfileActivationAuthority({
+      authorityId: "bounded-retry",
+      profiles: registry,
+      storeRevision: 0,
+      ready: false,
+      credentialConfigured: {},
+      activation: null,
+      commit: async (input) => committed(input),
+      createCommitId: () => "10000000-0000-4000-8000-000000000009",
+      recover: () =>
+        ++attempts === 1
+          ? new Promise((resolve) => {
+              release = resolve;
+            })
+          : Promise.resolve(fresh),
+    });
+    const first = authority.reconcile();
+    await vi.advanceTimersByTimeAsync(15_000);
+    expect(await first).toBe(false);
+    expect(await authority.reconcile()).toBe(true);
+    const version = authority.snapshot.stateVersion;
+    release({ ...fresh, storeRevision: 1, profileState: { profiles: [], activation: null } });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(authority.snapshot.stateVersion).toBe(version);
+    expect(registry.listLatest()).toEqual(real);
+  } finally {
+    vi.useRealTimers();
+  }
 });

@@ -113,6 +113,5 @@ export interface ProviderAttemptError {
 }
 
 export interface ProviderProfileSnapshot extends PersistentProviderProfile {
-  credential?: Readonly<Record<string, string>>;
   modelCatalog?: Pick<ModelCatalog, "contextKey" | "models">;
 }

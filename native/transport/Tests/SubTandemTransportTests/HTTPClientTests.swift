@@ -271,14 +271,12 @@ func makeDirectTransportRequest(port: UInt16) -> TransportRequest {
 
 func encodedTransportRequest(jobID: String) throws -> Data {
     try JSONSerialization.data(withJSONObject: [
-        "jobId": jobID,
-        "method": "POST",
-        "url": "https://provider.example/v1",
-        "headers": [:],
-        "proxyMode": "system",
-        "body": [:],
-        "timeoutMs": 5_000,
-        "maxResponseBytes": 1_024,
+        "jobId": jobID, "method": "POST", "url": "https://provider.example/v1/chat/completions",
+        "headers": [:], "proxyMode": "system", "body": ["model": "synthetic-model"],
+        "timeoutMs": 5_000, "maxResponseBytes": 1_024,
+        "credential": ["source": "none"], "purpose": "test",
+        "owner": ["senderId": "synthetic-window", "requestId": jobID],
+        "provider": ["kind": "openai", "endpoint": "https://provider.example/v1", "model": "synthetic-model", "proxyMode": "system"],
     ])
 }
 

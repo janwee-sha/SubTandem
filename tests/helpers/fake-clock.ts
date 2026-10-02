@@ -32,4 +32,8 @@ export class FakeClock {
   get pendingCount(): number {
     return this.timers.size;
   }
+
+  elapseWithoutCallbacks(milliseconds: number): void {
+    this.nowValue += milliseconds;
+  }
 }

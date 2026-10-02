@@ -45,10 +45,16 @@ describe("IINA sidebar lifecycle contract", () => {
         ]),
     ] as const;
     for (const [path, source] of sources) {
-      expect(source, path).not.toMatch(/(?<![.A-Za-z])setTimeout\(/);
-      expect(source, path).not.toMatch(/(?<![.A-Za-z])clearTimeout\(/);
-      expect(source, path).not.toMatch(/(?<![.A-Za-z])setInterval\(/);
-      expect(source, path).not.toMatch(/(?<![.A-Za-z])clearInterval\(/);
+      const managed =
+        path === "src/main.ts"
+          ? source
+              .replace("setTimeout(initializePlayer, 100)", "")
+              .replace("clearTimeout(initializePlayerTimer)", "")
+          : source;
+      expect(managed, path).not.toMatch(/(?<![.A-Za-z])setTimeout\(/);
+      expect(managed, path).not.toMatch(/(?<![.A-Za-z])clearTimeout\(/);
+      expect(managed, path).not.toMatch(/(?<![.A-Za-z])setInterval\(/);
+      expect(managed, path).not.toMatch(/(?<![.A-Za-z])clearInterval\(/);
     }
   });
 
@@ -76,34 +82,30 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(controllerSource).toContain('this.options.providerKind !== "claude"');
   });
 
-  it("keeps Claude drafts isolated and completes Save through credential ownership", () => {
+  it("keeps Claude drafts isolated and completes Save through the encrypted editor", () => {
     expect(sidebarSource).toContain("providerDrafts");
     expect(sidebarSource).toContain('claude: { endpoint: "https://api.anthropic.com"');
     expect(sidebarSource).toContain("saveActiveDraft");
     expect(sidebarSource).toContain("draftCredentialEpoch += 1");
-    expect(sidebarSource).toContain("pendingProfileSave.secret");
-    expect(sidebarSource).toContain('postMessage(\n      "secret:set"');
-    expect(sidebarSource).toContain("profileCredentialPartialFailureMessage");
-    expect(sidebarSource).toContain(
-      "pendingProfileSave.contextSignature !== editorContextSignature()",
-    );
-    expect(sidebarSource).toContain("finishSuccessfulProfileSave(result.profile)");
+    expect(sidebarSource).not.toContain("pendingProfileSave.secret");
+    expect(sidebarSource).not.toContain('"secret:set"');
+    expect(sidebarSource).toContain("currentCredentialEditor().save(");
+    expect(sidebarSource).toContain("pending.contextSignature !== editorContextSignature()");
+    expect(sidebarSource).toContain("finishSuccessfulProfileSave(result.profile as ProfileView)");
     expect(sidebarStateSource).toContain("snapshot.drawer = closedDrawer()");
   });
 
-  it("shows the optional-key hint after saving a credential", () => {
-    const start = sidebarSource.indexOf('window.iina?.onMessage("credential:state"');
-    const end = sidebarSource.indexOf('window.iina?.onMessage("operation:result"', start);
-    const credentialHandler = sidebarSource.slice(start, end);
-
-    expect(credentialHandler).toContain("Write-only. Leave blank to keep the saved API key.");
+  it("does not consume a separate credential write result", () => {
+    expect(sidebarSource).not.toContain('onMessage("credential:state"');
+    expect(sidebarSource).not.toContain('onMessage("profile:revision-created"');
+    expect(sidebarSource).not.toContain("API key saved.");
   });
 
   it("does not let a late Claude save, Test or deletion replace a newer drawer owner", () => {
     expect(sidebarSource).toContain("currentTest.requestId !== result.requestId");
     expect(sidebarSource).toContain("currentTest.drawerId !== result.drawerId");
     expect(sidebarSource).toContain("currentTest.draftRevision !== result.draftRevision");
-    expect(sidebarSource).toContain("result.requestId !== pendingProfileSave.requestId");
+    expect(sidebarSource).toContain("pendingProfileSave !== pending");
     expect(sidebarSource).toContain("deleteSucceeded");
     expect(sidebarStateSource).toContain("latestRequestByRegion");
   });
@@ -115,7 +117,7 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(requestSource).not.toContain("Enter an API key before refreshing Claude models.");
     expect(requestSource).toContain("usesDraftCredential");
     expect(requestSource).toContain("editingProfile?.credentialConfigured");
-    expect(requestSource).toContain('"provider:models-preview"');
+    expect(requestSource).toContain('"provider:draft-models"');
     expect(sidebarSource).toContain('setModelRefreshFeedback("busy")');
     expect(sidebarSource).toContain("pendingModelRefresh.contextSignature !== modelContextKey()");
     expect(sidebarSource).toContain("sidebarState.snapshot.modelControl.value");
@@ -126,9 +128,9 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(globalSource).toContain("prefetchProfileModels");
     expect(globalSource).toContain("models-startup-");
     expect(sidebarSource).toContain('requestModels("open")');
-    expect(sidebarSource).toContain('requestModels("endpoint")');
+    expect(sidebarSource).toContain('queueAutomaticRefresh("endpoint"');
     expect(sidebarSource).toContain('requestModels("manual")');
-    expect(sidebarSource).toContain("}, 400)");
+    expect(sidebarSource).toContain("Date.now() + 400");
     expect(sidebarSource).toContain("pendingModelRefresh");
   });
 
@@ -136,7 +138,7 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(sidebarSource).toContain('providerKey.addEventListener("input"');
     expect(sidebarSource).toContain("draftCredentialEpoch += 1");
     expect(sidebarSource).toContain('trigger === "manual"');
-    expect(sidebarSource).toContain('"provider:models-preview"');
+    expect(sidebarSource).toContain('"provider:draft-models"');
   });
 
   it("cancels draft Test ownership on field changes, Save, confirmed Delete and window close", () => {
@@ -144,7 +146,7 @@ describe("IINA sidebar lifecycle contract", () => {
     const testEnd = sidebarSource.indexOf('saveProfileButton.addEventListener("click"', testStart);
     const testHandler = sidebarSource.slice(testStart, testEnd);
     expect(testHandler.indexOf("validModelEndpoint()")).toBeLessThan(
-      testHandler.indexOf('postMessage(\n    "provider:test"'),
+      testHandler.indexOf('postMessage("provider:draft-test"'),
     );
     expect(sidebarSource).toContain("invalidateDrawerTestField(true)");
     expect(sidebarSource).toContain('providerModelSelect.addEventListener("change"');
@@ -241,11 +243,9 @@ describe("IINA sidebar lifecycle contract", () => {
   it("binds DeepSeek save and credential feedback to the current editor context", () => {
     expect(sidebarSource).toContain("function editorContextSignature");
     expect(sidebarSource).toContain("contextSignature: editorContextSignature()");
-    expect(sidebarSource).toContain(
-      "pendingProfileSave.contextSignature !== editorContextSignature()",
-    );
+    expect(sidebarSource).toContain("pending.contextSignature !== editorContextSignature()");
     expect(sidebarSource).toContain("cancelPendingProfileSaveForContextChange");
-    expect(sidebarSource).toContain("result.profileId !== pendingProfileSave.profileId");
+    expect(sidebarSource).toContain("pendingProfileSave !== pending");
   });
 
   it("does not reinterpret repeated ui:ready as a model refresh", () => {
@@ -306,11 +306,13 @@ describe("IINA sidebar lifecycle contract", () => {
 
   it("waits for IINA's player window before loading the sidebar webview", () => {
     expect(mainSource).toContain("iina.core.window.loaded");
-    expect(mainSource).toContain('iina.event.on("iina.window-loaded", scheduleInitializePlayer)');
-    expect(
-      mainSource.indexOf('iina.event.on("iina.window-loaded", scheduleInitializePlayer)'),
-    ).toBeLessThan(mainSource.lastIndexOf("scheduleInitializePlayer();"));
+    expect(mainSource).toContain('iina.event.on("iina.window-loaded", () => {');
+    expect(mainSource.indexOf('iina.event.on("iina.window-loaded", () => {')).toBeLessThan(
+      mainSource.lastIndexOf("scheduleInitializePlayer();"),
+    );
     expect(mainSource).toContain("setTimeout(initializePlayer, 100)");
+    expect(mainSource).toContain('iina.event.on("iina.window-will-close"');
+    expect(mainSource).toContain("clearTimeout(initializePlayerTimer)");
   });
 
   it("initializes a normal player without waiting for a global registration reply", () => {
@@ -426,22 +428,20 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(renderSource).not.toContain("deletedResults");
   });
 
-  it("keeps Update activation invalidation through optional credential completion", () => {
+  it("completes configuration and credentials through one confirmed Save", () => {
     expect(sidebarSource).toContain("beginProfileSave");
-    expect(sidebarSource).toContain("profileRevisionCreated");
     expect(sidebarSource).toContain("completeProfileSave");
     expect(sidebarSource).toContain("reconcileEditingProfile");
-    expect(sidebarSource).toContain("Profile updated. Enable it when you are ready.");
-    expect(sidebarSource).toContain("Profile saved, but the credential was not saved.");
+    expect(sidebarSource).not.toContain("profileRevisionCreated");
+    expect(sidebarSource).not.toContain("Profile saved, but the credential was not saved.");
     expect(sidebarSource).not.toContain("to authorize translation");
   });
 
-  it("lets credential completion replace cancelled model work and consumes authority state", () => {
+  it("refreshes models after confirmed Save and consumes authority state", () => {
     expect(sidebarSource).toContain('trigger !== "credential"');
     expect(mainSource).toContain("applyProfileAuthority");
-    const createdStart = mainSource.indexOf('runtime.global.onMessage("profile:revision-created"');
-    const createdSource = mainSource.slice(createdStart, createdStart + 1_600);
-    expect(createdSource).toContain('queueSidebarMessage("profile:revision-created"');
+    expect(mainSource).toContain("installCredentialMainRelay");
+    expect(mainSource).not.toContain('onMessage("profile:revision-created"');
   });
 
   it("prioritizes every safe embedded preparation state and exposes Retry only when allowed", () => {
@@ -508,9 +508,9 @@ describe("IINA sidebar lifecycle contract", () => {
     );
   });
 
-  it("renders unavailable Profile storage as HELPER_UNAVAILABLE instead of an empty library", () => {
-    expect(sidebarSource).toContain("Profiles unavailable (HELPER_UNAVAILABLE). Restart IINA.");
-    expect(sidebarSource).toContain("profileAuthority?.ready === false");
+  it("settles startup failures as the ordinary empty library", () => {
+    expect(sidebarSource).not.toContain("Profiles unavailable (HELPER_UNAVAILABLE). Restart IINA.");
+    expect(sidebarSource).toContain('profileListPhase === "settled"');
   });
 
   it("defers and coalesces Profile list refreshes outside the Global callback stack", () => {

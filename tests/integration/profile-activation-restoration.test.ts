@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { saveTestProfile, encryptedSaveOwner } from "../helpers/encrypted-profile-fixture.js";
+import { profileSaveRequestDigest } from "../../src/transport/client.js";
+import { describe, expect, it, vi } from "vitest";
 import type { ActivationReference, ProfileState } from "../../src/domain/types.js";
 import {
   restoreProfileActivationAuthority,
@@ -11,6 +13,10 @@ import type {
 } from "../../src/transport/client.js";
 import { ProfileActivationSync } from "../../src/adapters/iina/profile-activation-sync.js";
 import { identityHash } from "../../src/domain/identity.js";
+import { mkdtempSync, writeFileSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { spawn, spawnSync } from "node:child_process";
 
 const profile = {
   profileId: "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae",
@@ -26,6 +32,112 @@ const profile = {
   proxyMode: "direct" as const,
   model: "model-a",
 };
+
+describe.skipIf(process.platform !== "darwin")("production activation fixture script", () => {
+  const fixture = () => ({
+    formatVersion: 2,
+    storeId: "10000000-0000-4000-8000-000000000001",
+    storeRevision: 7,
+    lastCommit: {
+      commitId: "10000000-0000-4000-8000-000000000002",
+      operation: "open",
+      baseRevision: 6,
+      requestDigest: "0".repeat(64),
+    },
+    profileState: { profiles: [profile], activation: activation(true) },
+    credentials: {
+      [profile.profileId]: {
+        credentialId: "10000000-0000-4000-8000-000000000003",
+        envelope: "opaque-encrypted-value",
+      },
+    },
+    keyRing: {},
+    migration: null,
+  });
+  const run = (path: string) =>
+    spawnSync(
+      process.execPath,
+      ["scripts/profile-activation-fixture.ts", "--invalidate-restoration", path],
+      { cwd: process.cwd(), encoding: "utf8" },
+    );
+  it("updates a v2 snapshot and receipt atomically while retaining its opaque encrypted contents", () => {
+    const root = mkdtempSync(join(tmpdir(), "subtandem-activation-fixture-"));
+    try {
+      const path = join(root, "credentials.json");
+      const before = fixture();
+      writeFileSync(path, JSON.stringify(before));
+      const result = run(path);
+      expect(result.status, result.stderr).toBe(0);
+      const after = JSON.parse(readFileSync(path, "utf8"));
+      expect(after.storeRevision).toBe(8);
+      expect(after.lastCommit).toMatchObject({ operation: "commit", baseRevision: 7 });
+      expect(after.lastCommit.requestDigest).toMatch(/^[a-f0-9]{64}$/);
+      expect(after.profileState.activation.profileRevision).toBe(4);
+      expect(after.credentials).toEqual(before.credentials);
+      const backup = readdirSync(root).find((name) => name.includes("v2-activation-backup"))!;
+      expect(JSON.parse(readFileSync(join(root, backup), "utf8"))).toEqual(before);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+  it("rejects real v1-shaped input before creating a plaintext backup", () => {
+    const root = mkdtempSync(join(tmpdir(), "subtandem-activation-fixture-"));
+    try {
+      const path = join(root, "credentials.json");
+      const before = JSON.stringify({
+        ...fixture(),
+        formatVersion: 1,
+        credentials: { [profile.profileId]: { apiKey: "synthetic-fixture-old-key" } },
+      });
+      writeFileSync(path, before);
+      expect(run(path).status).not.toBe(0);
+      expect(readFileSync(path, "utf8")).toBe(before);
+      expect(
+        readdirSync(root).filter((name) => name.includes("backup") || name.endsWith(".tmp")),
+      ).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+  it("refuses to modify a snapshot while another process holds the fixed credential lock", async () => {
+    const root = mkdtempSync(join(tmpdir(), "subtandem-activation-fixture-"));
+    let child: ReturnType<typeof spawn> | undefined;
+    try {
+      const path = join(root, "credentials.json");
+      const before = JSON.stringify(fixture());
+      writeFileSync(path, before);
+      const lock = join(root, ".credentials.lock");
+      writeFileSync(lock, "", { mode: 0o600 });
+      child = spawn(
+        "/usr/bin/lockf",
+        [
+          "-k",
+          lock,
+          process.execPath,
+          "-e",
+          "process.stdout.write('locked'); setTimeout(() => {}, 10000)",
+        ],
+        { detached: true, stdio: ["ignore", "pipe", "pipe"] },
+      );
+      await new Promise<void>((resolve, reject) => {
+        child!.once("error", reject);
+        child!.stdout!.once("data", () => resolve());
+      });
+      expect(run(path).status).not.toBe(0);
+      expect(readFileSync(path, "utf8")).toBe(before);
+      expect(readdirSync(root).filter((name) => name.includes("backup"))).toEqual([]);
+    } finally {
+      if (child?.pid) {
+        try {
+          process.kill(-child.pid);
+        } catch (error) {
+          void error;
+        }
+      }
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
 
 function activation(credentialConfigured = true): ActivationReference {
   return {
@@ -245,7 +357,7 @@ describe("Profile activation restoration", () => {
     expect(first.snapshot.profiles).toEqual(secondWindow.snapshot.profiles);
   });
 
-  it("imports latest Profiles once as disabled without changing their revisions", async () => {
+  it("initializes missing storage empty without importing legacy preferences", async () => {
     const registry = profiles();
     const store = new RestorationStore();
     let legacyReads = 0;
@@ -262,12 +374,12 @@ describe("Profile activation restoration", () => {
 
     expect(store.calls).toEqual(["read", "initialize"]);
     expect(authority.snapshot).toMatchObject({ ready: true, activation: null });
-    expect(authority.snapshot.profiles[0]?.revision).toBe(3);
+    expect(authority.snapshot.profiles).toEqual([]);
     expect(authority.acceptsTranslations).toBe(false);
-    expect(legacyReads).toBe(1);
+    expect(legacyReads).toBe(0);
   });
 
-  it("opens one startup barrier and gives simultaneous windows the same restored activation", async () => {
+  it("reads a healthy startup snapshot without writing a barrier", async () => {
     const store = new RestorationStore({
       revision: 7,
       initialized: true,
@@ -290,8 +402,8 @@ describe("Profile activation restoration", () => {
     expect(second.accept(authority.snapshot, "get-b")).toBe(true);
     expect(first.snapshot).toEqual(second.snapshot);
     expect(authority.snapshot.profiles[0]?.revision).toBe(3);
-    expect(store.calls).toEqual(["read", "open"]);
-    expect(() => store.lateCommit(7)).toThrow("PROFILE_STATE_CONFLICT");
+    expect(store.calls).toEqual(["read"]);
+    expect(authority.snapshot.stateVersion).toBe(0);
   });
 
   it("atomically clears an invalid activation projection before becoming ready", async () => {
@@ -309,7 +421,7 @@ describe("Profile activation restoration", () => {
       createCommitId: () => "00000000-0000-4000-8000-000000000012",
     });
 
-    expect(store.calls).toEqual(["read", "open", "commit"]);
+    expect(store.calls).toEqual(["read", "commit"]);
     expect(authority.snapshot).toMatchObject({ ready: true, activation: null });
   });
 
@@ -332,7 +444,7 @@ describe("Profile activation restoration", () => {
 });
 
 for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
-  it(`preserves ${kind} saved Key through non-equivalent Endpoint and route changes after restart`, async () => {
+  it(`restores the ${kind} revision saved with an explicit empty key after Endpoint and route changes`, async () => {
     const saved = {
       ...profile,
       kind,
@@ -359,14 +471,34 @@ for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
     const first = await restoreProfileActivationAuthority(options);
     expect(first.snapshot.profiles[0]).toMatchObject({ ...saved, credentialConfigured: true });
     expect(first.snapshot.activation).toEqual(active);
-    const edited = await first.saveProfile({
-      ...saved,
-      expectedRevision: saved.revision,
-      displayName: "Changed name",
-      endpoint: " https://other.test:8443/Changed/Root ",
-      proxyMode: "system",
-      model: "changed-model",
-    });
+    const edited = await saveTestProfile(
+      first,
+      {
+        ...saved,
+        expectedRevision: saved.revision,
+        displayName: "Changed name",
+        endpoint: " https://other.test:8443/Changed/Root ",
+        proxyMode: "system",
+        model: "changed-model",
+      },
+      async (reservation, frame) => {
+        store.configured[saved.profileId] = false;
+        const result = await store.commit(
+          reservation.commitId,
+          reservation.expectedStoreRevision,
+          reservation.profileState,
+        );
+        return {
+          ...result,
+          lastCommit: {
+            commitId: reservation.commitId,
+            operation: "save-profile",
+            baseRevision: reservation.expectedStoreRevision,
+            requestDigest: profileSaveRequestDigest(encryptedSaveOwner, frame),
+          },
+        };
+      },
+    );
     expect(edited.outcome).toBe("changed");
     expect(edited.profile).toMatchObject({
       revision: saved.revision + 1,
@@ -393,8 +525,96 @@ for (const kind of ["openai", "claude", "deepseek", "ollama"] as const) {
     });
     expect(restarted.snapshot.profiles[0]).toMatchObject({
       ...edited.profile,
-      credentialConfigured: true,
+      credentialConfigured: false,
     });
     expect(restarted.snapshot.activation?.profileRevision).toBe(saved.revision + 1);
   });
 }
+
+describe("bounded restoration attempts", () => {
+  it("expires an unresponsive startup and prevents its late result from hydrating a newer base", async () => {
+    vi.useFakeTimers();
+    try {
+      let release!: (snapshot: ProfileStateStoreSnapshot) => void;
+      const store = new RestorationStore({
+        revision: 7,
+        initialized: true,
+        state: { profiles: [profile], activation: activation(false) },
+      });
+      let reads = 0;
+      const current = store.read.bind(store);
+      store.read = () =>
+        ++reads === 1
+          ? new Promise((resolve) => {
+              release = resolve;
+            })
+          : current();
+      const registry = profiles();
+      const loading = restoreProfileActivationAuthority({
+        authorityId: "bounded",
+        profiles: registry,
+        store,
+        createCommitId: () => "10000000-0000-4000-8000-000000000009",
+      });
+      await vi.advanceTimersByTimeAsync(15_000);
+      const authority = await loading;
+      expect(authority.snapshot).toMatchObject({ ready: false, profiles: [], activation: null });
+      expect(await authority.reconcile()).toBe(true);
+      expect(authority.snapshot).toMatchObject({
+        ready: true,
+        profiles: [profile],
+        activation: null,
+        activationGeneration: 0,
+      });
+      const version = authority.snapshot.stateVersion;
+      release({
+        initialized: true,
+        storeRevision: 1,
+        lastCommit: null,
+        profileState: { profiles: [], activation: null },
+        credentialConfigured: {},
+      });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(authority.snapshot.stateVersion).toBe(version);
+      expect(registry.listLatest()).toEqual([profile]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it("retains the readable list when independent cleanup never completes", async () => {
+    vi.useFakeTimers();
+    try {
+      const store = new RestorationStore({
+        revision: 7,
+        initialized: true,
+        state: { profiles: [profile], activation: null },
+      });
+      const read = store.read.bind(store);
+      store.read = async () => ({
+        ...(await read()),
+        migration: {
+          migrationId: "10000000-0000-4000-8000-000000000001",
+          sourceFormat: 1,
+          sourceLayout: "profile-state",
+          commitState: "committed",
+          cleanupState: "pending",
+          pendingClasses: [],
+        },
+      });
+      store.cleanup = () => new Promise(() => {});
+      const loading = restoreProfileActivationAuthority({
+        authorityId: "cleanup",
+        profiles: profiles(),
+        store,
+        createCommitId: () => "10000000-0000-4000-8000-000000000009",
+      });
+      expect((await loading).snapshot).toMatchObject({
+        ready: true,
+        profiles: [profile],
+        activation: null,
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

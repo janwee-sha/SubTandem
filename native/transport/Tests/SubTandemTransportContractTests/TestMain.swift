@@ -24,6 +24,52 @@ func expectFailure(_ message: String, _ operation: () throws -> Void) throws {
 enum SubTandemTransportContractTestMain {
     static func main() async {
         do {
+            if ProcessInfo.processInfo.environment["SUBTANDEM_NATIVE_TEST"] == "credential-migration-worker" {
+                try await runCredentialMigrationWorker()
+                exit(EXIT_SUCCESS)
+            }
+            if ProcessInfo.processInfo.environment["SUBTANDEM_NATIVE_TEST"] == "credential-migration-writer" {
+                try await runCredentialMigrationWriter()
+                exit(EXIT_SUCCESS)
+            }
+            if ProcessInfo.processInfo.environment["SUBTANDEM_NATIVE_TEST"] == "credential-migration" {
+                try await runCredentialMigrationTests()
+                print("Credential migration tests passed")
+                exit(EXIT_SUCCESS)
+            }
+            if ProcessInfo.processInfo.environment["SUBTANDEM_NATIVE_TEST"] == "credential-operation" {
+                try await runCredentialOperationTests()
+                print("Credential operation tests passed")
+                exit(EXIT_SUCCESS)
+            }
+            if ProcessInfo.processInfo.environment["SUBTANDEM_NATIVE_TEST"] == "credential-write-boundary" {
+                try await runCredentialWriteBoundaryTests()
+                print("Credential write boundary tests passed")
+                exit(EXIT_SUCCESS)
+            }
+            if ProcessInfo.processInfo.environment["SUBTANDEM_NATIVE_TEST"] == "credential-store-worker" {
+                try await runSecureStoreWorker()
+                exit(EXIT_SUCCESS)
+            }
+            if ProcessInfo.processInfo.environment["SUBTANDEM_NATIVE_TEST"] == "credential-store" {
+                try await runSecureCredentialStoreTests()
+                print("Secure credential store tests passed")
+                exit(EXIT_SUCCESS)
+            }
+            if ProcessInfo.processInfo.environment["SUBTANDEM_NATIVE_TEST"] == "credential-request" {
+                try await runCredentialRequestTests()
+                print("Credential request tests passed")
+                exit(EXIT_SUCCESS)
+            }
+            try runCredentialChannelTests()
+            try runCredentialProtectionTests()
+            try runCredentialHostProbeTests()
+            try await runCredentialChannelLifecycleTests()
+            try await runCredentialOperationTests()
+            try await runSecureCredentialStoreTests()
+            try await runCredentialMigrationTests()
+            try await runCredentialRequestTests()
+            try await runCredentialWriteBoundaryTests()
             try await runServerTests()
             try await runFileRPCClientTests()
             try await runHTTPClientTests()

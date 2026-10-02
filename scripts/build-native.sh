@@ -3,6 +3,25 @@ set -eu
 
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 TRANSPORT_PACKAGE="$ROOT_DIR/native/transport"
+CREDENTIAL_PROBE=${SUBTANDEM_CREDENTIAL_HOST_PROBE:-0}
+case "$CREDENTIAL_PROBE" in
+  0) ;;
+  1)
+    TRANSPORT_PACKAGE="$ROOT_DIR/build/credential-probe/native"
+    mkdir -p "$TRANSPORT_PACKAGE/Sources"
+    find "$TRANSPORT_PACKAGE/Sources" -mindepth 1 -delete
+    cp "$ROOT_DIR/native/transport/Package.swift" "$TRANSPORT_PACKAGE/Package.swift"
+    cp -R "$ROOT_DIR/native/transport/Sources/CCurl" "$TRANSPORT_PACKAGE/Sources/"
+    cp -R "$ROOT_DIR/native/transport/Sources/SubTandemTransport" "$TRANSPORT_PACKAGE/Sources/"
+    cp "$ROOT_DIR/tests/helpers/CredentialHostProbe.swift" "$TRANSPORT_PACKAGE/Sources/SubTandemTransport/"
+    case "${SUBTANDEM_CREDENTIAL_PROBE_BUILD:-A}" in
+      A|B) ;;
+      *) echo "SUBTANDEM_CREDENTIAL_PROBE_BUILD must be A or B" >&2; exit 1 ;;
+    esac
+    printf 'enum CredentialHostProbeBuild { static let id = "%s" }\n' "${SUBTANDEM_CREDENTIAL_PROBE_BUILD:-A}" > "$TRANSPORT_PACKAGE/Sources/SubTandemTransport/CredentialHostProbeBuild.swift"
+    ;;
+  *) echo "SUBTANDEM_CREDENTIAL_HOST_PROBE must be 0 or 1" >&2; exit 1 ;;
+esac
 EXTRACTOR_PACKAGE="$ROOT_DIR/native/subtitle-extractor"
 STYLE_PICKER_PACKAGE="$ROOT_DIR/native/style-picker"
 OUTPUT_DIR="$ROOT_DIR/dist/native"
@@ -49,7 +68,8 @@ SWIFT_CACHE_KEY=$(printf '%s\n' \
   "swift=$SWIFT_VERSION" \
   "sdk=$SDK_VERSION" \
   "host=$HOST_ARCH" \
-  "target=macos12.0" | shasum -a 256 | awk '{print $1}')
+  "target=macos12.0" \
+  "credential-probe=$CREDENTIAL_PROBE" | shasum -a 256 | awk '{print $1}')
 
 if [ "$FORCE_REBUILD" = 1 ] || [ ! -f "$SWIFT_CACHE_STAMP" ] || [ "$(cat "$SWIFT_CACHE_STAMP")" != "$SWIFT_CACHE_KEY" ]; then
   find "$SWIFT_BUILD_DIR" -mindepth 1 -delete
@@ -68,11 +88,15 @@ build_package() {
   ARCH=$3
   DESTINATION_PATH=$4
   FFMPEG_PREFIX=${5:-}
+  set --
+  if [ "$CREDENTIAL_PROBE" = 1 ] && [ "$PACKAGE_DIR" = "$TRANSPORT_PACKAGE" ]; then
+    set -- -Xswiftc -DSUBTANDEM_CREDENTIAL_HOST_PROBE
+  fi
 
   SUBTANDEM_FFMPEG_PREFIX="$FFMPEG_PREFIX" \
-    swift build --build-system swiftbuild --disable-sandbox --package-path "$PACKAGE_DIR" --scratch-path "$SCRATCH_PATH" -c release --destination "$DESTINATION_PATH" --arch "$ARCH"
+    swift build --build-system swiftbuild "$@" --disable-sandbox --package-path "$PACKAGE_DIR" --scratch-path "$SCRATCH_PATH" -c release --destination "$DESTINATION_PATH" --arch "$ARCH"
   SWIFT_BIN_PATH=$(SUBTANDEM_FFMPEG_PREFIX="$FFMPEG_PREFIX" \
-    swift build --build-system swiftbuild --disable-sandbox --package-path "$PACKAGE_DIR" --scratch-path "$SCRATCH_PATH" -c release --destination "$DESTINATION_PATH" --arch "$ARCH" --show-bin-path)
+    swift build --build-system swiftbuild "$@" --disable-sandbox --package-path "$PACKAGE_DIR" --scratch-path "$SCRATCH_PATH" -c release --destination "$DESTINATION_PATH" --arch "$ARCH" --show-bin-path)
 }
 
 for ARCH in arm64 x86_64; do
