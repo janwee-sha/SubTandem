@@ -106,8 +106,6 @@ IINA 개발 버전에서는 사용 가능한 플러그인 목록에서 SubTandem
 
 Profile 요약을 펼치면 바로 편집할 수 있습니다. 작업 행은 왼쪽에 **Test**, 오른쪽에 **Cancel**, **Delete**, **Save** 순서로 표시되며 새 초안에는 Delete가 없습니다. 현재 값을 테스트하고 저장한 뒤 새 revision을 활성화하세요.
 
-API key가 저장된 기존 Profile을 열면 모델 목록 새로 고침, **Test**, **Save**는 키 읽기가 끝날 때까지 기다립니다. 이때도 필드 편집, **Delete**, **Cancel**, 서랍 닫기는 가능합니다. 읽기에 실패하거나 15초가 지나면 편집 가능한 빈 API key 필드와 함께 작업이 다시 가능해집니다. 새 Profile과 저장된 API key가 없는 Profile은 추가로 기다릴 필요가 없습니다.
-
 ## ⚙️ 번역 서비스
 
 ### OpenAI

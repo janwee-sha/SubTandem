@@ -106,8 +106,6 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 
 展开 Profile 摘要即可就地编辑。操作行左侧是 **Test**，右侧依次是 **Cancel**、**Delete**、**Save**；新草稿不显示 Delete。测试当前值并保存后，再启用新修订版。
 
-打开已有且保存了 API key 的 Profile 时，模型刷新、**Test** 和 **Save** 会等待读取结束。期间仍可编辑字段、使用 **Delete** 或 **Cancel**，或关闭抽屉。读取失败或等待达到 15 秒后，这些操作恢复可用，API key 显示为可编辑的空字段；新建 Profile 和未保存 API key 的 Profile 无需额外等待。
-
 ## ⚙️ 翻译服务
 
 ### OpenAI

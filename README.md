@@ -106,8 +106,6 @@ After any installation method, approve the requested plugin permissions if promp
 
 Expand a profile summary to edit it in place. The action row keeps **Test** on the left and **Cancel**, **Delete**, **Save** on the right; a new draft omits Delete. Test the current values, save the update, and enable the new revision before translating.
 
-When you open an existing Profile with a saved API key, model refresh, **Test**, and **Save** wait until the key has been read. You can still edit fields, use **Delete** or **Cancel**, or close the drawer. If the read fails or takes 15 seconds, the controls become available with an editable empty API key field; new Profiles and Profiles without a saved key need no extra wait.
-
 ## ⚙️ Translation Services
 
 ### OpenAI

@@ -106,8 +106,6 @@ Quelle que soit la méthode choisie, approuvez les autorisations demandées si I
 
 Développez le résumé d'un Profile pour le modifier sur place. La ligne d'actions place **Test** à gauche puis **Cancel**, **Delete**, **Save** à droite ; un nouveau brouillon n'affiche pas Delete. Testez les valeurs courantes, enregistrez-les, puis activez la nouvelle révision.
 
-À l’ouverture d’un Profile existant avec une API key enregistrée, l’actualisation des modèles, **Test** et **Save** attendent la fin de la lecture de la clé. Vous pouvez toujours modifier les champs, utiliser **Delete** ou **Cancel**, ou fermer le tiroir. Si la lecture échoue ou dure 15 secondes, les commandes redeviennent disponibles avec un champ API key vide et modifiable. Les nouveaux Profile et ceux sans clé enregistrée n’ont pas d’attente supplémentaire.
-
 ## ⚙️ Services de traduction
 
 ### OpenAI
