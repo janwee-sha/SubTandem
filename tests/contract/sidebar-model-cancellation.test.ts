@@ -47,7 +47,7 @@ describe.each(["openai", "claude", "deepseek", "ollama"])(
             : field === "#provider-kind"
               ? "openai"
               : field === "#provider-proxy-mode"
-                ? "system"
+                ? "direct"
                 : "https://another.test/v1";
         h.element(field).dispatch(
           field === "#provider-key" || field === "#provider-endpoint" ? "input" : "change",

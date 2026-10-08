@@ -319,7 +319,7 @@ describe("Sidebar/Main/Global security messages", () => {
         userAction: "CHECK_ENDPOINT",
         providerKind: "ollama",
       }),
-    ).toBe("The Profile settings were rejected. Check the Endpoint and Model ID.");
+    ).toBe("The Profile settings were rejected. Check the API root and Model ID.");
     expect(
       providerTestStatusMessage({
         ok: false,
@@ -337,7 +337,7 @@ describe("Sidebar/Main/Global security messages", () => {
         userAction: "CHECK_ENDPOINT",
         providerKind: "claude",
       }),
-    ).toBe("The Profile settings were rejected. Check the Endpoint and Model ID.");
+    ).toBe("The Profile settings were rejected. Check the API root and Model ID.");
   });
 
   it("uses the same exact eleven service failure messages for Session and Profile Test", () => {
@@ -352,7 +352,7 @@ describe("Sidebar/Main/Global security messages", () => {
       ],
       [
         { category: "configuration", userAction: "CHECK_ENDPOINT" },
-        "The Profile settings were rejected. Check the Endpoint and Model ID.",
+        "The Profile settings were rejected. Check the API root and Model ID.",
       ],
       [
         { category: "network", statusCode: 502, userAction: "CHECK_NETWORK" },

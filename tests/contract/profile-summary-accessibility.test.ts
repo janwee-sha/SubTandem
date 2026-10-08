@@ -32,7 +32,7 @@ describe("Profile summary accessibility", () => {
     expect(description?.id).toBe(disclosure.getAttribute("aria-describedby"));
     expect(description?.textContent).toContain("Name: <Name & Co>");
     expect(description?.textContent).toContain("Service and model: Claude · <long-model>&");
-    expect(description?.textContent).toContain("Endpoint: https://example.test/?a=1&b=<value>");
+    expect(description?.textContent).toContain("API root: https://example.test/?a=1&b=<value>");
     expect(description?.textContent).not.toMatch(/macOS proxy|key saved|secret-key/);
     expect(activation.getAttribute("aria-describedby")).toBeNull();
 

@@ -37,7 +37,7 @@ SubTandem conserve les sous-titres d'origine et affiche séparément leur traduc
 - **Priorité à la lecture :** la traduction ne met jamais la vidéo en pause et ne masque pas les sous-titres d'origine.
 - **Requêtes limitées :** SubTandem ne traduit que les cue proches, limite les tâches simultanées par fenêtre de lecture et ne met en cache les résultats réussis que pendant la session vidéo actuelle.
 - **Plusieurs Profile :** développez un Profile dans la liste groupée pour le modifier sur place, ou utilisez **New profile** à côté du titre. Test vérifie le brouillon du tiroir courant ; seul l'interrupteur indépendant active une révision enregistrée exacte dans toutes les fenêtres.
-- **Contrôle du proxy :** les nouveaux Profile utilisent la connexion directe par défaut et peuvent être configurés pour suivre le proxy macOS actuel.
+- **Contrôle du proxy :** les nouveaux Profile utilisent les paramètres du proxy système par défaut ; choisissez une route réseau pour chaque Profile.
 
 ## ✅ Configuration requise
 
@@ -99,7 +99,7 @@ Quelle que soit la méthode choisie, approuvez les autorisations demandées si I
 
 1. Ouvrez une vidéo locale et sélectionnez dans IINA une piste texte intégrée prise en charge ou un SRT/ASS externe comme sous-titre principal.
 2. Dans **Subtitle**, sélectionnez la langue cible exacte. Le service de traduction sélectionné détermine la langue source de chaque cue dans la requête de traduction ; aucune confirmation de langue source n'est requise.
-3. Dans **Translation service**, choisissez **New profile** pour créer un Profile OpenAI, Claude, DeepSeek ou Ollama. Les nouveaux brouillons utilisent **Connect directly** par défaut. Si nécessaire, saisissez l'API key avant d'actualiser manuellement les modèles.
+3. Dans **Translation service**, choisissez **New profile** pour créer un Profile OpenAI, Claude, DeepSeek ou Ollama. Les nouveaux brouillons utilisent **Use system proxy settings** par défaut. Si nécessaire, saisissez l'API key avant d'actualiser manuellement les modèles.
 4. Utilisez **Test** en bas à gauche pour tester le brouillon courant sans l'enregistrer, puis **Save** à droite et activez son interrupteur indépendant. La sonde fixe de Test peut être facturée, mais n'envoie aucun sous-titre en cours de lecture, n'enregistre pas la nouvelle key et n'active pas le Profile.
 5. Activez **Translate**. Le sous-titre d'origine reste affiché par IINA et les cue traduits apparaissent dans la surcouche de SubTandem. Sous **Subtitle**, utilisez **Position** pour déplacer la surcouche du haut (`0`) vers le bas (`100`).
 6. Choisissez les huit valeurs dans les groupes **Font**, **Border** et **Background**. Un préréglage de couleur est enregistré directement ; **Show Colors…** ouvre le panneau de couleurs macOS et sa fermeture sans modification conserve la valeur précédente.
@@ -112,27 +112,27 @@ Développez le résumé d'un Profile pour le modifier sur place. La ligne d'acti
 
 - L’API root par défaut est `https://api.openai.com/v1`. Pour OpenAI, renseignez votre **API key** et choisissez un modèle accessible à votre compte.
 - Actualisez la liste des modèles et choisissez-en un, ou saisissez son **Model ID** exact.
-- Pour un service compatible avec OpenAI, remplacez **Endpoint** par son API root. SubTandem ajoute `/chat/completions` et affiche l’URL de la requête dans la barre latérale. Laissez **API key** vide si ce service n’en demande pas.
+- Pour un service compatible avec OpenAI, remplacez **API root** par son API root. SubTandem ajoute `/chat/completions` et affiche l’URL de la requête dans la barre latérale. Laissez **API key** vide si ce service n’en demande pas.
 
 ### Claude
 
-- L’API root par défaut est `https://api.anthropic.com`. Pour Claude, renseignez votre **API key** Anthropic et choisissez un modèle accessible à votre compte.
+- L’API root par défaut est `https://api.anthropic.com/v1`. Pour Claude, renseignez votre **API key** Anthropic et choisissez un modèle accessible à votre compte.
 - Actualisez la liste des modèles et choisissez-en un, ou saisissez son **Model ID** exact.
-- Pour un service compatible avec Claude, remplacez **Endpoint** par son API root. SubTandem utilise `/v1/messages` pour traduire et `/v1/models` pour la liste des modèles. Laissez **API key** vide si le service accepte les requêtes sans clé. Vous pouvez alors actualiser les modèles, tester, enregistrer et activer le Profile sans clé.
+- Pour un service compatible avec Claude, remplacez **API root** par son API root. Si l’API root se termine par `/v1`, SubTandem ajoute `/messages` pour la traduction et `/models` pour le catalogue ; sinon, il ajoute `/v1/messages` et `/v1/models`. Laissez **API key** vide si le service accepte les requêtes sans clé. Vous pouvez alors actualiser les modèles, tester, enregistrer et activer le Profile sans clé.
 
 ### DeepSeek
 
 - L’API root par défaut est `https://api.deepseek.com`. Pour le service officiel DeepSeek, renseignez votre **API key** et choisissez un modèle accessible à votre compte.
 - Actualisez la liste des modèles et choisissez-en un, ou saisissez son **Model ID** exact. SubTandem ne présélectionne aucun modèle DeepSeek.
-- Si votre service utilise une autre API root compatible, modifiez **Endpoint**. SubTandem ajoute `/chat/completions` pour la traduction.
+- Si votre service utilise une autre API root compatible, modifiez **API root**. SubTandem ajoute `/chat/completions` pour la traduction.
 
 ### Ollama
 
 - L’adresse du serveur par défaut est `http://127.0.0.1:11434` pour Ollama sur votre ordinateur. Démarrez Ollama et installez d’abord un modèle compatible.
 - Actualisez la liste des modèles et choisissez un modèle installé, ou saisissez son **Model ID** exact.
-- Pour un serveur Ollama distant, remplacez **Endpoint** par son adresse. Renseignez **API key** seulement si ce serveur l’exige. **Test** vérifie la connexion, le modèle et la prise en charge des sorties structurées.
+- Pour un serveur Ollama distant, remplacez **API root** par son adresse. Les requêtes de traduction ajoutent `/api/chat`. Renseignez **API key** seulement si ce serveur l’exige. **Test** vérifie la connexion, le modèle et la prise en charge des sorties structurées.
 
-Les nouveaux Profile utilisent **Connect directly** par défaut. Choisissez **Use macOS proxy settings** si votre réseau exige un proxy.
+Les nouveaux Profile utilisent **Use system proxy settings** par défaut. **Network route** s’applique à l’actualisation des modèles, aux tests de connexion et à la traduction ; choisissez **Connect directly** pour contourner le proxy système. Les Profile existants conservent leur route enregistrée, et la route choisie dans le brouillon courant est conservée lorsque vous changez de service puis revenez.
 
 ## 🔒 Confidentialité, identifiants et coûts
 
@@ -142,7 +142,7 @@ Les nouveaux Profile utilisent **Connect directly** par défaut. Choisissez **Us
 - Ouvrez un Profile pour modifier son API key enregistrée. Elle est masquée par défaut ; **Show API key** la révèle uniquement dans le tiroir courant. **Save** la remplace par la saisie actuelle ; enregistrer un champ vide la supprime. Une lecture échouée laisse un champ vide modifiable sans changer les données enregistrées. **Cancel** abandonne les modifications.
 - La mise à niveau depuis l’ancien format en clair conserve les paramètres Profile et une sélection activée valide, mais efface les API key enregistrées. Saisissez-les à nouveau au besoin. SubTandem nettoie les copies qu’il gère ; les instantanés APFS/Time Machine, copies hors ligne et autres sauvegardes peuvent conserver les anciennes API key. Renouvelez-les auprès de votre service.
 - Sauvegardez le fichier `credentials.json` complet avec ses éléments de restauration associés. La restauration exige l’appareil et l’utilisateur d’origine ainsi qu’un environnement de clés système valide ; elle n’est pas garantie même dans ces conditions. Un autre appareil ou utilisateur ne peut pas récupérer les API key enregistrées ; saisissez-les à nouveau pour chaque Profile.
-- Le transport helper inclus n'écoute que sur un port temporaire `127.0.0.1`. Un endpoint configuré ou en cours d'édition peut recevoir des requêtes de modèles sans sous-titres. **Test** envoie au brouillon courant une sonde fixe sans sous-titres qui peut être facturée ; une nouvelle key n'est utilisée que pour ce test sauf enregistrement séparé. Seule la révision du Profile globalement activé reçoit le texte des sous-titres. Les redirect inter-origines et les identifiants inclus dans les URL sont refusés.
+- Le transport helper inclus n'écoute que sur un port temporaire `127.0.0.1`. Un API root configuré ou en cours d'édition peut recevoir des requêtes de modèles sans sous-titres. **Test** envoie au brouillon courant une sonde fixe sans sous-titres qui peut être facturée ; une nouvelle key n'est utilisée que pour ce test sauf enregistrement séparé. Seule la révision du Profile globalement activé reçoit le texte des sous-titres. Les redirect inter-origines et les identifiants inclus dans les URL sont refusés.
 - Les traductions ne sont mises en cache que pendant la session vidéo actuelle et sont effacées lors d'un changement de vidéo, à la fin de la lecture ou à la fermeture de la fenêtre.
 - Les pistes courtes, les textes de langue source inconnue et ceux déjà conformes à la langue cible exacte sont quand même envoyés au service sélectionné et peuvent être facturés. Le Provider applique ses propres politiques ; le traitement par lots et le cache de session réduisent les appels sans garantir un coût maximal.
 
@@ -153,11 +153,11 @@ SubTandem n'effectue pas de transcription audio, d'OCR ou d'extraction de sous-t
 ## 🛠️ Dépannage
 
 - **Select a supported text subtitle :** sélectionnez une piste locale intégrée SubRip/ASS/SSA/`mov_text` ou un SRT/ASS externe. Les pistes graphiques et intégrées distantes ne sont pas prises en charge ; suivez l'état pour resélectionner ou utiliser Retry après un échec.
-- **Échec de la traduction :** suivez l'action précise indiquée dans Session. Selon la cause, testez le Profile et vérifiez son endpoint, son Model ID exact, son API key, sa route réseau, les limites du compte ou le processus Ollama. La lecture et les sous-titres d'origine continuent normalement.
+- **Échec de la traduction :** suivez l'action précise indiquée dans Session. Selon la cause, testez le Profile et vérifiez son API root, son Model ID exact, son API key, sa route réseau, les limites du compte ou le processus Ollama. La lecture et les sous-titres d'origine continuent normalement.
 - **Liste de Profile vide au démarrage :** si les paramètres enregistrés ne se chargent pas, **New profile** reste disponible. Les paramètres endommagés peuvent être réinitialisés ; créez et enregistrez un nouveau Profile pour continuer. Un problème d’accès temporaire préserve les Profile valides, qui peuvent réapparaître lorsque l’accès est rétabli. Un échec d’enregistrement conserve le brouillon pour réessayer. L’échec de lecture d’une seule API key ne réinitialise pas la liste.
 - **Credential could not be saved :** installez le paquet Release plutôt qu'une copie de développement incomplète, vérifiez que le répertoire de données du plugin est accessible en écriture, puis quittez complètement et relancez IINA.
 - **Aucune traduction affichée :** vérifiez que l'interrupteur du Profile voulu et **Translate** sont tous deux activés et que la lecture se trouve dans l'intervalle d'un cue déjà traduit.
-- **Problème de réseau ou de proxy :** les nouveaux Profile se connectent directement. Si votre réseau exige un proxy, choisissez **Use macOS proxy settings** pour ce Profile, puis enregistrez-le, testez-le et activez la nouvelle révision.
+- **Problème de réseau ou de proxy :** les nouveaux Profile utilisent les paramètres du proxy système. Vérifiez cette configuration ou choisissez **Connect directly** pour ce Profile, puis enregistrez-le, testez-le et activez la nouvelle révision.
 
 ## ☕ Soutenir SubTandem
 

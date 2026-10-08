@@ -84,7 +84,7 @@ describe("IINA sidebar lifecycle contract", () => {
 
   it("keeps Claude drafts isolated and completes Save through the encrypted editor", () => {
     expect(sidebarSource).toContain("providerDrafts");
-    expect(sidebarSource).toContain('claude: { endpoint: "https://api.anthropic.com"');
+    expect(sidebarSource).toContain('claude: { endpoint: "https://api.anthropic.com/v1"');
     expect(sidebarSource).toContain("saveActiveDraft");
     expect(sidebarSource).toContain("draftCredentialEpoch += 1");
     expect(sidebarSource).not.toContain("pendingProfileSave.secret");
