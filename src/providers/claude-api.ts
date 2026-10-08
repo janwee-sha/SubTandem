@@ -1,5 +1,5 @@
 import { claudeHttpError } from "./errors.js";
-import { normalizeProviderEndpoint } from "./profiles.js";
+import { providerApiUrl } from "./profiles.js";
 import type { ProviderAttemptError } from "./types.js";
 
 export type ClaudeResource = "messages" | "models";
@@ -18,9 +18,7 @@ const CLAUDE_ERROR_TYPES = new Set([
 ]);
 
 export function claudeApiUrl(root: string, resource: ClaudeResource): string {
-  const endpoint = normalizeProviderEndpoint("claude", root).replace(/\/+$/, "");
-  if (/\/v1\/(?:messages|models)$/i.test(endpoint)) throw new Error("INVALID_ENDPOINT");
-  return `${endpoint}${/\/v1$/i.test(endpoint) ? "" : "/v1"}/${resource}`;
+  return providerApiUrl("claude", root, resource === "messages" ? "translation" : "models");
 }
 
 export function claudeRequestHeaders(

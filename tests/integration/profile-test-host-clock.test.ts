@@ -11,7 +11,7 @@ async function host() {
   const profile = new ProviderProfiles(() => "00000000-0000-4000-8000-000000000001").save({
     displayName: "One",
     kind: "openai",
-    endpoint: "https://synthetic.test/v1",
+    endpoint: "https://synthetic.test",
     model: "synthetic-model",
     proxyMode: "direct",
   });

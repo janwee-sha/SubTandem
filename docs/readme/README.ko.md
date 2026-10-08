@@ -110,27 +110,27 @@ Profile 요약을 펼치면 바로 편집할 수 있습니다. 작업 행은 왼
 
 ### OpenAI
 
-- 기본 API root는 `https://api.openai.com/v1`입니다. OpenAI 공식 서비스를 사용할 때는 **API key**를 입력하고 계정에서 사용할 수 있는 모델을 선택하세요.
+- 기본 API root는 `https://api.openai.com`입니다. OpenAI 공식 서비스를 사용할 때는 **API key**를 입력하고 계정에서 사용할 수 있는 모델을 선택하세요.
 - 모델 목록을 새로 고쳐 모델을 선택하거나 정확한 **Model ID**를 입력하세요.
-- OpenAI 호환 서비스를 사용할 때는 **API root**를 해당 서비스의 API root로 변경하세요. SubTandem가 `/chat/completions`를 추가하고 사이드바에 요청 URL을 표시합니다. 서비스에 API key가 필요하지 않다면 **API key**를 비워 두세요.
+- OpenAI 호환 서비스를 사용할 때는 **API root**를 해당 서비스의 API root로 변경하세요. 사이드바에 번역 요청 URL을 표시합니다. 서비스에 API key가 필요하지 않다면 **API key**를 비워 두세요.
 
 ### Claude
 
-- 기본 API root는 `https://api.anthropic.com/v1`입니다. Claude 공식 서비스를 사용할 때는 Anthropic **API key**를 입력하고 계정에서 사용할 수 있는 모델을 선택하세요.
+- 기본 API root는 `https://api.anthropic.com`입니다. Claude 공식 서비스를 사용할 때는 Anthropic **API key**를 입력하고 계정에서 사용할 수 있는 모델을 선택하세요.
 - 모델 목록을 새로 고쳐 모델을 선택하거나 정확한 **Model ID**를 입력하세요.
-- Claude 호환 서비스를 사용할 때는 **API root**를 해당 서비스의 API root로 변경하세요. API root가 `/v1`로 끝나면 번역 요청에는 `/messages`, 모델 목록 요청에는 `/models`를 추가합니다. 다른 주소에는 각각 `/v1/messages`와 `/v1/models`를 추가합니다. 서비스에 API key가 필요하지 않다면 **API key**를 비워 두세요. 키 없이도 모델 목록을 새로 고치고 Profile을 테스트, 저장, 활성화할 수 있습니다.
+- Claude 호환 서비스를 사용할 때는 **API root**를 해당 서비스의 API root로 변경하세요. 서비스에 API key가 필요하지 않다면 **API key**를 비워 두세요. 키 없이도 모델 목록을 새로 고치고 Profile을 테스트, 저장, 활성화할 수 있습니다.
 
 ### DeepSeek
 
 - 기본 API root는 `https://api.deepseek.com`입니다. DeepSeek 공식 서비스를 사용할 때는 **API key**를 입력하고 계정에서 사용할 수 있는 모델을 선택하세요.
 - 모델 목록을 새로 고쳐 모델을 선택하거나 정확한 **Model ID**를 입력하세요. SubTandem는 DeepSeek 모델을 자동으로 선택하지 않습니다.
-- 다른 호환 API root를 사용하는 서비스라면 **API root**를 변경하세요. SubTandem는 번역 요청에 `/chat/completions`를 추가합니다.
+- 다른 호환 API root를 사용하는 서비스라면 **API root**를 변경하세요.
 
 ### Ollama
 
 - 기본 서버 주소는 `http://127.0.0.1:11434`이며 사용 중인 컴퓨터에서 실행 중인 Ollama에 연결합니다. 먼저 Ollama를 실행하고 호환 모델을 설치하세요.
 - 모델 목록을 새로 고쳐 설치된 모델을 선택하거나 정확한 **Model ID**를 입력하세요.
-- 원격 Ollama 서버를 사용하려면 **API root**를 해당 서버 주소로 변경하세요. 번역 요청에는 `/api/chat`을 추가합니다. 서버에서 요구할 때만 **API key**를 입력합니다. **Test**는 연결, 모델, 구조화 출력 지원을 확인합니다.
+- 원격 Ollama 서버를 사용하려면 **API root**를 해당 서버 주소로 변경하세요. 서버에서 요구할 때만 **API key**를 입력합니다. **Test**는 연결, 모델, 구조화 출력 지원을 확인합니다.
 
 새 Profile은 기본적으로 **Use system proxy settings**를 사용합니다. **Network route**는 모델 새로 고침, 연결 테스트, 번역에 적용됩니다. 시스템 프록시를 거치지 않으려면 **Connect directly**를 선택하세요. 기존 Profile은 저장된 경로를 유지하며, 현재 초안에서 선택한 경로도 서비스를 바꿨다가 돌아오면 유지됩니다.
 
@@ -142,7 +142,6 @@ Profile 요약을 펼치면 바로 편집할 수 있습니다. 작업 행은 왼
 - Profile을 열면 저장된 API key를 편집할 수 있습니다. 처음에는 가려지며 **Show API key**는 현재 서랍에서만 값을 표시합니다. **Save**는 현재 입력으로 교체하고 빈 입력을 저장하면 삭제합니다. 읽기에 실패하면 편집 가능한 빈 필드가 표시되며 저장된 데이터는 바뀌지 않습니다. **Cancel**은 편집을 버립니다.
 - 이전 평문 형식에서 업그레이드하면 Profile 설정과 유효한 활성 선택은 유지되지만 저장된 API key는 지워집니다. 필요할 때 다시 입력하세요. SubTandem은 관리하는 복사본을 정리하지만 APFS/Time Machine 스냅샷, 오프라인 복사본 및 다른 백업에는 이전 API key가 남을 수 있습니다. 서비스에서 이전 API key를 교체하세요.
 - 복구 자료가 포함된 전체 `credentials.json`을 백업하세요. 복구하려면 원래 장치와 사용자, 유효한 시스템 키 환경이 필요하며 이 조건에서도 성공을 보장하지 않습니다. 다른 장치나 사용자는 저장된 API key를 복구할 수 없습니다. 각 Profile에 다시 입력하세요.
-- 번들 transport helper는 임시 `127.0.0.1` 포트에서만 수신합니다. 저장했거나 편집 중인 API root는 자막 없는 모델 목록 요청을 받을 수 있습니다. **Test**는 현재 초안으로 과금될 수 있는 고정 자막 없는 probe를 보내며, 새로 입력한 key는 별도로 저장하지 않는 한 그 테스트에만 사용됩니다. 전역 활성화된 Profile revision만 번역용 자막 텍스트를 받습니다.
 - 번역 결과는 현재 영상 세션에만 캐시되며 영상 변경, 재생 종료 또는 창 닫기 시 삭제됩니다.
 - 짧은 트랙, 원본 언어를 알 수 없는 텍스트, 정확한 대상 언어와 이미 같은 텍스트도 선택한 Provider로 전송되어 비용이 발생할 수 있습니다. Provider 자체 정책이 적용되며 묶음 처리와 세션 캐시는 호출 횟수를 줄이지만 최대 비용을 보장하지 않습니다.
 

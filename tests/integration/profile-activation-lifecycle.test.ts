@@ -21,19 +21,19 @@ function setup() {
   const a = profiles.save({
     displayName: "A",
     kind: "openai",
-    endpoint: "https://a.example/v1",
+    endpoint: "https://a.example",
     model: "model-a",
   });
   const b = profiles.save({
     displayName: "B",
     kind: "openai",
-    endpoint: "https://b.example/v1",
+    endpoint: "https://b.example",
     model: "model-b",
   });
   const c = profiles.save({
     displayName: "C",
     kind: "claude",
-    endpoint: "https://c.example/v1",
+    endpoint: "https://c.example",
     model: "model-c",
   });
   const d = profiles.save({

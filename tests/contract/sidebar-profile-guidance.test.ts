@@ -5,15 +5,15 @@ const services = [
   {
     kind: "openai",
     label: "OpenAI",
-    root: "https://api.openai.com/v1",
-    path: "/chat/completions",
+    root: "https://api.openai.com",
+    path: "/v1/chat/completions",
     placeholder: "e.g. gpt-6-luna",
   },
   {
     kind: "claude",
     label: "Claude",
-    root: "https://api.anthropic.com/v1",
-    path: "/messages",
+    root: "https://api.anthropic.com",
+    path: "/v1/messages",
     placeholder: "e.g. claude-haiku-5-5",
   },
   {
@@ -84,7 +84,7 @@ describe.each(services)("$label Profile guidance", (service) => {
         revision: 1,
         displayName: "Saved custom name",
         kind: service.kind,
-        endpoint: "https://fixture.test/custom/v1/",
+        endpoint: "https://fixture.test/custom/",
         model: "custom-model",
         proxyMode: route,
         endpointFingerprint: "fixture",
@@ -138,7 +138,7 @@ describe.each(services)("$label Profile guidance", (service) => {
       const h = sidebarHarness();
       h.element("#new-profile").dispatch("click");
       selectService(h, service.kind);
-      const root = `https://fixture.test/${"long-path-".repeat(40)}/v1`;
+      const root = `https://fixture.test/${"long-path-".repeat(40)}/custom`;
       h.element("#provider-endpoint").value = `  ${root}${slash}  `;
       h.element("#provider-endpoint").dispatch("input");
       expect(h.element("#request-url").textContent).toBe(`Actual request:\n${root}${service.path}`);
@@ -192,27 +192,29 @@ describe.each(services)("$label Profile guidance", (service) => {
   });
 });
 
-describe("Claude API root paths", () => {
+describe.each(services.slice(0, 2))("$label fixed API root paths", (service) => {
   it.each([
-    ["https://fixture.test", "/v1/messages"],
-    ["https://fixture.test/proxy/", "/v1/messages"],
-    ["https://fixture.test/v1///", "/messages"],
-    ["https://fixture.test/proxy/V1/", "/messages"],
-  ])("previews %s with %s", (root, path) => {
+    "https://fixture.test",
+    "https://fixture.test/proxy/",
+    "https://fixture.test/v1///",
+    "https://fixture.test/proxy/V1/",
+  ])("always previews the fixed translation path for %s", (root) => {
     const h = sidebarHarness();
     h.element("#new-profile").dispatch("click");
-    selectService(h, "claude");
+    selectService(h, service.kind);
     h.element("#provider-endpoint").value = root;
     h.element("#provider-endpoint").dispatch("input");
     expect(h.element("#endpoint-hint").textContent).toBe(
-      `Enter a HTTP(S) Claude API root. Translation requests append ${path}.`,
+      `Enter a HTTP(S) ${service.label} API root. Translation requests append ${service.path}.`,
     );
     expect(h.element("#request-url").textContent).toBe(
-      `Actual request:\n${root.replace(/\/+$/, "")}${path}`,
+      `Actual request:\n${root.replace(/\/+$/, "")}${service.path}`,
     );
     h.event("pagehide");
   });
+});
 
+describe("Claude API root validation", () => {
   it.each(["https://fixture.test/v1/messages", "https://fixture.test/v1/models/"])(
     "keeps existing full-resource rejection for %s",
     (root) => {
@@ -226,4 +228,16 @@ describe("Claude API root paths", () => {
       h.event("pagehide");
     },
   );
+});
+
+describe("New Profile heading", () => {
+  it("renders the title without an unsaved service subtitle", () => {
+    const h = sidebarHarness();
+    h.element("#new-profile").dispatch("click");
+    const heading = h.evaluate("newProfileRow.innerHTML");
+    expect(heading).toContain("<strong>New profile</strong>");
+    expect(heading).not.toContain("Unsaved translation service");
+    expect(heading).not.toContain("profile-summary");
+    h.event("pagehide");
+  });
 });

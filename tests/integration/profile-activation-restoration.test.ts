@@ -23,10 +23,10 @@ const profile = {
   revision: 3,
   displayName: "A",
   kind: "openai" as const,
-  endpoint: "https://a.example/v1",
+  endpoint: "https://a.example",
   endpointFingerprint: identityHash({
     kind: "openai",
-    endpoint: "https://a.example/v1",
+    endpoint: "https://a.example",
     proxyMode: "direct",
   }),
   proxyMode: "direct" as const,
@@ -277,10 +277,10 @@ describe("Profile activation restoration", () => {
       ...profile,
       profileId: `7a90a4e6-cc4f-4f59-99b7-8ff522f887a${index}`,
       displayName: `Profile ${index + 1}`,
-      endpoint: `https://profile-${index + 1}.example/v1`,
+      endpoint: `https://profile-${index + 1}.example`,
       endpointFingerprint: identityHash({
         kind: "openai",
-        endpoint: `https://profile-${index + 1}.example/v1`,
+        endpoint: `https://profile-${index + 1}.example`,
         proxyMode: "direct",
       }),
     }));
@@ -326,10 +326,10 @@ describe("Profile activation restoration", () => {
       ...profile,
       profileId: "7a90a4e6-cc4f-4f59-99b7-8ff522f887af",
       displayName: "B",
-      endpoint: "https://b.example/v1",
+      endpoint: "https://b.example",
       endpointFingerprint: identityHash({
         kind: "openai",
-        endpoint: "https://b.example/v1",
+        endpoint: "https://b.example",
         proxyMode: "direct",
       }),
     };

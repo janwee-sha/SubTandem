@@ -45,7 +45,7 @@ describe("US3 provider broker integration", () => {
       profiles.save({
         displayName: "OpenAI",
         kind: "openai",
-        endpoint: "https://openai.example/v1",
+        endpoint: "https://openai.example",
         model: "openai-model",
       }),
       profiles.save({
@@ -153,7 +153,7 @@ describe("US3 provider broker integration", () => {
       contextToken: modelCatalogContextToken({
         trigger: "profile",
         kind: "openai",
-        endpoint: "https://api.example.test/v1",
+        endpoint: "https://api.example.test",
         proxyMode: "direct",
       }),
       trigger: "profile",
@@ -472,7 +472,7 @@ describe("US3 provider broker integration", () => {
         kind,
         endpoint:
           kind === "openai"
-            ? "http://openai.example.test:8080/v1"
+            ? "http://openai.example.test:8080"
             : "http://ollama.example.test:11434",
         model: "model",
       });
@@ -551,7 +551,7 @@ describe("US3 provider broker integration", () => {
     const saved = profiles.save({
       displayName: "OpenAI",
       kind: "openai",
-      endpoint: "https://example.test/v1",
+      endpoint: "https://example.test",
       model: "m",
     });
     const authority = createTestProfileAuthority(profiles);
@@ -597,7 +597,7 @@ describe("US3 provider broker integration", () => {
     const saved = profiles.save({
       displayName: "OpenAI",
       kind: "openai",
-      endpoint: "https://example.test/v1",
+      endpoint: "https://example.test",
       model: "m",
     });
     const authority = createTestProfileAuthority(profiles);
@@ -698,7 +698,7 @@ describe("US3 provider broker integration", () => {
     const b = profiles.save({
       displayName: "B",
       kind: "openai",
-      endpoint: "https://b.example.test/v1",
+      endpoint: "https://b.example.test",
       model: "m",
     });
     const authority = createTestProfileAuthority(profiles);
@@ -749,7 +749,7 @@ describe("US3 provider broker integration", () => {
     const saved = profiles.save({
       displayName: "Remote",
       kind: "openai",
-      endpoint: "https://example.test/v1",
+      endpoint: "https://example.test",
       model: "m",
     });
     const authority = createTestProfileAuthority(profiles);
@@ -786,13 +786,13 @@ describe("US3 provider broker integration", () => {
     const deleted = profiles.save({
       displayName: "Deleted",
       kind: "openai",
-      endpoint: "https://deleted.example/v1",
+      endpoint: "https://deleted.example",
       model: "m",
     });
     const retained = profiles.save({
       displayName: "Retained",
       kind: "openai",
-      endpoint: "https://retained.example/v1",
+      endpoint: "https://retained.example",
       model: "m",
     });
     const authority = createTestProfileAuthority(profiles);

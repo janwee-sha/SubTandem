@@ -110,27 +110,27 @@ Développez le résumé d'un Profile pour le modifier sur place. La ligne d'acti
 
 ### OpenAI
 
-- L’API root par défaut est `https://api.openai.com/v1`. Pour OpenAI, renseignez votre **API key** et choisissez un modèle accessible à votre compte.
+- L’API root par défaut est `https://api.openai.com`. Pour OpenAI, renseignez votre **API key** et choisissez un modèle accessible à votre compte.
 - Actualisez la liste des modèles et choisissez-en un, ou saisissez son **Model ID** exact.
-- Pour un service compatible avec OpenAI, remplacez **API root** par son API root. SubTandem ajoute `/chat/completions` et affiche l’URL de la requête dans la barre latérale. Laissez **API key** vide si ce service n’en demande pas.
+- Pour un service compatible avec OpenAI, remplacez **API root** par son API root. L’URL de traduction apparaît dans la barre latérale. Laissez **API key** vide si ce service n’en demande pas.
 
 ### Claude
 
-- L’API root par défaut est `https://api.anthropic.com/v1`. Pour Claude, renseignez votre **API key** Anthropic et choisissez un modèle accessible à votre compte.
+- L’API root par défaut est `https://api.anthropic.com`. Pour Claude, renseignez votre **API key** Anthropic et choisissez un modèle accessible à votre compte.
 - Actualisez la liste des modèles et choisissez-en un, ou saisissez son **Model ID** exact.
-- Pour un service compatible avec Claude, remplacez **API root** par son API root. Si l’API root se termine par `/v1`, SubTandem ajoute `/messages` pour la traduction et `/models` pour le catalogue ; sinon, il ajoute `/v1/messages` et `/v1/models`. Laissez **API key** vide si le service accepte les requêtes sans clé. Vous pouvez alors actualiser les modèles, tester, enregistrer et activer le Profile sans clé.
+- Pour un service compatible avec Claude, remplacez **API root** par son API root. Laissez **API key** vide si le service accepte les requêtes sans clé. Vous pouvez alors actualiser les modèles, tester, enregistrer et activer le Profile sans clé.
 
 ### DeepSeek
 
 - L’API root par défaut est `https://api.deepseek.com`. Pour le service officiel DeepSeek, renseignez votre **API key** et choisissez un modèle accessible à votre compte.
 - Actualisez la liste des modèles et choisissez-en un, ou saisissez son **Model ID** exact. SubTandem ne présélectionne aucun modèle DeepSeek.
-- Si votre service utilise une autre API root compatible, modifiez **API root**. SubTandem ajoute `/chat/completions` pour la traduction.
+- Si votre service utilise une autre API root compatible, modifiez **API root**.
 
 ### Ollama
 
 - L’adresse du serveur par défaut est `http://127.0.0.1:11434` pour Ollama sur votre ordinateur. Démarrez Ollama et installez d’abord un modèle compatible.
 - Actualisez la liste des modèles et choisissez un modèle installé, ou saisissez son **Model ID** exact.
-- Pour un serveur Ollama distant, remplacez **API root** par son adresse. Les requêtes de traduction ajoutent `/api/chat`. Renseignez **API key** seulement si ce serveur l’exige. **Test** vérifie la connexion, le modèle et la prise en charge des sorties structurées.
+- Pour un serveur Ollama distant, remplacez **API root** par son adresse. Renseignez **API key** seulement si ce serveur l’exige. **Test** vérifie la connexion, le modèle et la prise en charge des sorties structurées.
 
 Les nouveaux Profile utilisent **Use system proxy settings** par défaut. **Network route** s’applique à l’actualisation des modèles, aux tests de connexion et à la traduction ; choisissez **Connect directly** pour contourner le proxy système. Les Profile existants conservent leur route enregistrée, et la route choisie dans le brouillon courant est conservée lorsque vous changez de service puis revenez.
 
@@ -142,7 +142,6 @@ Les nouveaux Profile utilisent **Use system proxy settings** par défaut. **Netw
 - Ouvrez un Profile pour modifier son API key enregistrée. Elle est masquée par défaut ; **Show API key** la révèle uniquement dans le tiroir courant. **Save** la remplace par la saisie actuelle ; enregistrer un champ vide la supprime. Une lecture échouée laisse un champ vide modifiable sans changer les données enregistrées. **Cancel** abandonne les modifications.
 - La mise à niveau depuis l’ancien format en clair conserve les paramètres Profile et une sélection activée valide, mais efface les API key enregistrées. Saisissez-les à nouveau au besoin. SubTandem nettoie les copies qu’il gère ; les instantanés APFS/Time Machine, copies hors ligne et autres sauvegardes peuvent conserver les anciennes API key. Renouvelez-les auprès de votre service.
 - Sauvegardez le fichier `credentials.json` complet avec ses éléments de restauration associés. La restauration exige l’appareil et l’utilisateur d’origine ainsi qu’un environnement de clés système valide ; elle n’est pas garantie même dans ces conditions. Un autre appareil ou utilisateur ne peut pas récupérer les API key enregistrées ; saisissez-les à nouveau pour chaque Profile.
-- Le transport helper inclus n'écoute que sur un port temporaire `127.0.0.1`. Un API root configuré ou en cours d'édition peut recevoir des requêtes de modèles sans sous-titres. **Test** envoie au brouillon courant une sonde fixe sans sous-titres qui peut être facturée ; une nouvelle key n'est utilisée que pour ce test sauf enregistrement séparé. Seule la révision du Profile globalement activé reçoit le texte des sous-titres. Les redirect inter-origines et les identifiants inclus dans les URL sont refusés.
 - Les traductions ne sont mises en cache que pendant la session vidéo actuelle et sont effacées lors d'un changement de vidéo, à la fin de la lecture ou à la fermeture de la fenêtre.
 - Les pistes courtes, les textes de langue source inconnue et ceux déjà conformes à la langue cible exacte sont quand même envoyés au service sélectionné et peuvent être facturés. Le Provider applique ses propres politiques ; le traitement par lots et le cache de session réduisent les appels sans garantir un coût maximal.
 

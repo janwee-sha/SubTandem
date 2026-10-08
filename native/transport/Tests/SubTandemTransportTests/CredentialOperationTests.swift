@@ -52,7 +52,7 @@ func runCredentialOperationTests() async throws {
     let server = try CredentialCaptureServer()
     let port = try await server.start()
     defer { server.stop() }
-    let endpoint = "http://127.0.0.1:\(port)/v1"
+    let endpoint = "http://127.0.0.1:\(port)"
     let peer = try await CredentialOperationPeer.open(handler)
     let frame = try peer.frame("synthetic-operation-key", purpose: "draft-test", endpoint: endpoint)
     let began = try await peer.draft("begin", frame: frame)
@@ -63,7 +63,7 @@ func runCredentialOperationTests() async throws {
     let before = try Data(contentsOf: directory.appendingPathComponent("credentials.json"))
     func request(_ reference: [String: Any], owner: String = "operation-window", requestID: String = "operation-1", model: String = "model-a", endpoint override: String? = nil) async throws -> ProtocolResponse {
         let root = override ?? endpoint
-        return await handler.handle(path: "/v2/request", authorization: "Bearer operation-token", body: try JSONSerialization.data(withJSONObject: ["jobId": UUID().uuidString, "method": "POST", "url": root + "/chat/completions", "headers": ["Content-Type": "application/json"], "proxyMode": "direct", "timeoutMs": 10_000, "maxResponseBytes": 1048576, "credential": reference, "provider": ["kind": "openai", "endpoint": root, "model": model, "proxyMode": "direct"], "purpose": "test", "owner": ["senderId": owner, "requestId": requestID], "body": ["model": model]]))
+        return await handler.handle(path: "/v2/request", authorization: "Bearer operation-token", body: try JSONSerialization.data(withJSONObject: ["jobId": UUID().uuidString, "method": "POST", "url": root + "/v1/chat/completions", "headers": ["Content-Type": "application/json"], "proxyMode": "direct", "timeoutMs": 10_000, "maxResponseBytes": 1048576, "credential": reference, "provider": ["kind": "openai", "endpoint": root, "model": model, "proxyMode": "direct"], "purpose": "test", "owner": ["senderId": owner, "requestId": requestID], "body": ["model": model]]))
     }
     let first = try await request(reference)
     try check(first.statusCode == 200 && server.requests().last!.contains("Bearer synthetic-operation-key"), "draft key must reach only the production native provider request")

@@ -41,7 +41,7 @@ const offer: CredentialChannelOffer = {
 const snapshot = credentialUtf8(
   JSON.stringify({
     kind: "openai",
-    endpoint: "https://example.test/v1",
+    endpoint: "https://example.test",
     model: 'model/雪\\"\n😀',
     proxyMode: "direct",
     purpose: "draft-test",

@@ -7,7 +7,7 @@ const profile = {
   revision: 1,
   displayName: "One",
   kind: "openai",
-  endpoint: "https://api.openai.com/v1",
+  endpoint: "https://api.openai.com",
   model: "model-a",
   proxyMode: "direct",
   endpointFingerprint: "fp",

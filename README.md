@@ -110,27 +110,27 @@ Expand a profile summary to edit it in place. The action row keeps **Test** on t
 
 ### OpenAI
 
-- The default API root is `https://api.openai.com/v1`. For OpenAI, enter your **API key** and choose a model available to your account.
+- The default API root is `https://api.openai.com`. For OpenAI, enter your **API key** and choose a model available to your account.
 - Refresh the model list and choose a model, or enter its exact **Model ID**.
-- For an OpenAI-compatible service, replace **API root** with its API root. SubTandem adds `/chat/completions` and shows the request URL in the sidebar. Leave **API key** blank if that service accepts requests without one.
+- For an OpenAI-compatible service, replace **API root** with its API root. The sidebar shows the translation request URL. Leave **API key** blank if that service accepts requests without one.
 
 ### Claude
 
-- The default API root is `https://api.anthropic.com/v1`. For Claude, enter your Anthropic **API key** and choose a model available to your account.
+- The default API root is `https://api.anthropic.com`. For Claude, enter your Anthropic **API key** and choose a model available to your account.
 - Refresh the model list and choose a model, or enter its exact **Model ID**.
-- For a Claude-compatible service, replace **API root** with its API root. For roots ending in `/v1`, SubTandem appends `/messages` for translation and `/models` for the model list; for other roots, it appends `/v1/messages` and `/v1/models`. Leave **API key** blank if that service accepts requests without one. You can refresh models, test, save, and enable the Profile without a key.
+- For a Claude-compatible service, replace **API root** with its API root. Leave **API key** blank if that service accepts requests without one. You can refresh models, test, save, and enable the Profile without a key.
 
 ### DeepSeek
 
 - The default API root is `https://api.deepseek.com`. For the official DeepSeek service, enter your **API key** and choose a model available to your account.
 - Refresh the model list and choose a model, or enter its exact **Model ID**. SubTandem does not select a DeepSeek model for you.
-- If your service uses a different compatible API root, change **API root**. SubTandem adds `/chat/completions` for translation.
+- If your service uses a different compatible API root, change **API root**.
 
 ### Ollama
 
 - The default server root is `http://127.0.0.1:11434` for Ollama running on your machine. Start Ollama and install a compatible model first.
 - Refresh the model list and choose an installed model, or enter its exact **Model ID**.
-- For a remote Ollama server, change **API root** to its server root. Translation requests append `/api/chat`. Enter an **API key** only if that server requires one. **Test** checks the connection, model, and structured-output support.
+- For a remote Ollama server, change **API root** to its server root. Enter an **API key** only if that server requires one. **Test** checks the connection, model, and structured-output support.
 
 New Profiles use **Use system proxy settings** by default. **Network route** controls model refresh, connection tests, and translation; choose **Connect directly** to bypass the system proxy. Existing Profiles keep their saved route, and a route chosen in the current draft is preserved when you switch services and return.
 
@@ -142,7 +142,6 @@ New Profiles use **Use system proxy settings** by default. **Network route** con
 - Open a Profile to edit its saved API key. It starts masked; **Show API key** reveals it only in the current drawer. **Save** replaces it with the current input, and saving an empty field clears it. A failed read leaves an editable empty field without changing the saved data. **Cancel** discards edits.
 - Upgrading from the previous plaintext format preserves Profile settings and a valid enabled selection but clears saved API keys. Enter them again when needed. SubTandem cleans copies it manages; APFS/Time Machine snapshots, offline copies and other backups can still contain old API keys. Rotate old API keys with your service.
 - Back up the complete `credentials.json` with its paired recovery material. Recovery requires the original device, user and a valid system key environment, and is not guaranteed even there. Another device or user cannot recover the saved API keys; re-enter them for each Profile.
-- The bundled transport helper listens only on a temporary `127.0.0.1` port. A configured or currently edited API root may receive subtitle-free model-list requests. Clicking **Test** sends the current draft a fixed subtitle-free probe that may be billed; a newly entered key is used only for that request unless separately saved. This includes the default Claude root at `https://api.anthropic.com/v1` and DeepSeek root at `https://api.deepseek.com`, even when no API key is configured. Only the globally enabled profile revision receives nearby subtitle text for translation. Cross-origin redirects and credentials embedded in URLs are rejected.
 - For embedded text subtitles, the bundled extractor reads only the selected stream from the current local media into a session-only temporary SRT. It does not support remote media or image-based subtitles, and removes temporary extraction data after parsing, cancellation, timeout, or shutdown.
 - Translations are cached only for the current video session and are cleared when the video changes, playback ends, or the window closes.
 - Short tracks, unknown-source text, and text already matching the exact target language are still sent to the enabled service and may incur charges. Your provider applies its own data and content policies; batching and session caching reduce calls but do not guarantee a maximum cost.

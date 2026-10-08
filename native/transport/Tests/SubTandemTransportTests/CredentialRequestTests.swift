@@ -66,6 +66,23 @@ final class CredentialCaptureServer: @unchecked Sendable {
 }
 
 func runCredentialRequestTests() async throws {
+    for kind in ["openai", "claude"] {
+        for endpoint in ["https://fixture.test", "https://fixture.test/v1", "https://fixture.test/proxy/V1///"] {
+            let root = endpoint.replacingOccurrences(of: #"/+$"#, with: "", options: .regularExpression)
+            for purpose in ["models", "test", "translation"] {
+                let resource = purpose == "models" ? "/models" : kind == "claude" ? "/messages" : "/chat/completions"
+                var object: [String: Any] = ["jobId": UUID().uuidString, "method": purpose == "models" ? "GET" : "POST", "url": root + "/v1" + resource, "headers": [:] as [String: String], "proxyMode": "system", "timeoutMs": 2000, "maxResponseBytes": 65536, "credential": ["source": "none"], "purpose": purpose, "owner": ["senderId": "fixed-path-window", "requestId": "fixed-path-request"], "provider": ["kind": kind, "endpoint": endpoint, "model": "model", "proxyMode": "system"]]
+                if purpose != "models" { object["body"] = ["model": "model"] }
+                _ = try CredentialHTTPRequest(JSONSerialization.data(withJSONObject: object))
+                object["url"] = root + resource
+                do {
+                    _ = try CredentialHTTPRequest(JSONSerialization.data(withJSONObject: object))
+                    throw ContractTestFailure(description: "native credentials must reject a request without the fixed versioned path")
+                } catch TransportProtocolError.forbiddenDestination { }
+            }
+        }
+    }
+
     try checkCredentialInspectionLimits()
     let server = try CredentialCaptureServer()
     let port = try await server.start()
@@ -87,7 +104,7 @@ func runCredentialRequestTests() async throws {
             "jobId": UUID().uuidString, "method": method, "url": endpoint, "headers": headers,
             "proxyMode": proxyMode, "timeoutMs": 2000, "maxResponseBytes": 65536,
             "credential": credential, "purpose": purpose, "owner": ["senderId": "synthetic-window", "requestId": UUID().uuidString],
-            "provider": ["kind": kind, "endpoint": "http://127.0.0.1:\(port)" + (["openai", "deepseek"].contains(kind) ? "/v1" : ""), "model": "synthetic-model", "proxyMode": proxyMode],
+            "provider": ["kind": kind, "endpoint": "http://127.0.0.1:\(port)" + (kind == "deepseek" ? "/v1" : ""), "model": "synthetic-model", "proxyMode": proxyMode],
         ]
         if method == "POST" { object["body"] = ["model": "synthetic-model", "messages": []] }
         for (name, value) in overrides { object[name] = value }
@@ -117,7 +134,7 @@ func runCredentialRequestTests() async throws {
     for proxyMode in ["direct", "system"] {
     for kind in ["openai", "claude", "deepseek", "ollama"] {
         let id = UUID().uuidString.lowercased()
-        let endpoint = "http://127.0.0.1:\(port)" + (["openai", "deepseek"].contains(kind) ? "/v1" : "")
+        let endpoint = "http://127.0.0.1:\(port)" + (kind == "deepseek" ? "/v1" : "")
         let fingerprint = CredentialCryptography.digest(try JSONSerialization.data(withJSONObject: ["kind": kind, "endpoint": endpoint, "proxyMode": proxyMode], options: [.sortedKeys, .withoutEscapingSlashes]))
         let profile = StoredProviderProfile(profileId: id, revision: 1, displayName: kind, kind: kind, endpoint: endpoint, endpointFingerprint: fingerprint, proxyMode: proxyMode, model: "synthetic-model", capability: nil)
         profiles.append(profile)
@@ -125,7 +142,7 @@ func runCredentialRequestTests() async throws {
         let key = "synthetic-\(kind)-credential"
         state = try await store.saveProfile(CredentialProfileSave(commitID: commit, expectedStoreRevision: state.storeRevision, expectedProfileRevision: 0, profileID: id, profileState: StoredProfileState(profiles: profiles, activation: nil), requestDigest: CredentialCryptography.digest(Data(commit.utf8))), value: Data(key.utf8))
         let credential: [String: Any] = ["source": "saved", "profileId": id, "profileRevision": 1, "kind": kind, "endpointFingerprint": fingerprint]
-        let url = endpoint + (kind == "ollama" ? "/api/tags" : kind == "claude" ? "/v1/models" : "/models")
+        let url = endpoint + (kind == "ollama" ? "/api/tags" : ["openai", "claude"].contains(kind) ? "/v1/models" : "/models")
         let result = try await request(credential, endpoint: url, kind: kind, proxyMode: proxyMode)
         try check(result.statusCode == 200, "saved reference must execute a provider request")
         let sent = server.requests().last!.lowercased()
@@ -137,11 +154,11 @@ func runCredentialRequestTests() async throws {
         try check(rejected.statusCode != 200 && server.requests().count == before, "stale reference must not execute")
         let wrongRoute = try await request(credential, endpoint: endpoint + "/unrelated", kind: kind, proxyMode: proxyMode)
         try check(wrongRoute.statusCode != 200 && server.requests().count == before, "saved credentials must be limited to their service route")
-        let disabled = try await request(credential, endpoint: endpoint + (kind == "ollama" ? "/api/chat" : kind == "claude" ? "/v1/messages" : "/chat/completions"), kind: kind, purpose: "translation", method: "POST", proxyMode: proxyMode)
+        let disabled = try await request(credential, endpoint: endpoint + (kind == "ollama" ? "/api/chat" : kind == "claude" ? "/v1/messages" : kind == "openai" ? "/v1/chat/completions" : "/chat/completions"), kind: kind, purpose: "translation", method: "POST", proxyMode: proxyMode)
         try check(disabled.statusCode != 200 && server.requests().count == before, "translation requires the current persisted activation")
         let activation = StoredActivationReference(profileId: id, profileRevision: 1, kind: kind, endpointFingerprint: fingerprint, credentialConfigured: true)
         state = try await store.commitProfileState(commitID: UUID().uuidString, expectedStoreRevision: state.storeRevision, profileState: StoredProfileState(profiles: profiles, activation: activation))
-        let allowed = try await request(credential, endpoint: endpoint + (kind == "ollama" ? "/api/chat" : kind == "claude" ? "/v1/messages" : "/chat/completions"), kind: kind, purpose: "translation", method: "POST", proxyMode: proxyMode)
+        let allowed = try await request(credential, endpoint: endpoint + (kind == "ollama" ? "/api/chat" : kind == "claude" ? "/v1/messages" : kind == "openai" ? "/v1/chat/completions" : "/chat/completions"), kind: kind, purpose: "translation", method: "POST", proxyMode: proxyMode)
         try check(allowed.statusCode == 200 && server.requests().count == before + 1, "active matching revision must authorize native translation")
         state = try await store.commitProfileState(commitID: UUID().uuidString, expectedStoreRevision: state.storeRevision, profileState: StoredProfileState(profiles: profiles, activation: nil))
         let escaped = key.unicodeScalars.map { String(format: "\\u%04x", $0.value) }.joined()
@@ -183,7 +200,7 @@ func runCredentialRequestTests() async throws {
     try JSONSerialization.data(withJSONObject: damaged).write(to: file)
     let reference: [String: Any] = ["source": "saved", "profileId": first.profileId, "profileRevision": 1, "kind": first.kind, "endpointFingerprint": first.endpointFingerprint]
     let beforeDamage = server.requests().count
-    let unavailable = try await request(reference, endpoint: first.endpoint + "/models")
+    let unavailable = try await request(reference, endpoint: first.endpoint + "/v1/models")
     try check(unavailable.statusCode != 200 && server.requests().count == beforeDamage, "damaged credential must never fall back to unauthenticated execution")
     try credentialCheck(Data(contentsOf: file) == JSONSerialization.data(withJSONObject: damaged), "failed read must not rewrite opaque stored data")
     try original.write(to: file)
@@ -193,7 +210,7 @@ func runCredentialRequestTests() async throws {
     state = try await store.saveProfile(CredentialProfileSave(commitID: clearCommit, expectedStoreRevision: state.storeRevision, expectedProfileRevision: 1, profileID: first.profileId, profileState: StoredProfileState(profiles: profiles, activation: nil), requestDigest: CredentialCryptography.digest(Data(clearCommit.utf8))), value: Data())
     var keyless = reference
     keyless["profileRevision"] = 2
-    let withoutKey = try await request(keyless, endpoint: first.endpoint + "/models")
+    let withoutKey = try await request(keyless, endpoint: first.endpoint + "/v1/models")
     try check(withoutKey.statusCode == 200 && !server.requests().last!.lowercased().contains("authorization:"), "saved Profile with no entry must send no authentication")
 }
 

@@ -276,7 +276,7 @@ func encodedTransportRequest(jobID: String) throws -> Data {
         "timeoutMs": 5_000, "maxResponseBytes": 1_024,
         "credential": ["source": "none"], "purpose": "test",
         "owner": ["senderId": "synthetic-window", "requestId": jobID],
-        "provider": ["kind": "openai", "endpoint": "https://provider.example/v1", "model": "synthetic-model", "proxyMode": "system"],
+        "provider": ["kind": "openai", "endpoint": "https://provider.example", "model": "synthetic-model", "proxyMode": "system"],
     ])
 }
 

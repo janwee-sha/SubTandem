@@ -110,27 +110,27 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 
 ### OpenAI
 
-- 默认 API root 是 `https://api.openai.com/v1`。使用 OpenAI 官方服务时，填写 **API key**，并选择账号可用的模型。
+- 默认 API root 是 `https://api.openai.com`。使用 OpenAI 官方服务时，填写 **API key**，并选择账号可用的模型。
 - 刷新模型列表并选择模型，或填写准确的 **Model ID**。
-- 使用兼容 OpenAI 的服务时，将 **API root** 改为该服务的 API root。SubTandem 会追加 `/chat/completions`，并在侧边栏显示请求地址。如果该服务无需 API key，可将 **API key** 留空。
+- 使用兼容 OpenAI 的服务时，将 **API root** 改为该服务的 API root。侧边栏会显示翻译请求地址。如果该服务无需 API key，可将 **API key** 留空。
 
 ### Claude
 
-- 默认 API root 是 `https://api.anthropic.com/v1`。使用 Claude 官方服务时，填写 Anthropic **API key**，并选择账号可用的模型。
+- 默认 API root 是 `https://api.anthropic.com`。使用 Claude 官方服务时，填写 Anthropic **API key**，并选择账号可用的模型。
 - 刷新模型列表并选择模型，或填写准确的 **Model ID**。
-- 使用兼容 Claude 的服务时，将 **API root** 改为该服务的 API root。API root 以 `/v1` 结尾时，翻译请求追加 `/messages`，模型列表请求追加 `/models`；其他地址分别追加 `/v1/messages`、`/v1/models`。如果该服务无需 API key，可将 **API key** 留空；仍可刷新模型、测试、保存和启用 Profile。
+- 使用兼容 Claude 的服务时，将 **API root** 改为该服务的 API root。如果该服务无需 API key，可将 **API key** 留空；仍可刷新模型、测试、保存和启用 Profile。
 
 ### DeepSeek
 
 - 默认 API root 是 `https://api.deepseek.com`。使用 DeepSeek 官方服务时，填写 **API key**，并选择账号可用的模型。
 - 刷新模型列表并选择模型，或填写准确的 **Model ID**。SubTandem 不会替你预选 DeepSeek 模型。
-- 如果服务使用其他兼容的 API root，可以修改 **API root**。SubTandem 会追加 `/chat/completions` 发起翻译请求。
+- 如果服务使用其他兼容的 API root，可以修改 **API root**。
 
 ### Ollama
 
 - 默认服务地址是 `http://127.0.0.1:11434`，用于连接你电脑上的 Ollama。请先启动 Ollama 并安装兼容模型。
 - 刷新模型列表并选择已安装的模型，或填写准确的 **Model ID**。
-- 使用远程 Ollama 时，将 **API root** 改为服务器地址。翻译请求会追加 `/api/chat`。仅当服务器要求时才填写 **API key**。**Test** 会检查连接、模型和结构化输出支持。
+- 使用远程 Ollama 时，将 **API root** 改为服务器地址。仅当服务器要求时才填写 **API key**。**Test** 会检查连接、模型和结构化输出支持。
 
 新 Profile 默认使用 **Use system proxy settings**。**Network route** 用于模型刷新、连接测试和翻译；选择 **Connect directly** 可绕过系统代理。已有 Profile 保留保存的路由，当前草稿中选择的路由在切换服务后再切回来时也会保留。
 
@@ -142,7 +142,6 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 - 打开 Profile 可编辑已保存的 API key。默认遮罩，**Show API key** 仅在当前抽屉显示原值。**Save** 以当前输入替换原值，空值保存会清除；读取失败时仍显示可编辑的空字段，不改变已保存数据。**Cancel** 丢弃修改。
 - 从原明文格式升级会保留 Profile 设置和有效启用选择，但清空已保存的 API key，请按需重新录入。SubTandem 清理其受管副本；APFS/Time Machine 快照、离线副本和其他备份仍可能保留旧 API key。建议在服务端轮换旧 API key。
 - 备份时保留完整的 `credentials.json` 及其中配套恢复材料。恢复依赖原设备、原用户和有效的系统密钥环境，即使条件满足也不保证成功。其他设备或用户无法恢复已保存的 API key，请为各 Profile 重新录入。
-- 随附的 transport helper 只监听临时的 `127.0.0.1` 端口。已配置或正在编辑的 API root 可接收不含字幕的模型目录请求；点击 **Test** 会向当前草稿发送可能计费的固定无字幕探针，新输入的密钥仅用于该次测试，除非另行保存。其中包括默认 Claude root `https://api.anthropic.com/v1` 和 DeepSeek root `https://api.deepseek.com`；只有全局启用的 Profile 修订版才会接收用于翻译的字幕文字。跨源重定向和 URL 中嵌入的凭据会被拒绝。
 - 处理内嵌文本字幕时，随附的 extractor 只读取当前本地媒体中选中的轨道，并生成会话级临时 SRT；远程媒体和图形字幕不会被提取，解析、取消、超时或退出后会清理临时数据。
 - 译文只在当前视频会话内缓存；换片、播放结束或关闭窗口时会被清除。
 - 短轨、源语言不明及已经符合准确目标语言的正文仍会发送到所选服务，并可能产生费用。服务适用其自身的数据与内容政策；批量处理和会话缓存可以减少调用次数，但不保证费用上限。

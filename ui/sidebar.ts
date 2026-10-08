@@ -183,8 +183,8 @@ interface ProviderDraft {
 
 function createProviderDrafts(): Record<ProviderKind, ProviderDraft> {
   return {
-    openai: { endpoint: "https://api.openai.com/v1", model: "", proxyMode: "system" },
-    claude: { endpoint: "https://api.anthropic.com/v1", model: "", proxyMode: "system" },
+    openai: { endpoint: "https://api.openai.com", model: "", proxyMode: "system" },
+    claude: { endpoint: "https://api.anthropic.com", model: "", proxyMode: "system" },
     deepseek: { endpoint: "https://api.deepseek.com", model: "", proxyMode: "system" },
     ollama: { endpoint: "http://127.0.0.1:11434", model: "", proxyMode: "system" },
   };
@@ -1117,21 +1117,12 @@ function setModelContext(value: string, catalog?: { contextKey: string; models: 
 
 function updateRequestUrl(): void {
   const kind = providerKind.value as ProviderKind;
-  const value = providerEndpoint.value.trim().replace(/\/+$/, "");
-  const path =
-    kind === "claude"
-      ? /\/v1$/i.test(value)
-        ? "/messages"
-        : "/v1/messages"
-      : kind === "ollama"
-        ? "/api/chat"
-        : "/chat/completions";
+  const path = providerApiPath(kind, "translation");
   document.querySelector<HTMLElement>("#endpoint-hint")!.textContent =
     `Enter a HTTP(S) ${providerLabels[kind]} API root. Translation requests append ${path}.`;
   let actualRequest = "—";
   try {
-    const root = normalizeProviderEndpoint(kind, providerEndpoint.value).replace(/\/+$/, "");
-    actualRequest = `${root}${path}`;
+    actualRequest = providerApiUrl(kind, providerEndpoint.value, "translation");
   } catch {
     actualRequest = "—";
   }
@@ -2166,7 +2157,7 @@ function createNewProfileRow(): HTMLElement {
   const article = document.createElement("article");
   article.className = "profile profile-new is-editing";
   article.dataset.newProfile = "true";
-  article.innerHTML = `<div class="profile-heading"><div class="profile-details profile-disclosure"><span class="disclosure-indicator" aria-hidden="true"></span><span class="profile-copy"><strong>New profile</strong><span class="profile-summary">Unsaved translation service</span></span></div></div>`;
+  article.innerHTML = `<div class="profile-heading"><div class="profile-details profile-disclosure"><span class="disclosure-indicator" aria-hidden="true"></span><span class="profile-copy"><strong>New profile</strong></span></div></div>`;
   const disclosure = article.querySelector<HTMLElement>(".profile-disclosure")!;
   disclosure.tabIndex = 0;
   disclosure.setAttribute("role", "button");

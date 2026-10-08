@@ -180,9 +180,9 @@ server.listen(0, "127.0.0.1", () => {
   process.stdout.write("Service type: OpenAI\nModel ID: fixture-model\nNetwork route: direct\n");
   for (const scenario of scenarios)
     process.stdout.write(
-      `${scenario[0]!.toUpperCase()}${scenario.slice(1)}: ${root}/${scenario}/v1\n`,
+      `${scenario[0]!.toUpperCase()}${scenario.slice(1)}: ${root}/${scenario}\n`,
     );
-  process.stdout.write(`Controlled: ${root}/controlled/v1\nStats: ${root}/stats\n`);
+  process.stdout.write(`Controlled: ${root}/controlled\nStats: ${root}/stats\n`);
 });
 
 const close = (): void => {

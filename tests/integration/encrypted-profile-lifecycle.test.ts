@@ -19,7 +19,7 @@ import { PlaybackController } from "../../src/app/controller.js";
 const input = {
   displayName: "Synthetic",
   kind: "openai" as const,
-  endpoint: "https://example.test/v1",
+  endpoint: "https://example.test",
   model: "model-a",
   proxyMode: "direct" as const,
 };
@@ -326,7 +326,7 @@ describe.skipIf(process.platform !== "darwin" || !existsSync(nativeLifecycleExec
         const candidate = {
           displayName: "Native lifecycle",
           kind,
-          endpoint: `${server.url}/${kind}${kind === "openai" || kind === "deepseek" ? "/v1" : ""}`,
+          endpoint: `${server.url}/${kind}${kind === "deepseek" ? "/v1" : ""}`,
           model: "model-a",
           proxyMode: "direct" as const,
         };

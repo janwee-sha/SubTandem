@@ -236,11 +236,10 @@ describe("IINA sidebar bundle contract", () => {
 
   it("uses Claude defaults, Messages URL guidance, Custom ID and an optional API key", () => {
     expect(sidebarSource).toContain(
-      'claude: { endpoint: "https://api.anthropic.com/v1", model: "", proxyMode: "system" }',
+      'claude: { endpoint: "https://api.anthropic.com", model: "", proxyMode: "system" }',
     );
     expect(sidebarSource).toContain('claude: "Claude"');
     expect(sidebarSource).not.toMatch(/claude[^\n]+model:\s*"[^"]+"/i);
-    expect(sidebarSource).toContain("/v1/messages");
     expect(sidebarSource).toMatch(/Claude[\s\S]*API root/i);
     expect(sidebarSource).toContain("Refresh the catalog or enter the exact model ID.");
     expect(sidebarSource).toContain('custom.textContent = "Custom model ID…"');

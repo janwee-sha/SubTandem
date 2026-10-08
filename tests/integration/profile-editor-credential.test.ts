@@ -5,7 +5,7 @@ const profile = {
   revision: 1,
   displayName: "One",
   kind: "openai",
-  endpoint: "https://api.openai.com/v1",
+  endpoint: "https://api.openai.com",
   model: "model-a",
   proxyMode: "direct",
   endpointFingerprint: "fp",
@@ -106,7 +106,7 @@ describe.each(["openai", "claude", "deepseek", "ollama"])("%s encrypted editor r
     h.receive("state:update", { profiles: [{ ...profile, kind }] });
     h.evaluate('loadEditor(profiles.get("one"))');
     await h.settleCredentials();
-    h.element("#provider-endpoint").value = "https://latest.test/v1";
+    h.element("#provider-endpoint").value = "https://latest.test";
     h.element("#provider-endpoint").dispatch("input");
     h.element("#provider-proxy-mode").dispatch("change");
     vi.advanceTimersByTime(200);
@@ -117,7 +117,7 @@ describe.each(["openai", "claude", "deepseek", "ollama"])("%s encrypted editor r
     await h.settleCredentials();
     const requests = h.messages.filter((entry) => entry.name === "provider:models");
     expect(requests).toHaveLength(1);
-    expect(requests[0]!.data.payload.endpoint).toBe("https://latest.test/v1");
+    expect(requests[0]!.data.payload.endpoint).toBe("https://latest.test");
     expect(h.element("#provider-key").value).toBe("");
   });
   it.each(["open", "confirm", "read"] as const)(

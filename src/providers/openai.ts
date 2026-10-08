@@ -11,7 +11,7 @@ import type {
 } from "./types.js";
 import type { ProviderTransport, ProviderTransportResponse } from "./transport.js";
 import { providerHttpErrorFromBody, protocolError } from "./errors.js";
-import { normalizeProviderEndpoint } from "./profiles.js";
+import { normalizeProviderEndpoint, providerApiUrl } from "./profiles.js";
 import { validateIdOutput, validateStrictIdOutput } from "./validation.js";
 import { buildTranslationTask } from "./translation-task.js";
 import { runTranslationBatches } from "./translation-batches.js";
@@ -167,7 +167,6 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
     timeoutMs: number,
   ): Promise<ProviderTransportResponse> {
     const task = buildTranslationTask({ targetLanguage, targets: items });
-    const apiRoot = this.endpoint.replace(/\/+$/, "");
     const responseFormat =
       capability === "strict-json-schema"
         ? {
@@ -185,7 +184,7 @@ export class OpenAICompatibleProvider implements ConfiguredProvider {
       ...providerRequestAuthority(this.config, "openai", owner),
       jobId,
       method: "POST",
-      url: `${apiRoot}/chat/completions`,
+      url: providerApiUrl("openai", this.endpoint, "translation"),
       headers: {
         "Content-Type": "application/json",
         "X-Session-Id": this.config.sessionId,
