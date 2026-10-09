@@ -61,7 +61,7 @@ describe("Session failure presentation", () => {
     ],
     [
       { category: "configuration" },
-      "The Profile settings were rejected. Check the Endpoint and Model ID.",
+      "The Profile settings were rejected. Check the API root and Model ID.",
     ],
     [
       { category: "network" },
@@ -106,7 +106,7 @@ describe("Session failure presentation", () => {
       ],
       [
         { category: "configuration", statusCode: 429 },
-        "The Profile settings were rejected. Check the Endpoint and Model ID.",
+        "The Profile settings were rejected. Check the API root and Model ID.",
       ],
       [{ category: "timeout", statusCode: 429 }, "The translation service timed out. Try again."],
       [

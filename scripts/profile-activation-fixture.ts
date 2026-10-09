@@ -317,7 +317,7 @@ async function listen(label: string, delayMs: number): Promise<{ server: Server;
   });
   const address = server.address();
   if (!address || typeof address === "string") throw new Error("LISTEN_FAILED");
-  return { server, root: `http://127.0.0.1:${address.port}/v1` };
+  return { server, root: `http://127.0.0.1:${address.port}` };
 }
 
 async function main(): Promise<void> {

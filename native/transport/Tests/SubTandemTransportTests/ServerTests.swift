@@ -53,8 +53,8 @@ func runServerTests() async throws {
         "revision": 1,
         "displayName": "A",
         "kind": "openai",
-        "endpoint": "https://example.test/v1",
-        "endpointFingerprint": "0d60715773b0025a549a09f48db8f58ac0f08cd3fb973bf8eca151f51a7eb4d8",
+        "endpoint": "https://example.test",
+        "endpointFingerprint": "77e6ddaebd4c56f3f66bb6ff4c788c4b4b5057a5410534047a17146c2daf1807",
         "proxyMode": "direct",
         "model": "model-a",
     ]
@@ -124,7 +124,7 @@ func runServerTests() async throws {
         let store = try SecureCredentialStore(directory: directory, protection: CredentialProtection(backend: SyntheticKeyBackend()))
         var snapshot = try await store.initializeProfileState(commitID: UUID().uuidString, expectedStoreRevision: 0, profiles: [])
         for revision in 1...3 {
-            let endpoint = revision == 1 ? "https://example.test/v1" : "https://other.test/v2"
+            let endpoint = revision == 1 ? "https://example.test" : "https://other.test/v2"
             let proxy = revision == 1 ? "direct" : "system"
             let selectedKind = revision == 3 ? (kind == "ollama" ? "openai" : "ollama") : kind
             let fingerprint = CredentialCryptography.digest(try JSONSerialization.data(withJSONObject: ["kind": selectedKind, "endpoint": endpoint, "proxyMode": proxy], options: [.sortedKeys, .withoutEscapingSlashes]))

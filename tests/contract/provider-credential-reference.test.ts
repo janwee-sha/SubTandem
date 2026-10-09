@@ -32,10 +32,7 @@ describe("provider native credential references", () => {
           throw new Error("synthetic-stop-before-network");
         },
       };
-      const endpoint =
-        kind === "openai" || kind === "deepseek"
-          ? "https://example.test/v1"
-          : "https://example.test";
+      const endpoint = kind === "deepseek" ? "https://example.test/v1" : "https://example.test";
       const config = {
         endpoint,
         model: "model",

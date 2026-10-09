@@ -144,7 +144,7 @@ const providerRequest: TransportRequest = {
   purpose: "test",
   provider: {
     kind: "openai",
-    endpoint: "https://example.test/v1",
+    endpoint: "https://example.test",
     model: "model",
     proxyMode: "system",
   },
@@ -470,7 +470,7 @@ describe("transport supervisor", () => {
           revision: 1,
           displayName: "Synthetic",
           kind: "openai",
-          endpoint: "https://example.test/v1",
+          endpoint: "https://example.test",
           endpointFingerprint: "fingerprint",
           model: "model",
           proxyMode: "system",

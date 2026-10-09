@@ -56,7 +56,6 @@ interface SidebarFeedback {
 
 interface ProfileNameState {
   value: string;
-  mode: "system" | "user" | "saved";
   serviceTypeLabel: string;
 }
 
@@ -496,7 +495,6 @@ function createSubTandemSidebarState(
     activeFeedback: null,
     profileName: {
       value: "OpenAI",
-      mode: "system",
       serviceTypeLabel: "OpenAI",
     },
     pendingProfileSave: null,
@@ -943,29 +941,21 @@ function createSubTandemSidebarState(
   const resetProfileName = (serviceTypeLabel: string): void => {
     snapshot.profileName = {
       value: serviceTypeLabel,
-      mode: "system",
       serviceTypeLabel,
     };
   };
 
-  const changeServiceTypeLabel = (serviceTypeLabel: string): void => {
-    snapshot.profileName = {
-      value: snapshot.profileName.mode === "system" ? serviceTypeLabel : snapshot.profileName.value,
-      mode: snapshot.profileName.mode,
-      serviceTypeLabel,
-    };
-  };
+  const changeServiceTypeLabel = resetProfileName;
 
   const inputProfileName = (value: string): void => {
     snapshot.profileName = {
       value,
-      mode: "user",
       serviceTypeLabel: snapshot.profileName.serviceTypeLabel,
     };
   };
 
   const loadProfileName = (value: string, serviceTypeLabel: string): void => {
-    snapshot.profileName = { value, mode: "saved", serviceTypeLabel };
+    snapshot.profileName = { value, serviceTypeLabel };
   };
 
   let credentialReadOwner: SidebarCredentialReadOwner | null = null;

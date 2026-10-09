@@ -69,7 +69,7 @@ describe("confirmed empty profile list", () => {
       revision: 1,
       kind: "openai",
       displayName: "One",
-      endpoint: "https://api.openai.com/v1",
+      endpoint: "https://api.openai.com",
       credentialConfigured: false,
     };
     ready(h, [p]);

@@ -37,7 +37,7 @@ SubTandem는 원본 자막을 그대로 유지하면서 선택한 위치에 번�
 - **재생 우선 동작:** 번역 작업 때문에 영상이 일시 정지되거나 원본 자막이 숨겨지지 않습니다.
 - **제한된 요청:** 재생 위치 주변의 자막만 번역하고 플레이어 창마다 동시 작업을 제한하며, 성공한 결과는 현재 영상 세션에만 캐시합니다.
 - **여러 Profile:** 그룹 목록에서 Profile을 펼쳐 바로 편집하거나 제목 옆의 **New profile**을 사용할 수 있습니다. Test는 현재 drawer 초안을 검사하며, 독립 스위치만 저장된 정확한 revision을 모든 창에서 활성화합니다.
-- **프록시 제어:** 새 Profile은 기본적으로 직접 연결하며 필요하면 현재 macOS 프록시 설정을 사용하도록 바꿀 수 있습니다.
+- **프록시 제어:** 새 Profile은 시스템 프록시 설정을 기본으로 사용하며, Profile마다 네트워크 경로를 선택할 수 있습니다.
 
 ## ✅ 요구 사항
 
@@ -99,7 +99,7 @@ IINA 개발 버전에서는 사용 가능한 플러그인 목록에서 SubTandem
 
 1. 로컬 영상을 열고 지원되는 내장 텍스트 자막 또는 외부 SRT/ASS를 IINA 주 자막으로 선택합니다.
 2. **Subtitle**에서 정확한 대상 언어를 선택합니다. 선택한 번역 Provider가 번역 요청 안에서 cue별 원본 언어를 이해하므로 원본 언어를 직접 확인할 필요가 없습니다.
-3. **Translation service**에서 **New profile**을 선택해 OpenAI, Claude, DeepSeek 또는 Ollama Profile을 만듭니다. 새 초안은 **Connect directly**가 기본값입니다. 인증이 필요하면 API key를 입력한 뒤 모델 목록을 수동으로 새로 고칩니다.
+3. **Translation service**에서 **New profile**을 선택해 OpenAI, Claude, DeepSeek 또는 Ollama Profile을 만듭니다. 새 초안은 **Use system proxy settings**가 기본값입니다. 인증이 필요하면 API key를 입력한 뒤 모델 목록을 수동으로 새로 고칩니다.
 4. 왼쪽 아래의 **Test**로 현재 초안을 저장하지 않고 검사한 뒤 오른쪽 아래의 **Save**로 저장하고 독립 스위치를 켭니다. Test의 고정 probe는 과금될 수 있지만 재생 중 자막을 보내거나 입력한 key를 저장하거나 Profile을 활성화하지 않습니다.
 5. **Translate**를 켭니다. 원본 자막은 IINA에서 계속 표시되고 번역된 cue는 SubTandem 오버레이에 나타납니다. **Subtitle**의 **Position**으로 오버레이를 위쪽(`0`)에서 아래쪽(`100`)까지 옮길 수 있습니다.
 6. **Font**, **Border**, **Background** 그룹에서 8개 텍스트 스타일 값을 선택합니다. 색상 프리셋은 즉시 저장되며, **Show Colors…**는 macOS 색상 패널을 엽니다. 변경하지 않고 닫으면 이전 값을 유지합니다.
@@ -110,29 +110,29 @@ Profile 요약을 펼치면 바로 편집할 수 있습니다. 작업 행은 왼
 
 ### OpenAI
 
-- 기본 API root는 `https://api.openai.com/v1`입니다. OpenAI 공식 서비스를 사용할 때는 **API key**를 입력하고 계정에서 사용할 수 있는 모델을 선택하세요.
+- 기본 API root는 `https://api.openai.com`입니다. OpenAI 공식 서비스를 사용할 때는 **API key**를 입력하고 계정에서 사용할 수 있는 모델을 선택하세요.
 - 모델 목록을 새로 고쳐 모델을 선택하거나 정확한 **Model ID**를 입력하세요.
-- OpenAI 호환 서비스를 사용할 때는 **Endpoint**를 해당 서비스의 API root로 변경하세요. SubTandem가 `/chat/completions`를 추가하고 사이드바에 요청 URL을 표시합니다. 서비스에 API key가 필요하지 않다면 **API key**를 비워 두세요.
+- OpenAI 호환 서비스를 사용할 때는 **API root**를 해당 서비스의 API root로 변경하세요. 사이드바에 번역 요청 URL을 표시합니다. 서비스에 API key가 필요하지 않다면 **API key**를 비워 두세요.
 
 ### Claude
 
 - 기본 API root는 `https://api.anthropic.com`입니다. Claude 공식 서비스를 사용할 때는 Anthropic **API key**를 입력하고 계정에서 사용할 수 있는 모델을 선택하세요.
 - 모델 목록을 새로 고쳐 모델을 선택하거나 정확한 **Model ID**를 입력하세요.
-- Claude 호환 서비스를 사용할 때는 **Endpoint**를 해당 서비스의 API root로 변경하세요. SubTandem는 번역에 `/v1/messages`, 모델 목록에 `/v1/models`를 사용합니다. 서비스에 API key가 필요하지 않다면 **API key**를 비워 두세요. 키 없이도 모델 목록을 새로 고치고 Profile을 테스트, 저장, 활성화할 수 있습니다.
+- Claude 호환 서비스를 사용할 때는 **API root**를 해당 서비스의 API root로 변경하세요. 서비스에 API key가 필요하지 않다면 **API key**를 비워 두세요. 키 없이도 모델 목록을 새로 고치고 Profile을 테스트, 저장, 활성화할 수 있습니다.
 
 ### DeepSeek
 
 - 기본 API root는 `https://api.deepseek.com`입니다. DeepSeek 공식 서비스를 사용할 때는 **API key**를 입력하고 계정에서 사용할 수 있는 모델을 선택하세요.
 - 모델 목록을 새로 고쳐 모델을 선택하거나 정확한 **Model ID**를 입력하세요. SubTandem는 DeepSeek 모델을 자동으로 선택하지 않습니다.
-- 다른 호환 API root를 사용하는 서비스라면 **Endpoint**를 변경하세요. SubTandem는 번역 요청에 `/chat/completions`를 추가합니다.
+- 다른 호환 API root를 사용하는 서비스라면 **API root**를 변경하세요.
 
 ### Ollama
 
 - 기본 서버 주소는 `http://127.0.0.1:11434`이며 사용 중인 컴퓨터에서 실행 중인 Ollama에 연결합니다. 먼저 Ollama를 실행하고 호환 모델을 설치하세요.
 - 모델 목록을 새로 고쳐 설치된 모델을 선택하거나 정확한 **Model ID**를 입력하세요.
-- 원격 Ollama 서버를 사용하려면 **Endpoint**를 해당 서버 주소로 변경하세요. 서버에서 요구할 때만 **API key**를 입력합니다. **Test**는 연결, 모델, 구조화 출력 지원을 확인합니다.
+- 원격 Ollama 서버를 사용하려면 **API root**를 해당 서버 주소로 변경하세요. 서버에서 요구할 때만 **API key**를 입력합니다. **Test**는 연결, 모델, 구조화 출력 지원을 확인합니다.
 
-새 Profile은 기본적으로 **Connect directly**를 사용합니다. 네트워크에 프록시가 필요하면 **Use macOS proxy settings**를 선택하세요.
+새 Profile은 기본적으로 **Use system proxy settings**를 사용합니다. **Network route**는 모델 새로 고침, 연결 테스트, 번역에 적용됩니다. 시스템 프록시를 거치지 않으려면 **Connect directly**를 선택하세요. 기존 Profile은 저장된 경로를 유지하며, 현재 초안에서 선택한 경로도 서비스를 바꿨다가 돌아오면 유지됩니다.
 
 ## 🔒 개인정보, 자격 증명 및 비용
 
@@ -142,7 +142,6 @@ Profile 요약을 펼치면 바로 편집할 수 있습니다. 작업 행은 왼
 - Profile을 열면 저장된 API key를 편집할 수 있습니다. 처음에는 가려지며 **Show API key**는 현재 서랍에서만 값을 표시합니다. **Save**는 현재 입력으로 교체하고 빈 입력을 저장하면 삭제합니다. 읽기에 실패하면 편집 가능한 빈 필드가 표시되며 저장된 데이터는 바뀌지 않습니다. **Cancel**은 편집을 버립니다.
 - 이전 평문 형식에서 업그레이드하면 Profile 설정과 유효한 활성 선택은 유지되지만 저장된 API key는 지워집니다. 필요할 때 다시 입력하세요. SubTandem은 관리하는 복사본을 정리하지만 APFS/Time Machine 스냅샷, 오프라인 복사본 및 다른 백업에는 이전 API key가 남을 수 있습니다. 서비스에서 이전 API key를 교체하세요.
 - 복구 자료가 포함된 전체 `credentials.json`을 백업하세요. 복구하려면 원래 장치와 사용자, 유효한 시스템 키 환경이 필요하며 이 조건에서도 성공을 보장하지 않습니다. 다른 장치나 사용자는 저장된 API key를 복구할 수 없습니다. 각 Profile에 다시 입력하세요.
-- 번들 transport helper는 임시 `127.0.0.1` 포트에서만 수신합니다. 저장했거나 편집 중인 endpoint는 자막 없는 모델 목록 요청을 받을 수 있습니다. **Test**는 현재 초안으로 과금될 수 있는 고정 자막 없는 probe를 보내며, 새로 입력한 key는 별도로 저장하지 않는 한 그 테스트에만 사용됩니다. 전역 활성화된 Profile revision만 번역용 자막 텍스트를 받습니다.
 - 번역 결과는 현재 영상 세션에만 캐시되며 영상 변경, 재생 종료 또는 창 닫기 시 삭제됩니다.
 - 짧은 트랙, 원본 언어를 알 수 없는 텍스트, 정확한 대상 언어와 이미 같은 텍스트도 선택한 Provider로 전송되어 비용이 발생할 수 있습니다. Provider 자체 정책이 적용되며 묶음 처리와 세션 캐시는 호출 횟수를 줄이지만 최대 비용을 보장하지 않습니다.
 
@@ -153,11 +152,11 @@ SubTandem는 오디오 전사, 이미지 기반 자막 OCR/추출, 원격 미디
 ## 🛠️ 문제 해결
 
 - **Select a supported text subtitle:** 로컬 내장 SubRip/ASS/SSA/`mov_text` 또는 외부 SRT/ASS를 주 자막으로 선택하세요. 이미지 기반 및 원격 내장 자막은 지원하지 않으며, 상태 안내에 따라 다시 선택하거나 준비 실패 후 Retry하세요.
-- **번역 실패:** Session에 표시되는 구체적인 조치를 따르세요. 원인에 따라 Profile을 테스트하고 endpoint, 정확한 Model ID, API key, 네트워크 경로, 계정 한도 또는 Ollama 프로세스를 확인하세요. 재생과 원본 자막은 정상적으로 계속됩니다.
+- **번역 실패:** Session에 표시되는 구체적인 조치를 따르세요. 원인에 따라 Profile을 테스트하고 API root, 정확한 Model ID, API key, 네트워크 경로, 계정 한도 또는 Ollama 프로세스를 확인하세요. 재생과 원본 자막은 정상적으로 계속됩니다.
 - **시작 후 빈 Profile 목록:** 저장된 설정을 불러오지 못해도 **New profile**은 사용할 수 있습니다. 손상된 설정은 초기화될 수 있으므로 새 Profile을 만들고 저장하여 계속 사용하세요. 일시적인 접근 문제는 유효한 저장된 Profile을 덮어쓰지 않으며, 접근이 복구되면 다시 나타날 수 있습니다. 저장에 실패해도 초안은 재시도를 위해 유지됩니다. 하나의 API key 읽기 실패는 목록을 초기화하지 않습니다.
 - **Credential could not be saved:** 불완전한 개발 사본 대신 Release 패키지를 설치하고 플러그인 데이터 디렉터리가 쓰기 가능한지 확인한 뒤 IINA를 완전히 종료하고 다시 시작하세요.
 - **번역문이 표시되지 않음:** 대상 Profile 스위치와 **Translate**가 모두 켜져 있고 재생 위치가 번역된 cue의 시간 범위 안에 있는지 확인하세요.
-- **네트워크 또는 프록시 문제:** 새 Profile은 직접 연결합니다. 네트워크에 프록시가 필요하면 해당 Profile에서 **Use macOS proxy settings**를 선택하고 저장, 테스트한 뒤 새 revision을 활성화하세요.
+- **네트워크 또는 프록시 문제:** 새 Profile은 시스템 프록시 설정을 사용합니다. 시스템 프록시 설정을 확인하거나 해당 Profile에서 **Connect directly**를 선택하고 저장, 테스트한 뒤 새 revision을 활성화하세요.
 
 ## ☕ SubTandem 후원하기
 

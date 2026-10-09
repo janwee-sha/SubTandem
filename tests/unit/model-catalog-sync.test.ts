@@ -8,7 +8,7 @@ describe("per-window model catalog synchronization", () => {
   it("uses one cache context across trigger sources while isolating profile revisions", () => {
     const base = {
       kind: "openai" as const,
-      endpoint: "https://example.test/v1",
+      endpoint: "https://example.test",
       proxyMode: "system" as const,
       profileId: "profile-a",
       profileRevision: 1,

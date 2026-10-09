@@ -81,7 +81,7 @@ describe("Sidebar/Main/Global security messages", () => {
     revision: 2,
     displayName: "Remote",
     kind: "openai" as const,
-    endpoint: "https://api.example.test/v1",
+    endpoint: "https://api.example.test",
     endpointFingerprint: "fingerprint",
     model: "model",
     credentialConfigured: true,
@@ -94,7 +94,7 @@ describe("Sidebar/Main/Global security messages", () => {
       revision: 2,
       displayName: "Remote",
       kind: "openai",
-      endpoint: "https://api.example.test/v1",
+      endpoint: "https://api.example.test",
       endpointFingerprint: "fingerprint",
       proxyMode: "system",
       model: "model",
@@ -319,7 +319,7 @@ describe("Sidebar/Main/Global security messages", () => {
         userAction: "CHECK_ENDPOINT",
         providerKind: "ollama",
       }),
-    ).toBe("The Profile settings were rejected. Check the Endpoint and Model ID.");
+    ).toBe("The Profile settings were rejected. Check the API root and Model ID.");
     expect(
       providerTestStatusMessage({
         ok: false,
@@ -337,7 +337,7 @@ describe("Sidebar/Main/Global security messages", () => {
         userAction: "CHECK_ENDPOINT",
         providerKind: "claude",
       }),
-    ).toBe("The Profile settings were rejected. Check the Endpoint and Model ID.");
+    ).toBe("The Profile settings were rejected. Check the API root and Model ID.");
   });
 
   it("uses the same exact eleven service failure messages for Session and Profile Test", () => {
@@ -352,7 +352,7 @@ describe("Sidebar/Main/Global security messages", () => {
       ],
       [
         { category: "configuration", userAction: "CHECK_ENDPOINT" },
-        "The Profile settings were rejected. Check the Endpoint and Model ID.",
+        "The Profile settings were rejected. Check the API root and Model ID.",
       ],
       [
         { category: "network", statusCode: 502, userAction: "CHECK_NETWORK" },
@@ -660,7 +660,7 @@ describe("Sidebar/Main/Global security messages", () => {
         drawerId: "drawer-id",
         draftRevision: 3,
         kind: "openai",
-        endpoint: "https://api.example.test/v1",
+        endpoint: "https://api.example.test",
         proxyMode: "direct",
         model: "model-a",
         sourceProfile: {
@@ -789,7 +789,7 @@ describe("Sidebar/Main/Global security messages", () => {
       payload: {
         trigger: "manual",
         kind: "openai",
-        endpoint: "https://models.example.test/v1",
+        endpoint: "https://models.example.test",
         proxyMode: "system",
         draftCredentialEpoch: 3,
         credential: { apiKey: "draft-secret" },

@@ -7,7 +7,7 @@ const profile = {
   endpointFingerprint: "fingerprint",
   displayName: "Long profile name",
   kind: "openai",
-  endpoint: "https://very-long.example.test/v1",
+  endpoint: "https://very-long.example.test",
   model: "long-model-name",
   proxyMode: "direct",
   credentialConfigured: true,

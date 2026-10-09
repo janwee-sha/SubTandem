@@ -29,7 +29,7 @@ describe("production startup recovery", () => {
           {
             displayName: "Recovered",
             kind: "openai",
-            endpoint: "https://example.test/v1",
+            endpoint: "https://example.test",
             proxyMode: "direct",
             model: "model",
           },
@@ -62,7 +62,7 @@ it("preserves healthy persistent bytes during a temporary transport outage and m
       {
         displayName: "Existing",
         kind: "openai",
-        endpoint: "https://existing.test/v1",
+        endpoint: "https://existing.test",
         proxyMode: "direct",
         model: "model",
       },
@@ -85,7 +85,7 @@ it("preserves healthy persistent bytes during a temporary transport outage and m
     const draft = {
       displayName: "Unsaved retry",
       kind: "openai" as const,
-      endpoint: "https://new.test/v1",
+      endpoint: "https://new.test",
       proxyMode: "direct" as const,
       model: "model",
     };

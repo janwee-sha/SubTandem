@@ -93,8 +93,8 @@ describe("Claude provider", () => {
   it.each([
     ["https://api.anthropic.com", "https://api.anthropic.com/v1/messages"],
     ["https://host.example/base/", "https://host.example/base/v1/messages"],
-    ["https://host.example/base/v1/", "https://host.example/base/v1/messages"],
-  ])("uses the normalized Messages URL for %s", async (endpoint, expectedUrl) => {
+    ["https://host.example/base/v1/", "https://host.example/base/v1/v1/messages"],
+  ])("always appends the fixed Messages path to %s", async (endpoint, expectedUrl) => {
     const requests: ProviderTransportRequest[] = [];
     const value = provider(
       { request: async (request) => (requests.push(request), successResponse(request)) },

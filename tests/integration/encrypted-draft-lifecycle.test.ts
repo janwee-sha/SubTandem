@@ -4,7 +4,7 @@ import { ProviderProfiles } from "../../src/providers/profiles.js";
 
 const saved = new ProviderProfiles(() => "10000000-0000-4000-8000-000000000001").save({
   kind: "openai",
-  endpoint: "https://saved.test/v1",
+  endpoint: "https://saved.test",
   proxyMode: "direct",
   model: "model-a",
   displayName: "Saved",
@@ -16,7 +16,7 @@ const source = {
 };
 const snapshot = (purpose: "draft-test" | "draft-models", existing = true) => ({
   kind: "openai" as const,
-  endpoint: "https://draft.test/v1",
+  endpoint: "https://draft.test",
   proxyMode: "direct" as const,
   model: "model-b",
   purpose,
@@ -150,7 +150,7 @@ describe("production encrypted draft lifecycle", () => {
       await Promise.race([work, h.transport.responses.waitForPending()]);
       expect(h.transport.calls[0]).toMatchObject({
         credential: { source: "draft", purpose: "draft-test" },
-        provider: { endpoint: "https://draft.test/v1", model: "model-b" },
+        provider: { endpoint: "https://draft.test", model: "model-b" },
       });
       expect([...h.draftValues.values()]).toEqual(["synthetic-draft-click-key"]);
       expect(JSON.stringify(h.draftCalls)).not.toContain("synthetic-draft-click-key");

@@ -6,6 +6,7 @@ import ts from "typescript";
 
 class Element {
   value = "";
+  placeholder = "";
   hidden = false;
   disabled = false;
   checked = false;

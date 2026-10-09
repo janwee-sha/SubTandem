@@ -143,7 +143,7 @@ describe("provider connection lifecycle integration", () => {
     const providers: ConfiguredProvider[] = [
       new OpenAICompatibleProvider(
         {
-          endpoint: "https://openai.example/v1",
+          endpoint: "https://openai.example",
           model: "draft-openai",
           apiKey: "entered-openai-key",
           proxyMode: "direct",
@@ -230,7 +230,7 @@ describe("provider connection lifecycle integration", () => {
     const providers: ConfiguredProvider[] = [
       new OpenAICompatibleProvider(
         {
-          endpoint: "https://openai.example/v1",
+          endpoint: "https://openai.example",
           model: "private-model",
           capability: "prompt-json",
           sessionId: "session",
@@ -408,7 +408,7 @@ describe("provider connection lifecycle integration", () => {
     const retained = profiles.save({
       displayName: "OpenAI",
       kind: "openai",
-      endpoint: "https://api.example.test/v1",
+      endpoint: "https://api.example.test",
       model: "model",
     });
     const updated = profiles.save({
@@ -432,7 +432,7 @@ describe("provider connection lifecycle integration", () => {
     const profile = profiles.save({
       displayName: "Selected",
       kind: "openai",
-      endpoint: "https://example.test/v1",
+      endpoint: "https://example.test",
       model: "selected-model",
     });
     const sync = new ModelCatalogSync();
@@ -457,7 +457,7 @@ describe("provider connection lifecycle integration", () => {
     const known = profiles.save({
       displayName: "Known",
       kind: "openai",
-      endpoint: "https://example.test/v1",
+      endpoint: "https://example.test",
       model: "namespace/model:v2",
     });
     const custom = profiles.save({
@@ -489,13 +489,13 @@ describe("provider connection lifecycle integration", () => {
     const sharedProfile = profiles.save({
       displayName: "Shared",
       kind: "openai",
-      endpoint: "https://shared.example/v1",
+      endpoint: "https://shared.example",
       model: "model",
     });
     const retainedProfile = profiles.save({
       displayName: "Retained",
       kind: "openai",
-      endpoint: "https://retained.example/v1",
+      endpoint: "https://retained.example",
       model: "model",
     });
     const authority = createTestProfileAuthority(profiles);

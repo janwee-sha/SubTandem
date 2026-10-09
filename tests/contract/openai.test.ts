@@ -21,7 +21,7 @@ describe("OpenAI-compatible provider", () => {
     let systemMessage = "";
     const provider = new OpenAICompatibleProvider(
       {
-        endpoint: "https://example.test/v1",
+        endpoint: "https://example.test",
         model: "model",
         capability: "json-object",
         sessionId: "session",
@@ -70,7 +70,7 @@ describe("OpenAI-compatible provider", () => {
       let capturedBody: Record<string, unknown> | undefined;
       const provider = new OpenAICompatibleProvider(
         {
-          endpoint: "https://example.test/v1",
+          endpoint: "https://example.test",
           model: "model",
           capability,
           sessionId: "session",
@@ -159,7 +159,7 @@ describe("OpenAI-compatible provider", () => {
     };
     const provider = new OpenAICompatibleProvider(
       {
-        endpoint: "https://example.test/v1",
+        endpoint: "https://example.test",
         model: "model",
         credential: testSavedCredential("openai"),
         sessionId: "session",
@@ -174,7 +174,7 @@ describe("OpenAI-compatible provider", () => {
     const calls: unknown[] = [];
     const provider = new OpenAICompatibleProvider(
       {
-        endpoint: "https://example.test/v1/",
+        endpoint: "https://example.test",
         model: "model",
         credential: testSavedCredential("openai"),
         capability: "strict-json-schema",
@@ -230,7 +230,7 @@ describe("OpenAI-compatible provider", () => {
     const calls: Array<Array<{ id: string; text: string }>> = [];
     const provider = new OpenAICompatibleProvider(
       {
-        endpoint: "https://example.test/v1",
+        endpoint: "https://example.test",
         model: "model",
         capability: "json-object",
         sessionId: "session",
@@ -281,7 +281,7 @@ describe("OpenAI-compatible provider", () => {
     const sessionHeaders: Array<string | undefined> = [];
     const provider = new OpenAICompatibleProvider(
       {
-        endpoint: "https://example.test/v1",
+        endpoint: "https://example.test",
         model: "model",
         capability: "json-object",
         sessionId: "profile-runtime-session",
@@ -350,7 +350,7 @@ describe("OpenAI-compatible provider", () => {
     };
     const first = new OpenAICompatibleProvider(
       {
-        endpoint: "https://example.test/v1",
+        endpoint: "https://example.test",
         model: "model",
         capability: "json-object",
         sessionId: "profile-session-one",
@@ -359,7 +359,7 @@ describe("OpenAI-compatible provider", () => {
     );
     const second = new OpenAICompatibleProvider(
       {
-        endpoint: "https://example.test/v1",
+        endpoint: "https://example.test",
         model: "model",
         capability: "json-object",
         sessionId: "profile-session-two",
@@ -376,7 +376,7 @@ describe("OpenAI-compatible provider", () => {
   it("publishes each validated wire result with restored IDs before returning the aggregate", async () => {
     const provider = new OpenAICompatibleProvider(
       {
-        endpoint: "https://example.test/v1",
+        endpoint: "https://example.test",
         model: "model",
         capability: "json-object",
         sessionId: "session",
@@ -448,7 +448,7 @@ describe("OpenAI-compatible provider", () => {
     let maxActive = 0;
     const provider = new OpenAICompatibleProvider(
       {
-        endpoint: "https://example.test/v1",
+        endpoint: "https://example.test",
         model: "model",
         capability: "json-object",
         sessionId: "session",
@@ -539,7 +539,7 @@ describe("OpenAI-compatible provider", () => {
     const cancelledJobs: string[] = [];
     const provider = new OpenAICompatibleProvider(
       {
-        endpoint: "https://example.test/v1",
+        endpoint: "https://example.test",
         model: "model",
         capability: "prompt-json",
         sessionId: "session",
@@ -594,11 +594,19 @@ describe("OpenAI-compatible provider", () => {
     expect(cancelledJobs).toEqual(["cancellation-part-1", "cancellation-part-2"]);
   });
 
-  it("treats even a full chat-completions input as an API root", async () => {
+  it.each([
+    ["https://example.test", "https://example.test/v1/chat/completions"],
+    ["https://example.test/v1///", "https://example.test/v1/v1/chat/completions"],
+    ["https://example.test/proxy/V1/", "https://example.test/proxy/V1/v1/chat/completions"],
+    [
+      "https://example.test/v1/chat/completions",
+      "https://example.test/v1/chat/completions/v1/chat/completions",
+    ],
+  ])("always appends the fixed Chat Completions path to %s", async (endpoint, expectedUrl) => {
     let requestedUrl = "";
     const provider = new OpenAICompatibleProvider(
       {
-        endpoint: "https://example.test/v1/chat/completions",
+        endpoint,
         model: "model",
         capability: "prompt-json",
         sessionId: "session",
@@ -622,7 +630,7 @@ describe("OpenAI-compatible provider", () => {
       },
     );
     await provider.attempt(makeProviderRequest());
-    expect(requestedUrl).toBe("https://example.test/v1/chat/completions/chat/completions");
+    expect(requestedUrl).toBe(expectedUrl);
   });
 
   it("does not hide authentication, model or quota failures behind capability fallback", async () => {
@@ -657,7 +665,7 @@ describe("OpenAI-compatible provider", () => {
       let calls = 0;
       const provider = new OpenAICompatibleProvider(
         {
-          endpoint: "https://example.test/v1",
+          endpoint: "https://example.test",
           model: "model",
           credential: testSavedCredential("openai"),
           sessionId: "session",
@@ -683,7 +691,7 @@ describe("OpenAI-compatible provider", () => {
     let statusCode = 200;
     const provider = new OpenAICompatibleProvider(
       {
-        endpoint: "https://example.test/v1",
+        endpoint: "https://example.test",
         model: "model",
         credential: testSavedCredential("openai"),
         capability: "json-object",
@@ -737,7 +745,7 @@ describe("OpenAI-compatible provider", () => {
   it("does not fall back after a non-capability connection-test failure", async () => {
     const jobs: string[] = [];
     const provider = new OpenAICompatibleProvider(
-      { endpoint: "https://example.test/v1", model: "model", sessionId: "session" },
+      { endpoint: "https://example.test", model: "model", sessionId: "session" },
       {
         request: async (request) => {
           jobs.push(request.jobId);
@@ -764,7 +772,7 @@ describe("OpenAI-compatible provider", () => {
     ]) {
       const provider = new OpenAICompatibleProvider(
         {
-          endpoint: "https://example.test/v1",
+          endpoint: "https://example.test",
           model: "m",
           capability: "prompt-json",
           sessionId: "session",
@@ -837,7 +845,7 @@ describe("OpenAI-compatible provider", () => {
       expect(calls).toHaveLength(2);
       expect(calls).toEqual(
         calls.map(() => ({
-          url: "http://api.example.test:8080/custom/root/chat/completions",
+          url: "http://api.example.test:8080/custom/root/v1/chat/completions",
           proxyMode,
           authorization: undefined,
         })),
@@ -848,7 +856,7 @@ describe("OpenAI-compatible provider", () => {
   it("classifies unavailable model responses without retaining Provider diagnostics", async () => {
     const value = new OpenAICompatibleProvider(
       {
-        endpoint: "https://example.test/v1",
+        endpoint: "https://example.test",
         model: "private-model",
         capability: "prompt-json",
         sessionId: "session",

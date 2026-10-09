@@ -162,6 +162,11 @@ label {
   line-height: 14px;
 }
 
+#request-url {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .model-control {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

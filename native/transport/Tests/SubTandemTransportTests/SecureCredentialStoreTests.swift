@@ -6,7 +6,7 @@ private let secureStoreProfileID = "10000000-0000-4000-8000-000000000001"
 private let secureStoreOtherID = "10000000-0000-4000-8000-000000000002"
 
 private func secureStoreProfile(_ id: String = secureStoreProfileID, revision: Int = 1) -> StoredProviderProfile {
-    StoredProviderProfile(profileId: id, revision: revision, displayName: "Synthetic", kind: "openai", endpoint: "https://example.test/v1", endpointFingerprint: "0d60715773b0025a549a09f48db8f58ac0f08cd3fb973bf8eca151f51a7eb4d8", proxyMode: "direct", model: "synthetic-model", capability: nil)
+    StoredProviderProfile(profileId: id, revision: revision, displayName: "Synthetic", kind: "openai", endpoint: "https://example.test", endpointFingerprint: "77e6ddaebd4c56f3f66bb6ff4c788c4b4b5057a5410534047a17146c2daf1807", proxyMode: "direct", model: "synthetic-model", capability: nil)
 }
 
 private func secureStoreInput(revision: Int, profileRevision: Int = 0, profiles: [StoredProviderProfile]? = nil, commitID: String = UUID().uuidString) -> CredentialProfileSave {

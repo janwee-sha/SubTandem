@@ -52,7 +52,7 @@ struct CredentialHTTPRequest: Sendable {
             body = Data()
         }
         let root = endpoint.replacingOccurrences(of: #"/+$"#, with: "", options: .regularExpression)
-        let apiRoot = kind == "claude" && root.range(of: #"/v1$"#, options: [.regularExpression, .caseInsensitive]) == nil ? root + "/v1" : root
+        let apiRoot = ["claude", "openai"].contains(kind) ? root + "/v1" : root
         let paths: [String]
         if purpose == "models" {
             guard method == "GET" else { throw TransportProtocolError.invalidRequest }

@@ -230,7 +230,7 @@ describe("authoritative global RPC routing", () => {
       payload: {
         trigger: "manual",
         kind: "openai",
-        endpoint: "https://example.test/v1",
+        endpoint: "https://example.test",
         proxyMode: "system",
       },
     });

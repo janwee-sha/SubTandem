@@ -236,13 +236,12 @@ describe("IINA sidebar bundle contract", () => {
 
   it("uses Claude defaults, Messages URL guidance, Custom ID and an optional API key", () => {
     expect(sidebarSource).toContain(
-      'claude: { endpoint: "https://api.anthropic.com", model: "", proxyMode: "direct" }',
+      'claude: { endpoint: "https://api.anthropic.com", model: "", proxyMode: "system" }',
     );
     expect(sidebarSource).toContain('claude: "Claude"');
     expect(sidebarSource).not.toMatch(/claude[^\n]+model:\s*"[^"]+"/i);
-    expect(sidebarSource).toContain("/v1/messages");
     expect(sidebarSource).toMatch(/Claude[\s\S]*API root/i);
-    expect(sidebarSource).toMatch(/exact Claude model ID/i);
+    expect(sidebarSource).toContain("Refresh the catalog or enter the exact model ID.");
     expect(sidebarSource).toContain('custom.textContent = "Custom model ID…"');
     expect(html).toMatch(/id="provider-key"[\s\S]*?type="password"/);
     expect(sidebarSource).not.toContain("claudeCredentialRequired");
@@ -253,7 +252,7 @@ describe("IINA sidebar bundle contract", () => {
 
   it("uses independent DeepSeek defaults without preselecting a model", () => {
     expect(sidebarSource).toContain(
-      'deepseek: { endpoint: "https://api.deepseek.com", model: "", proxyMode: "direct" }',
+      'deepseek: { endpoint: "https://api.deepseek.com", model: "", proxyMode: "system" }',
     );
     expect(sidebarSource).toContain('deepseek: "DeepSeek"');
     expect(sidebarSource).not.toMatch(/deepseek[^\n]+model:\s*"[^"]+"/i);
@@ -315,21 +314,24 @@ describe("IINA sidebar bundle contract", () => {
     expect(html).toContain('id="new-profile"');
     expect(html).toContain('id="request-url"');
     expect(html).toContain('id="provider-proxy-mode"');
-    expect(html).toContain('<option value="direct" selected>');
+    expect(html).toContain('<option value="system" selected>');
   });
 
-  it("uses direct for every new service draft and explains both route choices", () => {
-    for (const kind of ["openai", "claude", "deepseek", "ollama"])
-      expect(sidebarSource).toMatch(
-        new RegExp(`${kind}: \\{ endpoint: [^\\n]+proxyMode: "direct" \\}`),
-      );
+  it("uses system proxy settings and describes the operations using Network route", () => {
     expect(html).toMatch(
-      /<option value="direct" selected>Connect directly<\/option>[\s\S]*?<option value="system">Use macOS proxy settings<\/option>/,
+      /<option value="direct">Connect directly<\/option>[\s\S]*?<option value="system" selected>Use system proxy settings<\/option>/,
     );
     expect(html).toMatch(
-      /Connect directly without the macOS proxy, or use the current macOS proxy\s+settings\./,
+      /Choose how SubTandem connects to this service for model refresh, connection tests,\s+and translation\./,
     );
-    expect(html).not.toMatch(/fallback|falls back/i);
+  });
+
+  it("describes the API root and actual request with wrapping for long addresses", () => {
+    expect(html).toContain("<span>API root</span>");
+    expect(html).toContain('aria-describedby="endpoint-hint request-url"');
+    expect(sidebarCss).toMatch(
+      /#request-url\s*{[^}]*white-space: pre-wrap;[^}]*overflow-wrap: anywhere/,
+    );
   });
 
   it("keeps Test feedback together and splits Delete from the right-side save actions", () => {

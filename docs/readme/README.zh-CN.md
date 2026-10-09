@@ -37,7 +37,7 @@ SubTandem 保留原字幕，同时在你选择的位置独立显示译文。
 - **播放优先：** 翻译工作不会暂停视频，也不会隐藏原字幕。
 - **请求范围受限：** 只翻译播放位置附近的字幕；每个播放器窗口限制并发工作；成功译文只在当前视频会话内缓存。
 - **多个 Profile：** 可在分组列表中展开 Profile 就地编辑，也可使用标题右侧的 **New profile**。Test 测试当前抽屉草稿；独立开关才会在全部窗口与重启后全局启用已保存的确切修订版。
-- **代理控制：** 新 Profile 默认直连；每个 Profile 也可改用当前 macOS 系统代理。
+- **代理控制：** 新 Profile 默认使用系统代理设置；可为每个 Profile 选择网络路由。
 
 ## ✅ 使用要求
 
@@ -99,7 +99,7 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 
 1. 打开本地视频，并在 IINA 中选择受支持的内嵌文本字幕或外部 SRT/ASS 作为主字幕。
 2. 在 **Subtitle** 中选择准确的目标语言。当前翻译服务会在翻译请求内逐条理解源语言，无需手动确认源语言。
-3. 在 **Translation service** 中点击 **New profile**，创建 OpenAI、Claude、DeepSeek 或 Ollama Profile。新草稿默认 **Connect directly**。服务需要认证时，先填写 API key，再手动刷新模型列表；选择返回的模型，或填写准确的自定义 Model ID。
+3. 在 **Translation service** 中点击 **New profile**，创建 OpenAI、Claude、DeepSeek 或 Ollama Profile。新草稿默认 **Use system proxy settings**。服务需要认证时，先填写 API key，再手动刷新模型列表；选择返回的模型，或填写准确的自定义 Model ID。
 4. 用左下角 **Test** 测试当前草稿，再用右下角 **Save** 保存，并打开独立开关。Test 可能产生固定探针请求费用，但不会发送正在播放的字幕、保存新输入的密钥或启用 Profile。
 5. 打开 **Translate**。原字幕仍由 IINA 正常显示，译文会出现在 SubTandem 覆盖层中。可在 **Subtitle** 中用 **Position** 将覆盖层从顶部（`0`）调整到底部（`100`）。
 6. 在 **Font**、**Border** 与 **Background** 分组中设置八项文本样式。选择颜色预设会直接保存；选择 **Show Colors…** 可打开 macOS 系统颜色面板，未修改便关闭时会保留原值。
@@ -110,29 +110,29 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 
 ### OpenAI
 
-- 默认 API root 是 `https://api.openai.com/v1`。使用 OpenAI 官方服务时，填写 **API key**，并选择账号可用的模型。
+- 默认 API root 是 `https://api.openai.com`。使用 OpenAI 官方服务时，填写 **API key**，并选择账号可用的模型。
 - 刷新模型列表并选择模型，或填写准确的 **Model ID**。
-- 使用兼容 OpenAI 的服务时，将 **Endpoint** 改为该服务的 API root。SubTandem 会追加 `/chat/completions`，并在侧边栏显示请求地址。如果该服务无需 API key，可将 **API key** 留空。
+- 使用兼容 OpenAI 的服务时，将 **API root** 改为该服务的 API root。侧边栏会显示翻译请求地址。如果该服务无需 API key，可将 **API key** 留空。
 
 ### Claude
 
 - 默认 API root 是 `https://api.anthropic.com`。使用 Claude 官方服务时，填写 Anthropic **API key**，并选择账号可用的模型。
 - 刷新模型列表并选择模型，或填写准确的 **Model ID**。
-- 使用兼容 Claude 的服务时，将 **Endpoint** 改为该服务的 API root。SubTandem 通过 `/v1/messages` 翻译，并从 `/v1/models` 获取模型列表。如果该服务无需 API key，可将 **API key** 留空；仍可刷新模型、测试、保存和启用 Profile。
+- 使用兼容 Claude 的服务时，将 **API root** 改为该服务的 API root。如果该服务无需 API key，可将 **API key** 留空；仍可刷新模型、测试、保存和启用 Profile。
 
 ### DeepSeek
 
 - 默认 API root 是 `https://api.deepseek.com`。使用 DeepSeek 官方服务时，填写 **API key**，并选择账号可用的模型。
 - 刷新模型列表并选择模型，或填写准确的 **Model ID**。SubTandem 不会替你预选 DeepSeek 模型。
-- 如果服务使用其他兼容的 API root，可以修改 **Endpoint**。SubTandem 会追加 `/chat/completions` 发起翻译请求。
+- 如果服务使用其他兼容的 API root，可以修改 **API root**。
 
 ### Ollama
 
 - 默认服务地址是 `http://127.0.0.1:11434`，用于连接你电脑上的 Ollama。请先启动 Ollama 并安装兼容模型。
 - 刷新模型列表并选择已安装的模型，或填写准确的 **Model ID**。
-- 使用远程 Ollama 时，将 **Endpoint** 改为服务器地址。仅当服务器要求时才填写 **API key**。**Test** 会检查连接、模型和结构化输出支持。
+- 使用远程 Ollama 时，将 **API root** 改为服务器地址。仅当服务器要求时才填写 **API key**。**Test** 会检查连接、模型和结构化输出支持。
 
-新 Profile 默认使用 **Connect directly**。网络需要代理时，选择 **Use macOS proxy settings**。
+新 Profile 默认使用 **Use system proxy settings**。**Network route** 用于模型刷新、连接测试和翻译；选择 **Connect directly** 可绕过系统代理。已有 Profile 保留保存的路由，当前草稿中选择的路由在切换服务后再切回来时也会保留。
 
 ## 🔒 隐私、凭据与费用
 
@@ -142,7 +142,6 @@ SubTandem v0.1.0 已包含 IINA 更新元数据。使用上述任一方式完成
 - 打开 Profile 可编辑已保存的 API key。默认遮罩，**Show API key** 仅在当前抽屉显示原值。**Save** 以当前输入替换原值，空值保存会清除；读取失败时仍显示可编辑的空字段，不改变已保存数据。**Cancel** 丢弃修改。
 - 从原明文格式升级会保留 Profile 设置和有效启用选择，但清空已保存的 API key，请按需重新录入。SubTandem 清理其受管副本；APFS/Time Machine 快照、离线副本和其他备份仍可能保留旧 API key。建议在服务端轮换旧 API key。
 - 备份时保留完整的 `credentials.json` 及其中配套恢复材料。恢复依赖原设备、原用户和有效的系统密钥环境，即使条件满足也不保证成功。其他设备或用户无法恢复已保存的 API key，请为各 Profile 重新录入。
-- 随附的 transport helper 只监听临时的 `127.0.0.1` 端口。已配置或正在编辑的 endpoint 可接收不含字幕的模型目录请求；点击 **Test** 会向当前草稿发送可能计费的固定无字幕探针，新输入的密钥仅用于该次测试，除非另行保存。其中包括默认 Claude root `https://api.anthropic.com` 和 DeepSeek root `https://api.deepseek.com`；只有全局启用的 Profile 修订版才会接收用于翻译的字幕文字。跨源重定向和 URL 中嵌入的凭据会被拒绝。
 - 处理内嵌文本字幕时，随附的 extractor 只读取当前本地媒体中选中的轨道，并生成会话级临时 SRT；远程媒体和图形字幕不会被提取，解析、取消、超时或退出后会清理临时数据。
 - 译文只在当前视频会话内缓存；换片、播放结束或关闭窗口时会被清除。
 - 短轨、源语言不明及已经符合准确目标语言的正文仍会发送到所选服务，并可能产生费用。服务适用其自身的数据与内容政策；批量处理和会话缓存可以减少调用次数，但不保证费用上限。
@@ -154,11 +153,11 @@ SubTandem 不提供音频转写、图形字幕 OCR/提取、远程媒体内嵌�
 ## 🛠️ 故障排查
 
 - **Select a supported text subtitle：** 在 IINA 中选择本地内嵌 SubRip/ASS/SSA/`mov_text` 或外部 SRT/ASS 作为主字幕。远程内嵌和图形字幕不受支持；可按状态提示重新选轨，或对失败的准备操作执行 Retry。
-- **翻译失败：** 按照 Session 显示的具体操作处理。根据失败原因测试 Profile，并检查 endpoint、准确的 Model ID、API key、网络路由、账户限额或 Ollama 进程。视频和原字幕会继续正常播放。
+- **翻译失败：** 按照 Session 显示的具体操作处理。根据失败原因测试 Profile，并检查 API root、准确的 Model ID、API key、网络路由、账户限额或 Ollama 进程。视频和原字幕会继续正常播放。
 - **启动后出现空 Profile 列表：** 无法加载已保存设置时，仍可使用 **New profile**。损坏的设置可能被重置，可新建并保存 Profile 后继续使用。暂时访问失败不会覆盖有效的已保存 Profile，访问恢复后它们可以重新出现。保存失败会保留草稿供重试。单条 API key 读取失败不会重置列表。
 - **Credential could not be saved：** 使用正式 Release 安装包，不要使用内容不完整的开发副本；确认插件数据目录可写，并完全退出后重启 IINA。
 - **没有显示译文：** 确认目标 Profile 开关和 **Translate** 均已开启；播放位置还需要处于已有译文的字幕时段内。
-- **网络或代理故障：** 新 Profile 默认直连。若网络需要代理，请为该 Profile 选择 **Use macOS proxy settings**，然后保存、测试并启用新修订版。
+- **网络或代理故障：** 新 Profile 默认使用系统代理设置。请检查系统代理配置，或为该 Profile 选择 **Connect directly**，然后保存、测试并启用新修订版。
 
 ## ☕ 支持 SubTandem
 

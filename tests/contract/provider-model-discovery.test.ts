@@ -180,7 +180,7 @@ describe("provider model discovery", () => {
         {
           jobId: "models-claude",
           kind: "claude",
-          endpoint: "https://host.example/base/v1/",
+          endpoint: "https://host.example/base/",
           credential: testSavedCredential("claude"),
           proxyMode: "direct",
         },
@@ -193,7 +193,7 @@ describe("provider model discovery", () => {
       purpose: "models",
       provider: {
         kind: "claude",
-        endpoint: "https://host.example/base/v1/",
+        endpoint: "https://host.example/base/",
         model: null,
         proxyMode: "direct",
       },
@@ -351,7 +351,7 @@ describe("provider model discovery", () => {
         {
           jobId: "models-openai",
           kind: "openai",
-          endpoint: "https://example.test/v1/",
+          endpoint: "https://example.test",
           credential: testSavedCredential("openai"),
           proxyMode: "direct",
         },
@@ -364,7 +364,7 @@ describe("provider model discovery", () => {
       purpose: "models",
       provider: {
         kind: "openai",
-        endpoint: "https://example.test/v1/",
+        endpoint: "https://example.test",
         model: null,
         proxyMode: "direct",
       },
@@ -406,7 +406,7 @@ describe("provider model discovery", () => {
   it("treats a valid empty response as an empty catalog", async () => {
     await expect(
       discoverProviderModels(
-        { jobId: "empty", kind: "openai", endpoint: "https://example.test/v1" },
+        { jobId: "empty", kind: "openai", endpoint: "https://example.test" },
         transport({ data: [] }),
       ),
     ).resolves.toEqual([]);
@@ -420,7 +420,7 @@ describe("provider model discovery", () => {
     const kind = _name.includes("Ollama") ? "ollama" : "openai";
     await expect(
       discoverProviderModels(
-        { jobId: "invalid", kind, endpoint: "https://example.test/v1" },
+        { jobId: "invalid", kind, endpoint: "https://example.test" },
         transport(body),
       ),
     ).rejects.toMatchObject({ category: "protocol" });
@@ -462,4 +462,18 @@ describe.each(["openai", "deepseek", "ollama"] as const)("%s model guards", (kin
     ).rejects.toMatchObject({ category: "cancelled" });
     expect(client.requests).toHaveLength(failAt - 1);
   });
+});
+
+describe.each(["openai", "claude"] as const)("%s fixed model catalog path", (kind) => {
+  it.each(["https://fixture.test", "https://fixture.test/v1", "https://fixture.test/proxy/V1///"])(
+    "always appends /v1/models to %s",
+    async (endpoint) => {
+      const client = transport({ data: [{ id: "model" }], has_more: false });
+      await expect(
+        discoverProviderModels({ jobId: "fixed-model-path", kind, endpoint }, client),
+      ).resolves.toEqual(["model"]);
+      expect(client.requests[0]!.url).toBe(`${endpoint.replace(/\/+$/, "")}/v1/models`);
+      expect(client.requests[0]!.provider.endpoint).toBe(endpoint);
+    },
+  );
 });

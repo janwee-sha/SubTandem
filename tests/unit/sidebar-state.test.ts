@@ -943,14 +943,13 @@ describe("Sidebar model catalog state", () => {
   });
 });
 
-describe("Sidebar Profile name source", () => {
-  it("tracks Claude system ownership, atomic saving and exact model controls", () => {
+describe("Sidebar Profile name", () => {
+  it("tracks Claude naming, atomic saving and exact model controls", () => {
     const state = createState();
     state.resetProfileName("OpenAI");
     state.changeServiceTypeLabel("Claude");
     expect(state.snapshot.profileName).toEqual({
       value: "Claude",
-      mode: "system",
       serviceTypeLabel: "Claude",
     });
     state.beginProfileSave("claude-save");
@@ -977,22 +976,20 @@ describe("Sidebar Profile name source", () => {
     });
   });
 
-  it("follows Service type labels only while the name is system-owned", () => {
+  it("uses the selected Service type label as the default name", () => {
     const state = createState();
     state.resetProfileName("OpenAI-compatible");
     expect(state.snapshot.profileName).toEqual({
       value: "OpenAI-compatible",
-      mode: "system",
       serviceTypeLabel: "OpenAI-compatible",
     });
 
     state.changeServiceTypeLabel("Ollama");
     expect(state.snapshot.profileName.value).toBe("Ollama");
-    expect(state.snapshot.profileName.mode).toBe("system");
   });
 
   it.each(["Custom", "", "   ", "OpenAI-compatible"])(
-    "protects user input %j from later Service type changes",
+    "resets user input %j on Service type changes",
     (value) => {
       const state = createState();
       state.resetProfileName("OpenAI-compatible");
@@ -1000,24 +997,22 @@ describe("Sidebar Profile name source", () => {
       state.changeServiceTypeLabel("Ollama");
 
       expect(state.snapshot.profileName).toEqual({
-        value,
-        mode: "user",
+        value: "Ollama",
         serviceTypeLabel: "Ollama",
       });
     },
   );
 
-  it("protects a saved name and lets New restore system ownership", () => {
+  it("loads a saved name and resets it when Service type changes", () => {
     const state = createState();
     state.loadProfileName("Saved profile", "OpenAI-compatible");
-    state.changeServiceTypeLabel("Ollama");
     expect(state.snapshot.profileName.value).toBe("Saved profile");
-    expect(state.snapshot.profileName.mode).toBe("saved");
+    state.changeServiceTypeLabel("Ollama");
+    expect(state.snapshot.profileName.value).toBe("Ollama");
 
     state.resetProfileName("Ollama");
     expect(state.snapshot.profileName).toEqual({
       value: "Ollama",
-      mode: "system",
       serviceTypeLabel: "Ollama",
     });
   });
@@ -1168,7 +1163,7 @@ describe("Sidebar confirmed Profile activation", () => {
       revision: 1,
       displayName: "A",
       kind: "openai",
-      endpoint: "https://a.example/v1",
+      endpoint: "https://a.example",
       endpointFingerprint: "fingerprint-a",
       proxyMode: "direct",
       model: "model-a",
@@ -1179,7 +1174,7 @@ describe("Sidebar confirmed Profile activation", () => {
       revision: 1,
       displayName: "B",
       kind: "openai",
-      endpoint: "https://b.example/v1",
+      endpoint: "https://b.example",
       endpointFingerprint: "fingerprint-b",
       proxyMode: "direct",
       model: "model-b",

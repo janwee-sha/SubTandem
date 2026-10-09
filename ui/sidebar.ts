@@ -175,47 +175,33 @@ function populateSubtitleColorGrid(): void {
 
 populateSubtitleColorGrid();
 
-const providerDrafts: Record<
-  ProviderKind,
-  { endpoint: string; model: string; proxyMode: "system" | "direct" }
-> = {
-  openai: { endpoint: "https://api.openai.com/v1", model: "", proxyMode: "direct" },
-  claude: { endpoint: "https://api.anthropic.com", model: "", proxyMode: "direct" },
-  deepseek: { endpoint: "https://api.deepseek.com", model: "", proxyMode: "direct" },
-  ollama: { endpoint: "http://127.0.0.1:11434", model: "", proxyMode: "direct" },
-};
+interface ProviderDraft {
+  endpoint: string;
+  model: string;
+  proxyMode: "system" | "direct";
+}
+
+function createProviderDrafts(): Record<ProviderKind, ProviderDraft> {
+  return {
+    openai: { endpoint: "https://api.openai.com", model: "", proxyMode: "system" },
+    claude: { endpoint: "https://api.anthropic.com", model: "", proxyMode: "system" },
+    deepseek: { endpoint: "https://api.deepseek.com", model: "", proxyMode: "system" },
+    ollama: { endpoint: "http://127.0.0.1:11434", model: "", proxyMode: "system" },
+  };
+}
+
+const providerDrafts = createProviderDrafts();
 const providerLabels: Record<ProviderKind, string> = {
   openai: "OpenAI",
   claude: "Claude",
   deepseek: "DeepSeek",
   ollama: "Ollama",
 };
-const providerUi: Record<
-  ProviderKind,
-  { endpointHint: string; modelHint: string; modelPlaceholder: string }
-> = {
-  openai: {
-    endpointHint: "Enter a complete HTTP(S) API root. Every value receives /chat/completions.",
-    modelHint: "Enter the exact model identifier exposed by this service.",
-    modelPlaceholder: "e.g. gpt-translate-fast",
-  },
-  claude: {
-    endpointHint:
-      "Enter a complete HTTP(S) Claude API root, optionally ending in /v1. Do not enter a full Messages URL.",
-    modelHint: "Refresh the catalog or enter the exact Claude model ID.",
-    modelPlaceholder: "Exact Claude model ID",
-  },
-  deepseek: {
-    endpointHint:
-      "Enter a complete HTTP(S) DeepSeek API root. Chat requests append /chat/completions.",
-    modelHint: "Refresh the catalog or enter the exact DeepSeek model identifier.",
-    modelPlaceholder: "Exact DeepSeek model ID",
-  },
-  ollama: {
-    endpointHint: "Enter a complete HTTP(S) Ollama server root.",
-    modelHint: "Enter the exact Ollama tag, for example translategemma:12b or qwen3:14b.",
-    modelPlaceholder: "e.g. qwen3:14b",
-  },
+const modelPlaceholders: Record<ProviderKind, string> = {
+  openai: "e.g. gpt-6-luna",
+  claude: "e.g. claude-haiku-5-5",
+  deepseek: "e.g. deepseek-flash",
+  ollama: "e.g. translategemma:12b",
 };
 const profiles = new Map<string, ProfileView>();
 const sidebarState = window.createSubTandemSidebarState();
@@ -1130,22 +1116,17 @@ function setModelContext(value: string, catalog?: { contextKey: string; models: 
 }
 
 function updateRequestUrl(): void {
-  const value = providerEndpoint.value.trim().replace(/\/+$/, "");
   const kind = providerKind.value as ProviderKind;
-  if (kind === "ollama") {
-    requestUrl.textContent = value ? `Ollama API root: ${value}` : "Enter the Ollama server root.";
-    return;
+  const path = providerApiPath(kind, "translation");
+  document.querySelector<HTMLElement>("#endpoint-hint")!.textContent =
+    `Enter a HTTP(S) ${providerLabels[kind]} API root. Translation requests append ${path}.`;
+  let actualRequest = "—";
+  try {
+    actualRequest = providerApiUrl(kind, providerEndpoint.value, "translation");
+  } catch {
+    actualRequest = "—";
   }
-  if (kind === "claude") {
-    const messagesUrl = /\/v1$/i.test(value) ? `${value}/messages` : `${value}/v1/messages`;
-    requestUrl.textContent = value
-      ? `Actual request: ${messagesUrl}`
-      : "Requests append /v1/messages to this Claude API root.";
-    return;
-  }
-  requestUrl.textContent = value
-    ? `Actual request: ${value}/chat/completions`
-    : "Requests append /chat/completions to this API root.";
+  requestUrl.textContent = `Actual request:\n${actualRequest}`;
 }
 
 function selectedServiceTypeLabel(): string {
@@ -1157,13 +1138,11 @@ function applyProviderKind(): void {
   activeProviderKind = kind;
   providerEndpoint.value = providerDrafts[kind].endpoint;
   providerProxyMode.value = providerDrafts[kind].proxyMode;
-  sidebarState.changeServiceTypeLabel(selectedServiceTypeLabel());
   profileName.value = sidebarState.snapshot.profileName.value;
   document.querySelector<HTMLElement>("#credential-row")!.hidden = false;
-  document.querySelector<HTMLElement>("#endpoint-hint")!.textContent =
-    providerUi[kind].endpointHint;
-  document.querySelector<HTMLElement>("#model-hint")!.textContent = providerUi[kind].modelHint;
-  providerModel.placeholder = providerUi[kind].modelPlaceholder;
+  document.querySelector<HTMLElement>("#model-hint")!.textContent =
+    "Refresh the catalog or enter the exact model ID. Low-effort models are recommended.";
+  providerModel.placeholder = modelPlaceholders[kind];
   document.querySelector<HTMLElement>("#credential-hint")!.textContent =
     "Enter an API key if the service requires one.";
   setModelContext(providerDrafts[kind].model);
@@ -1178,6 +1157,7 @@ providerKind.addEventListener("change", () => {
   saveActiveDraft();
   draftCredentialEpoch += 1;
   clearCredentialInput();
+  sidebarState.changeServiceTypeLabel(selectedServiceTypeLabel());
   applyProviderKind();
   renderDrawerAvailability();
   requestModels("profile");
@@ -1221,26 +1201,7 @@ profileName.addEventListener("input", () => {
 });
 
 function resetProviderDrafts(): void {
-  providerDrafts.openai = {
-    endpoint: "https://api.openai.com/v1",
-    model: "",
-    proxyMode: "direct",
-  };
-  providerDrafts.claude = {
-    endpoint: "https://api.anthropic.com",
-    model: "",
-    proxyMode: "direct",
-  };
-  providerDrafts.deepseek = {
-    endpoint: "https://api.deepseek.com",
-    model: "",
-    proxyMode: "direct",
-  };
-  providerDrafts.ollama = {
-    endpoint: "http://127.0.0.1:11434",
-    model: "",
-    proxyMode: "direct",
-  };
+  Object.assign(providerDrafts, createProviderDrafts());
 }
 
 function clearProfileDrawer(focus = true): void {
@@ -1570,7 +1531,7 @@ testProfileButton.addEventListener("click", () => {
   if (drawer.mode === "closed" || drawer.validity !== "current") return;
   if (!validModelEndpoint()) {
     profileTestStatus.dataset.state = "error";
-    profileTestStatus.textContent = "Enter a valid HTTP(S) service endpoint before testing.";
+    profileTestStatus.textContent = "Enter a valid HTTP(S) API root before testing.";
     providerEndpoint.focus();
     return;
   }
@@ -2132,7 +2093,7 @@ function syncProfileOverflow(article: HTMLElement): void {
     }
     const fullText = line.textContent ?? "";
     line.setAttribute("title", fullText);
-    return [`${["Name", "Service and model", "Endpoint"][index]}: ${fullText}`];
+    return [`${["Name", "Service and model", "API root"][index]}: ${fullText}`];
   });
   state.description.textContent = descriptions.join("; ");
   if (descriptions.length) disclosure.setAttribute("aria-describedby", state.description.id);
@@ -2196,7 +2157,7 @@ function createNewProfileRow(): HTMLElement {
   const article = document.createElement("article");
   article.className = "profile profile-new is-editing";
   article.dataset.newProfile = "true";
-  article.innerHTML = `<div class="profile-heading"><div class="profile-details profile-disclosure"><span class="disclosure-indicator" aria-hidden="true"></span><span class="profile-copy"><strong>New profile</strong><span class="profile-summary">Unsaved translation service</span></span></div></div>`;
+  article.innerHTML = `<div class="profile-heading"><div class="profile-details profile-disclosure"><span class="disclosure-indicator" aria-hidden="true"></span><span class="profile-copy"><strong>New profile</strong></span></div></div>`;
   const disclosure = article.querySelector<HTMLElement>(".profile-disclosure")!;
   disclosure.tabIndex = 0;
   disclosure.setAttribute("role", "button");

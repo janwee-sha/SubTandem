@@ -20,7 +20,7 @@ function serviceFailureMessage(error: ServiceFailureInput | null | undefined): s
   if (error?.statusCode === 403)
     return "Access was denied. Check the Profile’s API key and model access.";
   if (error?.category === "configuration")
-    return "The Profile settings were rejected. Check the Endpoint and Model ID.";
+    return "The Profile settings were rejected. Check the API root and Model ID.";
   if (error?.category === "network")
     return "Couldn’t reach the translation service. Check your connection and Network route.";
   if (error?.category === "timeout" || error?.statusCode === 408 || error?.statusCode === 504)

@@ -59,8 +59,8 @@ function modelCatalogStatusMessage(result: ModelCatalogStatus): string {
   if (result.category === "protocol")
     return "This service did not return a compatible model catalog. Enter an exact Custom model ID.";
   if (typeof result.statusCode === "number")
-    return `Model refresh failed with HTTP ${result.statusCode}. Check the endpoint.`;
-  return "Model refresh failed. Check the endpoint and network route.";
+    return `Model refresh failed with HTTP ${result.statusCode}. Check the API root.`;
+  return "Model refresh failed. Check the API root and Network route.";
 }
 
 (globalThis as typeof globalThis & Window).subtandemModelCatalogStatusMessage =

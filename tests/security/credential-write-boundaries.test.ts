@@ -13,7 +13,7 @@ const secret = "synthetic-write-key-雪";
 const profile = new ProviderProfiles(() => "10000000-0000-4000-8000-000000000001").save({
   displayName: "Synthetic",
   kind: "openai",
-  endpoint: "https://example.test/v1",
+  endpoint: "https://example.test",
   model: "model-a",
   proxyMode: "direct",
 });

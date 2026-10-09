@@ -50,6 +50,27 @@ function normalizeProviderEndpoint(kind: ProviderEndpointKind, value: string): s
   return trimmed;
 }
 
+type ProviderApiResource = "translation" | "models";
+
+const providerApiPaths: Record<ProviderEndpointKind, Record<ProviderApiResource, string>> = {
+  openai: { translation: "/v1/chat/completions", models: "/v1/models" },
+  claude: { translation: "/v1/messages", models: "/v1/models" },
+  deepseek: { translation: "/chat/completions", models: "/models" },
+  ollama: { translation: "/api/chat", models: "/api/tags" },
+};
+
+function providerApiPath(kind: ProviderEndpointKind, resource: ProviderApiResource): string {
+  return providerApiPaths[kind][resource];
+}
+
+function providerApiUrl(
+  kind: ProviderEndpointKind,
+  root: string,
+  resource: ProviderApiResource,
+): string {
+  return `${normalizeProviderEndpoint(kind, root).replace(/\/+$/, "")}${providerApiPath(kind, resource)}`;
+}
+
 function providerEndpointIdentity(kind: ProviderEndpointKind, value: string): string {
   const endpoint = normalizeProviderEndpoint(kind, value);
   const match = endpoint.match(/^(https?):\/\/([^/?#]+)(\/[^?#]*)?$/i)!;
@@ -76,6 +97,8 @@ function sameProviderService(left: ServiceIdentity, right: ServiceIdentity): boo
 
 interface SubtandemProviderEndpointApi {
   normalizeProviderEndpoint: typeof normalizeProviderEndpoint;
+  providerApiPath: typeof providerApiPath;
+  providerApiUrl: typeof providerApiUrl;
   providerEndpointIdentity: typeof providerEndpointIdentity;
   sameProviderService: typeof sameProviderService;
 }
@@ -84,6 +107,8 @@ interface SubtandemProviderEndpointApi {
   globalThis as typeof globalThis & { subtandemProviderEndpoint: SubtandemProviderEndpointApi }
 ).subtandemProviderEndpoint = {
   normalizeProviderEndpoint,
+  providerApiPath,
+  providerApiUrl,
   providerEndpointIdentity,
   sameProviderService,
 };

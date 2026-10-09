@@ -7,7 +7,7 @@ const saved = {
   endpointFingerprint: "fingerprint",
   displayName: "Saved profile",
   kind: "openai",
-  endpoint: "https://example.test/v1",
+  endpoint: "https://example.test",
   model: "model-one",
   proxyMode: "direct",
   credentialConfigured: true,
@@ -42,7 +42,7 @@ describe("Profile summary operations", () => {
       ...saved,
       revision: 2,
       model: "model-two",
-      endpoint: "https://updated.example/v1",
+      endpoint: "https://updated.example",
       proxyMode: "system",
       credentialConfigured: false,
     };

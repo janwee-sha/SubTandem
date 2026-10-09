@@ -22,7 +22,7 @@ describe("saved Profile summary", () => {
               endpointFingerprint: "fingerprint",
               displayName: "My profile",
               kind,
-              endpoint: "https://provider.example/v1",
+              endpoint: "https://provider.example",
               proxyMode,
               credentialConfigured,
               model,
@@ -32,7 +32,7 @@ describe("saved Profile summary", () => {
             expect(row.querySelector(".profile-summary").textContent).toBe(
               model ? `${label} · ${model}` : label,
             );
-            expect(row.querySelector("code").textContent).toBe("https://provider.example/v1");
+            expect(row.querySelector("code").textContent).toBe("https://provider.example");
             expect(
               [
                 row.querySelector("strong").textContent,

@@ -2,7 +2,7 @@ import type { CredentialReference } from "../../shared/credential-protocol.js";
 import { providerRequestAuthority } from "./transport.js";
 import { claudeApiError, claudeApiUrl, claudeRequestHeaders } from "./claude-api.js";
 import { providerHttpError, protocolError } from "./errors.js";
-import { normalizeProviderEndpoint } from "./profiles.js";
+import { providerApiUrl } from "./profiles.js";
 import type { ProviderKind } from "./types.js";
 import type { ProviderTransport } from "./transport.js";
 
@@ -131,13 +131,13 @@ export async function discoverProviderModels(
       afterId = cursor;
     }
   }
-  const endpoint = normalizeProviderEndpoint(request.kind, request.endpoint).replace(/\/+$/, "");
+  const url = providerApiUrl(request.kind, request.endpoint, "models");
   await request.assertActive?.();
   const response = await transport.request({
     ...authority,
     jobId: request.jobId,
     method: "GET",
-    url: `${endpoint}${request.kind === "ollama" ? "/api/tags" : "/models"}`,
+    url,
     headers: {},
     proxyMode: request.proxyMode ?? "system",
     timeoutMs: 10_000,

@@ -9,7 +9,7 @@ const profile = {
   revision: 1,
   displayName: "A",
   kind: "openai" as const,
-  endpoint: "https://example.test/v1",
+  endpoint: "https://example.test",
   endpointFingerprint: "fingerprint",
   proxyMode: "direct" as const,
   model: "model-a",

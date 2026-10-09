@@ -12,7 +12,7 @@ describe("native credential failure repair", () => {
       const input = {
         kind: "openai" as const,
         displayName: "Target",
-        endpoint: "https://example.test/v1",
+        endpoint: "https://example.test",
         model: "model",
         proxyMode: "direct" as const,
       };
@@ -55,7 +55,7 @@ describe("native credential failure repair", () => {
       const input = {
         kind: "openai" as const,
         displayName: "Target",
-        endpoint: "https://example.test/v1",
+        endpoint: "https://example.test",
         model: "model",
         proxyMode: "direct" as const,
       };

@@ -1,5 +1,5 @@
 import "../../shared/provider-endpoint.js";
-export const { normalizeProviderEndpoint, sameProviderService } = (
+export const { normalizeProviderEndpoint, providerApiUrl, sameProviderService } = (
   globalThis as typeof globalThis & { subtandemProviderEndpoint: SubtandemProviderEndpointApi }
 ).subtandemProviderEndpoint;
 import { identityHash } from "../domain/identity.js";

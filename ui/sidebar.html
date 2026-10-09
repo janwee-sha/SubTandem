@@ -320,19 +320,22 @@
               <input id="profile-name" type="text" value="OpenAI" autocomplete="off" />
             </label>
             <label class="field">
-              <span>Endpoint</span>
+              <span>API root</span>
               <input
                 id="provider-endpoint"
                 type="url"
-                value="https://api.openai.com/v1"
-                aria-describedby="endpoint-hint"
+                value="https://api.openai.com"
+                aria-describedby="endpoint-hint request-url"
                 autocomplete="off"
                 required
               />
               <small id="endpoint-hint"
-                >Enter a complete HTTP(S) API root, usually ending in /v1.</small
+                >Enter a HTTP(S) OpenAI API root. Translation requests append
+                /v1/chat/completions.</small
               >
-              <small id="request-url">Requests will use /chat/completions below this root.</small>
+              <small id="request-url"
+                >Actual request: https://api.openai.com/v1/chat/completions</small
+              >
             </label>
             <div id="model-row" class="field">
               <label for="provider-model-select">Model ID</label>
@@ -360,13 +363,14 @@
               <input
                 id="provider-model"
                 type="text"
-                placeholder="e.g. gpt-4.1-mini"
+                placeholder="e.g. gpt-6-luna"
                 aria-describedby="model-hint"
                 autocomplete="off"
                 required
               />
               <small id="model-hint"
-                >Choose a discovered model or enter its exact identifier.</small
+                >Refresh the catalog or enter the exact model ID. Low-effort models are
+                recommended.</small
               >
               <p
                 id="model-catalog-status"
@@ -378,12 +382,12 @@
             <label class="field">
               <span>Network route</span>
               <select id="provider-proxy-mode" aria-describedby="proxy-mode-hint">
-                <option value="direct" selected>Connect directly</option>
-                <option value="system">Use macOS proxy settings</option>
+                <option value="direct">Connect directly</option>
+                <option value="system" selected>Use system proxy settings</option>
               </select>
               <small id="proxy-mode-hint"
-                >Connect directly without the macOS proxy, or use the current macOS proxy
-                settings.</small
+                >Choose how SubTandem connects to this service for model refresh, connection tests,
+                and translation.</small
               >
             </label>
             <div id="credential-row" class="field">

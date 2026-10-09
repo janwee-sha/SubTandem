@@ -16,7 +16,7 @@ describe("latest provider Profiles", () => {
       expectedRevision: 1,
       displayName: "OpenAI",
       kind: "openai",
-      endpoint: "https://api.example/v1",
+      endpoint: "https://api.example",
       model: "model-a",
       proxyMode: "direct",
     });
@@ -67,7 +67,7 @@ describe("latest provider Profiles", () => {
     const latest = source.save({
       displayName: "A",
       kind: "openai",
-      endpoint: "https://a.example/v1",
+      endpoint: "https://a.example",
       model: "model-a",
     });
     const restored = new ProviderProfiles(() => "unused");
@@ -86,7 +86,7 @@ describe("latest provider Profiles", () => {
     const candidate = profiles.createSaveCandidate({
       displayName: "A",
       kind: "openai",
-      endpoint: "https://a.example/v1",
+      endpoint: "https://a.example",
       model: "model-a",
     });
 
@@ -101,7 +101,7 @@ describe("latest provider Profiles", () => {
     const saved = profiles.save({
       displayName: "A",
       kind: "openai",
-      endpoint: "https://a.example/v1",
+      endpoint: "https://a.example",
       model: "model-a",
     });
     expect(() => profiles.hydrate([saved, saved])).toThrow(/DUPLICATE_PROFILE/);
@@ -112,7 +112,7 @@ describe("latest provider Profiles", () => {
       profiles.createSaveCandidate({
         displayName: "collision",
         kind: "openai",
-        endpoint: "https://collision.example/v1",
+        endpoint: "https://collision.example",
         model: "model",
       }),
     ).toThrow(/PROFILE_ID_COLLISION/);
@@ -123,7 +123,7 @@ describe("latest provider Profiles", () => {
     const saved = profiles.save({
       displayName: "A",
       kind: "openai",
-      endpoint: "https://a.example/v1",
+      endpoint: "https://a.example",
       model: "model-a",
     });
     expect(() =>
@@ -132,7 +132,7 @@ describe("latest provider Profiles", () => {
         expectedRevision: 0,
         displayName: "stale",
         kind: "openai",
-        endpoint: "https://stale.example/v1",
+        endpoint: "https://stale.example",
         model: "model",
       }),
     ).toThrow(/STALE_PROFILE_REVISION/);
