@@ -7,9 +7,9 @@ const html = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "ut
 describe("Session source summary", () => {
   it("keeps labels and values adjacent in Format, Translated cues, Total cues order", () => {
     const summary = html.match(/<dl id="source-summary"[\s\S]*?<\/dl>/)?.[0] ?? "";
-    expect(summary).toMatch(/<dt>Format<\/dt>\s*<dd id="source-format">/);
-    expect(summary).toMatch(/<dt>Translated cues<\/dt>\s*<dd id="cache-size">/);
-    expect(summary).toMatch(/<dt>Total cues<\/dt>\s*<dd id="source-cues">/);
+    expect(summary).toMatch(/<dt[^>]*>Format<\/dt>\s*<dd id="source-format">/);
+    expect(summary).toMatch(/<dt[^>]*>Translated cues<\/dt>\s*<dd id="cache-size">/);
+    expect(summary).toMatch(/<dt[^>]*>Total cues<\/dt>\s*<dd id="source-cues">/);
     expect(summary).not.toContain("Session cache");
   });
 

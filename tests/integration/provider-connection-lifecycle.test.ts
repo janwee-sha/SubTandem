@@ -21,25 +21,12 @@ import "../../ui/service-failure-message.js";
 import "../../ui/session-status.js";
 import "../../ui/provider-status.js";
 
+const ui = globalThis as typeof globalThis & Window;
 const providerTestStatusMessage = (
-  globalThis as typeof globalThis & {
-    subtandemProviderTestStatusMessage(result: {
-      category?: string;
-      statusCode?: number;
-      code?: string;
-      userAction?: string;
-    }): string;
-  }
-).subtandemProviderTestStatusMessage;
-const sessionFailureMessage = (
-  globalThis as typeof globalThis & {
-    subtandemSessionFailureMessage(result: {
-      category?: string;
-      statusCode?: number;
-      providerCode?: string;
-    }): string | null;
-  }
-).subtandemSessionFailureMessage;
+  result: Parameters<Window["subtandemProviderTestStatusFeedback"]>[0],
+) => ui.subtandemLocalization.feedback(ui.subtandemProviderTestStatusFeedback(result)) ?? "";
+const sessionFailureMessage = (result: Parameters<Window["subtandemSessionFailureFeedback"]>[0]) =>
+  ui.subtandemLocalization.feedback(ui.subtandemSessionFailureFeedback(result));
 
 class DeferredConfiguredProvider implements ConfiguredProvider {
   readonly attemptIds: string[] = [];

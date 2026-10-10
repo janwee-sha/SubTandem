@@ -5,7 +5,8 @@ PROJECT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 PACKAGE_DIR=${1:-$PROJECT_DIR}
 TRANSPORT="$PACKAGE_DIR/dist/native/subtandem-transport"
 EXTRACTOR="$PACKAGE_DIR/dist/native/subtandem-subtitle-extractor"
-STYLE_PICKER="$PACKAGE_DIR/dist/native/subtandem-style-picker"
+STYLE_PICKER_APP="$PACKAGE_DIR/dist/native/SubTandemStylePicker.app"
+STYLE_PICKER="$STYLE_PICKER_APP/Contents/MacOS/subtandem-style-picker"
 HASH_FILE="$PROJECT_DIR/build/native-hashes.json"
 MINIMUM_MACOS=12.0
 EXTRACTION_PATH='@tmp/subtandem-extraction'
@@ -25,13 +26,6 @@ for compliance_file in LICENSE THIRD_PARTY_NOTICES.txt; do
     exit 1
   fi
 done
-
-NATIVE_FILES=$(find "$PACKAGE_DIR/dist/native" -mindepth 1 -maxdepth 1 -type f -print | sed "s|$PACKAGE_DIR/||" | LC_ALL=C sort)
-EXPECTED_NATIVE=$(printf '%s\n' dist/native/subtandem-style-picker dist/native/subtandem-subtitle-extractor dist/native/subtandem-transport | LC_ALL=C sort)
-if [ "$NATIVE_FILES" != "$EXPECTED_NATIVE" ]; then
-  echo "dist/native contains files outside the exact runtime allowlist" >&2
-  exit 1
-fi
 
 for HELPER in "$TRANSPORT" "$EXTRACTOR" "$STYLE_PICKER"; do
   if [ ! -x "$HELPER" ]; then
@@ -56,10 +50,8 @@ if [ ! -f "$HASH_FILE" ]; then
   echo "Missing native build hash manifest" >&2
   exit 1
 fi
-node -e 'const fs=require("node:fs"),c=require("node:crypto"),p=require("node:path");const [manifest,...files]=process.argv.slice(1);const expected=JSON.parse(fs.readFileSync(manifest,"utf8"));const hash=file=>c.createHash("sha256").update(fs.readFileSync(file)).digest("hex");if(files.some(file=>expected[p.basename(file)]!==hash(file)))process.exit(1)' "$HASH_FILE" "$TRANSPORT" "$EXTRACTOR" "$STYLE_PICKER" || {
-  echo "Packaged native helper differs from the audited repository build" >&2
-  exit 1
-}
+VERSION=$(node -p 'require(process.argv[1]).version' "$PROJECT_DIR/package.json")
+node "$PROJECT_DIR/scripts/native-package.mjs" --verify "$PACKAGE_DIR/dist/native" "$PROJECT_DIR" "$VERSION" "$HASH_FILE"
 
 if LC_ALL=C grep -E -n 'require\(|module\.exports' "$PACKAGE_DIR/dist/main.js" "$PACKAGE_DIR/dist/global.js"; then
   echo "IINA entry bundle contains an unsupported CommonJS runtime reference" >&2

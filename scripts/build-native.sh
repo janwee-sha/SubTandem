@@ -2,6 +2,7 @@
 set -eu
 
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+node "$ROOT_DIR/scripts/build-localization.mjs" --check
 TRANSPORT_PACKAGE="$ROOT_DIR/native/transport"
 CREDENTIAL_PROBE=${SUBTANDEM_CREDENTIAL_HOST_PROBE:-0}
 case "$CREDENTIAL_PROBE" in
@@ -94,9 +95,9 @@ build_package() {
   fi
 
   SUBTANDEM_FFMPEG_PREFIX="$FFMPEG_PREFIX" \
-    swift build --build-system swiftbuild "$@" --disable-sandbox --package-path "$PACKAGE_DIR" --scratch-path "$SCRATCH_PATH" -c release --destination "$DESTINATION_PATH" --arch "$ARCH"
+    swift build --build-system swiftbuild --jobs 2 "$@" --disable-sandbox --package-path "$PACKAGE_DIR" --scratch-path "$SCRATCH_PATH" -c release --destination "$DESTINATION_PATH" --arch "$ARCH"
   SWIFT_BIN_PATH=$(SUBTANDEM_FFMPEG_PREFIX="$FFMPEG_PREFIX" \
-    swift build --build-system swiftbuild "$@" --disable-sandbox --package-path "$PACKAGE_DIR" --scratch-path "$SCRATCH_PATH" -c release --destination "$DESTINATION_PATH" --arch "$ARCH" --show-bin-path)
+    swift build --build-system swiftbuild --jobs 2 "$@" --disable-sandbox --package-path "$PACKAGE_DIR" --scratch-path "$SCRATCH_PATH" -c release --destination "$DESTINATION_PATH" --arch "$ARCH" --show-bin-path)
 }
 
 for ARCH in arm64 x86_64; do
@@ -126,11 +127,24 @@ done
 
 lipo -create "$TRANSPORT_ARM" "$TRANSPORT_INTEL" -output "$OUTPUT_DIR/subtandem-transport"
 lipo -create "$EXTRACTOR_ARM" "$EXTRACTOR_INTEL" -output "$OUTPUT_DIR/subtandem-subtitle-extractor"
-lipo -create "$STYLE_PICKER_ARM" "$STYLE_PICKER_INTEL" -output "$OUTPUT_DIR/subtandem-style-picker"
+STYLE_PICKER_APP="$OUTPUT_DIR/SubTandemStylePicker.app"
+STYLE_PICKER_EXECUTABLE="$STYLE_PICKER_APP/Contents/MacOS/subtandem-style-picker"
+mkdir -p "$STYLE_PICKER_APP/Contents/MacOS"
+lipo -create "$STYLE_PICKER_ARM" "$STYLE_PICKER_INTEL" -output "$STYLE_PICKER_EXECUTABLE"
+cp "$STYLE_PICKER_PACKAGE/Info.plist" "$STYLE_PICKER_APP/Contents/Info.plist"
+VERSION=$(node -p 'require(process.argv[1]).version' "$ROOT_DIR/package.json")
+plutil -replace CFBundleShortVersionString -string "$VERSION" "$STYLE_PICKER_APP/Contents/Info.plist"
+plutil -replace CFBundleVersion -string "$VERSION" "$STYLE_PICKER_APP/Contents/Info.plist"
+node "$ROOT_DIR/scripts/build-localization.mjs" --native-resources "$STYLE_PICKER_APP/Contents/Resources"
 
-for HELPER in "$OUTPUT_DIR/subtandem-transport" "$OUTPUT_DIR/subtandem-subtitle-extractor" "$OUTPUT_DIR/subtandem-style-picker"; do
+for HELPER in "$OUTPUT_DIR/subtandem-transport" "$OUTPUT_DIR/subtandem-subtitle-extractor" "$STYLE_PICKER_EXECUTABLE"; do
   chmod 755 "$HELPER"
-  codesign --force --sign - "$HELPER"
+  if [ "$HELPER" = "$STYLE_PICKER_EXECUTABLE" ]; then
+    codesign --force --sign - "$STYLE_PICKER_APP"
+    codesign --verify --strict "$STYLE_PICKER_APP"
+  else
+    codesign --force --sign - "$HELPER"
+  fi
   lipo "$HELPER" -verify_arch arm64
   lipo "$HELPER" -verify_arch x86_64
   codesign --verify --strict "$HELPER"
@@ -140,7 +154,8 @@ for HELPER in "$OUTPUT_DIR/subtandem-transport" "$OUTPUT_DIR/subtandem-subtitle-
   fi
 done
 
-node -e 'const fs=require("node:fs"),c=require("node:crypto"),p=require("node:path");const [out,...files]=process.argv.slice(1);const hash=file=>c.createHash("sha256").update(fs.readFileSync(file)).digest("hex");fs.writeFileSync(out,JSON.stringify(Object.fromEntries(files.map(file=>[p.basename(file),hash(file)])),null,2)+"\n")' "$HASH_FILE" "$OUTPUT_DIR/subtandem-transport" "$OUTPUT_DIR/subtandem-subtitle-extractor" "$OUTPUT_DIR/subtandem-style-picker"
+node "$ROOT_DIR/scripts/native-package.mjs" --write-hashes "$OUTPUT_DIR" "$HASH_FILE"
+node "$ROOT_DIR/scripts/native-package.mjs" --verify "$OUTPUT_DIR" "$ROOT_DIR" "$VERSION" "$HASH_FILE"
 
 SWIFT_CACHE_STAMP_TMP="$SWIFT_CACHE_STAMP.tmp.$$"
 printf '%s\n' "$SWIFT_CACHE_KEY" > "$SWIFT_CACHE_STAMP_TMP"

@@ -17,6 +17,7 @@ async function host() {
   });
   const contents = new Map<string, string>();
   let generation = 0;
+  let restoredAuthorityId = "";
   let expired = false;
   let unavailable = false;
   let sequence = 0;
@@ -145,9 +146,17 @@ async function host() {
   }));
   vi.doMock("../../src/providers/profile-activation.js", async (original) => ({
     ...(await original<Record<string, unknown>>()),
-    restoreProfileActivationAuthority: async (options: { profiles: ProviderProfiles }) => {
+    restoreProfileActivationAuthority: async (options: {
+      profiles: ProviderProfiles;
+      authorityId: string;
+    }) => {
+      restoredAuthorityId = options.authorityId;
       options.profiles.hydrate([profile]);
-      return createTestProfileAuthority(options.profiles, { [profile.profileId]: true });
+      return createTestProfileAuthority(
+        options.profiles,
+        { [profile.profileId]: true },
+        options.authorityId,
+      );
     },
   }));
   const event = new FakeIinaEvent();
@@ -220,6 +229,7 @@ async function host() {
   await import("../../src/main.js");
   await vi.advanceTimersByTimeAsync(100);
   const h = sidebarHarness({
+    authorityId: restoredAuthorityId,
     timers: {
       setTimeout,
       clearTimeout,
@@ -236,6 +246,7 @@ async function host() {
     postMessage: (name, data) => sidebarListeners.get(name)?.(data),
   });
   sidebar = h;
+  await vi.advanceTimersByTimeAsync(1_000);
   h.receive("state:update", { profiles: [{ ...profile, credentialConfigured: true }] });
   h.evaluate(`loadEditor(profiles.get(${JSON.stringify(profile.profileId)}))`);
   await vi.advanceTimersByTimeAsync(15_000);

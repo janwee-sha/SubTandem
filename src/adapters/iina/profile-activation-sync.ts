@@ -20,6 +20,7 @@ function cloneSnapshot(snapshot: AuthoritySnapshot): AuthoritySnapshot {
 
 export class ProfileActivationSync {
   private confirmed: AuthoritySnapshot | null = null;
+  private readonly retiredAuthorities = new Set<string>();
   private deadlineMs: number | null = null;
   private fallbackEntered = false;
   profileListPhase: "initializing" | "settled" = "initializing";
@@ -60,14 +61,20 @@ export class ProfileActivationSync {
   }
 
   accept(snapshot: AuthoritySnapshot, requestId?: string): boolean {
+    if (this.retiredAuthorities.has(snapshot.authorityId)) return false;
     if (
       this.profileListPhase === "initializing" &&
       this.deadlineMs !== null &&
       this.now() >= this.deadlineMs
     )
       this.enterFallback();
-    if (!this.confirmed) {
+    if (
+      !this.confirmed ||
+      (snapshot.authorityId !== this.confirmed.authorityId &&
+        requestId === this.initialGetRequestId)
+    ) {
       if (requestId !== this.initialGetRequestId) return false;
+      if (this.confirmed) this.retiredAuthorities.add(this.confirmed.authorityId);
       this.confirmed = cloneSnapshot(snapshot);
       if (!snapshot.ready) this.enterFallback(true);
       this.profileListPhase = "settled";

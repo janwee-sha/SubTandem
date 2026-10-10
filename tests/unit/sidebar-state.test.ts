@@ -119,7 +119,7 @@ describe("Sidebar authoritative profile deletion", () => {
     const result = state.deleteSucceeded({
       requestId: "delete-request",
       profileId: "deleted",
-      message: "Profile and saved credential deleted.",
+      message: globalThis.subtandemLocalization.message("sidebar.profileAndSavedCredentialDeleted"),
     });
 
     expect(result.announced).toBe(true);
@@ -290,12 +290,12 @@ describe("Sidebar operation feedback ownership", () => {
         regionId: "language-settings",
         actionId: "languages",
       },
-      "Saving languages…",
+      globalThis.subtandemLocalization.message("sidebar.savingLanguages"),
     );
 
     expect(state.snapshot.activeFeedback).toMatchObject({
       requestId: "language-request",
-      message: "Saving languages…",
+      message: globalThis.subtandemLocalization.message("sidebar.savingLanguages"),
     });
     expect(state.snapshot.requests["language-request"]).toBeDefined();
     expect(state.snapshot.latestRequestByRegion["language-settings"]).toEqual({
@@ -339,7 +339,7 @@ describe("Sidebar operation feedback ownership", () => {
         actionId: "delete",
         profileId: "deleted",
       },
-      "Deleting…",
+      globalThis.subtandemLocalization.message("sidebar.deleting"),
     );
     state.deleteSucceeded({
       requestId: "delete-request",
@@ -355,7 +355,7 @@ describe("Sidebar operation feedback ownership", () => {
 
     state.beginOperation(
       { requestId: "retry", regionId: "subtitle-retry", actionId: "retry-preparation" },
-      "Retrying…",
+      globalThis.subtandemLocalization.message("sidebar.retrying"),
     );
     expect(state.snapshot.activeFeedback).toMatchObject({
       requestId: "retry",
@@ -510,8 +510,8 @@ describe("Sidebar Font style state", () => {
     expect(
       Object.values(state.snapshot.subtitleStyle.pendingByField).every((value) => !value),
     ).toBe(true);
-    expect(state.snapshot.subtitleStyle.groupError).toBe(
-      "Subtitle style could not be saved. The previous style remains active.",
+    expect(state.snapshot.subtitleStyle.groupError).toEqual(
+      globalThis.subtandemLocalization.message("sidebar.subtitleStyleCouldNotBeSavedThe"),
     );
   });
 });
@@ -632,8 +632,8 @@ describe("Sidebar native color picker state", () => {
       ),
     ).toBe(true);
     expect(state.snapshot.subtitleStyle.nativeColorSession).toBeNull();
-    expect(state.snapshot.subtitleStyle.groupError).toBe(
-      "The system color picker is unavailable. The previous style remains active.",
+    expect(state.snapshot.subtitleStyle.groupError).toEqual(
+      globalThis.subtandemLocalization.message("sidebar.theSystemColorPickerIsUnavailableThe"),
     );
   });
 
@@ -722,7 +722,11 @@ describe("Sidebar model catalog state", () => {
     const state = createState();
     state.setModelContext("context-a", "");
     state.applyModelCatalog("context-a", ["model-a", "model-b"]);
-    state.setModelRequiredError("Choose a model.");
+    state.setModelRequiredError(
+      globalThis.subtandemLocalization.message(
+        "sidebar.refreshModelsAndChooseOneOrEnterACustomModelID",
+      ),
+    );
     const modelSelect = new FakeModelControl();
     const customModelInput = new FakeModelControl();
     let feedbackRenders = 0;
@@ -745,18 +749,23 @@ describe("Sidebar model catalog state", () => {
       value: "model-b",
       mode: "known",
       refreshState: "success",
-      refreshMessage: "",
+      refreshMessage: null,
       validationError: null,
     });
     expect(feedbackRenders).toBe(1);
 
-    state.setModelRefreshState("error", "The catalog request failed.");
+    state.setModelRefreshState(
+      "error",
+      globalThis.subtandemLocalization.message("sidebar.modelRefreshFailedTryAgain"),
+    );
     modelSelect.value = "model-a";
     modelSelect.dispatch("change");
     expect(state.modelForSave()).toBe("model-a");
     expect(state.snapshot.modelControl).toMatchObject({
       refreshState: "error",
-      refreshMessage: "The catalog request failed.",
+      refreshMessage: globalThis.subtandemLocalization.message(
+        "sidebar.modelRefreshFailedTryAgain",
+      ),
       validationError: null,
     });
     expect(feedbackRenders).toBe(1);
@@ -765,7 +774,11 @@ describe("Sidebar model catalog state", () => {
   it("saves a trimmed custom model and clears the empty-value error as soon as input is non-empty", () => {
     const state = createState();
     state.setModelContext("context-a", "");
-    state.setModelRequiredError("Choose a model.");
+    state.setModelRequiredError(
+      globalThis.subtandemLocalization.message(
+        "sidebar.refreshModelsAndChooseOneOrEnterACustomModelID",
+      ),
+    );
     const modelSelect = new FakeModelControl();
     const customModelInput = new FakeModelControl();
     let feedbackRenders = 0;
@@ -785,7 +798,9 @@ describe("Sidebar model catalog state", () => {
     expect(customModelInput.focusCount).toBe(1);
     expect(state.snapshot.modelControl).toMatchObject({
       refreshState: "idle",
-      validationError: "Choose a model.",
+      validationError: globalThis.subtandemLocalization.message(
+        "sidebar.refreshModelsAndChooseOneOrEnterACustomModelID",
+      ),
     });
 
     customModelInput.value = "  namespace/custom:v2  ";
@@ -796,7 +811,7 @@ describe("Sidebar model catalog state", () => {
       value: "  namespace/custom:v2  ",
       mode: "custom",
       refreshState: "idle",
-      refreshMessage: "",
+      refreshMessage: null,
       validationError: null,
     });
     expect(feedbackRenders).toBe(1);
@@ -930,7 +945,10 @@ describe("Sidebar model catalog state", () => {
     state.finishOperation("activation-request", "success", "Profile enabled for translation.");
 
     state.setModelRefreshState("busy", "Refreshing models…");
-    state.setModelRefreshState("success", "2 models available.");
+    state.setModelRefreshState(
+      "success",
+      globalThis.subtandemLocalization.message("models.available", { count: 2 }),
+    );
 
     expect(state.snapshot.activeFeedback).toMatchObject({
       requestId: "activation-request",
@@ -938,7 +956,7 @@ describe("Sidebar model catalog state", () => {
     });
     expect(state.snapshot.modelControl).toMatchObject({
       refreshState: "success",
-      refreshMessage: "2 models available.",
+      refreshMessage: globalThis.subtandemLocalization.message("models.available", { count: 2 }),
     });
   });
 });
@@ -1029,7 +1047,7 @@ describe("Sidebar atomic Profile Update", () => {
       { profileId: "retained", revision: 2, displayName: "After" },
     ]);
     expect(state.reconcileEditingProfile(editingProfile)).toEqual(editingProfile);
-    expect(state.completeProfileSave("save-request", "")).toBe("");
+    expect(state.completeProfileSave("save-request", null)).toBeNull();
     expect(state.reconcileEditingProfile(editingProfile)).toEqual({
       profileId: "retained",
       revision: 2,
@@ -1044,7 +1062,7 @@ describe("Sidebar atomic Profile Update", () => {
     expect(state.completeProfileSave("stale-save", "")).toBeNull();
     expect(state.snapshot.pendingProfileSave).toEqual({ requestId: "save-request" });
     expect(state.snapshot.drawer.mode).toBe("editing");
-    expect(state.completeProfileSave("save-request", "")).toBe("");
+    expect(state.completeProfileSave("save-request", null)).toBeNull();
     expect(state.snapshot.pendingProfileSave).toBeNull();
     expect(state.snapshot.drawer.mode).toBe("closed");
   });
@@ -1204,7 +1222,7 @@ describe("Sidebar confirmed Profile activation", () => {
     expect(state.profileActivationView("profile-a")).toMatchObject({
       checked: true,
       disabled: false,
-      accessibleName: "Enable A",
+      accessibleName: globalThis.subtandemLocalization.message("profile.enable", { name: "A" }),
     });
     expect(state.beginProfileActivation("activation-1", "profile-b", true)).toBe(true);
     expect(state.profileActivationView("profile-b")).toMatchObject({
@@ -1240,7 +1258,9 @@ describe("Sidebar confirmed Profile activation", () => {
       authority: authority(1),
       error: { code: "PROFILE_STATE_CONFLICT", userAction: "NONE" },
     });
-    expect(state.profileActivationView("profile-b").error).toMatch(/could not/i);
+    expect(
+      globalThis.subtandemLocalization.feedback(state.profileActivationView("profile-b").error),
+    ).toMatch(/could not/i);
     state.beginProfileActivation("activation-unchanged", "profile-a", false);
     expect(
       state.finishProfileActivation({
@@ -1262,7 +1282,7 @@ describe("Sidebar confirmed Profile activation", () => {
       checked: false,
       disabled: false,
       busy: false,
-      error: expect.stringMatching(/timed out/i),
+      error: globalThis.subtandemLocalization.message("sidebar.profileActivationTimedOutTryAgain"),
     });
   });
 
@@ -1273,7 +1293,9 @@ describe("Sidebar confirmed Profile activation", () => {
     state.expireProfileActivation("late-enable");
 
     expect(state.applyProfileAuthority(authority(1))).toBe(true);
-    expect(state.profileActivationView("profile-b").error).toMatch(/timed out/i);
+    expect(
+      globalThis.subtandemLocalization.feedback(state.profileActivationView("profile-b").error),
+    ).toMatch(/timed out/i);
     expect(state.applyProfileAuthority(authority(2, "profile-b"))).toBe(true);
     expect(state.profileActivationView("profile-b")).toMatchObject({
       checked: true,
@@ -1311,7 +1333,9 @@ describe("Sidebar confirmed Profile activation", () => {
     state.expireProfileActivation("late-disable");
 
     state.applyProfileAuthority(authority(2));
-    expect(state.profileActivationView("profile-a").error).toMatch(/timed out/i);
+    expect(
+      globalThis.subtandemLocalization.feedback(state.profileActivationView("profile-a").error),
+    ).toMatch(/timed out/i);
     state.applyProfileAuthority(authority(3, null));
     expect(state.profileActivationView("profile-a")).toMatchObject({
       checked: false,
@@ -1325,7 +1349,9 @@ describe("Sidebar confirmed Profile activation", () => {
     expect(state.profileActivationView("profile-a")).toMatchObject({
       checked: false,
       disabled: true,
-      readinessMessage: expect.stringMatching(/restor|confirm|storage/i),
+      readinessMessage: globalThis.subtandemLocalization.message(
+        "sidebar.profileActivationIsRestoringOrWaitingFor",
+      ),
     });
     expect(state.beginProfileActivation("activation-1", "profile-a", true)).toBe(false);
   });
@@ -1511,7 +1537,7 @@ describe("Sidebar Profile drawer save lifecycle", () => {
     expect(state.snapshot.profiles.some((profile) => profile.profileId === "created")).toBe(false);
     expect(state.completeProfileSave("stale-new", "")).toBeNull();
     expect(state.snapshot.drawer.mode).toBe("new");
-    expect(state.completeProfileSave("save-new", "", true)).toBe("");
+    expect(state.completeProfileSave("save-new", null, true)).toBeNull();
     expect(state.snapshot.drawer).toMatchObject({ mode: "closed", drawerId: null });
   });
 
@@ -1520,9 +1546,13 @@ describe("Sidebar Profile drawer save lifecycle", () => {
     state.openProfileDrawer("retained");
     const sourceProfile = state.snapshot.drawer.sourceProfile;
     state.beginProfileSave("save-failure");
-    expect(state.completeProfileSave("save-failure", "Profile could not be saved.", false)).toBe(
-      "Profile could not be saved.",
-    );
+    expect(
+      state.completeProfileSave(
+        "save-failure",
+        globalThis.subtandemLocalization.message("sidebar.profileCouldNotBeSaved"),
+        false,
+      ),
+    ).toEqual(globalThis.subtandemLocalization.message("sidebar.profileCouldNotBeSaved"));
     expect(state.snapshot.drawer).toMatchObject({
       mode: "editing",
       profileId: "retained",

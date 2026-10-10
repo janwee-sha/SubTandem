@@ -1,3 +1,6 @@
+import { sampleHostUiContext } from "./adapters/iina/host-ui-context.js";
+import { parseUiLanguageState } from "./domain/messages.js";
+import type { HostUiContext } from "../shared/localization/types.js";
 import { installCredentialMainRelay } from "./adapters/iina/sidebar-rpc.js";
 import { PlaybackController } from "./app/controller.js";
 import { GlobalProviderClient } from "./adapters/iina/global-provider-client.js";
@@ -130,6 +133,20 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     sidebar: hostRuntime.sidebar,
     utils: hostRuntime.utils,
   };
+  const hostUiSample = sampleHostUiContext(runtime);
+  let uiLanguage: HostUiContext | null = null;
+  let uiLanguageRequestId: string | null = null;
+  let uiLanguageRequestedAt = 0;
+  let uiLanguageSequence = 0;
+  const requestUiLanguage = (): void => {
+    if (uiLanguage || (uiLanguageRequestId && Date.now() - uiLanguageRequestedAt < 30_000)) return;
+    uiLanguageRequestId = `ui-language.${playerId}.${++uiLanguageSequence}`;
+    uiLanguageRequestedAt = Date.now();
+    runtime.global.postMessage("ui-language:get", {
+      requestId: uiLanguageRequestId,
+      sample: hostUiSample,
+    });
+  };
   const provider = new GlobalProviderClient(runtime.global);
   let mediaEpoch = 0;
   const sourcePort =
@@ -226,6 +243,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
       targetLanguages: TARGET_LANGUAGES,
       overlayPosition: overlayPosition.snapshot,
       subtitleStyle: subtitleStyle.snapshot,
+      ...(uiLanguage ? { uiLanguage } : {}),
       ...patch,
     };
   };
@@ -295,6 +313,18 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
       ...profileActivationSync.snapshot!,
       activation: profileActivationSync.effectiveActivation,
     };
+    if (uiLanguage && uiLanguage.authorityId !== confirmed.authorityId) {
+      runtime.global.postMessage("subtitle-style:picker-cancel", {
+        requestId: `subtitle-style.authority.${playerId}`,
+        revision: 1,
+        payload: {},
+      });
+      uiLanguage = null;
+      uiLanguageRequestId = null;
+      delete sidebarState.uiLanguage;
+      sidebarMessages.drain();
+      requestUiLanguage();
+    }
     profileListState = bindProfileAuthority(
       profileListState,
       confirmed.authorityId,
@@ -350,12 +380,14 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
   };
 
   const flushSidebarMessages = (): void => {
+    if (!uiLanguage) return;
     for (const message of sidebarMessages.drain()) {
       runtime.sidebar.postMessage(message.name, message.data);
     }
   };
 
   const flushSidebar = (): void => {
+    if (!uiLanguage) return;
     runtime.sidebar.postMessage("state:update", sidebarState);
     flushSidebarMessages();
   };
@@ -646,6 +678,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     }
     if (sourceLoadingAllowed()) scheduleSourceReload();
     else if (!sourceLoadingAllowed()) suspendSourceLoading();
+    requestUiLanguage();
     requestProfileActivation();
     requestOverlayPosition();
     requestSubtitleStyle();
@@ -658,6 +691,7 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
     }
     hostClock.pulse();
     hostRuntime.global?.postMessage("runtime:tick", {});
+    requestUiLanguage();
     updateSidebarState();
     flushSidebar();
   });
@@ -865,6 +899,19 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
         userAction: "NONE",
       });
       flushSidebar();
+    }
+  });
+  runtime.global.onMessage("ui-language:state", (raw: unknown) => {
+    try {
+      const result = parseUiLanguageState(raw);
+      if (result.requestId !== uiLanguageRequestId || uiLanguage) return;
+      const authority = profileActivationSync.snapshot;
+      if (authority && result.context.authorityId !== authority.authorityId) return;
+      uiLanguage = result.context;
+      updateSidebarState();
+      flushSidebar();
+    } catch {
+      runtime.console.log("UI_LANGUAGE_CONTEXT_REJECTED");
     }
   });
   runtime.global.onMessage("profile-activation:state", (raw: unknown) => {
@@ -1224,8 +1271,13 @@ let initializePlayerTimer: ReturnType<typeof setTimeout> | null = null;
 let playerClosedOnce = false;
 // IINA 1.4.0 reports visible=false for an onscreen player. Later versions
 // expose visibility correctly, including when a closed player is reused.
-const legacyWindowVisibility =
-  typeof iina !== "undefined" && iina.core.getVersion().iina === "1.4.0";
+const legacyWindowVisibility = (() => {
+  try {
+    return typeof iina !== "undefined" && iina.core.getVersion().iina === "1.4.0";
+  } catch {
+    return false;
+  }
+})();
 let legacyWindowClosed = false;
 const initializePlayer = (): void => {
   initializePlayerTimer = null;

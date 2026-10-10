@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   StylePickerClient,
+  discoverStylePickerExecutable,
   StylePickerProcess,
   parseStylePickerReadyFrame,
   type StylePickerHttpBridge,
 } from "../../src/adapters/iina/style-picker-client.js";
+import { UI_LOCALES } from "../../shared/localization/locales.js";
 import type { ReadyFileStore } from "../../src/adapters/iina/transport-process.js";
 
 class FakeBridge implements StylePickerHttpBridge {
@@ -23,27 +25,104 @@ class FakeBridge implements StylePickerHttpBridge {
 }
 
 describe("style picker client", () => {
+  it.each(UI_LOCALES)("launches and accepts only the exact %s locale", async (uiLocale) => {
+    const values = new Map<string, string>();
+    const launches: string[][] = [];
+    const result = await StylePickerProcess.bootstrap(
+      {
+        launch: async (_path, args) => {
+          launches.push(args);
+          values.set(
+            args[2]!,
+            JSON.stringify({
+              type: "ready",
+              protocolVersion: 2,
+              port: 49152,
+              token: "opaque-token",
+              createdAtMs: Date.now(),
+              uiLocale,
+            }),
+          );
+          return { status: 0 };
+        },
+      },
+      {
+        exists: (path) => values.has(path),
+        read: (path) => values.get(path) ?? null,
+        delete: (path) => {
+          values.delete(path);
+        },
+      },
+      { dataDirectory: "/private/test-data", uiLocale },
+      "/private/SubTandemStylePicker.app/Contents/MacOS/subtandem-style-picker",
+    );
+    expect(launches[0]!.slice(3)).toEqual([
+      "--ui-locale",
+      uiLocale,
+      "-AppleLanguages",
+      `(${uiLocale})`,
+    ]);
+    expect(result.uiLocale).toBe(uiLocale);
+    const frame = {
+      type: "ready",
+      protocolVersion: 2,
+      port: 49152,
+      token: "opaque-token",
+      createdAtMs: 10000,
+      uiLocale,
+    };
+    for (const bad of [
+      { ...frame, protocolVersion: 1 },
+      { ...frame, uiLocale: "ar" },
+      { ...frame, uiLocale: uiLocale === "he" ? "en" : "he" },
+      { ...frame, extra: true },
+      { ...frame, port: 1 },
+      { ...frame, createdAtMs: 20000 },
+    ])
+      expect(() => parseStylePickerReadyFrame(JSON.stringify(bad), uiLocale, 9000, 10000)).toThrow(
+        "STYLE_PICKER_PROTOCOL",
+      );
+  });
+  it("locates only the app executable and rejects the old bare helper", () => {
+    const root = "/private/Plugins";
+    const app = `${root}/io.subtandem.iina.iinaplugin/dist/native/SubTandemStylePicker.app/Contents/MacOS/subtandem-style-picker`;
+    const locator = {
+      resolvePath: () => `${root}/.data/io.subtandem.iina`,
+      exists: (path: string) => path === app,
+    };
+    expect(discoverStylePickerExecutable(locator)).toBe(app);
+    expect(() =>
+      discoverStylePickerExecutable({
+        ...locator,
+        exists: (path) =>
+          path === `${root}/io.subtandem.iina.iinaplugin/dist/native/subtandem-style-picker`,
+      }),
+    ).toThrow();
+  });
+
   it("accepts one exact ready frame and rejects leaked or malformed output", () => {
     expect(
       parseStylePickerReadyFrame(
-        '{"type":"ready","protocolVersion":1,"port":49152,"token":"abcdefgh","createdAtMs":10000}\n',
+        '{"type":"ready","protocolVersion":2,"port":49152,"token":"abcdefgh","createdAtMs":10000,"uiLocale":"en"}\n',
+        "en",
         9_000,
         10_000,
       ),
     ).toEqual({
       type: "ready",
-      protocolVersion: 1,
+      protocolVersion: 2,
+      uiLocale: "en",
       port: 49152,
       token: "abcdefgh",
       createdAtMs: 10_000,
     });
     for (const output of [
       "{}\n",
-      '{"type":"ready","protocolVersion":1,"port":49152,"token":"short","createdAtMs":10000}\n',
-      '{"type":"ready","protocolVersion":1,"port":49152,"token":"abcdefgh","createdAtMs":10000,"text":"body"}\n',
-      '{"type":"ready","protocolVersion":1,"port":49152,"token":"abcdefgh","createdAtMs":10000}\nextra\n',
+      '{"type":"ready","protocolVersion":2,"port":49152,"token":"short","createdAtMs":10000,"uiLocale":"en"}\n',
+      '{"type":"ready","protocolVersion":2,"port":49152,"token":"abcdefgh","createdAtMs":10000,"uiLocale":"en","text":"body"}\n',
+      '{"type":"ready","protocolVersion":2,"port":49152,"token":"abcdefgh","createdAtMs":10000,"uiLocale":"en"}\nextra\n',
     ]) {
-      expect(() => parseStylePickerReadyFrame(output)).toThrow("STYLE_PICKER_PROTOCOL");
+      expect(() => parseStylePickerReadyFrame(output, "en")).toThrow("STYLE_PICKER_PROTOCOL");
     }
   });
 
@@ -68,7 +147,8 @@ describe("style picker client", () => {
               args[2]!,
               `${JSON.stringify({
                 type: "ready",
-                protocolVersion: 1,
+                protocolVersion: 2,
+                uiLocale: "en",
                 port: 49152,
                 token: "abcdefgh",
                 createdAtMs: Date.now(),
@@ -78,12 +158,20 @@ describe("style picker client", () => {
           },
         },
         store,
-        { dataDirectory: "/private/plugin-data" },
+        { dataDirectory: "/private/plugin-data", uiLocale: "en" },
         "/private/subtandem-style-picker",
       ),
-    ).resolves.toEqual({ port: 49152, token: "abcdefgh" });
+    ).resolves.toEqual({ port: 49152, token: "abcdefgh", uiLocale: "en" });
     expect(launches).toEqual([
-      ["launch", "--ready-file", expect.stringMatching(/\/\.ready\/style-picker-/)],
+      [
+        "launch",
+        "--ready-file",
+        expect.stringMatching(/\/\.ready\/style-picker-/),
+        "--ui-locale",
+        "en",
+        "-AppleLanguages",
+        "(en)",
+      ],
     ]);
     expect(deleted).toHaveLength(1);
     expect(files.size).toBe(0);
@@ -92,7 +180,10 @@ describe("style picker client", () => {
   it("authenticates exact font open and availability requests", async () => {
     const bridge = new FakeBridge();
     bridge.responses.push({ status: "opened" }, { availability: "available", catalogRevision: 2 });
-    const client = new StylePickerClient({ port: 49152, token: "opaque-token" }, bridge);
+    const client = new StylePickerClient(
+      { port: 49152, token: "opaque-token", uiLocale: "en" },
+      bridge,
+    );
     await expect(
       client.openFont({
         requestId: "picker.1",
@@ -135,7 +226,10 @@ describe("style picker client", () => {
       earliestRevision: 4,
       latestRevision: 4,
     });
-    const client = new StylePickerClient({ port: 49152, token: "opaque-token" }, bridge);
+    const client = new StylePickerClient(
+      { port: 49152, token: "opaque-token", uiLocale: "en" },
+      bridge,
+    );
     await expect(client.events(3)).resolves.toEqual({
       events: [{ revision: 4, requestId: "picker.1", type: "font-confirmed", fontFamily: "Inter" }],
       latestRevision: 4,
@@ -149,7 +243,10 @@ describe("style picker client", () => {
   it("supports exact cancel and shutdown without exposing raw failures", async () => {
     const bridge = new FakeBridge();
     bridge.responses.push({ status: "cancelled" }, { status: "shutting-down" });
-    const client = new StylePickerClient({ port: 49152, token: "opaque-token" }, bridge);
+    const client = new StylePickerClient(
+      { port: 49152, token: "opaque-token", uiLocale: "en" },
+      bridge,
+    );
     await expect(client.cancel("picker.2")).resolves.toBe("cancelled");
     await expect(client.shutdown()).resolves.toBeUndefined();
     expect(bridge.requests.map((request) => request.url)).toEqual([
@@ -161,7 +258,10 @@ describe("style picker client", () => {
   it("silently fronts the active picker instead of reporting a conflict", async () => {
     const bridge = new FakeBridge();
     bridge.responses.push({ status: "focused" }, { status: "activated" });
-    const client = new StylePickerClient({ port: 49152, token: "opaque-token" }, bridge);
+    const client = new StylePickerClient(
+      { port: 49152, token: "opaque-token", uiLocale: "en" },
+      bridge,
+    );
     await expect(
       client.openColor({ requestId: "color.duplicate", color: { r: 1, g: 2, b: 3, a: 4 } }),
     ).resolves.toBe("focused");
@@ -175,7 +275,10 @@ describe("style picker client", () => {
   it("opens the system color panel with exact sRGB RGBA and preserves alpha", async () => {
     const bridge = new FakeBridge();
     bridge.responses.push({ status: "opened" });
-    const client = new StylePickerClient({ port: 49152, token: "opaque-token" }, bridge);
+    const client = new StylePickerClient(
+      { port: 49152, token: "opaque-token", uiLocale: "en" },
+      bridge,
+    );
     await expect(
       client.openColor({ requestId: "color.1", color: { r: 12, g: 34, b: 56, a: 78 } }),
     ).resolves.toBe("opened");
@@ -216,7 +319,10 @@ describe("style picker client", () => {
       earliestRevision: 1,
       latestRevision: 3,
     });
-    const client = new StylePickerClient({ port: 49152, token: "opaque-token" }, bridge);
+    const client = new StylePickerClient(
+      { port: 49152, token: "opaque-token", uiLocale: "en" },
+      bridge,
+    );
     const batch = await client.events(0);
     expect(batch.gap).toBe(false);
     expect(batch.events.map((event) => event.type)).toEqual([
@@ -247,7 +353,10 @@ describe("style picker client", () => {
 
   it("rejects malformed color events and exposes gaps for safe session recovery", async () => {
     const bridge = new FakeBridge();
-    const client = new StylePickerClient({ port: 49152, token: "opaque-token" }, bridge);
+    const client = new StylePickerClient(
+      { port: 49152, token: "opaque-token", uiLocale: "en" },
+      bridge,
+    );
     bridge.responses.push({ events: [], earliestRevision: 7, latestRevision: 9 });
     await expect(client.events(2)).resolves.toMatchObject({ gap: true, latestRevision: 9 });
     bridge.responses.push({
@@ -268,7 +377,10 @@ describe("style picker client", () => {
   it("rejects unknown response fields and subtitle-bearing request values", async () => {
     const bridge = new FakeBridge();
     bridge.responses.push({ status: "opened", text: "body" });
-    const client = new StylePickerClient({ port: 49152, token: "opaque-token" }, bridge);
+    const client = new StylePickerClient(
+      { port: 49152, token: "opaque-token", uiLocale: "en" },
+      bridge,
+    );
     await expect(
       client.openFont({
         requestId: "picker.3",

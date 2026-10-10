@@ -61,14 +61,14 @@ final class ColorPickerController: NSObject, NSWindowDelegate {
     private var previewHandler: ((RgbaColor) -> Void)?
     private var closeHandler: ((ColorCloseResult) -> Void)?
 
-    override init() {
+    init(localizer: NativeLocalizer) {
         super.init()
         panel.showsAlpha = true
         panel.isContinuous = true
         panel.setTarget(self)
         panel.setAction(#selector(colorChanged))
         panel.delegate = self
-        panel.setAccessibilityLabel("Translation subtitle color")
+        panel.setAccessibilityLabel(localizer.text(.translationSubtitleColor))
     }
 
     func open(

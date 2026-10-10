@@ -14,22 +14,6 @@ private func secureToken() throws -> String {
         .replacingOccurrences(of: "=", with: "")
 }
 
-private func serveArguments(_ arguments: [String]) throws -> (URL, Int32) {
-    guard arguments.count == 5,
-          arguments[0] == "serve",
-          arguments[1] == "--ready-file",
-          arguments[3] == "--parent-pid",
-          let value = Int32(arguments[4]),
-          value > 1 else { throw ProtocolError.invalid }
-    let readyFile = URL(fileURLWithPath: arguments[2]).standardizedFileURL
-    guard readyFile.path.hasPrefix("/"),
-          readyFile.deletingLastPathComponent().lastPathComponent == ".ready",
-          readyFile.lastPathComponent.hasPrefix("style-picker-"),
-          readyFile.pathExtension == "json"
-    else { throw ProtocolError.invalid }
-    return (readyFile, value)
-}
-
 private func processRunning(_ pid: Int32) -> Bool {
     if kill(pid, 0) == 0 { return true }
     return errno == EPERM
@@ -38,28 +22,25 @@ private func processRunning(_ pid: Int32) -> Bool {
 @MainActor
 private func run() throws {
     let arguments = Array(CommandLine.arguments.dropFirst())
-    if arguments.count == 3,
-       arguments[0] == "launch",
-       arguments[1] == "--ready-file" {
-        let readyFile = URL(fileURLWithPath: arguments[2]).standardizedFileURL
-        try DetachedBootstrap.launch(
-            arguments: Array(arguments[1...2]),
-            readyFile: readyFile
-        )
+    let startup = try PickerArguments.parse(arguments)
+    if startup.mode == .launch {
+        try DetachedBootstrap.launch(arguments: Array(arguments.dropFirst()), readyFile: startup.readyFile)
         return
     }
-    let (readyFile, observedParent) = try serveArguments(arguments)
+    guard let observedParent = startup.parentPID else { throw ProtocolError.invalid }
+    let readyFile = startup.readyFile
+    let localizer = try NativeLocalizer(locale: startup.uiLocale)
     let application = NSApplication.shared
     application.setActivationPolicy(.accessory)
-    let catalog = FontCatalog()
+    let catalog = FontCatalog(locale: startup.uiLocale.rawValue)
     let token = try secureToken()
-    let server = StylePickerServer(token: token, catalog: catalog) {
+    let server = StylePickerServer(token: token, catalog: catalog, localizer: localizer) {
         DispatchQueue.main.async {
             NSApplication.shared.terminate(nil)
         }
     }
     let port = try server.start()
-    try ReadyFileWriter.write(ReadyFrame(port: port, token: token), to: readyFile)
+    try ReadyFileWriter.write(ReadyFrame(port: port, token: token, uiLocale: startup.uiLocale), to: readyFile)
 
     let timer = makeParentProcessMonitor(
         parentPID: observedParent,

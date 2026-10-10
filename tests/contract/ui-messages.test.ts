@@ -30,37 +30,15 @@ import "../../ui/session-status.js";
 import "../../ui/provider-status.js";
 import { makeProviderRequest } from "./provider-test-helpers.js";
 
+const ui = globalThis as typeof globalThis & Window;
 const providerTestStatusMessage = (
-  globalThis as typeof globalThis & {
-    subtandemProviderTestStatusMessage(result: {
-      ok?: boolean;
-      category?: string;
-      statusCode?: number;
-      code?: string;
-      userAction?: string;
-      providerKind?: "openai" | "claude" | "deepseek" | "ollama";
-    }): string;
-  }
-).subtandemProviderTestStatusMessage;
-const sessionFailureMessage = (
-  globalThis as typeof globalThis & {
-    subtandemSessionFailureMessage(result: {
-      category?: string;
-      statusCode?: number;
-      providerCode?: string;
-    }): string | null;
-  }
-).subtandemSessionFailureMessage;
+  result: Parameters<Window["subtandemProviderTestStatusFeedback"]>[0],
+) => ui.subtandemLocalization.feedback(ui.subtandemProviderTestStatusFeedback(result)) ?? "";
+const sessionFailureMessage = (result: Parameters<Window["subtandemSessionFailureFeedback"]>[0]) =>
+  ui.subtandemLocalization.feedback(ui.subtandemSessionFailureFeedback(result));
 const modelCatalogStatusMessage = (
-  globalThis as typeof globalThis & {
-    subtandemModelCatalogStatusMessage(result: {
-      ok?: boolean;
-      count?: number;
-      category?: string;
-      credentialSource?: "saved" | "entered" | "none";
-    }): string;
-  }
-).subtandemModelCatalogStatusMessage;
+  result: Parameters<Window["subtandemModelCatalogStatusFeedback"]>[0],
+) => ui.subtandemLocalization.feedback(ui.subtandemModelCatalogStatusFeedback(result)) ?? "";
 
 function parsePlaintextDraft(value: unknown) {
   try {
@@ -287,7 +265,7 @@ describe("Sidebar/Main/Global security messages", () => {
     ).toBe(
       "The translation service returned an unsupported response. Check the Profile’s service type and model.",
     );
-    expect(providerStatusSource).toContain("subtandemServiceFailureMessage");
+    expect(providerStatusSource).toContain("subtandemServiceFailureFeedback");
     expect(
       providerTestStatusMessage({
         ok: false,

@@ -58,7 +58,11 @@ for (const kind of ["openai", "deepseek", "claude", "ollama"] as const) {
   it(`${kind} leaves active translation intact when only its drawer Test is cancelled`, async () => {
     const h = await globalProviderHarness([profile], false, true);
     await flush();
-    const work = h.send("provider:attempt", request);
+    const work = h.send("provider:attempt", {
+      ...request,
+      authorityId: h.authority.snapshot.authorityId,
+      activationGeneration: h.authority.snapshot.activationGeneration,
+    });
     await h.transport.responses.waitForPending();
     await h.send("provider:test-cancel", { testRequestId: "test" }, "window", "cancel-test");
     await h.send("provider:models-cancel", { modelRequestId: "models" }, "window", "cancel-models");

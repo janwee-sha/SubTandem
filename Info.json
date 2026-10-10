@@ -25,5 +25,100 @@
     "enabledByDefault": false,
     "targetLanguage": "zh-Hans",
     "translationOverlayPosition": 0
+  },
+  "localized": {
+    "af": {
+      "description": "’n Kragtige inprop vir intydse, KI-aangedrewe tweetalige ondertitelvertaling."
+    },
+    "ca": {
+      "description": "Un connector potent per a la traducció bilingüe de subtítols en temps real amb intel·ligència artificial."
+    },
+    "cs": {
+      "description": "Výkonný plugin pro dvojjazyčný překlad titulků v reálném čase pomocí umělé inteligence."
+    },
+    "da": {
+      "description": "Et effektivt plugin til AI-baseret tosproget oversættelse af undertekster i realtid."
+    },
+    "de": {
+      "description": "Ein leistungsstarkes Plugin für KI-gestützte zweisprachige Untertitelübersetzung in Echtzeit."
+    },
+    "en": {
+      "description": "A powerful plugin for real-time AI-powered bilingual subtitle translation."
+    },
+    "en-GB": {
+      "description": "A powerful plugin for real-time AI-powered bilingual subtitle translation."
+    },
+    "es": {
+      "description": "Un potente plugin de traducción bilingüe de subtítulos en tiempo real mediante IA."
+    },
+    "fi": {
+      "description": "Tehokas liitännäinen tekoälypohjaiseen, reaaliaikaiseen kaksikieliseen tekstityskäännökseen."
+    },
+    "fr": {
+      "description": "Un plugin puissant pour la traduction bilingue de sous-titres en temps réel grâce à l’IA."
+    },
+    "he": {
+      "description": "תוסף רב־עוצמה לתרגום דו־לשוני של כתוביות בזמן אמת באמצעות בינה מלאכותית."
+    },
+    "hi": {
+      "description": "AI की मदद से वास्तविक समय में द्विभाषी उपशीर्षक अनुवाद के लिए एक शक्तिशाली प्लगइन।"
+    },
+    "hr": {
+      "description": "Moćan dodatak za dvojezično prevođenje titlova u stvarnom vremenu uz pomoć umjetne inteligencije."
+    },
+    "hu": {
+      "description": "Hatékony bővítmény a feliratok valós idejű, mesterséges intelligenciával támogatott kétnyelvű fordításához."
+    },
+    "id": {
+      "description": "Plugin andal untuk terjemahan takarir dwibahasa secara waktu nyata dengan AI."
+    },
+    "it": {
+      "description": "Un potente plugin per la traduzione bilingue dei sottotitoli in tempo reale tramite IA."
+    },
+    "ja": {
+      "description": "AI によるリアルタイムの二言語字幕翻訳を実現する高機能プラグイン。"
+    },
+    "ko": {
+      "description": "AI로 실시간 이중 언어 자막 번역을 제공하는 강력한 플러그인."
+    },
+    "nl": {
+      "description": "Een krachtige plug-in voor realtime, door AI aangestuurde tweetalige ondertitelvertaling."
+    },
+    "pl": {
+      "description": "Zaawansowana wtyczka do dwujęzycznego tłumaczenia napisów w czasie rzeczywistym z użyciem AI."
+    },
+    "pt": {
+      "description": "Um plugin poderoso para a tradução bilingue de legendas em tempo real com IA."
+    },
+    "pt-BR": {
+      "description": "Um plugin poderoso para tradução bilíngue de legendas em tempo real com inteligência artificial."
+    },
+    "ro": {
+      "description": "O extensie puternică pentru traducerea bilingvă a subtitrărilor în timp real, cu ajutorul inteligenței artificiale."
+    },
+    "ru": {
+      "description": "Мощный плагин для двуязычного перевода субтитров в реальном времени с помощью ИИ."
+    },
+    "sk": {
+      "description": "Výkonný doplnok na dvojjazyčný preklad titulkov v reálnom čase pomocou umelej inteligencie."
+    },
+    "sr-Latn": {
+      "description": "Moćan dodatak za dvojezično prevođenje titlova u realnom vremenu pomoću veštačke inteligencije."
+    },
+    "sv": {
+      "description": "Ett kraftfullt tillägg för AI-baserad tvåspråkig undertextöversättning i realtid."
+    },
+    "tr": {
+      "description": "Yapay zekâ ile gerçek zamanlı, iki dilli altyazı çevirisi sağlayan güçlü bir eklenti."
+    },
+    "uk": {
+      "description": "Потужний плагін для двомовного перекладу субтитрів у реальному часі за допомогою ШІ."
+    },
+    "zh-Hans": {
+      "description": "功能强大的插件，通过 AI 提供实时双语字幕翻译。"
+    },
+    "zh-Hant": {
+      "description": "功能強大的外掛，透過 AI 提供即時雙語字幕翻譯。"
+    }
   }
 }

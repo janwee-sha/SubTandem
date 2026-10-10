@@ -7,16 +7,19 @@ struct ReadyFrame: Codable, Equatable, Sendable {
     let token: String
     let protocolVersion: Int
     let createdAtMs: Int64
+    let uiLocale: UiLocale
 
     init(
         port: Int,
         token: String,
+        uiLocale: UiLocale,
         createdAtMs: Int64 = Int64(Date().timeIntervalSince1970 * 1_000)
     ) {
         self.type = "ready"
         self.port = port
         self.token = token
-        self.protocolVersion = 1
+        self.protocolVersion = 2
+        self.uiLocale = uiLocale
         self.createdAtMs = createdAtMs
     }
 }
@@ -307,4 +310,28 @@ func makeParentProcessMonitor(
     })
     timer.resume()
     return timer
+}
+
+enum PickerMode: String { case launch, serve }
+struct PickerArguments {
+    let mode: PickerMode
+    let readyFile: URL
+    let uiLocale: UiLocale
+    let parentPID: Int32?
+
+    static func parse(_ arguments: [String]) throws -> PickerArguments {
+        guard let first = arguments.first, let mode = PickerMode(rawValue: first),
+              arguments.count == (mode == .launch ? 7 : 9),
+              arguments[1] == "--ready-file", arguments[2].hasPrefix("/"),
+              arguments[3] == "--ui-locale", let locale = UiLocale(rawValue: arguments[4]),
+              arguments[5] == "-AppleLanguages", arguments[6] == "(\(locale.rawValue))" else { throw ProtocolError.invalid }
+        let file = URL(fileURLWithPath: arguments[2]).standardizedFileURL
+        guard file.deletingLastPathComponent().lastPathComponent == ".ready", file.lastPathComponent.hasPrefix("style-picker-"), file.pathExtension == "json" else { throw ProtocolError.invalid }
+        var parentPID: Int32?
+        if mode == .serve {
+            guard arguments[7] == "--parent-pid", let value = Int32(arguments[8]), value > 1 else { throw ProtocolError.invalid }
+            parentPID = value
+        }
+        return PickerArguments(mode: mode, readyFile: file, uiLocale: locale, parentPID: parentPID)
+    }
 }

@@ -2,6 +2,8 @@ import { readFileSync, readdirSync, lstatSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
+import { auditNativePackage } from "./native-package.mjs";
+import { readZipEntries, validateArchiveEntries } from "./audit-release.mjs";
 import { createHash } from "node:crypto";
 export function auditCredentialPackage(root, sourceRoot, strict = false) {
   const info = JSON.parse(readFileSync(join(root, "Info.json"), "utf8"));
@@ -40,6 +42,18 @@ export function auditCredentialPackage(root, sourceRoot, strict = false) {
     )
       throw new Error("Development or credential asset in runtime package");
   }
+  auditNativePackage(join(root, "dist/native"), sourceRoot, pkg.version);
+  const sourceInfo = JSON.parse(readFileSync(join(sourceRoot, "Info.json"), "utf8"));
+  for (const key of [
+    "localized",
+    "permissions",
+    "allowedDomains",
+    "description",
+    "name",
+    "sidebarTab",
+  ])
+    if (JSON.stringify(info[key]) !== JSON.stringify(sourceInfo[key]))
+      throw new Error("Package manifest differs from source");
   if (strict) {
     const allowed = new Set([
       "Info.json",
@@ -54,6 +68,7 @@ export function auditCredentialPackage(root, sourceRoot, strict = false) {
   }
 }
 export function auditArchive(archive, stage) {
+  validateArchiveEntries(readZipEntries(readFileSync(archive)));
   const entries = execFileSync("unzip", ["-Z1", archive], { encoding: "utf8" })
     .trim()
     .split("\n")

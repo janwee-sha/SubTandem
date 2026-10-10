@@ -2,10 +2,9 @@ export type LanguageEquivalence = "base" | "exact-script" | "exact-region";
 
 export interface TargetLanguageOption {
   readonly id: string;
-  readonly displayName: string;
+  readonly requestName: string;
   readonly providerLabel: string;
   readonly equivalence: LanguageEquivalence;
-  readonly order: number;
 }
 
 const entries = [
@@ -168,17 +167,14 @@ const entries = [
 ] as const satisfies readonly (readonly [string, string, LanguageEquivalence?])[];
 
 export const TARGET_LANGUAGES: readonly TargetLanguageOption[] = Object.freeze(
-  [...entries]
-    .sort((left, right) => (left[1] < right[1] ? -1 : left[1] > right[1] ? 1 : 0))
-    .map(([id, displayName, equivalence], index) =>
-      Object.freeze({
-        id,
-        displayName,
-        providerLabel: `${displayName} [${id}]`,
-        equivalence: equivalence ?? "base",
-        order: index + 1,
-      }),
-    ),
+  entries.map(([id, requestName, equivalence]) =>
+    Object.freeze({
+      id,
+      requestName,
+      providerLabel: `${requestName} [${id}]`,
+      equivalence: equivalence ?? "base",
+    }),
+  ),
 );
 
 const targetLanguagesById = new Map(TARGET_LANGUAGES.map((option) => [option.id, option]));

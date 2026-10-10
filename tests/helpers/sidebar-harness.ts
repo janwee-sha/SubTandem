@@ -1,3 +1,4 @@
+import { createLocalizationRuntime } from "../../ui/localization.js";
 import { CredentialEditor } from "../../ui/credential-editor.js";
 import { CredentialPeer } from "./credential-peer.js";
 import { readFileSync } from "node:fs";
@@ -11,8 +12,37 @@ class Element {
   disabled = false;
   checked = false;
   required = false;
-  textContent = "";
-  innerHTML = "";
+  private ownText = "";
+  get textContent(): string {
+    return this.ownText + this.children.map((child) => child.textContent).join("");
+  }
+  set textContent(value: string) {
+    this.ownText = value;
+    this.replaceChildren();
+  }
+  get innerHTML(): string {
+    return "";
+  }
+  set innerHTML(value: string) {
+    this.replaceChildren();
+    materializeHtml(this, value);
+  }
+  tagName = "";
+  get options() {
+    return this.children.filter((child) => child.tagName === "option" || child.id === "option");
+  }
+  get lang() {
+    return this.getAttribute("lang") ?? "";
+  }
+  set lang(value: string) {
+    this.setAttribute("lang", value);
+  }
+  get dir() {
+    return this.getAttribute("dir") ?? "";
+  }
+  set dir(value: string) {
+    this.setAttribute("dir", value);
+  }
   tabIndex = 0;
   type = "password";
   selectionStart = 0;
@@ -43,7 +73,15 @@ class Element {
   ) {
     this.id = id;
   }
+  focusTarget(element: Element) {
+    this.focusElement(element);
+  }
+  appendText(text: string) {
+    this.ownText += text;
+  }
   querySelector(selector: string): Element {
+    const existing = this.querySelectorAll(selector)[0];
+    if (existing) return existing;
     if (selector.startsWith(":scope > ."))
       return (
         this.children.find((child) => child.className.split(" ").includes(selector.slice(11))) ??
@@ -66,19 +104,15 @@ class Element {
       }
     };
     visit(this);
-    const matches = descendants.filter((element) =>
-      selector === 'input[data-action="activation"]'
-        ? element.dataset.action === "activation"
-        : selector.startsWith("#")
-          ? element.id === selector.slice(1)
-          : selector.startsWith(".")
-            ? element.className.split(" ").includes(selector.slice(1))
-            : false,
-    );
+    const matches = descendants.filter((element) => matchesSelector(element, selector));
     return [...new Set(matches)];
   }
   setAttribute(name: string, value: string) {
     this.attributes.set(name, value);
+    if (name.startsWith("data-"))
+      this.dataset[name.slice(5).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())] = value;
+    if (name === "id") this.id = value;
+    if (name === "class") this.className = value;
   }
   getAttribute(name: string) {
     return this.attributes.get(name) ?? null;
@@ -101,6 +135,7 @@ class Element {
   }
   append(...items: Element[]) {
     for (const item of items) {
+      item.remove();
       item.parentElement = this;
       this.children.push(item);
     }
@@ -150,9 +185,83 @@ class Element {
   setCustomValidity() {}
 }
 
+function matchesSelector(element: Element, selector: string): boolean {
+  return selector.split(",").some((part) => {
+    const tokens = part.trim().split(/\s+/);
+    if (tokens[0] === ":scope") tokens.shift();
+    if (tokens[0] === ">") tokens.shift();
+    const token = tokens.pop() ?? "";
+    const attribute = token.match(/\[([\w-]+)(?:="([^"]*)")?\]/);
+    if (attribute) {
+      const value = element.getAttribute(attribute[1]!);
+      if (value === null || (attribute[2] !== undefined && value !== attribute[2])) return false;
+    }
+    const base = token.replace(/\[[^\]]*\]/g, "");
+    if (base.startsWith("#") && element.id !== base.slice(1)) return false;
+    if (
+      base.startsWith(".") &&
+      !base
+        .slice(1)
+        .split(".")
+        .every((name) => element.className.split(" ").includes(name))
+    )
+      return false;
+    if (base && !/^[.#]/.test(base) && element.tagName !== base && element.id !== base)
+      return false;
+    if (tokens.length) {
+      let parent = element.parentElement;
+      while (parent && !matchesSelector(parent, tokens.join(" "))) parent = parent.parentElement;
+      return parent !== null;
+    }
+    return true;
+  });
+}
+
+function materializeHtml(parent: Element, html: string): void {
+  const stack = [parent];
+  const decode = (value: string) =>
+    value
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">");
+  for (const token of html.match(/<[^>]*>|[^<]+/g) ?? []) {
+    if (token.startsWith("<!")) continue;
+    if (token.startsWith("</")) {
+      if (stack.length > 1) stack.pop();
+      continue;
+    }
+    if (token.startsWith("<")) {
+      const tag = token.match(/^<([\w-]+)/)?.[1];
+      if (!tag) continue;
+      const element = new Element(tag, (target) => parent.focusTarget(target));
+      element.tagName = tag;
+      for (const match of token.matchAll(/([\w-]+)(?:="([^"]*)")?/g)) {
+        if (match[1] === tag) continue;
+        element.setAttribute(match[1]!, decode(match[2] ?? ""));
+        if (["value", "type", "placeholder"].includes(match[1]!))
+          (element as any)[match[1]!] = decode(match[2] ?? "");
+        if (["hidden", "disabled", "checked", "required"].includes(match[1]!))
+          (element as any)[match[1]!] = true;
+      }
+      stack.at(-1)!.append(element);
+      if (
+        !["input", "meta", "link", "br", "img", "hr", "path", "circle"].includes(tag) &&
+        !token.endsWith("/>")
+      )
+        stack.push(element);
+    } else if (token.trim()) {
+      const element = stack.at(-1)!;
+      element.appendText(decode(token.replace(/\s+/g, " ").trim()));
+    }
+  }
+}
+
 export function sidebarHarness(
   options: {
     postMessage?(name: string, data: unknown): void;
+    locale?: string;
+    authorityId?: string;
     timers?: Pick<
       typeof globalThis,
       "setTimeout" | "clearTimeout" | "setInterval" | "clearInterval"
@@ -163,6 +272,10 @@ export function sidebarHarness(
   const document = new Element("", (element) => {
     activeElement = element;
   });
+  materializeHtml(
+    document,
+    readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8"),
+  );
   const messages: Array<{ name: string; data: any }> = [];
   const listeners = new Map<string, (data: unknown) => void>();
   const timers = new Map<number, () => void>();
@@ -199,7 +312,7 @@ export function sidebarHarness(
         new Element(tag, (element) => {
           activeElement = element;
         }),
-      documentElement: new Element(),
+      documentElement: document.querySelector("html"),
       get activeElement() {
         return activeElement;
       },
@@ -315,6 +428,7 @@ export function sidebarHarness(
     configurable: true,
   });
   context.window = context;
+  context.subtandemLocalization = createLocalizationRuntime(options.locale ?? "en");
   context.subtandemCredentialEditor = {
     create: (port: ConstructorParameters<typeof CredentialEditor>[0]) =>
       new CredentialEditor(port, context as any),
@@ -387,7 +501,24 @@ export function sidebarHarness(
       for (let n = 0; n < 20; n++) await Promise.resolve();
     },
     element: (id: string) => document.querySelector(id),
-    receive: (name: string, data: unknown) => listeners.get(name)?.(data),
+    receive: (name: string, data: unknown) => {
+      const view = data as any;
+      if (name === "state:update" && !view.uiLanguage)
+        data = {
+          ...view,
+          uiLanguage: {
+            authorityId:
+              view.profileAuthority?.authorityId ?? options.authorityId ?? "test-authority",
+            locale: options.locale ?? "en",
+            direction: options.locale === "he" ? "rtl" : "ltr",
+            hostVersion: "1.5.0",
+            hostLocalization: options.locale ?? "en",
+            fallbackReason: null,
+          },
+        };
+      return listeners.get(name)?.(data);
+    },
+    receiveRaw: (name: string, data: unknown) => listeners.get(name)?.(data),
     evaluate: (source: string) => runInContext(source, context),
     event: (name: string) => windowEvents.get(name)?.(),
     pulse: () => [...intervals.values()].forEach((callback) => callback()),

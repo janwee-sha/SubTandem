@@ -12,7 +12,9 @@ function failureMessage(error: {
   retryable?: boolean;
   userAction?: string;
 }) {
-  return globalThis.subtandemSessionFailureMessage(error);
+  return globalThis.subtandemLocalization.feedback(
+    globalThis.subtandemSessionFailureFeedback(error),
+  );
 }
 
 function presentation(input: {
@@ -38,7 +40,10 @@ function presentation(input: {
       | "invalidated";
   } | null;
 }) {
-  return globalThis.subtandemResolveSessionPresentation(input);
+  const value = globalThis.subtandemResolveSessionPresentation(input);
+  return value
+    ? { ...value, text: globalThis.subtandemLocalization.feedback(value.message) }
+    : null;
 }
 
 describe("Session failure presentation", () => {
@@ -203,7 +208,7 @@ describe("Session presentation priority", () => {
       providerError: { category: "network" },
     });
 
-    expect(first?.signature).toBe("running\u0000Translations are running");
+    expect(first?.signature).toBe("running\u0000sidebar.translationsAreRunning\u0000{}");
     expect(equivalent?.signature).toBe(first?.signature);
     expect(changed?.signature).not.toBe(first?.signature);
   });
@@ -219,11 +224,10 @@ describe("Session presentation priority", () => {
       sourcePreparation: { state: "unsupportedType" },
     });
 
-    expect(first).toEqual({
+    expect(first).toMatchObject({
       text: "Subtitle type not supported. Select a text subtitle in IINA.",
       state: "unsupportedType",
-      signature:
-        "unsupportedType\u0000Subtitle type not supported. Select a text subtitle in IINA.",
+      signature: "unsupportedType\u0000sidebar.subtitleTypeNotSupportedSelectAText\u0000{}",
     });
     expect(equivalent?.signature).toBe(first?.signature);
     expect(presentation({ status: "waitingForSubtitle", sourceIssue: "unreadable" })?.text).toBe(
@@ -234,11 +238,11 @@ describe("Session presentation priority", () => {
   it("keeps the no-service message stable while preserving disabled and subtitle priority", () => {
     const noService = presentation({ status: "waitingForConfiguration" });
 
-    expect(noService).toEqual({
+    expect(noService).toMatchObject({
       text: "No translation service enabled. Enable one to translate.",
       state: "waitingForConfiguration",
       signature:
-        "waitingForConfiguration\u0000No translation service enabled. Enable one to translate.",
+        "waitingForConfiguration\u0000sidebar.noTranslationServiceEnabledEnableOneTo\u0000{}",
     });
     expect(presentation({ status: "waitingForConfiguration" })?.signature).toBe(
       noService?.signature,

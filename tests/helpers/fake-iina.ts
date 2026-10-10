@@ -206,3 +206,24 @@ export class FakeIinaPlayer {
     for (const callback of this.listeners.get(event)?.values() ?? []) callback(...args);
   }
 }
+
+export class FakeIinaHostUiRuntime {
+  version: unknown = "1.5.0";
+  localizations: unknown = ["en"];
+  reads = 0;
+  failVersion = false;
+  failRead = false;
+  core = {
+    getVersion: () => {
+      if (this.failVersion) throw new Error("SYNTHETIC_VERSION_FAILURE");
+      return { iina: this.version };
+    },
+  };
+  utils = {
+    preferredLocalizations: () => {
+      this.reads += 1;
+      if (this.failRead) throw new Error("SYNTHETIC_LANGUAGE_FAILURE");
+      return this.localizations;
+    },
+  };
+}

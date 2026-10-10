@@ -50,10 +50,16 @@ for (const kind of ["openai", "deepseek", "claude", "ollama"] as const) {
           signal === "length"
             ? "The translation service returned an unsupported response. Check the Profile’s service type and model."
             : "The translation service refused this request. Try another model or Profile.";
-        expect(globalThis.subtandemProviderTestStatusMessage({ ...safe, ok: false })).toBe(
-          expected,
-        );
-        expect(globalThis.subtandemSessionFailureMessage(safe)).toBe(expected);
+        expect(
+          globalThis.subtandemLocalization.feedback(
+            globalThis.subtandemProviderTestStatusFeedback({ ...safe, ok: false }),
+          ),
+        ).toBe(expected);
+        expect(
+          globalThis.subtandemLocalization.feedback(
+            globalThis.subtandemSessionFailureFeedback(safe),
+          ),
+        ).toBe(expected);
         expect(JSON.stringify(safe)).not.toMatch(/private-|private\.example/);
         expect(calls.filter((call) => call.method === "POST")).toHaveLength(1);
       },

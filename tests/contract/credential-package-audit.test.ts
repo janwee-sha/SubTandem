@@ -47,3 +47,23 @@ describe("production credential package audit", () => {
       expect(() => auditCredentialPackage(root, root)).toThrow(/mismatch/);
     }));
 });
+
+describe("localized production package audit", () => {
+  it("accepts the signed app and rejects probe bytes and manifest localization changes", async () => {
+    const { nativePackageFixture } = await import("../helpers/native-package-fixture.js");
+    const { readFileSync } = await import("node:fs");
+    const fixture = nativePackageFixture();
+    try {
+      auditCredentialPackage(fixture.root, process.cwd());
+      writeFileSync(join(fixture.root, "dist/main.js"), "CredentialHostProbe");
+      expect(() => auditCredentialPackage(fixture.root, process.cwd())).toThrow(/Test credential/);
+      writeFileSync(join(fixture.root, "dist/main.js"), "");
+      const info = JSON.parse(readFileSync(join(fixture.root, "Info.json"), "utf8"));
+      info.localized.he.description = "unexpected";
+      writeFileSync(join(fixture.root, "Info.json"), JSON.stringify(info));
+      expect(() => auditCredentialPackage(fixture.root, process.cwd())).toThrow(/manifest differs/);
+    } finally {
+      fixture.cleanup();
+    }
+  });
+});

@@ -2,7 +2,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 describe("IINA sidebar bundle contract", () => {
-  const html = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
+  const rawHtml = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
+  const html = rawHtml.replace(/\s+(?:data-i18n(?:-[a-z-]+)?|dir)="[^"]*"/g, "");
   const sidebarCss = readFileSync(new URL("../../ui/sidebar.css", import.meta.url), "utf8");
   const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
   const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
@@ -44,36 +45,28 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarSource).toContain('className = "profile-disclosure profile-details"');
     expect(sidebarSource).toContain('setAttribute("aria-expanded"');
     expect(sidebarSource).toContain('setAttribute("aria-controls"');
-    expect(sidebarSource).toContain("`Edit ${profile.displayName}`");
+    expect(sidebarSource).toContain('uiFeedback("profile.edit", { name: profile.displayName })');
     expect(sidebarSource).not.toContain('className = "profile-test-state"');
     expect(sidebarSource).not.toContain('passed: "Test passed"');
     expect(sidebarSource).not.toContain('failed: "Test failed"');
   });
 
-  it("uses relative classic-script assets that IINA can load", () => {
+  it("bundles one ordered entry as a classic IINA script", () => {
+    const entry = readFileSync(new URL("../../ui/sidebar-entry.ts", import.meta.url), "utf8");
     expect(packageJson.targets?.sidebar?.publicUrl).toBe("./");
-    expect(html).toContain('<script src="./provider-status.ts"></script>');
-    expect(html).toContain('<script src="./sidebar.ts"></script>');
-    expect(html).toContain('<script src="./sidebar-state.ts"></script>');
     expect(packageJson.targets?.sidebar?.outputFormat).toBe("global");
-    expect(packageJson.targets?.sidebar?.includeNodeModules).toBe(true);
-    expect(html.match(/type="module"/g)).toHaveLength(1);
-    expect(html).toContain('<script type="module" src="./credential-editor-entry.ts"></script>');
-    expect(html.indexOf("./provider-status.ts")).toBeLessThan(html.indexOf("./sidebar.ts"));
-    expect(html.indexOf("./sidebar-state.ts")).toBeLessThan(html.indexOf("./sidebar.ts"));
+    expect(html).toContain('<script type="module" src="./sidebar-entry.ts"></script>');
+    expect(entry.indexOf("./localization.js")).toBeLessThan(entry.indexOf("./provider-status.js"));
+    expect(entry.indexOf("./service-failure-message.js")).toBeLessThan(
+      entry.indexOf("./provider-status.js"),
+    );
+    expect(entry.indexOf("./sidebar-state.js")).toBeLessThan(entry.indexOf("./sidebar.js"));
   });
 
   it("loads one shared service failure mapper before both feedback consumers", () => {
     expect(serviceFailureSource).not.toBe("");
-    expect(html).toContain('<script src="./service-failure-message.ts"></script>');
-    expect(html.indexOf("./service-failure-message.ts")).toBeLessThan(
-      html.indexOf("./provider-status.ts"),
-    );
-    expect(html.indexOf("./service-failure-message.ts")).toBeLessThan(
-      html.indexOf("./session-status.ts"),
-    );
     for (const consumer of [providerStatusSource, sessionStatusSource]) {
-      expect(consumer).toContain("subtandemServiceFailureMessage");
+      expect(consumer).toContain("subtandemServiceFailureFeedback");
       expect(consumer).not.toContain("Authentication failed. Check the Profile’s API key.");
       expect(consumer).not.toContain(
         "The service limit was reached. Check the account quota or try again later.",
@@ -84,16 +77,16 @@ describe("IINA sidebar bundle contract", () => {
 
   it("renders each Profile activation as a confirmed accessible switch", () => {
     expect(sidebarSource).toContain('role = "switch"');
-    expect(sidebarSource).toContain("`Enable ${profile.displayName}`");
+    expect(sidebarSource).toContain('uiFeedback("profile.enable", { name: profile.displayName })');
     expect(sidebarSource).toMatch(/postMessage\(\s*"profile-activation:set"/);
     expect(sidebarSource).not.toContain('postMessage("profile:select"');
     expect(sidebarSource).not.toMatch(/\["select",[^\]]+\]/i);
   });
 
   it("uses the non-control Profile content as the pointer and keyboard edit entry", () => {
-    expect(sidebarSource).toContain("new ProfileCardInteractionCoordinator");
+    expect(sidebarSource).toContain("new window.ProfileCardInteractionCoordinator");
     expect(sidebarSource).toContain("tabIndex = 0");
-    expect(sidebarSource).toContain("`Edit ${profile.displayName}`");
+    expect(sidebarSource).toContain('uiFeedback("profile.edit", { name: profile.displayName })');
     expect(sidebarSource).toContain("openProfileDrawer");
     expect(sidebarSource).toContain("mountProfileDrawer");
     expect(sidebarSource).not.toMatch(/\["edit",\s*"Edit"\]/);
@@ -114,10 +107,10 @@ describe("IINA sidebar bundle contract", () => {
       /<button[^>]*id="test-profile"[^>]*aria-describedby="profile-test-status"[^>]*>\s*Test\s*<\/button>/,
     );
     expect(html).not.toContain("profile-action-placeholder");
-    expect(sidebarSource.match(/Testing…/g)).toHaveLength(1);
+    expect(sidebarSource.match(/uiFeedback\("sidebar.testing"\)/g)).toHaveLength(1);
     expect(sidebarSource).not.toContain("Testing the current draft");
-    expect(sidebarSource).toContain("Deleting…");
-    expect(sidebarSource).toContain('"The profile will be permanently deleted."');
+    expect(sidebarSource).toContain('uiFeedback("sidebar.deleting")');
+    expect(sidebarSource).toContain('uiFeedback("sidebar.theProfileWillBePermanentlyDeleted")');
     expect(sidebarCss).not.toContain(".profile-action-placeholder");
     expect(`${html}\n${sidebarSource}\n${sidebarCss}`).not.toMatch(
       /busy-ring|spinner|test-profile[^\n{]*::(?:before|after)|profile-test[^\n{]*animation/i,
@@ -240,14 +233,14 @@ describe("IINA sidebar bundle contract", () => {
     );
     expect(sidebarSource).toContain('claude: "Claude"');
     expect(sidebarSource).not.toMatch(/claude[^\n]+model:\s*"[^"]+"/i);
-    expect(sidebarSource).toMatch(/Claude[\s\S]*API root/i);
-    expect(sidebarSource).toContain("Refresh the catalog or enter the exact model ID.");
-    expect(sidebarSource).toContain('custom.textContent = "Custom model ID…"');
+    expect(sidebarSource).toContain('uiFeedback("endpoint.help"');
+    expect(sidebarSource).toContain('uiFeedback("sidebar.refreshTheCatalogOrEnterTheExact")');
+    expect(sidebarSource).toContain('messageKey: "sidebar.customModelID"');
     expect(html).toMatch(/id="provider-key"[\s\S]*?type="password"/);
     expect(sidebarSource).not.toContain("claudeCredentialRequired");
     expect(sidebarSource).not.toContain("Enter an API key before saving this Claude Profile.");
     expect(sidebarSource).not.toContain("Enter an API key before testing this Claude Profile.");
-    expect(sidebarSource).toContain('"Enter an API key if the service requires one."');
+    expect(sidebarSource).toContain('uiFeedback("sidebar.enterAnAPIKeyIfTheService")');
   });
 
   it("uses independent DeepSeek defaults without preselecting a model", () => {
@@ -290,7 +283,9 @@ describe("IINA sidebar bundle contract", () => {
     expect(sidebarSource).toContain('"provider:draft-models"');
     expect(sidebarSource).toContain('trigger === "manual"');
     expect(sidebarSource).toContain("draftCredentialEpoch");
-    expect(sidebarSource).toContain("Refresh models and choose one, or enter a custom model ID.");
+    expect(sidebarSource).toContain(
+      'uiFeedback("sidebar.refreshModelsAndChooseOneOrEnterACustomModelID")',
+    );
     const saveStart = sidebarSource.indexOf('saveProfileButton.addEventListener("click"');
     const saveEnd = sidebarSource.indexOf('newProfileButton.addEventListener("click"', saveStart);
     const saveHandler = sidebarSource.slice(saveStart, saveEnd);
@@ -319,7 +314,7 @@ describe("IINA sidebar bundle contract", () => {
 
   it("uses system proxy settings and describes the operations using Network route", () => {
     expect(html).toMatch(
-      /<option value="direct">Connect directly<\/option>[\s\S]*?<option value="system" selected>Use system proxy settings<\/option>/,
+      /<option value="direct">Connect directly<\/option>[\s\S]*?<option value="system" selected>\s*Use system proxy settings\s*<\/option>/,
     );
     expect(html).toMatch(
       /Choose how SubTandem connects to this service for model refresh, connection tests,\s+and translation\./,
@@ -364,7 +359,7 @@ describe("IINA sidebar bundle contract", () => {
       /\.profile-drawer-commit-row\s*{[^}]*display: flex;[^}]*justify-content: space-between;[^}]*flex-wrap: wrap/,
     );
     expect(sidebarCss).toMatch(
-      /\.profile-drawer-actions-end\s*{[^}]*margin-left: auto;[^}]*justify-content: flex-end/,
+      /\.profile-drawer-actions-end\s*{[^}]*margin-inline-start: auto;[^}]*justify-content: flex-end/,
     );
   });
 
@@ -442,7 +437,7 @@ describe("IINA sidebar bundle contract", () => {
     expect(html).not.toContain("Save Languages");
     expect(html).not.toMatch(/Mother language|Subtitle language|source-language/);
     expect(sidebarSource).toContain("view.targetLanguages");
-    expect(sidebarSource).toContain("language.displayName");
+    expect(sidebarSource).toContain("language.label");
   });
 
   it("auto-saves each changed target once with hydrated single-pending state", () => {
@@ -547,7 +542,8 @@ describe("IINA sidebar bundle contract", () => {
 });
 
 describe("Subtitle Font controls contract", () => {
-  const html = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
+  const rawHtml = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
+  const html = rawHtml.replace(/\s+(?:data-i18n(?:-[a-z-]+)?|dir)="[^"]*"/g, "");
   const css = readFileSync(new URL("../../ui/sidebar.css", import.meta.url), "utf8");
 
   it("places the Font group immediately after Position with all five fields", () => {
@@ -576,8 +572,8 @@ describe("Subtitle Font controls contract", () => {
       /<button[^>]*id="subtitle-font-color"[^>]*aria-haspopup="dialog"[^>]*aria-expanded="false"/,
     );
     expect(html).toContain('id="subtitle-color-palette"');
-    expect(html).toMatch(/data-color-name="White"/);
-    expect(html).toMatch(/data-color-name="Black"/);
+    expect(html).toMatch(/data-color-id="white"/);
+    expect(html).toMatch(/data-color-id="black"/);
   });
 
   it("provides narrow-column, focus and high-contrast styling", () => {
@@ -637,7 +633,8 @@ describe("Subtitle Font controls contract", () => {
 });
 
 describe("Subtitle Border and Background controls contract", () => {
-  const html = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
+  const rawHtml = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
+  const html = rawHtml.replace(/\s+(?:data-i18n(?:-[a-z-]+)?|dir)="[^"]*"/g, "");
 
   it("places Border and Background after Font and before the service section", () => {
     const font = html.indexOf('id="subtitle-font-group"');
@@ -666,16 +663,17 @@ describe("Subtitle Border and Background controls contract", () => {
 });
 
 describe("Shared subtitle color palette contract", () => {
-  const html = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
+  const rawHtml = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
+  const html = rawHtml.replace(/\s+(?:data-i18n(?:-[a-z-]+)?|dir)="[^"]*"/g, "");
   const css = readFileSync(new URL("../../ui/sidebar.css", import.meta.url), "utf8");
 
   it("offers named RGBA presets, selected semantics and one Show Colors entry", () => {
     const paletteStart = html.indexOf('id="subtitle-color-palette"');
     const paletteEnd = html.indexOf('id="subtitle-style-error"', paletteStart);
     const palette = html.slice(paletteStart, paletteEnd);
-    expect(palette).toContain('data-color-name="White"');
-    expect(palette).toContain('data-color-name="Black"');
-    expect(palette).toContain('data-color-name="Transparent"');
+    expect(palette).toContain('data-color-id="white"');
+    expect(palette).toContain('data-color-id="black"');
+    expect(palette).toContain('data-color-id="transparent"');
     expect(palette).toContain('aria-checked="false"');
     expect(palette).toContain('id="subtitle-show-colors"');
     expect(palette).toContain("Show Colors…");

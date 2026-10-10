@@ -1,0 +1,982 @@
+{
+  "targetLanguages": [
+    {
+      "id": "ab",
+      "requestName": "Abkhazian",
+      "providerLabel": "Abkhazian [ab]",
+      "equivalence": "base"
+    },
+    {
+      "id": "sq",
+      "requestName": "Albanian",
+      "providerLabel": "Albanian [sq]",
+      "equivalence": "base"
+    },
+    {
+      "id": "aa",
+      "requestName": "Afar",
+      "providerLabel": "Afar [aa]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ak",
+      "requestName": "Akan",
+      "providerLabel": "Akan [ak]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ar",
+      "requestName": "Arabic",
+      "providerLabel": "Arabic [ar]",
+      "equivalence": "base"
+    },
+    {
+      "id": "am",
+      "requestName": "Amharic",
+      "providerLabel": "Amharic [am]",
+      "equivalence": "base"
+    },
+    {
+      "id": "as",
+      "requestName": "Assamese",
+      "providerLabel": "Assamese [as]",
+      "equivalence": "base"
+    },
+    {
+      "id": "az",
+      "requestName": "Azerbaijani",
+      "providerLabel": "Azerbaijani [az]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ee",
+      "requestName": "Ewe",
+      "providerLabel": "Ewe [ee]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ay",
+      "requestName": "Aymara",
+      "providerLabel": "Aymara [ay]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ga",
+      "requestName": "Irish",
+      "providerLabel": "Irish [ga]",
+      "equivalence": "base"
+    },
+    {
+      "id": "et",
+      "requestName": "Estonian",
+      "providerLabel": "Estonian [et]",
+      "equivalence": "base"
+    },
+    {
+      "id": "oc",
+      "requestName": "Occitan",
+      "providerLabel": "Occitan [oc]",
+      "equivalence": "base"
+    },
+    {
+      "id": "or",
+      "requestName": "Odia",
+      "providerLabel": "Odia [or]",
+      "equivalence": "base"
+    },
+    {
+      "id": "om",
+      "requestName": "Oromo",
+      "providerLabel": "Oromo [om]",
+      "equivalence": "base"
+    },
+    {
+      "id": "os",
+      "requestName": "Ossetian",
+      "providerLabel": "Ossetian [os]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ba",
+      "requestName": "Bashkir",
+      "providerLabel": "Bashkir [ba]",
+      "equivalence": "base"
+    },
+    {
+      "id": "eu",
+      "requestName": "Basque",
+      "providerLabel": "Basque [eu]",
+      "equivalence": "base"
+    },
+    {
+      "id": "be",
+      "requestName": "Belarusian",
+      "providerLabel": "Belarusian [be]",
+      "equivalence": "base"
+    },
+    {
+      "id": "pam",
+      "requestName": "Kapampangan",
+      "providerLabel": "Kapampangan [pam]",
+      "equivalence": "base"
+    },
+    {
+      "id": "bg",
+      "requestName": "Bulgarian",
+      "providerLabel": "Bulgarian [bg]",
+      "equivalence": "base"
+    },
+    {
+      "id": "nso",
+      "requestName": "Northern Sotho",
+      "providerLabel": "Northern Sotho [nso]",
+      "equivalence": "base"
+    },
+    {
+      "id": "is",
+      "requestName": "Icelandic",
+      "providerLabel": "Icelandic [is]",
+      "equivalence": "base"
+    },
+    {
+      "id": "pl",
+      "requestName": "Polish",
+      "providerLabel": "Polish [pl]",
+      "equivalence": "base"
+    },
+    {
+      "id": "bs",
+      "requestName": "Bosnian",
+      "providerLabel": "Bosnian [bs]",
+      "equivalence": "base"
+    },
+    {
+      "id": "fa",
+      "requestName": "Persian",
+      "providerLabel": "Persian [fa]",
+      "equivalence": "base"
+    },
+    {
+      "id": "bho",
+      "requestName": "Bhojpuri",
+      "providerLabel": "Bhojpuri [bho]",
+      "equivalence": "base"
+    },
+    {
+      "id": "br",
+      "requestName": "Breton",
+      "providerLabel": "Breton [br]",
+      "equivalence": "base"
+    },
+    {
+      "id": "bo",
+      "requestName": "Tibetan",
+      "providerLabel": "Tibetan [bo]",
+      "equivalence": "base"
+    },
+    {
+      "id": "tn",
+      "requestName": "Tswana",
+      "providerLabel": "Tswana [tn]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ts",
+      "requestName": "Tsonga",
+      "providerLabel": "Tsonga [ts]",
+      "equivalence": "base"
+    },
+    {
+      "id": "tt",
+      "requestName": "Tatar",
+      "providerLabel": "Tatar [tt]",
+      "equivalence": "base"
+    },
+    {
+      "id": "da",
+      "requestName": "Danish",
+      "providerLabel": "Danish [da]",
+      "equivalence": "base"
+    },
+    {
+      "id": "de",
+      "requestName": "German",
+      "providerLabel": "German [de]",
+      "equivalence": "base"
+    },
+    {
+      "id": "dv",
+      "requestName": "Dhivehi",
+      "providerLabel": "Dhivehi [dv]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ru",
+      "requestName": "Russian",
+      "providerLabel": "Russian [ru]",
+      "equivalence": "base"
+    },
+    {
+      "id": "fo",
+      "requestName": "Faroese",
+      "providerLabel": "Faroese [fo]",
+      "equivalence": "base"
+    },
+    {
+      "id": "fr",
+      "requestName": "French",
+      "providerLabel": "French [fr]",
+      "equivalence": "base"
+    },
+    {
+      "id": "sa",
+      "requestName": "Sanskrit",
+      "providerLabel": "Sanskrit [sa]",
+      "equivalence": "base"
+    },
+    {
+      "id": "fil",
+      "requestName": "Filipino",
+      "providerLabel": "Filipino [fil]",
+      "equivalence": "base"
+    },
+    {
+      "id": "fj",
+      "requestName": "Fijian",
+      "providerLabel": "Fijian [fj]",
+      "equivalence": "base"
+    },
+    {
+      "id": "fi",
+      "requestName": "Finnish",
+      "providerLabel": "Finnish [fi]",
+      "equivalence": "base"
+    },
+    {
+      "id": "km",
+      "requestName": "Khmer",
+      "providerLabel": "Khmer [km]",
+      "equivalence": "base"
+    },
+    {
+      "id": "kl",
+      "requestName": "Greenlandic",
+      "providerLabel": "Greenlandic [kl]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ka",
+      "requestName": "Georgian",
+      "providerLabel": "Georgian [ka]",
+      "equivalence": "base"
+    },
+    {
+      "id": "gu",
+      "requestName": "Gujarati",
+      "providerLabel": "Gujarati [gu]",
+      "equivalence": "base"
+    },
+    {
+      "id": "gn",
+      "requestName": "Guarani",
+      "providerLabel": "Guarani [gn]",
+      "equivalence": "base"
+    },
+    {
+      "id": "kk",
+      "requestName": "Kazakh",
+      "providerLabel": "Kazakh [kk]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ht",
+      "requestName": "Haitian Creole",
+      "providerLabel": "Haitian Creole [ht]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ko",
+      "requestName": "Korean",
+      "providerLabel": "Korean [ko]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ha",
+      "requestName": "Hausa",
+      "providerLabel": "Hausa [ha]",
+      "equivalence": "base"
+    },
+    {
+      "id": "nl",
+      "requestName": "Dutch",
+      "providerLabel": "Dutch [nl]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ky",
+      "requestName": "Kyrgyz",
+      "providerLabel": "Kyrgyz [ky]",
+      "equivalence": "base"
+    },
+    {
+      "id": "gl",
+      "requestName": "Galician",
+      "providerLabel": "Galician [gl]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ca",
+      "requestName": "Catalan",
+      "providerLabel": "Catalan [ca]",
+      "equivalence": "base"
+    },
+    {
+      "id": "gaa",
+      "requestName": "Ga",
+      "providerLabel": "Ga [gaa]",
+      "equivalence": "base"
+    },
+    {
+      "id": "cs",
+      "requestName": "Czech",
+      "providerLabel": "Czech [cs]",
+      "equivalence": "base"
+    },
+    {
+      "id": "kn",
+      "requestName": "Kannada",
+      "providerLabel": "Kannada [kn]",
+      "equivalence": "base"
+    },
+    {
+      "id": "kha",
+      "requestName": "Khasi",
+      "providerLabel": "Khasi [kha]",
+      "equivalence": "base"
+    },
+    {
+      "id": "xh",
+      "requestName": "Xhosa",
+      "providerLabel": "Xhosa [xh]",
+      "equivalence": "base"
+    },
+    {
+      "id": "co",
+      "requestName": "Corsican",
+      "providerLabel": "Corsican [co]",
+      "equivalence": "base"
+    },
+    {
+      "id": "hr",
+      "requestName": "Croatian",
+      "providerLabel": "Croatian [hr]",
+      "equivalence": "base"
+    },
+    {
+      "id": "qu",
+      "requestName": "Quechua",
+      "providerLabel": "Quechua [qu]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ku",
+      "requestName": "Kurdish",
+      "providerLabel": "Kurdish [ku]",
+      "equivalence": "base"
+    },
+    {
+      "id": "la",
+      "requestName": "Latin",
+      "providerLabel": "Latin [la]",
+      "equivalence": "base"
+    },
+    {
+      "id": "lv",
+      "requestName": "Latvian",
+      "providerLabel": "Latvian [lv]",
+      "equivalence": "base"
+    },
+    {
+      "id": "lo",
+      "requestName": "Lao",
+      "providerLabel": "Lao [lo]",
+      "equivalence": "base"
+    },
+    {
+      "id": "lt",
+      "requestName": "Lithuanian",
+      "providerLabel": "Lithuanian [lt]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ln",
+      "requestName": "Lingala",
+      "providerLabel": "Lingala [ln]",
+      "equivalence": "base"
+    },
+    {
+      "id": "rn",
+      "requestName": "Rundi",
+      "providerLabel": "Rundi [rn]",
+      "equivalence": "base"
+    },
+    {
+      "id": "luo",
+      "requestName": "Luo",
+      "providerLabel": "Luo [luo]",
+      "equivalence": "base"
+    },
+    {
+      "id": "lua",
+      "requestName": "Luba-Lulua",
+      "providerLabel": "Luba-Lulua [lua]",
+      "equivalence": "base"
+    },
+    {
+      "id": "lg",
+      "requestName": "Luganda",
+      "providerLabel": "Luganda [lg]",
+      "equivalence": "base"
+    },
+    {
+      "id": "lb",
+      "requestName": "Luxembourgish",
+      "providerLabel": "Luxembourgish [lb]",
+      "equivalence": "base"
+    },
+    {
+      "id": "rw",
+      "requestName": "Kinyarwanda",
+      "providerLabel": "Kinyarwanda [rw]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ro",
+      "requestName": "Romanian",
+      "providerLabel": "Romanian [ro]",
+      "equivalence": "base"
+    },
+    {
+      "id": "gv",
+      "requestName": "Manx",
+      "providerLabel": "Manx [gv]",
+      "equivalence": "base"
+    },
+    {
+      "id": "mt",
+      "requestName": "Maltese",
+      "providerLabel": "Maltese [mt]",
+      "equivalence": "base"
+    },
+    {
+      "id": "mr",
+      "requestName": "Marathi",
+      "providerLabel": "Marathi [mr]",
+      "equivalence": "base"
+    },
+    {
+      "id": "mg",
+      "requestName": "Malagasy",
+      "providerLabel": "Malagasy [mg]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ml",
+      "requestName": "Malayalam",
+      "providerLabel": "Malayalam [ml]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ms",
+      "requestName": "Malay",
+      "providerLabel": "Malay [ms]",
+      "equivalence": "base"
+    },
+    {
+      "id": "mk",
+      "requestName": "Macedonian",
+      "providerLabel": "Macedonian [mk]",
+      "equivalence": "base"
+    },
+    {
+      "id": "mfe",
+      "requestName": "Mauritian Creole",
+      "providerLabel": "Mauritian Creole [mfe]",
+      "equivalence": "base"
+    },
+    {
+      "id": "mi",
+      "requestName": "Maori",
+      "providerLabel": "Maori [mi]",
+      "equivalence": "base"
+    },
+    {
+      "id": "mn",
+      "requestName": "Mongolian",
+      "providerLabel": "Mongolian [mn]",
+      "equivalence": "base"
+    },
+    {
+      "id": "bn",
+      "requestName": "Bengali",
+      "providerLabel": "Bengali [bn]",
+      "equivalence": "base"
+    },
+    {
+      "id": "my",
+      "requestName": "Burmese",
+      "providerLabel": "Burmese [my]",
+      "equivalence": "base"
+    },
+    {
+      "id": "hmn",
+      "requestName": "Hmong",
+      "providerLabel": "Hmong [hmn]",
+      "equivalence": "base"
+    },
+    {
+      "id": "af",
+      "requestName": "Afrikaans",
+      "providerLabel": "Afrikaans [af]",
+      "equivalence": "base"
+    },
+    {
+      "id": "st",
+      "requestName": "Southern Sotho",
+      "providerLabel": "Southern Sotho [st]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ne",
+      "requestName": "Nepali",
+      "providerLabel": "Nepali [ne]",
+      "equivalence": "base"
+    },
+    {
+      "id": "new",
+      "requestName": "Newari",
+      "providerLabel": "Newari [new]",
+      "equivalence": "base"
+    },
+    {
+      "id": "no",
+      "requestName": "Norwegian",
+      "providerLabel": "Norwegian [no]",
+      "equivalence": "base"
+    },
+    {
+      "id": "pa",
+      "requestName": "Punjabi",
+      "providerLabel": "Punjabi [pa]",
+      "equivalence": "base"
+    },
+    {
+      "id": "pt",
+      "requestName": "Portuguese",
+      "providerLabel": "Portuguese [pt]",
+      "equivalence": "base"
+    },
+    {
+      "id": "pt-PT",
+      "requestName": "Portuguese (Portugal)",
+      "providerLabel": "Portuguese (Portugal) [pt-PT]",
+      "equivalence": "exact-region"
+    },
+    {
+      "id": "ps",
+      "requestName": "Pashto",
+      "providerLabel": "Pashto [ps]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ny",
+      "requestName": "Chichewa",
+      "providerLabel": "Chichewa [ny]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ja",
+      "requestName": "Japanese",
+      "providerLabel": "Japanese [ja]",
+      "equivalence": "base"
+    },
+    {
+      "id": "sv",
+      "requestName": "Swedish",
+      "providerLabel": "Swedish [sv]",
+      "equivalence": "base"
+    },
+    {
+      "id": "sm",
+      "requestName": "Samoan",
+      "providerLabel": "Samoan [sm]",
+      "equivalence": "base"
+    },
+    {
+      "id": "sr",
+      "requestName": "Serbian",
+      "providerLabel": "Serbian [sr]",
+      "equivalence": "base"
+    },
+    {
+      "id": "crs",
+      "requestName": "Seychellois Creole",
+      "providerLabel": "Seychellois Creole [crs]",
+      "equivalence": "base"
+    },
+    {
+      "id": "sg",
+      "requestName": "Sango",
+      "providerLabel": "Sango [sg]",
+      "equivalence": "base"
+    },
+    {
+      "id": "si",
+      "requestName": "Sinhala",
+      "providerLabel": "Sinhala [si]",
+      "equivalence": "base"
+    },
+    {
+      "id": "sn",
+      "requestName": "Shona",
+      "providerLabel": "Shona [sn]",
+      "equivalence": "base"
+    },
+    {
+      "id": "eo",
+      "requestName": "Esperanto",
+      "providerLabel": "Esperanto [eo]",
+      "equivalence": "base"
+    },
+    {
+      "id": "sk",
+      "requestName": "Slovak",
+      "providerLabel": "Slovak [sk]",
+      "equivalence": "base"
+    },
+    {
+      "id": "sl",
+      "requestName": "Slovenian",
+      "providerLabel": "Slovenian [sl]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ss",
+      "requestName": "Swati",
+      "providerLabel": "Swati [ss]",
+      "equivalence": "base"
+    },
+    {
+      "id": "sw",
+      "requestName": "Swahili",
+      "providerLabel": "Swahili [sw]",
+      "equivalence": "base"
+    },
+    {
+      "id": "gd",
+      "requestName": "Scottish Gaelic",
+      "providerLabel": "Scottish Gaelic [gd]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ceb",
+      "requestName": "Cebuano",
+      "providerLabel": "Cebuano [ceb]",
+      "equivalence": "base"
+    },
+    {
+      "id": "so",
+      "requestName": "Somali",
+      "providerLabel": "Somali [so]",
+      "equivalence": "base"
+    },
+    {
+      "id": "tg",
+      "requestName": "Tajik",
+      "providerLabel": "Tajik [tg]",
+      "equivalence": "base"
+    },
+    {
+      "id": "te",
+      "requestName": "Telugu",
+      "providerLabel": "Telugu [te]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ta",
+      "requestName": "Tamil",
+      "providerLabel": "Tamil [ta]",
+      "equivalence": "base"
+    },
+    {
+      "id": "th",
+      "requestName": "Thai",
+      "providerLabel": "Thai [th]",
+      "equivalence": "base"
+    },
+    {
+      "id": "to",
+      "requestName": "Tongan",
+      "providerLabel": "Tongan [to]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ti",
+      "requestName": "Tigrinya",
+      "providerLabel": "Tigrinya [ti]",
+      "equivalence": "base"
+    },
+    {
+      "id": "tum",
+      "requestName": "Tumbuka",
+      "providerLabel": "Tumbuka [tum]",
+      "equivalence": "base"
+    },
+    {
+      "id": "tr",
+      "requestName": "Turkish",
+      "providerLabel": "Turkish [tr]",
+      "equivalence": "base"
+    },
+    {
+      "id": "tk",
+      "requestName": "Turkmen",
+      "providerLabel": "Turkmen [tk]",
+      "equivalence": "base"
+    },
+    {
+      "id": "war",
+      "requestName": "Waray",
+      "providerLabel": "Waray [war]",
+      "equivalence": "base"
+    },
+    {
+      "id": "cy",
+      "requestName": "Welsh",
+      "providerLabel": "Welsh [cy]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ug",
+      "requestName": "Uyghur",
+      "providerLabel": "Uyghur [ug]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ve",
+      "requestName": "Venda",
+      "providerLabel": "Venda [ve]",
+      "equivalence": "base"
+    },
+    {
+      "id": "wo",
+      "requestName": "Wolof",
+      "providerLabel": "Wolof [wo]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ur",
+      "requestName": "Urdu",
+      "providerLabel": "Urdu [ur]",
+      "equivalence": "base"
+    },
+    {
+      "id": "uk",
+      "requestName": "Ukrainian",
+      "providerLabel": "Ukrainian [uk]",
+      "equivalence": "base"
+    },
+    {
+      "id": "uz",
+      "requestName": "Uzbek",
+      "providerLabel": "Uzbek [uz]",
+      "equivalence": "base"
+    },
+    {
+      "id": "es",
+      "requestName": "Spanish",
+      "providerLabel": "Spanish [es]",
+      "equivalence": "base"
+    },
+    {
+      "id": "fy",
+      "requestName": "Western Frisian",
+      "providerLabel": "Western Frisian [fy]",
+      "equivalence": "base"
+    },
+    {
+      "id": "he",
+      "requestName": "Hebrew",
+      "providerLabel": "Hebrew [he]",
+      "equivalence": "base"
+    },
+    {
+      "id": "el",
+      "requestName": "Greek",
+      "providerLabel": "Greek [el]",
+      "equivalence": "base"
+    },
+    {
+      "id": "haw",
+      "requestName": "Hawaiian",
+      "providerLabel": "Hawaiian [haw]",
+      "equivalence": "base"
+    },
+    {
+      "id": "sd",
+      "requestName": "Sindhi",
+      "providerLabel": "Sindhi [sd]",
+      "equivalence": "base"
+    },
+    {
+      "id": "hu",
+      "requestName": "Hungarian",
+      "providerLabel": "Hungarian [hu]",
+      "equivalence": "base"
+    },
+    {
+      "id": "su",
+      "requestName": "Sundanese",
+      "providerLabel": "Sundanese [su]",
+      "equivalence": "base"
+    },
+    {
+      "id": "hy",
+      "requestName": "Armenian",
+      "providerLabel": "Armenian [hy]",
+      "equivalence": "base"
+    },
+    {
+      "id": "ig",
+      "requestName": "Igbo",
+      "providerLabel": "Igbo [ig]",
+      "equivalence": "base"
+    },
+    {
+      "id": "it",
+      "requestName": "Italian",
+      "providerLabel": "Italian [it]",
+      "equivalence": "base"
+    },
+    {
+      "id": "yi",
+      "requestName": "Yiddish",
+      "providerLabel": "Yiddish [yi]",
+      "equivalence": "base"
+    },
+    {
+      "id": "iu",
+      "requestName": "Inuktitut",
+      "providerLabel": "Inuktitut [iu]",
+      "equivalence": "base"
+    },
+    {
+      "id": "hi",
+      "requestName": "Hindi",
+      "providerLabel": "Hindi [hi]",
+      "equivalence": "base"
+    },
+    {
+      "id": "id",
+      "requestName": "Indonesian",
+      "providerLabel": "Indonesian [id]",
+      "equivalence": "base"
+    },
+    {
+      "id": "en",
+      "requestName": "English",
+      "providerLabel": "English [en]",
+      "equivalence": "base"
+    },
+    {
+      "id": "yo",
+      "requestName": "Yoruba",
+      "providerLabel": "Yoruba [yo]",
+      "equivalence": "base"
+    },
+    {
+      "id": "vi",
+      "requestName": "Vietnamese",
+      "providerLabel": "Vietnamese [vi]",
+      "equivalence": "base"
+    },
+    {
+      "id": "jv",
+      "requestName": "Javanese",
+      "providerLabel": "Javanese [jv]",
+      "equivalence": "base"
+    },
+    {
+      "id": "zh-Hant",
+      "requestName": "Chinese (Traditional)",
+      "providerLabel": "Chinese (Traditional) [zh-Hant]",
+      "equivalence": "exact-script"
+    },
+    {
+      "id": "zh-Hans",
+      "requestName": "Chinese (Simplified)",
+      "providerLabel": "Chinese (Simplified) [zh-Hans]",
+      "equivalence": "exact-script"
+    },
+    {
+      "id": "dz",
+      "requestName": "Dzongkha",
+      "providerLabel": "Dzongkha [dz]",
+      "equivalence": "base"
+    },
+    {
+      "id": "zu",
+      "requestName": "Zulu",
+      "providerLabel": "Zulu [zu]",
+      "equivalence": "base"
+    },
+    {
+      "id": "kri",
+      "requestName": "Krio",
+      "providerLabel": "Krio [kri]",
+      "equivalence": "base"
+    }
+  ],
+  "namedColors": [
+    {
+      "id": "transparent",
+      "rgba": [0, 0, 0, 0]
+    },
+    {
+      "id": "white",
+      "rgba": [255, 255, 255, 255]
+    },
+    {
+      "id": "red",
+      "rgba": [255, 59, 48, 255]
+    },
+    {
+      "id": "orange",
+      "rgba": [255, 149, 0, 255]
+    },
+    {
+      "id": "yellow",
+      "rgba": [255, 204, 0, 255]
+    },
+    {
+      "id": "green",
+      "rgba": [52, 199, 89, 255]
+    },
+    {
+      "id": "cyan",
+      "rgba": [50, 173, 230, 255]
+    },
+    {
+      "id": "blue",
+      "rgba": [0, 122, 255, 255]
+    },
+    {
+      "id": "purple",
+      "rgba": [175, 82, 222, 255]
+    },
+    {
+      "id": "black",
+      "rgba": [0, 0, 0, 255]
+    }
+  ]
+}

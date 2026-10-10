@@ -406,7 +406,8 @@ button.secondary {
   min-width: 0;
   gap: 9px;
   max-height: 1600px;
-  padding: 10px 0 2px 18px;
+  padding-block: 10px 2px;
+  padding-inline: 18px 0;
   overflow: hidden;
   transition:
     max-height 250ms ease,
@@ -452,7 +453,7 @@ button.secondary {
 .profile-drawer-actions-end {
   display: flex;
   min-width: 0;
-  margin-left: auto;
+  margin-inline-start: auto;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 5px;
@@ -617,7 +618,7 @@ button.secondary {
   min-width: 2.5rem;
   color: var(--label-primary);
   font-variant-numeric: tabular-nums;
-  text-align: right;
+  text-align: end;
 }
 
 .profile-operation-status:empty,
@@ -754,7 +755,7 @@ dt {
 }
 
 dd {
-  text-align: right;
+  text-align: end;
   font-weight: 600;
 }
 
@@ -922,7 +923,7 @@ dd {
   position: absolute;
   z-index: 10;
   top: 42px;
-  right: 0;
+  inset-inline-end: 0;
   display: grid;
   width: min(286px, 100%);
   gap: 7px;
@@ -1140,12 +1141,12 @@ dd {
   min-width: 0;
 }
 .credential-input input {
-  padding-right: 28px;
+  padding-inline-end: 28px;
   min-width: 0;
 }
 #toggle-provider-key {
   position: absolute;
-  right: 0;
+  inset-inline-end: 0;
   top: 0;
   bottom: 0;
   width: 24px;
@@ -1184,4 +1185,18 @@ dd {
 .profiles[data-empty="true"] .empty {
   margin: 0;
   text-align: center;
+}
+
+[dir="auto"],
+[dir="ltr"] {
+  unicode-bidi: isolate;
+}
+
+[dir="rtl"] .disclosure-indicator {
+  transform: scaleX(-1);
+}
+
+.profile-delete-actions button {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
