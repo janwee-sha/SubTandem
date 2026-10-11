@@ -68,7 +68,7 @@
     "sidebar.apiRoot": "API-Basisadresse",
     "sidebar.closeNewProfile": "Neues Profil schließen",
     "sidebar.thisProfileChangedInAnotherWindowCancel": "Dieses Profil wurde in einem anderen Fenster geändert. Brechen Sie ab oder schließen Sie es und öffnen Sie dann die aktuelle Version.",
-    "sidebar.noProfilesYet": "Noch keine Profile.",
+    "sidebar.noProfilesYet": "Noch keine profile.",
     "sidebar.theSubtitleFontPickerIsUnavailable": "Die Schriftauswahl für Untertitel ist nicht verfügbar.",
     "sidebar.profile": "Profil",
     "sidebar.profileActivationIsRestoringOrWaitingFor": "Der Aktivierungszustand des Profils wird wiederhergestellt oder wartet auf die Speicherbestätigung.",

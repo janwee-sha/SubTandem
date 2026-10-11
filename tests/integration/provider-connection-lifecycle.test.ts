@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createLocalizer } from "../../ui/localization.js";
 import { normalizeProviderError } from "../../src/domain/errors.js";
 import { ProviderBroker } from "../../src/providers/broker.js";
 import { ProviderConnectionTests } from "../../src/providers/connection-tests.js";
@@ -20,6 +21,8 @@ import {
 import "../../ui/service-failure-message.js";
 import "../../ui/session-status.js";
 import "../../ui/provider-status.js";
+
+const localizer = createLocalizer("en");
 
 const ui = globalThis as typeof globalThis & Window;
 const providerTestStatusMessage = (
@@ -263,7 +266,8 @@ describe("provider connection lifecycle integration", () => {
         },
       ),
     ];
-    const expected = "The model is unavailable. Check the Profile’s Model ID.";
+    const messageKey = "sidebar.theModelIsUnavailableCheckTheProfiles";
+    const expected = localizer.format(messageKey);
 
     for (const [index, provider] of providers.entries()) {
       const testError = normalizeProviderError(
@@ -281,6 +285,8 @@ describe("provider connection lifecycle integration", () => {
 
       expect(testError.category).toBe("model");
       expect(sessionError.category).toBe("model");
+      expect(ui.subtandemProviderTestStatusFeedback(testWire)).toEqual({ messageKey, params: {} });
+      expect(ui.subtandemSessionFailureFeedback(sessionError)).toEqual({ messageKey, params: {} });
       expect(providerTestStatusMessage(testWire)).toBe(expected);
       expect(sessionFailureMessage(sessionError)).toBe(expected);
       expect(JSON.stringify({ testWire, sessionError })).not.toMatch(

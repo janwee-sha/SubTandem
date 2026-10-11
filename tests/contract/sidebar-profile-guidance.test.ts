@@ -55,7 +55,7 @@ describe.each(services)("$label Profile guidance", (service) => {
       localizer.format("model.example", { model: service.placeholder.slice(5) }),
     );
     expect(h.element("#model-hint").textContent).toBe(
-      "Refresh the catalog or enter the exact model ID. Low-effort models are recommended.",
+      localizer.format("sidebar.refreshTheCatalogOrEnterTheExact"),
     );
     expect(h.element("#endpoint-hint").textContent).toBe(
       localizer.format("endpoint.help", { service: service.label, path: service.path }),
