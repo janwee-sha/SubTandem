@@ -1172,11 +1172,10 @@ function renderModelControl(): void {
     ...state.knownModelIds.map((model) => ({ id: model, requestName: model })),
     { id: "__custom__", requestName: "Custom model ID", messageKey: "sidebar.customModelID" },
   ];
-  for (const model of window.subtandemLocalization.options(
-    "models",
-    JSON.stringify(items),
-    items,
-  )) {
+  const modelOptions = window.subtandemLocalization.options("models", JSON.stringify(items), items);
+  const customOption = modelOptions.find(({ id }) => id === "__custom__")!;
+  const knownOptions = modelOptions.filter(({ id }) => id !== "__custom__");
+  for (const model of [customOption, ...knownOptions]) {
     const option = document.createElement("option");
     option.value = model.id;
     option.textContent = model.label;

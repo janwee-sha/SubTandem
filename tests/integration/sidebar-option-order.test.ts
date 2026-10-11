@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import { sidebarHarness } from "../helpers/sidebar-harness.js";
 import { UI_LOCALES } from "../../shared/localization/locales.js";
 import { TARGET_LANGUAGES } from "../../src/domain/target-languages.js";
-import { createOptionDirectory, LOCALE_CATALOGS } from "../../ui/localization.js";
+import { createLocalizer, createOptionDirectory, LOCALE_CATALOGS } from "../../ui/localization.js";
 import baseline from "../fixtures/localization/business-values.json";
 
 describe("actual Sidebar named DOM and identity", () => {
   it.each(UI_LOCALES)(
-    "sorts targets/services/models/colors without changing values or non-name sequences in %s",
+    "sorts named options and pins custom model IDs without changing values in %s",
     (locale) => {
       const h = sidebarHarness({ locale });
       const numeric = h.evaluate("Array.from(fontSizeSelect.options).map(option=>option.value)");
@@ -59,29 +59,81 @@ describe("actual Sidebar named DOM and identity", () => {
         projector.project(locale, "services", 1, serviceItems).options.map(({ id }) => id),
       );
       expect(h.element("#provider-kind").value).toBe("openai");
-      h.evaluate(
-        'sidebarState.setModelContext("catalog", "model-2"); sidebarState.applyModelCatalog("catalog", ["éclair", "Alpha", "model-2", "model-10"]); providerModelSelect.focus(); renderModelControl()',
-      );
-      const models = ["éclair", "Alpha", "model-2", "model-10"].map((id) => ({
-        id,
-        requestName: id,
-      }));
-      models.push({
-        id: "__custom__",
-        requestName: "Custom model ID",
-        messageKey: "sidebar.customModelID",
-      } as any);
-      expect(
+      const customLabel = createLocalizer(locale).format("sidebar.customModelID");
+      const modelIds = ["éclair", "Alpha", "model-2", "model-10"];
+      for (const kind of ["openai", "claude", "deepseek", "ollama"]) {
+        h.evaluate(`providerKind.value = ${JSON.stringify(kind)}; applyProviderKind()`);
+        expect(
+          h.evaluate(
+            "Array.from(providerModelSelect.options).map(option=>({id:option.value,label:option.textContent}))",
+          ),
+        ).toEqual([{ id: "__custom__", label: customLabel }]);
+        const contextKey = `catalog-${kind}`;
         h.evaluate(
+          `setModelContext("model-2", {contextKey:${JSON.stringify(contextKey)},models:${JSON.stringify(modelIds)}}); providerModelSelect.focus()`,
+        );
+        const models = [
+          ...modelIds.map((id) => ({ id, requestName: id })),
+          {
+            id: "__custom__",
+            requestName: "Custom model ID",
+            messageKey: "sidebar.customModelID",
+          },
+        ];
+        const options = h.evaluate(
           "Array.from(providerModelSelect.options).map(option=>({id:option.value,label:option.textContent}))",
-        ),
-      ).toEqual(
-        projector
-          .project(locale, "models", 1, models)
-          .options.map(({ id, label }) => ({ id, label })),
-      );
-      expect(h.element("#provider-model-select").value).toBe("model-2");
-      expect(h.evaluate("document.activeElement===providerModelSelect")).toBe(true);
+        );
+        expect(options[0]).toEqual({ id: "__custom__", label: customLabel });
+        expect(options.slice(1)).toEqual(
+          projector
+            .project(locale, "models", kind, models)
+            .options.filter(({ id }) => id !== "__custom__")
+            .map(({ id, label }) => ({ id, label })),
+        );
+        expect(h.element("#provider-model-select").value).toBe("model-2");
+        expect(h.element("#provider-model").hidden).toBe(true);
+        expect(h.evaluate("document.activeElement===providerModelSelect")).toBe(true);
+        h.element("#provider-model-select").value = "__custom__";
+        h.element("#provider-model-select").dispatch("change");
+        expect(h.evaluate("document.activeElement===providerModel")).toBe(true);
+        h.element("#provider-model").value = "namespace/custom:v2";
+        h.element("#provider-model").dispatch("input");
+        const refreshedIds = [...modelIds, customLabel];
+        h.evaluate(
+          `sidebarState.applyModelCatalog(${JSON.stringify(contextKey)}, ${JSON.stringify(refreshedIds)}); renderModelControl()`,
+        );
+        const refreshed = h.evaluate(
+          "Array.from(providerModelSelect.options).map(option=>({id:option.value,label:option.textContent}))",
+        );
+        expect(refreshed[0]).toEqual({
+          id: "__custom__",
+          label: `${customLabel} [__custom__]`,
+        });
+        expect(refreshed.slice(1)).toEqual(
+          projector
+            .project(locale, "models", `${kind}-refresh`, [
+              ...models,
+              { id: customLabel, requestName: customLabel },
+            ])
+            .options.filter(({ id }) => id !== "__custom__")
+            .map(({ id, label }) => ({ id, label })),
+        );
+        expect(h.element("#provider-model-select").value).toBe("__custom__");
+        expect(h.element("#provider-model").value).toBe("namespace/custom:v2");
+        expect(h.element("#provider-model").hidden).toBe(false);
+        expect(h.element("#provider-model").required).toBe(true);
+        expect(h.evaluate("document.activeElement===providerModel")).toBe(true);
+        h.evaluate(
+          `sidebarState.applyModelCatalog(${JSON.stringify(contextKey)}, []); renderModelControl()`,
+        );
+        expect(
+          h.evaluate(
+            "Array.from(providerModelSelect.options).map(option=>({id:option.value,label:option.textContent}))",
+          ),
+        ).toEqual([{ id: "__custom__", label: customLabel }]);
+        expect(h.element("#provider-model-select").value).toBe("__custom__");
+        expect(h.element("#provider-model").value).toBe("namespace/custom:v2");
+      }
       expect(h.evaluate("Array.from(fontSizeSelect.options).map(option=>option.value)")).toEqual(
         numeric,
       );
