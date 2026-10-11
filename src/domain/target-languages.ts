@@ -1,3 +1,5 @@
+export type TargetLanguageDirection = "ltr" | "rtl";
+
 export type LanguageEquivalence = "base" | "exact-script" | "exact-region";
 
 export interface TargetLanguageOption {
@@ -188,4 +190,10 @@ export function getTargetLanguage(value: string): TargetLanguageOption | null {
 
 export function getProviderLanguageLabel(value: string): string | null {
   return getTargetLanguage(value)?.providerLabel ?? null;
+}
+
+const rtlTargetLanguageIds = new Set(["ar", "dv", "fa", "he", "ps", "sd", "ug", "ur", "yi"]);
+
+export function getTargetLanguageDirection(value: string): TargetLanguageDirection {
+  return rtlTargetLanguageIds.has(value) ? "rtl" : "ltr";
 }

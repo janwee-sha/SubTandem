@@ -2,6 +2,7 @@ import baseline from "../fixtures/localization/business-values.json";
 import { describe, expect, it } from "vitest";
 import {
   getProviderLanguageLabel,
+  getTargetLanguageDirection,
   getTargetLanguage,
   isTargetLanguageId,
   TARGET_LANGUAGES,
@@ -33,5 +34,20 @@ describe("target language catalog", () => {
     expect(isTargetLanguageId("fil")).toBe(true);
     expect(isTargetLanguageId("tl")).toBe(false);
     expect(getProviderLanguageLabel("pt-PT")).toBe("Portuguese (Portugal) [pt-PT]");
+  });
+});
+
+describe("target language reading direction", () => {
+  it("uses RTL for every supported default RTL script and LTR for the rest", () => {
+    const rtlIds = ["ar", "dv", "fa", "he", "ps", "sd", "ug", "ur", "yi"];
+    expect(
+      TARGET_LANGUAGES.filter((item) => getTargetLanguageDirection(item.id) === "rtl")
+        .map((item) => item.id)
+        .sort(),
+    ).toEqual([...rtlIds].sort());
+    for (const item of TARGET_LANGUAGES) {
+      expect(getTargetLanguageDirection(item.id)).toBe(rtlIds.includes(item.id) ? "rtl" : "ltr");
+    }
+    expect(getTargetLanguageDirection("unknown")).toBe("ltr");
   });
 });

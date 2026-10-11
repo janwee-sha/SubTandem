@@ -7,12 +7,12 @@ final class LocalizationProbe: NSObject, WKScriptMessageHandler, WKNavigationDel
     private var watchdog: Timer?
     private var container: NSWindow?
 
-    func start(_ file: URL) {
+    func start(_ file: URL, width: CGFloat = 1, height: CGFloat = 1) {
         let configuration = WKWebViewConfiguration()
         configuration.userContentController.add(self, name: "result")
         configuration.userContentController.addUserScript(WKUserScript(source: "window.addEventListener('error', function(event) { window.webkit.messageHandlers.result.postMessage([{locale:'unknown',status:'runtimeFailed',error:String(event.message || 'Resource load failed')}]); });", injectionTime: .atDocumentStart, forMainFrameOnly: true))
-        webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 1, height: 1), configuration: configuration)
-        container = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1, height: 1), styleMask: [], backing: .buffered, defer: false)
+        webView = WKWebView(frame: NSRect(x: 0, y: 0, width: width, height: height), configuration: configuration)
+        container = NSWindow(contentRect: NSRect(x: 0, y: 0, width: width, height: height), styleMask: [], backing: .buffered, defer: false)
         container?.contentView = webView
         webView.navigationDelegate = self
         watchdog = Timer.scheduledTimer(withTimeInterval: 40, repeats: false) { _ in
@@ -44,9 +44,12 @@ final class LocalizationProbe: NSObject, WKScriptMessageHandler, WKNavigationDel
 }
 
 let arguments = CommandLine.arguments
-if arguments.count != 2 { exit(2) }
+if arguments.count != 2 && arguments.count != 4 { exit(2) }
 let application = NSApplication.shared
 application.setActivationPolicy(.prohibited)
 let probe = LocalizationProbe()
-probe.start(URL(fileURLWithPath: arguments[1]))
+let width = arguments.count == 4 ? Double(arguments[2]) ?? 0 : 1
+let height = arguments.count == 4 ? Double(arguments[3]) ?? 0 : 1
+if width <= 0 || height <= 0 { exit(2) }
+probe.start(URL(fileURLWithPath: arguments[1]), width: width, height: height)
 application.run()

@@ -1,5 +1,9 @@
 import type { SessionStatus } from "../domain/status.js";
-import { isTargetLanguageId } from "../domain/target-languages.js";
+import {
+  getTargetLanguageDirection,
+  isTargetLanguageId,
+  type TargetLanguageDirection,
+} from "../domain/target-languages.js";
 import type { TranslationProvider } from "../providers/provider.js";
 import type {
   FrozenTranslationTarget,
@@ -26,7 +30,7 @@ export interface ControllerSource {
 }
 
 export interface TranslationOverlaySink {
-  show(lines: readonly string[]): void;
+  show(lines: readonly string[], direction: TargetLanguageDirection): void;
   clear(): void;
 }
 
@@ -459,7 +463,11 @@ export class PlaybackController {
         this.translations,
         this.session.positionMs,
       );
-      if (lines.length > 0) this.options.overlay.show(lines);
+      if (lines.length > 0)
+        this.options.overlay.show(
+          lines,
+          getTargetLanguageDirection(this.effectiveTargetLanguage() ?? "en"),
+        );
       else this.options.overlay.clear();
     } catch (error) {
       void error;
