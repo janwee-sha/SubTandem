@@ -502,6 +502,10 @@ export class GlobalMailbox extends FileGlobalMailbox {
     this.handlers.set(name, callback);
   }
 
+  isRegistered(playerId: string): boolean {
+    return this.players.has(playerId);
+  }
+
   onSessionClose(callback: (playerId: string, reason: SessionCloseReason) => void): void {
     this.sessionCloseHandlers.add(callback);
   }
@@ -538,6 +542,11 @@ export class GlobalMailbox extends FileGlobalMailbox {
     for (const stem of this.readyFiles("request")) {
       const frame = this.consume(stem, "request");
       if (!frame) continue;
+      if (frame.name === REGISTER_MESSAGE) {
+        this.players.set(frame.sourceId, currentTime);
+        continue;
+      }
+      if (!this.players.has(frame.sourceId) && frame.name === "ui-language:get") continue;
       this.players.set(frame.sourceId, currentTime);
       if (frame.name === CLOSE_MESSAGE) {
         this.players.delete(frame.sourceId);

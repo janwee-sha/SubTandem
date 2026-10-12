@@ -1,3 +1,4 @@
+import { isUiLocale, type UiLocale } from "../../../shared/localization/locales.js";
 import {
   createReadyFilePath,
   parseReadyFrame,
@@ -17,11 +18,12 @@ import { hostTimers } from "./host-timers.js";
 export interface StylePickerSession {
   port: number;
   token: string;
+  uiLocale: UiLocale;
 }
 
 export interface StylePickerReadyFrame extends StylePickerSession {
   type: "ready";
-  protocolVersion: 1;
+  protocolVersion: 2;
   createdAtMs: number;
 }
 
@@ -62,11 +64,25 @@ const validRevision = (value: unknown): value is number =>
 
 export function parseStylePickerReadyFrame(
   output: string,
+  expectedLocale: UiLocale,
   notBeforeMs = 0,
   nowMs = Date.now(),
 ): StylePickerReadyFrame {
   try {
-    return parseReadyFrame(output, notBeforeMs, nowMs);
+    if (output.length > 2048 || !isUiLocale(expectedLocale))
+      throw new Error("STYLE_PICKER_PROTOCOL");
+    const value: unknown = JSON.parse(output.trim());
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      throw new Error("STYLE_PICKER_PROTOCOL");
+    const frame = value as Record<string, unknown>;
+    if (
+      !exactKeys(frame, ["type", "protocolVersion", "createdAtMs", "port", "token", "uiLocale"]) ||
+      !isUiLocale(frame.uiLocale) ||
+      frame.uiLocale !== expectedLocale
+    )
+      throw new Error("STYLE_PICKER_PROTOCOL");
+    const { uiLocale, ...ready } = frame;
+    return { ...parseReadyFrame(JSON.stringify(ready), notBeforeMs, nowMs, 2), uiLocale };
   } catch {
     throw new Error("STYLE_PICKER_PROTOCOL");
   }
@@ -76,9 +92,10 @@ export class StylePickerProcess {
   static async bootstrap(
     launcher: ProcessLauncher,
     readyFiles: ReadyFileStore,
-    options: { dataDirectory: string; fileDirectory?: string },
+    options: { dataDirectory: string; fileDirectory?: string; uiLocale: UiLocale },
     executable: string,
   ): Promise<StylePickerSession> {
+    if (!isUiLocale(options.uiLocale)) throw new Error("STYLE_PICKER_PROTOCOL");
     const fileDirectory = options.fileDirectory ?? options.dataDirectory;
     removeStaleHelperFiles(readyFiles, fileDirectory);
     const readyFile = createReadyFilePath(fileDirectory, "style-picker");
@@ -88,7 +105,15 @@ export class StylePickerProcess {
     if (readyFiles.exists(readyFile)) throw new Error("STYLE_PICKER_PROTOCOL");
     const startedAtMs = Date.now();
     let exitStatus: number | null = null;
-    const completion = launcher.launch(executable, ["launch", "--ready-file", nativeReadyFile]);
+    const completion = launcher.launch(executable, [
+      "launch",
+      "--ready-file",
+      nativeReadyFile,
+      "--ui-locale",
+      options.uiLocale,
+      "-AppleLanguages",
+      `(${options.uiLocale})`,
+    ]);
     void completion.then(
       (result) => {
         exitStatus = result.status;
@@ -101,8 +126,8 @@ export class StylePickerProcess {
       for (let tries = 0; tries < 250; tries += 1) {
         const output = readyFiles.exists(readyFile) ? readyFiles.read(readyFile) : null;
         if (output !== null) {
-          const frame = parseStylePickerReadyFrame(output, startedAtMs);
-          return { port: frame.port, token: frame.token };
+          const frame = parseStylePickerReadyFrame(output, options.uiLocale, startedAtMs);
+          return { port: frame.port, token: frame.token, uiLocale: frame.uiLocale };
         }
         if (exitStatus !== null && exitStatus !== 0) throw new Error("STYLE_PICKER_START_FAILED");
         await hostTimers.delay(20);
@@ -126,6 +151,7 @@ export class StylePickerClient {
     private readonly bridge: StylePickerHttpBridge,
   ) {
     if (
+      !isUiLocale(session.uiLocale) ||
       !Number.isInteger(session.port) ||
       session.port < 1024 ||
       session.port > 65535 ||
@@ -298,7 +324,7 @@ export function discoverStylePickerExecutable(
   const suffix = `/.data/${pluginId}`;
   if (!dataDirectory.endsWith(suffix)) throw new Error("PLUGIN_DATA_PATH_UNEXPECTED");
   const pluginsDirectory = dataDirectory.slice(0, -suffix.length);
-  const executableName = "subtandem-style-picker";
+  const executableName = "SubTandemStylePicker.app/Contents/MacOS/subtandem-style-picker";
   const candidate = `${pluginsDirectory}/${pluginId}.iinaplugin/dist/native/${executableName}`;
   try {
     if (locator.exists(candidate)) return candidate;

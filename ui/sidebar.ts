@@ -1,3 +1,16 @@
+function uiFeedback(
+  messageKey: string,
+  params: Record<string, string | number> = {},
+): LocalizedFeedback {
+  return window.subtandemLocalization.message(messageKey, params);
+}
+
+function localizedText(value: string | LocalizedFeedback | null | undefined): string {
+  return typeof value === "string"
+    ? value
+    : (window.subtandemLocalization.feedback(value ?? null) ?? "");
+}
+
 type SessionStatus =
   | "disabled"
   | "waitingForSubtitle"
@@ -98,6 +111,8 @@ const subtitleShowColors = document.querySelector<HTMLButtonElement>("#subtitle-
 const subtitleStyleError = document.querySelector<HTMLParagraphElement>("#subtitle-style-error")!;
 const operationAnnouncer = document.querySelector<HTMLParagraphElement>("#operation-announcer")!;
 const appElement = document.querySelector<HTMLElement>("#app")!;
+const supportLink = document.querySelector<HTMLAnchorElement>("#support-link")!;
+const supportStatus = document.querySelector<HTMLParagraphElement>("#support-status")!;
 const profileDeleteBackdrop = document.querySelector<HTMLElement>("#profile-delete-backdrop")!;
 const profileDeleteDialog = document.querySelector<HTMLElement>("#profile-delete-dialog")!;
 const profileDeleteTitle = document.querySelector<HTMLHeadingElement>("#profile-delete-title")!;
@@ -111,24 +126,24 @@ const cancelProfileDeleteButton =
   document.querySelector<HTMLButtonElement>("#cancel-profile-delete")!;
 
 const subtitleColorFamilies = [
-  ["Red", 0],
-  ["Orange", 28],
-  ["Yellow", 54],
-  ["Green", 112],
-  ["Teal", 166],
-  ["Cyan", 190],
-  ["Blue", 218],
-  ["Indigo", 246],
-  ["Purple", 278],
-  ["Pink", 326],
+  [uiFeedback("sidebar.red"), 0],
+  [uiFeedback("sidebar.orange"), 28],
+  [uiFeedback("sidebar.yellow"), 54],
+  [uiFeedback("sidebar.green"), 112],
+  [uiFeedback("sidebar.teal"), 166],
+  [uiFeedback("sidebar.cyan"), 190],
+  [uiFeedback("sidebar.blue"), 218],
+  [uiFeedback("sidebar.indigo"), 246],
+  [uiFeedback("sidebar.purple"), 278],
+  [uiFeedback("sidebar.pink"), 326],
 ] as const;
 const subtitleColorTones = [
-  ["Darkest", 18],
-  ["Dark", 30],
-  ["Deep", 42],
-  ["Medium", 54],
-  ["Light", 68],
-  ["Lightest", 82],
+  [uiFeedback("sidebar.darkest"), 18],
+  [uiFeedback("sidebar.dark"), 30],
+  [uiFeedback("sidebar.deep"), 42],
+  [uiFeedback("sidebar.medium"), 54],
+  [uiFeedback("sidebar.light"), 68],
+  [uiFeedback("sidebar.lightest"), 82],
 ] as const;
 
 function subtitlePaletteRgb(hue: number, saturation: number, lightness: number): number[] {
@@ -155,12 +170,17 @@ function populateSubtitleColorGrid(): void {
   for (const [toneName, lightnessPercent] of subtitleColorTones) {
     for (const [familyName, hue] of subtitleColorFamilies) {
       const [r, g, b] = subtitlePaletteRgb(hue, 0.82, lightnessPercent / 100);
-      const name = `${toneName} ${familyName}`;
+      const name = localizedText(
+        uiFeedback("color.grid", {
+          tone: localizedText(toneName),
+          color: localizedText(familyName),
+        }),
+      );
       const button = document.createElement("button");
       button.type = "button";
       button.setAttribute("role", "radio");
       button.setAttribute("aria-checked", "false");
-      button.setAttribute("aria-label", name);
+      button.setAttribute("aria-label", localizedText(name));
       button.dataset.colorName = name;
       button.dataset.rgba = `${r},${g},${b},255`;
       const swatch = document.createElement("span");
@@ -198,15 +218,36 @@ const providerLabels: Record<ProviderKind, string> = {
   ollama: "Ollama",
 };
 const modelPlaceholders: Record<ProviderKind, string> = {
-  openai: "e.g. gpt-6-luna",
-  claude: "e.g. claude-haiku-5-5",
-  deepseek: "e.g. deepseek-flash",
-  ollama: "e.g. translategemma:12b",
+  openai: "gpt-6-luna",
+  claude: "claude-haiku-5-5",
+  deepseek: "deepseek-flash",
+  ollama: "translategemma:12b",
 };
 const profiles = new Map<string, ProfileView>();
 const sidebarState = window.createSubTandemSidebarState();
-const profileCardInteractions = new ProfileCardInteractionCoordinator();
-const profileDeleteDialogInteractions = new ProfileDeleteDialogInteractionCoordinator();
+let renderedUiAuthority: string | null = null;
+let uiSnapshotReady = false;
+let pendingSupportRequestId: string | null = null;
+let supportOpenFailed = false;
+const retiredUiAuthorities = new Set<string>();
+const pendingSidebarEvents: Array<() => void> = [];
+function onBusinessMessage(name: string, callback: (raw: unknown) => void): void {
+  window.iina?.onMessage(name, (raw: unknown) => {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return;
+    const value = raw as { authorityId?: unknown; authority?: { authorityId?: unknown } };
+    const authorityId = value.authorityId ?? value.authority?.authorityId;
+    const apply = (): void => {
+      if (typeof authorityId === "string" && authorityId !== renderedUiAuthority) return;
+      callback(raw);
+    };
+    if (!uiSnapshotReady) {
+      if (pendingSidebarEvents.length >= 128) pendingSidebarEvents.shift();
+      pendingSidebarEvents.push(apply);
+    } else apply();
+  });
+}
+const profileCardInteractions = new window.ProfileCardInteractionCoordinator();
+const profileDeleteDialogInteractions = new window.ProfileDeleteDialogInteractionCoordinator();
 const profileRows = new Map<string, HTMLElement>();
 let newProfileRow: HTMLElement | null = null;
 const pendingOperations = new Set<string>();
@@ -231,7 +272,10 @@ function renderCredentialVisibility(): void {
   const masked = sidebarState.snapshot.drawer.masked;
   providerKey.type = masked ? "password" : "text";
   toggleProviderKey.disabled = providerKey.value.length === 0;
-  toggleProviderKey.setAttribute("aria-label", masked ? "Show API key" : "Hide API key");
+  toggleProviderKey.setAttribute(
+    "aria-label",
+    localizedText(masked ? uiFeedback("sidebar.showAPIKey") : uiFeedback("sidebar.hideAPIKey")),
+  );
   toggleProviderKey.setAttribute("aria-pressed", String(!masked));
 }
 toggleProviderKey.addEventListener("pointerdown", (event) => {
@@ -449,14 +493,18 @@ function renderDeleteDialog(): void {
     if (!profileDeleteBackdrop.hidden) closeDeleteDialog(true);
     return;
   }
-  profileDeleteTitle.textContent = `Delete ${confirmation.displayName}?`;
-  profileDeleteDescription.textContent = "The profile will be permanently deleted.";
+  profileDeleteTitle.textContent = localizedText(
+    uiFeedback("profile.deleteTitle", { name: confirmation.displayName }),
+  );
+  profileDeleteDescription.textContent = localizedText(
+    uiFeedback("sidebar.theProfileWillBePermanentlyDeleted"),
+  );
   const deleting = confirmation.phase === "deleting";
   confirmProfileDeleteButton.disabled = deleting;
   cancelProfileDeleteButton.disabled = deleting;
   confirmProfileDeleteButton.setAttribute("aria-busy", String(deleting));
   profileDeleteStatus.dataset.state = deleting ? "busy" : "";
-  profileDeleteStatus.textContent = deleting ? "Deleting…" : "";
+  profileDeleteStatus.textContent = localizedText(deleting ? uiFeedback("sidebar.deleting") : "");
   if (profileDeleteBackdrop.hidden) {
     setDeleteDialogBackgroundShielded(true);
     profileDeleteBackdrop.hidden = false;
@@ -494,14 +542,15 @@ function renderOverlayPosition(): void {
   );
   translationPositionStatus.dataset.state =
     state.feedback === "saved" ? "success" : state.feedback === "error" ? "error" : "busy";
-  translationPositionStatus.textContent =
+  translationPositionStatus.textContent = localizedText(
     state.feedback === "saving"
-      ? "Saving translation position…"
+      ? uiFeedback("sidebar.savingTranslationPosition")
       : state.feedback === "saved"
-        ? "Translation position saved."
+        ? uiFeedback("sidebar.translationPositionSaved")
         : state.feedback === "error"
-          ? "Translation position could not be saved. The previous position remains active."
-          : "";
+          ? uiFeedback("sidebar.translationPositionCouldNotBeSavedThe")
+          : "",
+  );
 }
 
 function subtitleStyleInteractionId(field: SidebarSubtitleStyleField): string {
@@ -511,10 +560,30 @@ function subtitleStyleInteractionId(field: SidebarSubtitleStyleField): string {
 
 function rgbaLabel(color: SidebarRgbaColor): string {
   const alpha = Math.round((color.a / 255) * 100);
-  if (color.a === 0) return `Transparent · 0%`;
-  if (color.r === 255 && color.g === 255 && color.b === 255) return `White · ${alpha}%`;
-  if (color.r === 0 && color.g === 0 && color.b === 0) return `Black · ${alpha}%`;
-  return `RGBA ${color.r}, ${color.g}, ${color.b}, ${alpha}%`;
+  if (color.a === 0)
+    return localizedText(
+      uiFeedback("color.namedAlpha", {
+        color: window.subtandemLocalization.colorName("transparent"),
+        alpha: 0,
+      }),
+    );
+  if (color.r === 255 && color.g === 255 && color.b === 255)
+    return localizedText(
+      uiFeedback("color.namedAlpha", {
+        color: window.subtandemLocalization.colorName("white"),
+        alpha,
+      }),
+    );
+  if (color.r === 0 && color.g === 0 && color.b === 0)
+    return localizedText(
+      uiFeedback("color.namedAlpha", {
+        color: window.subtandemLocalization.colorName("black"),
+        alpha,
+      }),
+    );
+  return localizedText(
+    uiFeedback("color.rgba", { red: color.r, green: color.g, blue: color.b, alpha }),
+  );
 }
 
 function rgbaCss(color: SidebarRgbaColor): string {
@@ -523,29 +592,34 @@ function rgbaCss(color: SidebarRgbaColor): string {
 
 const colorControls: Record<
   SidebarSubtitleColorField,
-  { button: HTMLButtonElement; swatch: HTMLElement; label: string }
+  { button: HTMLButtonElement; swatch: HTMLElement; label: LocalizedFeedback }
 > = {
   fontColor: {
     button: fontColorButton,
     swatch: fontColorSwatch,
-    label: "Font Color",
+    label: uiFeedback("sidebar.fontColor"),
   },
   borderColor: {
     button: borderColorButton,
     swatch: borderColorSwatch,
-    label: "Border Color",
+    label: uiFeedback("sidebar.borderColor"),
   },
   backgroundColor: {
     button: backgroundColorButton,
     swatch: backgroundColorSwatch,
-    label: "Background Color",
+    label: uiFeedback("sidebar.backgroundColor"),
   },
 };
 
 function renderColorControl(field: SidebarSubtitleColorField, color: SidebarRgbaColor): void {
   const control = colorControls[field];
   control.swatch.style.setProperty("--subtitle-swatch", rgbaCss(color));
-  control.button.setAttribute("aria-label", `${control.label}: ${rgbaLabel(color)}`);
+  control.button.setAttribute(
+    "aria-label",
+    localizedText(
+      uiFeedback("color.control", { label: localizedText(control.label), color: rgbaLabel(color) }),
+    ),
+  );
 }
 
 function renderSubtitleStyle(): void {
@@ -556,12 +630,14 @@ function renderSubtitleStyle(): void {
   renderColorControl("backgroundColor", style.backgroundColor);
   fontSizeSelect.value = String(style.fontSize);
   borderWidthSelect.value = String(style.borderWidth);
-  fontButton.textContent = style.fontFamily ?? "System Default";
+  fontButton.textContent = localizedText(style.fontFamily ?? uiFeedback("sidebar.systemDefault"));
   fontBold.checked = style.bold;
   fontItalic.checked = style.italic;
-  fontStatus.textContent = state.fontResolution.fallbackActive
-    ? `${state.fontResolution.preferredFamily} is unavailable; using System Font.`
-    : "";
+  fontStatus.textContent = localizedText(
+    state.fontResolution.fallbackActive
+      ? uiFeedback("font.unavailable", { name: state.fontResolution.preferredFamily ?? "" })
+      : "",
+  );
   fontStatus.dataset.state = state.fontResolution.fallbackActive ? "error" : "";
   for (const field of ["fontColor", "borderColor", "backgroundColor"] as const) {
     const control = colorControls[field];
@@ -597,7 +673,7 @@ function renderSubtitleStyle(): void {
       ),
     );
   }
-  subtitleStyleError.textContent = state.groupError ?? "";
+  subtitleStyleError.textContent = localizedText(state.groupError ?? "");
   subtitleStyleError.dataset.state = state.groupError ? "error" : "";
 }
 
@@ -651,19 +727,19 @@ function controlForAction(
   );
 }
 
-function idleLabelForAction(actionId: string): string {
-  if (actionId === "save-profile") return "Save";
-  if (actionId === "retry-preparation") return "Retry";
-  if (actionId === "test") return "Test";
-  if (actionId === "delete") return "Delete";
-  return "";
+function idleLabelForAction(actionId: string): LocalizedFeedback | null {
+  if (actionId === "save-profile") return uiFeedback("sidebar.save");
+  if (actionId === "retry-preparation") return uiFeedback("sidebar.retry");
+  if (actionId === "test") return uiFeedback("sidebar.test");
+  if (actionId === "delete") return uiFeedback("sidebar.delete");
+  return null;
 }
 
 function setActionBusy(
   actionId: string,
   profileId: string | undefined,
   busy: boolean,
-  busyLabel = "",
+  busyLabel: LocalizedFeedback | null = null,
 ): void {
   const control = controlForAction(actionId, profileId);
   if (!control) return;
@@ -675,9 +751,7 @@ function setActionBusy(
     return;
   }
   if (control instanceof HTMLButtonElement) {
-    const label = control.querySelector<HTMLElement>(".profile-action-label");
-    if (label) label.textContent = busy ? busyLabel : idleLabelForAction(actionId);
-    else control.textContent = busy ? busyLabel : idleLabelForAction(actionId);
+    control.textContent = localizedText(busy ? busyLabel : idleLabelForAction(actionId));
   }
 }
 
@@ -710,24 +784,24 @@ function renderActiveFeedback(): void {
   ]) {
     if (status !== visibleStatus) {
       delete status.dataset.state;
-      status.textContent = "";
+      status.textContent = localizedText("");
     }
   }
   const assistiveFeedbackSignature =
     feedback?.visibility === "assistive"
-      ? `${feedback.requestId}:${feedback.phase}:${feedback.message}`
+      ? `${feedback.requestId}:${feedback.phase}:${JSON.stringify(feedback.message)}`
       : "";
   if (assistiveFeedbackSignature !== renderedAssistiveFeedbackSignature) {
-    operationAnnouncer.textContent = "";
+    operationAnnouncer.textContent = localizedText("");
     renderedAssistiveFeedbackSignature = assistiveFeedbackSignature;
   }
   if (feedback && feedback.visibility === "assistive") {
-    if (operationAnnouncer.textContent !== feedback.message)
-      operationAnnouncer.textContent = feedback.message;
+    if (operationAnnouncer.textContent !== localizedText(feedback.message))
+      operationAnnouncer.textContent = localizedText(feedback.message);
   } else if (feedback && feedback.visibility === "visible" && visibleStatus) {
     visibleStatus.dataset.state = feedback.phase;
-    if (visibleStatus.textContent !== feedback.message)
-      visibleStatus.textContent = feedback.message;
+    if (visibleStatus.textContent !== localizedText(feedback.message))
+      visibleStatus.textContent = localizedText(feedback.message);
   }
   updateSubtitleRetryControls();
 }
@@ -737,11 +811,14 @@ function renderModelFeedback(): void {
   const visibleState = state.validationError ? "error" : state.refreshState;
   if (visibleState === "idle") delete modelCatalogStatus.dataset.state;
   else modelCatalogStatus.dataset.state = visibleState;
-  modelCatalogStatus.textContent = state.validationError ?? state.refreshMessage;
+  modelCatalogStatus.textContent = localizedText(state.validationError ?? state.refreshMessage);
   refreshModelsButton.setAttribute("aria-busy", String(state.refreshState === "busy"));
 }
 
-function setModelRefreshFeedback(state: "idle" | "busy" | "success" | "error", message = ""): void {
+function setModelRefreshFeedback(
+  state: "idle" | "busy" | "success" | "error",
+  message: LocalizedFeedback | null = null,
+): void {
   sidebarState.setModelRefreshState(state, message);
   renderModelFeedback();
 }
@@ -749,7 +826,7 @@ function setModelRefreshFeedback(state: "idle" | "busy" | "success" | "error", m
 function beginOperation(
   regionId: string,
   actionId: string,
-  busyLabel: string,
+  busyLabel: LocalizedFeedback | null,
   profileId?: string,
   revision?: number,
   fixedRequestId?: string,
@@ -776,7 +853,7 @@ function beginOperation(
 
 function finishOperation(
   requestId: unknown,
-  message: string,
+  message: LocalizedFeedback | null,
   phase: Exclude<SidebarFeedbackPhase, "busy"> = "success",
   visibility?: SidebarFeedbackVisibility,
   renderFeedback = true,
@@ -841,7 +918,7 @@ function cancelPendingProfileSaveForContextChange(): void {
   sidebarState.cancelProfileSave(requestId);
   finishOperation(
     requestId,
-    "The editor changed before this save completed. Refresh the Profile list to review it.",
+    uiFeedback("sidebar.theEditorChangedBeforeThisSaveCompleted"),
     "cancelled",
   );
 }
@@ -857,7 +934,7 @@ function expireDrawerTest(): void {
   clearDrawerTestDeadline();
   const current = sidebarState.snapshot.drawer.test;
   if (!current || current.requestId !== pending.requestId || current.phase !== "testing") return;
-  const message = window.subtandemProviderTestStatusMessage({ category: "timeout" });
+  const message = window.subtandemProviderTestStatusFeedback({ category: "timeout" });
   if (
     !sidebarState.finishDrawerTest(
       current.requestId,
@@ -870,7 +947,7 @@ function expireDrawerTest(): void {
     return;
   setActionBusy("test", undefined, false);
   profileTestStatus.dataset.state = "error";
-  profileTestStatus.textContent = message;
+  profileTestStatus.textContent = localizedText(message);
   credentialEditor?.close();
   window.iina?.postMessage("provider:test-cancel", envelope({ testRequestId: current.requestId }));
 }
@@ -879,7 +956,7 @@ function clearDrawerTestFeedback(): void {
   clearDrawerTestDeadline();
   setActionBusy("test", undefined, false);
   delete profileTestStatus.dataset.state;
-  profileTestStatus.textContent = "";
+  profileTestStatus.textContent = localizedText("");
 }
 
 function cancelActiveDrawerTest(): void {
@@ -926,7 +1003,10 @@ function reconcileDrawerAfterAuthority(previousTest: SidebarDrawerTestState | nu
 
 function validModelEndpoint(): boolean {
   try {
-    normalizeProviderEndpoint(providerKind.value as ProviderKind, providerEndpoint.value);
+    window.subtandemProviderEndpoint.normalizeProviderEndpoint(
+      providerKind.value as ProviderKind,
+      providerEndpoint.value,
+    );
     return true;
   } catch {
     return false;
@@ -1026,7 +1106,7 @@ function requestModels(trigger: "open" | "endpoint" | "profile" | "credential" |
       .catch(() => {
         if (pendingModelRefresh?.requestId !== requestId) return;
         pendingModelRefresh = null;
-        setModelRefreshFeedback("error", "Model refresh failed. Try again.");
+        setModelRefreshFeedback("error", uiFeedback("sidebar.modelRefreshFailedTryAgain"));
       });
     return;
   }
@@ -1045,7 +1125,7 @@ function sealDrawerOperation(
     value,
     {
       kind: providerKind.value as ProviderKind,
-      endpoint: normalizeProviderEndpoint(
+      endpoint: window.subtandemProviderEndpoint.normalizeProviderEndpoint(
         providerKind.value as ProviderKind,
         providerEndpoint.value,
       ),
@@ -1092,16 +1172,19 @@ function scheduleEndpointModelRefresh(): void {
 function renderModelControl(): void {
   const state = sidebarState.snapshot.modelControl;
   providerModelSelect.replaceChildren();
-  for (const model of state.knownModelIds) {
+  const items = [
+    ...state.knownModelIds.map((model) => ({ id: model, requestName: model })),
+    { id: "__custom__", requestName: "Custom model ID", messageKey: "sidebar.customModelID" },
+  ];
+  const modelOptions = window.subtandemLocalization.options("models", JSON.stringify(items), items);
+  const customOption = modelOptions.find(({ id }) => id === "__custom__")!;
+  const knownOptions = modelOptions.filter(({ id }) => id !== "__custom__");
+  for (const model of [customOption, ...knownOptions]) {
     const option = document.createElement("option");
-    option.value = model;
-    option.textContent = model;
+    option.value = model.id;
+    option.textContent = model.label;
     providerModelSelect.append(option);
   }
-  const custom = document.createElement("option");
-  custom.value = "__custom__";
-  custom.textContent = "Custom model ID…";
-  providerModelSelect.append(custom);
   providerModelSelect.value = state.mode === "known" ? state.value : "__custom__";
   providerModel.hidden = state.mode === "known";
   providerModel.required = state.mode === "custom";
@@ -1117,16 +1200,21 @@ function setModelContext(value: string, catalog?: { contextKey: string; models: 
 
 function updateRequestUrl(): void {
   const kind = providerKind.value as ProviderKind;
-  const path = providerApiPath(kind, "translation");
-  document.querySelector<HTMLElement>("#endpoint-hint")!.textContent =
-    `Enter a HTTP(S) ${providerLabels[kind]} API root. Translation requests append ${path}.`;
+  const path = window.subtandemProviderEndpoint.providerApiPath(kind, "translation");
+  document.querySelector<HTMLElement>("#endpoint-hint")!.textContent = localizedText(
+    uiFeedback("endpoint.help", { service: providerLabels[kind], path }),
+  );
   let actualRequest = "—";
   try {
-    actualRequest = providerApiUrl(kind, providerEndpoint.value, "translation");
+    actualRequest = window.subtandemProviderEndpoint.providerApiUrl(
+      kind,
+      providerEndpoint.value,
+      "translation",
+    );
   } catch {
     actualRequest = "—";
   }
-  requestUrl.textContent = `Actual request:\n${actualRequest}`;
+  requestUrl.textContent = localizedText(uiFeedback("endpoint.request", { url: actualRequest }));
 }
 
 function selectedServiceTypeLabel(): string {
@@ -1140,11 +1228,15 @@ function applyProviderKind(): void {
   providerProxyMode.value = providerDrafts[kind].proxyMode;
   profileName.value = sidebarState.snapshot.profileName.value;
   document.querySelector<HTMLElement>("#credential-row")!.hidden = false;
-  document.querySelector<HTMLElement>("#model-hint")!.textContent =
-    "Refresh the catalog or enter the exact model ID. Low-effort models are recommended.";
-  providerModel.placeholder = modelPlaceholders[kind];
-  document.querySelector<HTMLElement>("#credential-hint")!.textContent =
-    "Enter an API key if the service requires one.";
+  document.querySelector<HTMLElement>("#model-hint")!.textContent = localizedText(
+    uiFeedback("sidebar.refreshTheCatalogOrEnterTheExact"),
+  );
+  providerModel.placeholder = localizedText(
+    uiFeedback("model.example", { model: modelPlaceholders[kind] }),
+  );
+  document.querySelector<HTMLElement>("#credential-hint")!.textContent = localizedText(
+    uiFeedback("sidebar.enterAnAPIKeyIfTheService"),
+  );
   setModelContext(providerDrafts[kind].model);
   updateRequestUrl();
 }
@@ -1214,7 +1306,7 @@ function clearProfileDrawer(focus = true): void {
   editingProfile = null;
   draftCredentialEpoch += 1;
   clearCredentialInput();
-  profileTestStatus.textContent = "";
+  profileTestStatus.textContent = localizedText("");
   sidebarState.setProfileContext({ credentialDisplayProfileId: null });
   profileDrawer.hidden = true;
   profileDrawer.removeAttribute("aria-labelledby");
@@ -1286,9 +1378,9 @@ function loadEditor(profile: ProfileView, preservePendingSave = false): void {
   };
   applyProviderKind();
   setModelContext(profile.model ?? "", profile.modelCatalog);
-  providerKey.placeholder = "Optional";
+  providerKey.placeholder = localizedText(uiFeedback("sidebar.optional"));
   deleteProfileButton.hidden = false;
-  saveProfileButton.textContent = "Save";
+  saveProfileButton.textContent = localizedText(uiFeedback("sidebar.save"));
   mountProfileDrawer();
   startEditorCredentialLoad();
   requestModels("open");
@@ -1318,9 +1410,9 @@ function openNewProfile(): void {
   sidebarState.setProfileContext({ credentialDisplayProfileId: null });
   sidebarState.resetProfileName("OpenAI");
   profileName.value = sidebarState.snapshot.profileName.value;
-  providerKey.placeholder = "Optional";
+  providerKey.placeholder = localizedText(uiFeedback("sidebar.optional"));
   deleteProfileButton.hidden = true;
-  saveProfileButton.textContent = "Save";
+  saveProfileButton.textContent = localizedText(uiFeedback("sidebar.save"));
   applyProviderKind();
   renderProfiles([...profiles.values()]);
   profileName.focus();
@@ -1367,7 +1459,9 @@ enabled.addEventListener("change", () => {
   const requestId = beginOperation(
     "translation-toggle",
     "translation",
-    enabled.checked ? "Enabling translation…" : "Disabling translation…",
+    enabled.checked
+      ? uiFeedback("sidebar.enablingTranslation")
+      : uiFeedback("sidebar.disablingTranslation"),
   );
   window.iina?.postMessage(
     "translation:set-enabled",
@@ -1378,7 +1472,11 @@ enabled.addEventListener("change", () => {
 targetLanguage.addEventListener("change", () => {
   if (!targetLanguageHydrated || pendingLanguageSaveRequestId) return;
   if (targetLanguage.value === committedTargetLanguage) return;
-  const requestId = beginOperation("language-settings", "languages", "Saving languages…");
+  const requestId = beginOperation(
+    "language-settings",
+    "languages",
+    uiFeedback("sidebar.savingLanguages"),
+  );
   pendingLanguageSaveRequestId = requestId;
   window.iina?.postMessage(
     "defaults:save",
@@ -1520,7 +1618,11 @@ fontButton.addEventListener("click", () => {
 });
 
 retrySubtitleButton.addEventListener("click", () => {
-  const requestId = beginOperation("subtitle-retry", "retry-preparation", "Retrying…");
+  const requestId = beginOperation(
+    "subtitle-retry",
+    "retry-preparation",
+    uiFeedback("sidebar.retrying"),
+  );
   window.iina?.postMessage("subtitle:retry-preparation", envelope({}, requestId));
 });
 
@@ -1531,15 +1633,13 @@ testProfileButton.addEventListener("click", () => {
   if (drawer.mode === "closed" || drawer.validity !== "current") return;
   if (!validModelEndpoint()) {
     profileTestStatus.dataset.state = "error";
-    profileTestStatus.textContent = "Enter a valid HTTP(S) API root before testing.";
+    profileTestStatus.textContent = localizedText(uiFeedback("sidebar.enterAValidHTTPSAPIRoot"));
     providerEndpoint.focus();
     return;
   }
   const model = sidebarState.snapshot.modelControl.value.trim();
   if (!model) {
-    sidebarState.setModelRequiredError(
-      "Refresh models and choose one, or enter a custom model ID before testing.",
-    );
+    sidebarState.setModelRequiredError(uiFeedback("sidebar.refreshModelsAndChooseOneOrEnter"));
     renderModelFeedback();
     providerModel.focus();
     return;
@@ -1556,7 +1656,7 @@ testProfileButton.addEventListener("click", () => {
     timer: setTimeout(expireDrawerTest, drawerTestTimeoutMs),
   };
   profileTestStatus.dataset.state = "busy";
-  profileTestStatus.textContent = "Testing…";
+  profileTestStatus.textContent = localizedText(uiFeedback("sidebar.testing"));
   setActionBusy("test", undefined, true);
   void sealDrawerOperation(enteredApiKey, "draft-test", requestId, expiresAtMs)
     .then((operation) => {
@@ -1577,13 +1677,13 @@ testProfileButton.addEventListener("click", () => {
       sidebarState.finishDrawerTest(
         requestId,
         false,
-        "Test failed. Try again.",
+        uiFeedback("sidebar.testFailedTryAgain"),
         started.drawerId,
         started.draftRevision,
       );
       clearDrawerTestFeedback();
       profileTestStatus.dataset.state = "error";
-      profileTestStatus.textContent = "Test failed. Try again.";
+      profileTestStatus.textContent = localizedText(uiFeedback("sidebar.testFailedTryAgain"));
     });
 });
 
@@ -1595,7 +1695,7 @@ saveProfileButton.addEventListener("click", async () => {
   const model = sidebarState.modelForSave();
   if (!model) {
     sidebarState.setModelRequiredError(
-      "Refresh models and choose one, or enter a custom model ID.",
+      uiFeedback("sidebar.refreshModelsAndChooseOneOrEnterACustomModelID"),
     );
     renderModelFeedback();
     providerModel.focus();
@@ -1605,7 +1705,7 @@ saveProfileButton.addEventListener("click", async () => {
   const requestId = beginOperation(
     "profile-editor",
     "save-profile",
-    editingProfile ? "Updating profile…" : "Saving profile…",
+    editingProfile ? uiFeedback("sidebar.updatingProfile") : uiFeedback("sidebar.savingProfile"),
     editingProfile?.profileId,
     editingProfile?.revision,
   );
@@ -1645,16 +1745,20 @@ saveProfileButton.addEventListener("click", async () => {
     );
     if (pendingProfileSave !== pending || pending.contextSignature !== editorContextSignature())
       return;
-    sidebarState.completeProfileSave(requestId, "");
-    finishOperation(requestId, "");
+    sidebarState.completeProfileSave(requestId, null);
+    finishOperation(requestId, null);
     pendingProfileSave = null;
     credentialEditor?.close();
     finishSuccessfulProfileSave(result.profile as ProfileView);
     window.iina?.postMessage("ui:ready", envelope({}));
   } catch {
     if (pendingProfileSave !== pending) return;
-    sidebarState.completeProfileSave(requestId, "Profile could not be saved.", false);
-    finishOperation(requestId, "Profile could not be saved.", "error");
+    sidebarState.completeProfileSave(
+      requestId,
+      uiFeedback("sidebar.profileCouldNotBeSaved"),
+      false,
+    );
+    finishOperation(requestId, uiFeedback("sidebar.profileCouldNotBeSaved"), "error");
     pendingProfileSave = null;
     credentialEditor?.close();
     setProfileSaveLocked(false);
@@ -1681,7 +1785,7 @@ confirmProfileDeleteButton.addEventListener("click", () => {
   beginOperation(
     `profile-row:${target.profileId}`,
     "delete",
-    "Deleting…",
+    uiFeedback("sidebar.deleting"),
     target.profileId,
     target.expectedRevision,
     requestId,
@@ -1807,14 +1911,14 @@ profilesElement.addEventListener("change", (event) => {
   );
 });
 
-window.iina?.onMessage("profile-activation:state", (raw: unknown) => {
+onBusinessMessage("profile-activation:state", (raw: unknown) => {
   if (!sidebarState.applyProfileAuthority(raw as SidebarProfileAuthority)) return;
   clearConfirmedProfileActivationTimeouts();
   renderedProfilesSignature = "";
   renderProfiles(sidebarState.snapshot.profiles as unknown as ProfileView[]);
 });
 
-window.iina?.onMessage("profile-activation:result", (raw: unknown) => {
+onBusinessMessage("profile-activation:result", (raw: unknown) => {
   const value = raw as SidebarProfileActivationResult;
   const timeout = profileActivationTimeouts.get(value.requestId);
   if (timeout !== undefined) {
@@ -1828,7 +1932,7 @@ window.iina?.onMessage("profile-activation:result", (raw: unknown) => {
   renderProfiles(sidebarState.snapshot.profiles as unknown as ProfileView[]);
 });
 
-window.iina?.onMessage("profile:deleted", (raw: unknown) => {
+onBusinessMessage("profile:deleted", (raw: unknown) => {
   const result = raw as { requestId?: string; profileId?: string };
   if (typeof result.requestId !== "string" || typeof result.profileId !== "string") return;
   const pendingDelete =
@@ -1838,7 +1942,7 @@ window.iina?.onMessage("profile:deleted", (raw: unknown) => {
   sidebarState.deleteSucceeded({
     requestId: result.requestId,
     profileId: result.profileId,
-    message: "Profile and saved credential deleted.",
+    message: uiFeedback("sidebar.profileAndSavedCredentialDeleted"),
   });
   if (editingProfile?.profileId === result.profileId) resetEditor();
   if (pendingDelete) setActionBusy("delete", result.profileId, false);
@@ -1848,7 +1952,7 @@ window.iina?.onMessage("profile:deleted", (raw: unknown) => {
   window.iina?.postMessage("ui:ready", envelope({}));
 });
 
-window.iina?.onMessage("provider:test-result", (raw: unknown) => {
+onBusinessMessage("provider:test-result", (raw: unknown) => {
   expireDrawerTest();
   const result = raw as {
     requestId?: string;
@@ -1873,7 +1977,7 @@ window.iina?.onMessage("provider:test-result", (raw: unknown) => {
     currentTest.draftRevision !== result.draftRevision
   )
     return;
-  const message = window.subtandemProviderTestStatusMessage({
+  const message = window.subtandemProviderTestStatusFeedback({
     ...result,
     providerKind: providerKind.value as ProviderKind,
   });
@@ -1890,10 +1994,10 @@ window.iina?.onMessage("provider:test-result", (raw: unknown) => {
   setActionBusy("test", undefined, false);
   profileTestStatus.dataset.state =
     result.ok === true ? "success" : result.code === "TEST_INVALIDATED" ? "pending" : "error";
-  profileTestStatus.textContent = message;
+  profileTestStatus.textContent = localizedText(message);
 });
 
-window.iina?.onMessage("provider:models-result", (raw: unknown) => {
+onBusinessMessage("provider:models-result", (raw: unknown) => {
   const result = raw as {
     requestId?: unknown;
     ok?: unknown;
@@ -1915,7 +2019,7 @@ window.iina?.onMessage("provider:models-result", (raw: unknown) => {
   pendingModelRefresh = null;
   if (result.ok) {
     if (!Array.isArray(result.models) || result.models.some((model) => typeof model !== "string")) {
-      setModelRefreshFeedback("error", "The model list response was incompatible.");
+      setModelRefreshFeedback("error", uiFeedback("sidebar.theModelListResponseWasIncompatible"));
       return;
     }
     const value = sidebarState.snapshot.modelControl.value;
@@ -1924,14 +2028,14 @@ window.iina?.onMessage("provider:models-result", (raw: unknown) => {
     renderModelControl();
     setModelRefreshFeedback(
       "success",
-      window.subtandemModelCatalogStatusMessage({
+      window.subtandemModelCatalogStatusFeedback({
         ok: true,
         count: sidebarState.snapshot.modelControl.knownModelIds.length,
       }),
     );
     return;
   }
-  const message = window.subtandemModelCatalogStatusMessage({
+  const message = window.subtandemModelCatalogStatusFeedback({
     ok: false,
     ...(typeof result.category === "string" ? { category: result.category } : {}),
     ...(typeof result.statusCode === "number" ? { statusCode: result.statusCode } : {}),
@@ -1940,7 +2044,7 @@ window.iina?.onMessage("provider:models-result", (raw: unknown) => {
   setModelRefreshFeedback("error", message);
 });
 
-window.iina?.onMessage("operation:result", (raw: unknown) => {
+onBusinessMessage("operation:result", (raw: unknown) => {
   const result = raw as {
     requestId?: string;
     ok?: boolean;
@@ -2000,26 +2104,26 @@ window.iina?.onMessage("operation:result", (raw: unknown) => {
     finishOperation(
       result.requestId,
       result.cancelled
-        ? "Target language was not changed."
+        ? uiFeedback("sidebar.targetLanguageWasNotChanged")
         : succeeded
-          ? "Target language saved."
-          : "Target language could not be saved. The previous target remains active.",
+          ? uiFeedback("sidebar.targetLanguageSaved")
+          : uiFeedback("sidebar.targetLanguageCouldNotBeSavedThe"),
       result.cancelled ? "cancelled" : succeeded ? "success" : "error",
       result.cancelled ? "visible" : undefined,
     );
     return;
   }
   const message = result.cancelled
-    ? "Operation cancelled. Nothing was changed."
+    ? uiFeedback("sidebar.operationCancelledNothingWasChanged")
     : result.action === "translation"
       ? enabled.checked
-        ? "Translation enabled."
-        : "Translation disabled."
+        ? uiFeedback("sidebar.translationEnabled")
+        : uiFeedback("sidebar.translationDisabled")
       : result.action === "retry-preparation"
         ? result.ok === true
-          ? "Subtitle preparation restarted."
-          : "Retry is no longer available for this subtitle."
-        : "Operation completed.";
+          ? uiFeedback("sidebar.subtitlePreparationRestarted")
+          : uiFeedback("sidebar.retryIsNoLongerAvailableForThis")
+        : uiFeedback("sidebar.operationCompleted");
   finishOperation(
     result.requestId,
     message,
@@ -2027,13 +2131,13 @@ window.iina?.onMessage("operation:result", (raw: unknown) => {
   );
 });
 
-window.iina?.onMessage("operation:error", (raw: unknown) => {
+onBusinessMessage("operation:error", (raw: unknown) => {
   const result = raw as { requestId?: string };
   const languageSaveAccepted = finishLanguageSave(result.requestId);
   if (languageSaveAccepted) {
     finishOperation(
       result.requestId,
-      "Target language could not be saved. The previous target remains active.",
+      uiFeedback("sidebar.targetLanguageCouldNotBeSavedThe"),
       "error",
     );
     return;
@@ -2044,8 +2148,8 @@ window.iina?.onMessage("operation:error", (raw: unknown) => {
   finishOperation(
     result.requestId,
     failedDelete
-      ? "The Profile could not be deleted. Review the latest Profile and try again."
-      : "The operation could not be completed. Review the service settings and try again.",
+      ? uiFeedback("sidebar.theProfileCouldNotBeDeletedReview")
+      : uiFeedback("sidebar.theOperationCouldNotBeCompletedReview"),
     "error",
   );
   if (
@@ -2092,10 +2196,23 @@ function syncProfileOverflow(article: HTMLElement): void {
       return [];
     }
     const fullText = line.textContent ?? "";
-    line.setAttribute("title", fullText);
-    return [`${["Name", "Service and model", "API root"][index]}: ${fullText}`];
+    line.setAttribute("title", localizedText(fullText));
+    return [
+      localizedText(
+        uiFeedback("profile.details", {
+          label: localizedText(
+            [
+              uiFeedback("sidebar.name"),
+              uiFeedback("sidebar.serviceAndModel"),
+              uiFeedback("sidebar.apiRoot"),
+            ][index],
+          ),
+          value: fullText,
+        }),
+      ),
+    ];
   });
-  state.description.textContent = descriptions.join("; ");
+  state.description.textContent = localizedText(descriptions.join("; "));
   if (descriptions.length) disclosure.setAttribute("aria-describedby", state.description.id);
   else disclosure.removeAttribute("aria-describedby");
 }
@@ -2104,7 +2221,7 @@ function clearProfileOverflow(article: HTMLElement): void {
   const state = profileOverflow.get(article);
   if (!state) return;
   state.observer.disconnect();
-  state.description.textContent = "";
+  state.description.textContent = localizedText("");
   article.querySelector<HTMLElement>(".profile-disclosure")!.removeAttribute("aria-describedby");
   for (const line of profileDisplayLines(article)) line.removeAttribute("title");
   profileOverflow.delete(article);
@@ -2113,7 +2230,7 @@ function clearProfileOverflow(article: HTMLElement): void {
 function createProfileRow(profile: ProfileView): HTMLElement {
   const article = document.createElement("article");
   article.className = "profile";
-  article.innerHTML = `<div class="profile-heading"><div class="profile-details profile-disclosure"><span class="disclosure-indicator" aria-hidden="true"></span><span class="profile-copy"><strong></strong><span class="profile-summary"></span><code></code></span></div><label class="switch profile-activation"><input type="checkbox"></label></div><p class="operation-status profile-operation-status" role="status" aria-live="polite"></p>`;
+  article.innerHTML = `<div class="profile-heading"><div class="profile-details profile-disclosure"><span class="disclosure-indicator" aria-hidden="true"></span><span class="profile-copy"><strong dir="auto"></strong><span class="profile-summary" dir="ltr"></span><code dir="ltr"></code></span></div><label class="switch profile-activation"><input type="checkbox"></label></div><p class="operation-status profile-operation-status" role="status" aria-live="polite"></p>`;
   const disclosure = article.querySelector<HTMLElement>(".profile-disclosure")!;
   disclosure.className = "profile-disclosure profile-details";
   disclosure.tabIndex = 0;
@@ -2138,16 +2255,23 @@ function updateProfileRow(article: HTMLElement, profile: ProfileView): void {
   article.dataset.profileId = profile.profileId;
   const disclosure = article.querySelector<HTMLElement>(".profile-disclosure")!;
   disclosure.dataset.profileId = profile.profileId;
-  disclosure.setAttribute("aria-label", `Edit ${profile.displayName}`);
+  disclosure.setAttribute(
+    "aria-label",
+    localizedText(uiFeedback("profile.edit", { name: profile.displayName })),
+  );
   disclosure.setAttribute("aria-expanded", "false");
   disclosure.setAttribute("aria-controls", panelId);
-  article.querySelector("strong")!.textContent = profile.displayName;
-  article.querySelector<HTMLElement>(".profile-summary")!.textContent =
-    `${providerLabels[profile.kind]}${profile.model ? ` · ${profile.model}` : ""}`;
-  article.querySelector("code")!.textContent = profile.endpoint;
+  article.querySelector("strong")!.textContent = localizedText(profile.displayName);
+  article.querySelector<HTMLElement>(".profile-summary")!.textContent = localizedText(
+    `${providerLabels[profile.kind]}${profile.model ? ` · ${profile.model}` : ""}`,
+  );
+  article.querySelector("code")!.textContent = localizedText(profile.endpoint);
   const activation = article.querySelector<HTMLInputElement>(".profile-activation input")!;
   activation.dataset.profileId = profile.profileId;
-  activation.setAttribute("aria-label", `Enable ${profile.displayName}`);
+  activation.setAttribute(
+    "aria-label",
+    localizedText(uiFeedback("profile.enable", { name: profile.displayName })),
+  );
   const status = article.querySelector<HTMLParagraphElement>(".profile-operation-status")!;
   status.dataset.profileId = profile.profileId;
   syncProfileOverflow(article);
@@ -2157,11 +2281,12 @@ function createNewProfileRow(): HTMLElement {
   const article = document.createElement("article");
   article.className = "profile profile-new is-editing";
   article.dataset.newProfile = "true";
-  article.innerHTML = `<div class="profile-heading"><div class="profile-details profile-disclosure"><span class="disclosure-indicator" aria-hidden="true"></span><span class="profile-copy"><strong>New profile</strong></span></div></div>`;
+  article.innerHTML = `<div class="profile-heading"><div class="profile-details profile-disclosure"><span class="disclosure-indicator" aria-hidden="true"></span><span class="profile-copy"><strong></strong></span></div></div>`;
+  article.querySelector("strong")!.textContent = localizedText(uiFeedback("sidebar.newProfile"));
   const disclosure = article.querySelector<HTMLElement>(".profile-disclosure")!;
   disclosure.tabIndex = 0;
   disclosure.setAttribute("role", "button");
-  disclosure.setAttribute("aria-label", "Close new Profile");
+  disclosure.setAttribute("aria-label", localizedText(uiFeedback("sidebar.closeNewProfile")));
   disclosure.setAttribute("aria-expanded", "true");
   disclosure.setAttribute("aria-controls", "profile-drawer-new");
   disclosure.addEventListener("click", () => clearProfileDrawer());
@@ -2232,14 +2357,15 @@ function renderDrawerAvailability(): void {
   if (conflict) {
     profileEditorStatus.dataset.conflict = "true";
     profileEditorStatus.dataset.state = "error";
-    profileEditorStatus.textContent =
-      "This Profile changed in another window. Cancel or close it, then reopen the latest version.";
+    profileEditorStatus.textContent = localizedText(
+      uiFeedback("sidebar.thisProfileChangedInAnotherWindowCancel"),
+    );
     return;
   }
   if (profileEditorStatus.dataset.conflict === "true") {
     delete profileEditorStatus.dataset.conflict;
     delete profileEditorStatus.dataset.state;
-    profileEditorStatus.textContent = "";
+    profileEditorStatus.textContent = localizedText("");
   }
 }
 
@@ -2254,7 +2380,9 @@ function renderProfileActivationControls(): void {
     const profile = profiles.get(profileId);
     input.setAttribute(
       "aria-label",
-      profile ? `Enable ${profile.displayName}` : view.accessibleName,
+      localizedText(
+        profile ? uiFeedback("profile.enable", { name: profile.displayName }) : view.accessibleName,
+      ),
     );
     input.setAttribute("aria-checked", String(view.checked));
     if (view.busy) input.setAttribute("aria-busy", "true");
@@ -2263,10 +2391,10 @@ function renderProfileActivationControls(): void {
       `.profile-operation-status[data-profile-id="${profileId}"]`,
     );
     if (status && (view.error || view.readinessMessage)) {
-      status.textContent = view.error ?? view.readinessMessage ?? "";
+      status.textContent = localizedText(view.error ?? view.readinessMessage ?? "");
       status.dataset.state = view.error ? "error" : "pending";
     } else if (status) {
-      status.textContent = "";
+      status.textContent = localizedText("");
       delete status.dataset.state;
     }
   }
@@ -2304,7 +2432,7 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
   if (emptyList) {
     const empty = existingEmpty ?? document.createElement("p");
     empty.className = "empty";
-    empty.textContent = "No profiles yet.";
+    empty.textContent = localizedText(uiFeedback("sidebar.noProfilesYet"));
     profilesElement.append(empty);
   } else existingEmpty?.remove();
   renderActiveFeedback();
@@ -2313,17 +2441,17 @@ function renderProfiles(viewProfiles: ProfileView[]): void {
   renderDeleteDialog();
 }
 
-window.iina?.onMessage("subtitle-style:state", (raw: unknown) => {
+onBusinessMessage("subtitle-style:state", (raw: unknown) => {
   if (sidebarState.applySubtitleStyleState(raw as SidebarSubtitleStyleAuthorityState))
     renderSubtitleStyle();
 });
 
-window.iina?.onMessage("subtitle-style:save-result", (raw: unknown) => {
+onBusinessMessage("subtitle-style:save-result", (raw: unknown) => {
   if (sidebarState.finishSubtitleStyleSave(raw as SidebarSubtitleStyleSaveResult))
     renderSubtitleStyle();
 });
 
-window.iina?.onMessage("subtitle-style:picker-result", (raw: unknown) => {
+onBusinessMessage("subtitle-style:picker-result", (raw: unknown) => {
   const result = raw as {
     requestId?: string;
     outcome?: "confirmed" | "cancelled" | "unchanged" | "focused" | "failed";
@@ -2336,7 +2464,7 @@ window.iina?.onMessage("subtitle-style:picker-result", (raw: unknown) => {
     pendingColorPickerRequestId = null;
     renderSubtitleStyle();
     if (session) colorControls[session.field].button.focus();
-    if (result.outcome === "unchanged") subtitleStyleError.textContent = "";
+    if (result.outcome === "unchanged") subtitleStyleError.textContent = localizedText("");
     return;
   }
   if (result.requestId !== pendingFontPickerRequestId || !result.authority) return;
@@ -2345,13 +2473,152 @@ window.iina?.onMessage("subtitle-style:picker-result", (raw: unknown) => {
   sidebarState.applySubtitleStyleState(result.authority);
   renderSubtitleStyle();
   if (result.outcome === "failed") {
-    subtitleStyleError.textContent = "The subtitle font picker is unavailable.";
+    subtitleStyleError.textContent = localizedText(
+      uiFeedback("sidebar.theSubtitleFontPickerIsUnavailable"),
+    );
     subtitleStyleError.dataset.state = "error";
   }
 });
 
+function reorderNamedOptions(): void {
+  const selectedKind = providerKind.value || "openai";
+  const services = Array.from(providerKind.options);
+  const serviceItems = services.map((option) => ({
+    id: option.value,
+    requestName: option.textContent ?? "",
+  }));
+  for (const option of window.subtandemLocalization.options(
+    "services",
+    JSON.stringify(serviceItems),
+    serviceItems,
+  )) {
+    const element = services.find((service) => service.value === option.id)!;
+    element.textContent = option.label;
+    providerKind.append(element);
+  }
+  providerKind.value = selectedKind;
+  const favorites = colorPalette.querySelector<HTMLElement>(".subtitle-color-favorites")!;
+  const colors = Array.from(favorites.querySelectorAll<HTMLButtonElement>("button[data-color-id]"));
+  const colorItems = colors.map((button) => ({
+    id: button.dataset.colorId!,
+    requestName: button.getAttribute("aria-label") ?? "",
+  }));
+  for (const option of window.subtandemLocalization.options("colors", 1, colorItems)) {
+    const element = colors.find((color) => color.dataset.colorId === option.id)!;
+    element.setAttribute("aria-label", option.label);
+    favorites.append(element);
+  }
+  renderModelControl();
+}
+
+function renderSupportEntry(): void {
+  supportLink.setAttribute("href", window.subtandemLocalization.supportPageUrl());
+  supportStatus.textContent = supportOpenFailed
+    ? localizedText(uiFeedback("support.openFailed"))
+    : "";
+  supportStatus.dataset.state = supportOpenFailed ? "error" : "";
+}
+
+supportLink.addEventListener("click", (event) => {
+  event.preventDefault();
+  if (!uiSnapshotReady || appElement.getAttribute("aria-hidden") === "true") return;
+  pendingSupportRequestId = nextRequestId();
+  supportOpenFailed = false;
+  renderSupportEntry();
+  window.iina?.postMessage("support:open", envelope({}, pendingSupportRequestId));
+});
+
+onBusinessMessage("support:open-result", (raw: unknown) => {
+  const result = raw as { requestId?: unknown; ok?: unknown };
+  if (
+    !pendingSupportRequestId ||
+    result.requestId !== pendingSupportRequestId ||
+    typeof result.ok !== "boolean"
+  )
+    return;
+  pendingSupportRequestId = null;
+  supportOpenFailed = !result.ok;
+  renderSupportEntry();
+});
+
+function renderStaticLocalization(): void {
+  for (const element of Array.from(document.querySelectorAll<HTMLElement>("[data-i18n]")))
+    element.textContent = localizedText(uiFeedback(element.dataset.i18n!));
+  for (const attribute of ["aria-label", "title", "placeholder"] as const) {
+    const dataAttribute = `data-i18n-${attribute}`;
+    for (const element of Array.from(
+      document.querySelectorAll<HTMLElement>(`[${dataAttribute}]`),
+    )) {
+      const value = localizedText(uiFeedback(element.getAttribute(dataAttribute)!));
+      element.setAttribute(attribute, value);
+      if (attribute === "placeholder" && element instanceof HTMLInputElement)
+        element.placeholder = value;
+    }
+  }
+  for (const button of Array.from(
+    colorPalette.querySelectorAll<HTMLButtonElement>("button[data-color-id]"),
+  ))
+    button.setAttribute(
+      "aria-label",
+      window.subtandemLocalization.colorName(button.dataset.colorId!),
+    );
+  subtitleColorGrid.replaceChildren();
+  populateSubtitleColorGrid();
+  reorderNamedOptions();
+  renderCredentialVisibility();
+  applyProviderKindLocalization();
+  renderSupportEntry();
+}
+
+function applyProviderKindLocalization(): void {
+  const kind = providerKind.value as ProviderKind;
+  providerModel.placeholder = localizedText(
+    uiFeedback("model.example", { model: modelPlaceholders[kind] }),
+  );
+  updateRequestUrl();
+}
+
 window.iina?.onMessage("state:update", (raw: unknown) => {
-  const view = raw as {
+  const snapshot = window.subtandemLocalization.parseSnapshot(raw);
+  if (!snapshot) return;
+  if (retiredUiAuthorities.has(snapshot.uiLanguage.authorityId)) return;
+  if (renderedUiAuthority && snapshot.uiLanguage.authorityId !== renderedUiAuthority) {
+    const authority = snapshot.profileAuthority as SidebarProfileAuthority | undefined;
+    if (!authority || authority.authorityId !== snapshot.uiLanguage.authorityId) return;
+    retiredUiAuthorities.add(renderedUiAuthority);
+    window.subtandemLocalization.clearDirectories();
+    uiSnapshotReady = false;
+    pendingSupportRequestId = null;
+    supportOpenFailed = false;
+    pendingSidebarEvents.splice(0);
+    cancelPendingProfileSaveForContextChange();
+    sidebarState.snapshot.drawer.savePhase = null;
+    resetEditor();
+    closeDeleteDialog(false);
+    pendingOperations.clear();
+    for (const timeout of profileActivationTimeouts.values()) window.clearTimeout(timeout);
+    profileActivationTimeouts.clear();
+    pendingFontPickerRequestId = null;
+    pendingColorPickerRequestId = null;
+    profiles.clear();
+    Object.assign(sidebarState.snapshot, window.createSubTandemSidebarState().snapshot);
+    renderedProfilesSignature = "";
+    renderedLanguageCatalogSignature = "";
+    lastSessionPresentationSignature = "";
+  }
+  const languageChanged =
+    renderedUiAuthority === null ||
+    window.subtandemLocalization.locale !== snapshot.uiLanguage.locale;
+  renderedUiAuthority = snapshot.uiLanguage.authorityId;
+  window.subtandemLocalization.setLocale(snapshot.uiLanguage.locale);
+  document.documentElement.lang = snapshot.uiLanguage.locale;
+  document.documentElement.dir = snapshot.uiLanguage.direction;
+  if (languageChanged) {
+    renderStaticLocalization();
+    lastSessionPresentationSignature = "";
+    renderedProfilesSignature = "";
+  }
+  const view = snapshot as {
     status?: SessionStatus;
     source?: {
       format: string;
@@ -2370,7 +2637,7 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     } | null;
     targetLanguage?: string;
     targetLanguageRevision?: number;
-    targetLanguages?: Array<{ id: string; displayName: string; order: number }>;
+    targetLanguages?: Array<{ id: string; requestName: string }>;
     overlayPosition?: SidebarOverlayPositionAuthorityState;
     subtitleStyle?: SidebarSubtitleStyleAuthorityState | null;
   };
@@ -2386,17 +2653,19 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     reconcileDrawerAfterAuthority(previousTest);
   }
   if (view.targetLanguages) {
-    const signature = JSON.stringify(view.targetLanguages);
+    const signature = JSON.stringify([window.subtandemLocalization.locale, view.targetLanguages]);
     if (signature !== renderedLanguageCatalogSignature) {
       const displayedTargetLanguage = targetLanguage.value;
       renderedLanguageCatalogSignature = signature;
       targetLanguage.replaceChildren();
-      for (const language of [...view.targetLanguages].sort(
-        (left, right) => left.order - right.order,
+      for (const language of window.subtandemLocalization.options(
+        "targets",
+        signature,
+        view.targetLanguages,
       )) {
         const option = document.createElement("option");
         option.value = language.id;
-        option.textContent = language.displayName;
+        option.textContent = language.label;
         targetLanguage.append(option);
       }
       if (
@@ -2423,7 +2692,7 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
   const sessionPresentation = window.subtandemResolveSessionPresentation(view);
   if (sessionPresentation && sessionPresentation.signature !== lastSessionPresentationSignature) {
     lastSessionPresentationSignature = sessionPresentation.signature;
-    statusMessage.textContent = sessionPresentation.text;
+    statusMessage.textContent = localizedText(sessionPresentation.message);
     statusDot.dataset.state = sessionPresentation.state;
   }
   if (view.status) enabled.checked = view.status !== "disabled";
@@ -2433,7 +2702,7 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
   if (!subtitleDetailsVisible) {
     for (const requestId of sidebarState.clearOperationRegion("subtitle-retry"))
       pendingOperations.delete(requestId);
-    subtitleRetryStatus.textContent = "";
+    subtitleRetryStatus.textContent = localizedText("");
     sourcePreparationControls.hidden = true;
     retrySubtitleButton.hidden = true;
     sourceSummary.hidden = true;
@@ -2442,21 +2711,24 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
   }
   if (sourceDetails.source && subtitleDetailsVisible) {
     sourceSummary.hidden = false;
-    document.querySelector<HTMLElement>("#source-format")!.textContent =
-      window.subtandemSubtitleFormatLabel(sourceDetails.source.format);
-    document.querySelector<HTMLElement>("#cache-size")!.textContent =
+    document.querySelector<HTMLElement>("#source-format")!.textContent = localizedText(
+      window.subtandemSubtitleFormatLabel(sourceDetails.source.format),
+    );
+    document.querySelector<HTMLElement>("#cache-size")!.textContent = localizedText(
       Number.isSafeInteger(view.cacheSize) && (view.cacheSize ?? -1) >= 0
-        ? String(view.cacheSize)
-        : "—";
-    document.querySelector<HTMLElement>("#source-cues")!.textContent =
+        ? window.subtandemLocalization.number(view.cacheSize!)
+        : "—",
+    );
+    document.querySelector<HTMLElement>("#source-cues")!.textContent = localizedText(
       Number.isSafeInteger(sourceDetails.source.cueCount) && sourceDetails.source.cueCount >= 0
-        ? String(sourceDetails.source.cueCount)
-        : "—";
+        ? window.subtandemLocalization.number(sourceDetails.source.cueCount)
+        : "—",
+    );
   } else {
     sourceSummary.hidden = true;
-    document.querySelector<HTMLElement>("#source-format")!.textContent = "";
-    document.querySelector<HTMLElement>("#cache-size")!.textContent = "";
-    document.querySelector<HTMLElement>("#source-cues")!.textContent = "";
+    document.querySelector<HTMLElement>("#source-format")!.textContent = localizedText("");
+    document.querySelector<HTMLElement>("#cache-size")!.textContent = localizedText("");
+    document.querySelector<HTMLElement>("#source-cues")!.textContent = localizedText("");
   }
   if (view.profiles) {
     const previousTest = sidebarState.snapshot.drawer.test;
@@ -2489,6 +2761,14 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
         editingProfile as unknown as SidebarStateProfile,
       ) as unknown as ProfileView;
   }
+  renderSubtitleStyle();
+  renderOverlayPosition();
+  renderModelFeedback();
+  renderActiveFeedback();
+  appElement.removeAttribute("inert");
+  appElement.removeAttribute("aria-busy");
+  uiSnapshotReady = true;
+  for (const apply of pendingSidebarEvents.splice(0)) apply();
 });
 
 window.iina?.postMessage("ui:ready", envelope({}));

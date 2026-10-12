@@ -752,6 +752,13 @@ export function parseTranslationBatchProgress(value: unknown): TranslationBatchP
   };
 }
 
+export function parseSupportOpenRequest(value: unknown): RpcEnvelope<Record<string, never>> {
+  const message = parseEnvelope(value);
+  if (!exactKeys(message.payload as Record<string, unknown>, []))
+    throw new Error("INVALID_MESSAGE");
+  return { ...message, payload: {} };
+}
+
 export function parseEnvelope(value: unknown): RpcEnvelope {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("INVALID_MESSAGE");
@@ -1423,4 +1430,161 @@ export function parseProfileSaveRequest(raw: unknown, stage: "prepare" | "commit
       frame: frame as CredentialEnvelope,
     },
   };
+}
+
+import { canonicalUiLocale, isUiLocale } from "../../shared/localization/locales.js";
+import type {
+  HostUiContext,
+  HostUiSample,
+  UiSampleFailure,
+} from "../../shared/localization/types.js";
+import {
+  hostVersionParts,
+  supportsHostUiLanguage,
+  validHostLocalization,
+} from "../adapters/iina/host-ui-context.js";
+
+const UI_SAMPLE_FAILURES: readonly UiSampleFailure[] = [
+  "legacyHost",
+  "unknownVersion",
+  "unavailable",
+  "readFailed",
+  "emptyResult",
+  "invalidResult",
+];
+
+function languageRecord(value: unknown, keys: readonly string[]): Record<string, unknown> {
+  if (
+    value === null ||
+    typeof value !== "object" ||
+    Array.isArray(value) ||
+    Object.keys(value).sort().join(",") !== [...keys].sort().join(",")
+  )
+    throw new Error("INVALID_UI_LANGUAGE_MESSAGE");
+  return value as Record<string, unknown>;
+}
+
+function languageIdentity(value: unknown): value is string {
+  return typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(value);
+}
+
+export function parseHostUiSample(value: unknown): HostUiSample {
+  const v = languageRecord(value, ["hostVersion", "preferredLocalization", "failure"]);
+  if (v.hostVersion !== null && !hostVersionParts(v.hostVersion))
+    throw new Error("INVALID_UI_LANGUAGE_SAMPLE");
+  if (v.preferredLocalization !== null && !validHostLocalization(v.preferredLocalization))
+    throw new Error("INVALID_UI_LANGUAGE_SAMPLE");
+  if (v.failure !== null && !UI_SAMPLE_FAILURES.includes(v.failure as UiSampleFailure))
+    throw new Error("INVALID_UI_LANGUAGE_SAMPLE");
+  if (v.failure === "unknownVersion") {
+    if (v.hostVersion !== null || v.preferredLocalization !== null)
+      throw new Error("INVALID_UI_LANGUAGE_SAMPLE");
+  } else {
+    if (typeof v.hostVersion !== "string") throw new Error("INVALID_UI_LANGUAGE_SAMPLE");
+    if (
+      v.failure === "legacyHost"
+        ? supportsHostUiLanguage(v.hostVersion)
+        : !supportsHostUiLanguage(v.hostVersion)
+    )
+      throw new Error("INVALID_UI_LANGUAGE_SAMPLE");
+    if (v.failure === null ? v.preferredLocalization === null : v.preferredLocalization !== null)
+      throw new Error("INVALID_UI_LANGUAGE_SAMPLE");
+  }
+  return {
+    hostVersion: v.hostVersion as string | null,
+    preferredLocalization: v.preferredLocalization as string | null,
+    failure: v.failure as UiSampleFailure | null,
+  };
+}
+
+export function parseHostUiContext(value: unknown): HostUiContext {
+  const v = languageRecord(value, [
+    "authorityId",
+    "locale",
+    "direction",
+    "hostVersion",
+    "hostLocalization",
+    "fallbackReason",
+  ]);
+  if (
+    !languageIdentity(v.authorityId) ||
+    !isUiLocale(v.locale) ||
+    v.direction !== (v.locale === "he" ? "rtl" : "ltr")
+  )
+    throw new Error("INVALID_UI_LANGUAGE_CONTEXT");
+  const unsupported = v.fallbackReason === "unsupportedLocale";
+  parseHostUiSample({
+    hostVersion: v.hostVersion,
+    preferredLocalization: v.hostLocalization,
+    failure: unsupported ? null : v.fallbackReason,
+  });
+  if (
+    (v.fallbackReason === null && canonicalUiLocale(v.hostLocalization) !== v.locale) ||
+    (unsupported && canonicalUiLocale(v.hostLocalization) !== null)
+  )
+    throw new Error("INVALID_UI_LANGUAGE_CONTEXT");
+  if (v.fallbackReason !== null && v.locale !== "en")
+    throw new Error("INVALID_UI_LANGUAGE_CONTEXT");
+  return { ...v } as unknown as HostUiContext;
+}
+
+export function parseUiLanguageGet(value: unknown): { requestId: string; sample: HostUiSample } {
+  const v = languageRecord(value, ["requestId", "sample"]);
+  if (!languageIdentity(v.requestId)) throw new Error("INVALID_UI_LANGUAGE_MESSAGE");
+  return { requestId: v.requestId, sample: parseHostUiSample(v.sample) };
+}
+
+export function parseUiLanguageState(value: unknown): {
+  requestId: string;
+  context: HostUiContext;
+} {
+  const v = languageRecord(value, ["requestId", "context"]);
+  if (!languageIdentity(v.requestId)) throw new Error("INVALID_UI_LANGUAGE_MESSAGE");
+  return { requestId: v.requestId, context: parseHostUiContext(v.context) };
+}
+
+export function parseSidebarStateUpdate(
+  value: unknown,
+): Record<string, unknown> & { uiLanguage: HostUiContext } {
+  if (value === null || typeof value !== "object" || Array.isArray(value))
+    throw new Error("INVALID_SIDEBAR_STATE");
+  const v = value as Record<string, unknown>;
+  const fields = [
+    "uiLanguage",
+    "status",
+    "cacheSize",
+    "providerError",
+    "source",
+    "sourceIssue",
+    "sourcePreparation",
+    "targetLanguage",
+    "targetLanguageRevision",
+    "targetLanguages",
+    "overlayPosition",
+    "subtitleStyle",
+    "profileListPhase",
+    "profiles",
+    "profileAuthority",
+    "selection",
+    "languageSavePending",
+  ];
+  if (Object.keys(v).some((key) => !fields.includes(key))) throw new Error("INVALID_SIDEBAR_STATE");
+  for (const field of ["cacheSize", "targetLanguageRevision"] as const)
+    if (v[field] !== undefined && typeof v[field] !== "number")
+      throw new Error("INVALID_SIDEBAR_STATE");
+  if (
+    (v.profiles !== undefined && !Array.isArray(v.profiles)) ||
+    (v.targetLanguages !== undefined && !Array.isArray(v.targetLanguages)) ||
+    (v.targetLanguage !== undefined && typeof v.targetLanguage !== "string") ||
+    (v.profileListPhase !== undefined &&
+      v.profileListPhase !== "initializing" &&
+      v.profileListPhase !== "settled") ||
+    (v.status !== undefined && typeof v.status !== "string")
+  )
+    throw new Error("INVALID_SIDEBAR_STATE");
+  const uiLanguage = parseHostUiContext(v.uiLanguage);
+  const authority = v.profileAuthority as { authorityId?: unknown } | undefined;
+  if (authority && authority.authorityId !== uiLanguage.authorityId)
+    throw new Error("INVALID_SIDEBAR_AUTHORITY");
+  return { ...v, uiLanguage };
 }

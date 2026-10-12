@@ -8,9 +8,9 @@ interface ProviderTestStatus {
 }
 
 interface Window {
-  subtandemServiceFailureMessage(result: ProviderTestStatus): string | null;
-  subtandemProviderTestStatusMessage(result: ProviderTestStatus): string;
-  subtandemModelCatalogStatusMessage(result: ModelCatalogStatus): string;
+  subtandemServiceFailureFeedback(result: ProviderTestStatus): LocalizedFeedback | null;
+  subtandemProviderTestStatusFeedback(result: ProviderTestStatus): LocalizedFeedback | null;
+  subtandemModelCatalogStatusFeedback(result: ModelCatalogStatus): LocalizedFeedback | null;
 }
 
 interface ModelCatalogStatus {
@@ -21,47 +21,78 @@ interface ModelCatalogStatus {
   credentialSource?: "saved" | "entered" | "none";
 }
 
-function providerTestStatusMessage(result: ProviderTestStatus): string {
-  if (result.ok) return "Test passed";
+function providerTestStatusFeedback(result: ProviderTestStatus): LocalizedFeedback | null {
+  if (result.ok)
+    return (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+      "sidebar.testPassed",
+    );
   if (result.code === "TEST_INVALIDATED")
-    return "This test is no longer current. Review the Profile and test again.";
+    return (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+      "sidebar.thisTestIsNoLongerCurrentReview",
+    );
   switch (result.userAction) {
     case "RESTART_IINA":
-      return "The secure transport helper is unavailable. Restart IINA and test again.";
+      return (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+        "sidebar.theSecureTransportHelperIsUnavailableRestart",
+      );
     case "CHECK_INSTALLATION":
-      return "The bundled transport helper could not be found. Re-link or reinstall the SubTandem plugin, then restart IINA.";
+      return (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+        "sidebar.theBundledTransportHelperCouldNotBe",
+      );
   }
   return (
-    (globalThis as typeof globalThis & Window).subtandemServiceFailureMessage({
+    (globalThis as typeof globalThis & Window).subtandemServiceFailureFeedback({
       ...result,
       ...(result.code === undefined ? {} : { providerCode: result.code }),
-    }) ?? ""
+    }) ?? null
   );
 }
 
-(globalThis as typeof globalThis & Window).subtandemProviderTestStatusMessage =
-  providerTestStatusMessage;
+(globalThis as typeof globalThis & Window).subtandemProviderTestStatusFeedback =
+  providerTestStatusFeedback;
 
-function modelCatalogStatusMessage(result: ModelCatalogStatus): string {
+function modelCatalogStatusFeedback(result: ModelCatalogStatus): LocalizedFeedback | null {
   if (result.ok) {
     const count = typeof result.count === "number" ? result.count : 0;
-    if (count === 0) return "No models were returned. Custom model ID remains available.";
-    return `${count} ${count === 1 ? "model" : "models"} available.`;
+    if (count === 0)
+      return (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+        "sidebar.noModelsWereReturnedCustomModelID",
+      );
+    return (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+      "models.available",
+      { count },
+    );
   }
   if (result.category === "authentication") {
     if (result.credentialSource === "entered")
-      return "Model refresh failed. Check the entered API key.";
+      return (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+        "sidebar.modelRefreshFailedCheckTheEnteredAPI",
+      );
     if (result.credentialSource === "saved")
-      return "Model refresh failed. Check the saved API key.";
-    return "Model refresh failed. Enter an API key and refresh again.";
+      return (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+        "sidebar.modelRefreshFailedCheckTheSavedAPI",
+      );
+    return (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+      "sidebar.modelRefreshFailedEnterAnAPIKey",
+    );
   }
-  if (result.category === "timeout") return "Model refresh timed out. Try again.";
+  if (result.category === "timeout")
+    return (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+      "sidebar.modelRefreshTimedOutTryAgain",
+    );
   if (result.category === "protocol")
-    return "This service did not return a compatible model catalog. Enter an exact Custom model ID.";
+    return (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+      "sidebar.thisServiceDidNotReturnACompatible",
+    );
   if (typeof result.statusCode === "number")
-    return `Model refresh failed with HTTP ${result.statusCode}. Check the API root.`;
-  return "Model refresh failed. Check the API root and Network route.";
+    return (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+      "models.httpFailure",
+      { statusCode: result.statusCode },
+    );
+  return (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.modelRefreshFailedCheckTheAPIRoot",
+  );
 }
 
-(globalThis as typeof globalThis & Window).subtandemModelCatalogStatusMessage =
-  modelCatalogStatusMessage;
+(globalThis as typeof globalThis & Window).subtandemModelCatalogStatusFeedback =
+  modelCatalogStatusFeedback;

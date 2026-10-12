@@ -3,6 +3,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     environment: "node",
+    setupFiles: ["tests/helpers/localization-setup.ts"],
     fileParallelism: false,
     include: ["tests/{unit,contract,integration,security}/**/*.test.ts"],
     coverage: {

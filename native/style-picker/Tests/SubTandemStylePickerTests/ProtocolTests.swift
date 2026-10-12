@@ -18,24 +18,24 @@ func checkThrows(_ message: String, _ operation: () throws -> Void) throws {
 }
 
 func runProtocolTests() throws {
-    let frame = ReadyFrame(port: 49_152, token: "opaque-token", createdAtMs: 10_000)
+    let frame = ReadyFrame(port: 49_152, token: "opaque-token", uiLocale: .en, createdAtMs: 10_000)
     let object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(frame)) as? [String: Any]
     try check(
-        Set(object?.keys.map { $0 } ?? []) == Set(["type", "protocolVersion", "port", "token", "createdAtMs"]),
+        Set(object?.keys.map { $0 } ?? []) == Set(["type", "protocolVersion", "port", "token", "createdAtMs", "uiLocale"]),
         "ready keys"
     )
     try check(object?["type"] as? String == "ready", "ready type")
-    try check(object?["protocolVersion"] as? Int == 1, "ready version")
+    try check(object?["protocolVersion"] as? Int == 2, "ready version")
     try check(object?["port"] as? Int == 49_152, "ready port")
     try check(object?["token"] as? String == "opaque-token", "ready token")
     try check(object?["createdAtMs"] as? Int == 10_000, "ready freshness")
     let daemonArguments = try DetachedBootstrap.daemonArguments(
-        ["--ready-file", "/private/.ready/style-picker-test.json"],
+        ["--ready-file", "/private/.ready/style-picker-test.json", "--ui-locale", "en", "-AppleLanguages", "(en)"],
         parentPID: 123
     )
     try check(
         daemonArguments == [
-            "serve", "--ready-file", "/private/.ready/style-picker-test.json", "--parent-pid", "123",
+            "serve", "--ready-file", "/private/.ready/style-picker-test.json", "--ui-locale", "en", "-AppleLanguages", "(en)", "--parent-pid", "123",
         ],
         "bootstrap must pass the real parent PID to serve mode"
     )
@@ -96,6 +96,8 @@ struct StylePickerTestMain {
     static func main() throws {
         try runProtocolTests()
         try runFontPickerTests()
+        try runFontCatalogTests()
+        try runLocalizationTests()
         try runColorPickerTests()
     }
 }

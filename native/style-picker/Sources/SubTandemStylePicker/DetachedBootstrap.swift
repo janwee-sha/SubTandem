@@ -11,6 +11,7 @@ enum DetachedBootstrapError: Error {
 enum DetachedBootstrap {
     static func daemonArguments(_ arguments: [String], parentPID: Int32) throws -> [String] {
         guard parentPID > 1 else { throw DetachedBootstrapError.invalidParent }
+        _ = try PickerArguments.parse(["launch"] + arguments)
         return ["serve"] + arguments + ["--parent-pid", String(parentPID)]
     }
 

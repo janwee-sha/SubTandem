@@ -251,7 +251,11 @@ export class SubtitleStyleFollower {
     }
     if (next.stateRevision < this.current.stateRevision) return false;
     if (next.stateRevision === this.current.stateRevision) {
-      if (JSON.stringify(next) !== JSON.stringify(this.current))
+      const expected =
+        next.phase === "snapshot"
+          ? { ...this.current, phase: "snapshot", changedField: null }
+          : this.current;
+      if (JSON.stringify(next) !== JSON.stringify(expected))
         throw new Error("CONFLICTING_SUBTITLE_STYLE_STATE");
       return true;
     }

@@ -1,40 +1,24 @@
-import { createHash } from "node:crypto";
+import baseline from "../fixtures/localization/business-values.json";
 import { describe, expect, it } from "vitest";
 import {
   getProviderLanguageLabel,
+  getTargetLanguageDirection,
   getTargetLanguage,
   isTargetLanguageId,
   TARGET_LANGUAGES,
 } from "../../src/domain/target-languages.js";
 
 describe("target language catalog", () => {
-  it("contains the exact ordered 156-item identity set", () => {
+  it("contains the exact 156-item business identity set without a display order", () => {
     expect(TARGET_LANGUAGES).toHaveLength(156);
-    const fields = TARGET_LANGUAGES.map(
-      ({ id, displayName, providerLabel, equivalence, order }) => ({
-        id,
-        displayName,
-        providerLabel,
-        equivalence,
-        order,
-      }),
-    );
-    expect(createHash("sha256").update(JSON.stringify(fields)).digest("hex")).toBe(
-      "44eee5f62cc86bf3804284f9bf33351113682302c947a06fb08d22eeab7dcc1a",
-    );
-    expect(TARGET_LANGUAGES.every((item) => !("detectorCode" in item))).toBe(true);
-    expect(TARGET_LANGUAGES.map((item) => item.displayName)).toEqual(
-      [...TARGET_LANGUAGES]
-        .map((item) => item.displayName)
-        .sort((left, right) => (left < right ? -1 : left > right ? 1 : 0)),
-    );
-    expect(TARGET_LANGUAGES.map((item) => item.order)).toEqual(
-      Array.from({ length: 156 }, (_, index) => index + 1),
-    );
-    for (const field of ["id", "displayName", "providerLabel"] as const)
+    expect(TARGET_LANGUAGES).toEqual(baseline.targetLanguages);
+    expect(
+      TARGET_LANGUAGES.every(
+        (item) => !("displayName" in item) && !("order" in item) && !("detectorCode" in item),
+      ),
+    ).toBe(true);
+    for (const field of ["id", "requestName", "providerLabel"] as const)
       expect(new Set(TARGET_LANGUAGES.map((item) => item[field])).size).toBe(156);
-    expect(TARGET_LANGUAGES[0]).toMatchObject({ id: "ab", displayName: "Abkhazian" });
-    expect(TARGET_LANGUAGES.at(-1)).toMatchObject({ id: "zu", displayName: "Zulu" });
   });
 
   it("keeps explicit variants and named edge identities distinct", () => {
@@ -42,13 +26,28 @@ describe("target language catalog", () => {
     expect(getTargetLanguage("zh-Hant")).toMatchObject({ equivalence: "exact-script" });
     expect(getTargetLanguage("pt")).toMatchObject({ equivalence: "base" });
     expect(getTargetLanguage("pt-PT")).toMatchObject({ equivalence: "exact-region" });
-    expect(getTargetLanguage("gaa")?.displayName).toBe("Ga");
-    expect(getTargetLanguage("kri")?.displayName).toBe("Krio");
+    expect(getTargetLanguage("gaa")?.requestName).toBe("Ga");
+    expect(getTargetLanguage("kri")?.requestName).toBe("Krio");
   });
 
   it("validates members and derives stable provider labels", () => {
     expect(isTargetLanguageId("fil")).toBe(true);
     expect(isTargetLanguageId("tl")).toBe(false);
     expect(getProviderLanguageLabel("pt-PT")).toBe("Portuguese (Portugal) [pt-PT]");
+  });
+});
+
+describe("target language reading direction", () => {
+  it("uses RTL for every supported default RTL script and LTR for the rest", () => {
+    const rtlIds = ["ar", "dv", "fa", "he", "ps", "sd", "ug", "ur", "yi"];
+    expect(
+      TARGET_LANGUAGES.filter((item) => getTargetLanguageDirection(item.id) === "rtl")
+        .map((item) => item.id)
+        .sort(),
+    ).toEqual([...rtlIds].sort());
+    for (const item of TARGET_LANGUAGES) {
+      expect(getTargetLanguageDirection(item.id)).toBe(rtlIds.includes(item.id) ? "rtl" : "ltr");
+    }
+    expect(getTargetLanguageDirection("unknown")).toBe("ltr");
   });
 });

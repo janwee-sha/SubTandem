@@ -1,3 +1,4 @@
+import type { TargetLanguageDirection } from "../../domain/target-languages.js";
 import { parseOverlayReady } from "../../domain/messages.js";
 import {
   DEFAULT_OVERLAY_POSITION,
@@ -35,6 +36,7 @@ export class WebViewTranslationOverlay {
   private lifecycleId: string | null = null;
   private renderRevision = 0;
   private lines: string[] | null = null;
+  private direction: TargetLanguageDirection = "ltr";
   private position = DEFAULT_OVERLAY_POSITION;
   private style = cloneSubtitleTextStyle(DEFAULT_SUBTITLE_TEXT_STYLE);
   private region: OverlayRegion = {
@@ -60,7 +62,7 @@ export class WebViewTranslationOverlay {
     }
   }
 
-  show(lines: readonly string[]): void {
+  show(lines: readonly string[], direction: TargetLanguageDirection = "ltr"): void {
     const current = lines.flatMap((line) => line.split(/\r\n|\r|\n/));
     if (!current.some((line) => line.trim())) {
       this.clear();
@@ -68,6 +70,7 @@ export class WebViewTranslationOverlay {
     }
     this.renderRevision += 1;
     this.lines = current;
+    this.direction = direction;
     if (this.ready) this.post("overlay:render", this.renderPayload());
   }
 
@@ -175,7 +178,7 @@ export class WebViewTranslationOverlay {
   }
 
   private renderPayload() {
-    return { ...this.layoutPayload(), lines: [...this.lines!] };
+    return { ...this.layoutPayload(), lines: [...this.lines!], direction: this.direction };
   }
 
   private post(name: string, data: unknown): void {

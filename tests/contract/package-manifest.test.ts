@@ -13,9 +13,9 @@ describe("IINA package manifest", () => {
     expect(manifest).not.toHaveProperty("global");
     expect(manifest.permissions).toEqual(["network-request", "file-system", "video-overlay"]);
     expect(manifest.permissionDescriptions).not.toHaveProperty("show-alert");
-    expect(manifest.version).toBe("0.2.1");
+    expect(manifest.version).toBe("0.3.0");
     expect(manifest.ghRepo).toBe("janwee-sha/SubTandem");
-    expect(manifest.ghVersion).toBe(2001);
+    expect(manifest.ghVersion).toBe(3000);
   });
 
   it("declares the product description without temporary display files", () => {
@@ -156,7 +156,7 @@ describe("IINA package manifest", () => {
       "THIRD_PARTY_NOTICES.txt",
       "dist/native/subtandem-transport",
       "dist/native/subtandem-subtitle-extractor",
-      "dist/native/subtandem-style-picker",
+      "dist/native/SubTandemStylePicker.app/Contents/MacOS/subtandem-style-picker",
     ]) {
       expect(`${verify}\n${pack}`).toContain(required);
     }
@@ -200,8 +200,11 @@ describe("IINA package manifest", () => {
     expect(nativeTests).toContain("ColorPickerTests.swift");
     expect(nativeBuild).toContain('STYLE_PICKER_PACKAGE="$ROOT_DIR/native/style-picker"');
     expect(nativeBuild).toContain("subtandem-style-picker");
-    expect(verify).toContain("dist/native/subtandem-style-picker");
-    expect(pack).toContain("dist/native/subtandem-style-picker");
+    expect(verify).toContain("SubTandemStylePicker.app");
+    expect(verify).toContain("Contents/MacOS/subtandem-style-picker");
+    expect(pack).toContain(
+      "dist/native/SubTandemStylePicker.app/Contents/MacOS/subtandem-style-picker",
+    );
     expect(pack).toMatch(/\^native\//);
   });
 

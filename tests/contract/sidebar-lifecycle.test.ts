@@ -1,8 +1,11 @@
 import { readFileSync, readdirSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
+import { createLocalizer } from "../../ui/localization.js";
+import en from "../../shared/localization/catalogs/en.json";
 import { parseRetrySubtitlePreparation } from "../../src/domain/messages.js";
 
+const localizer = createLocalizer("en");
 await import("../../ui/sidebar-state.js");
 await import("../../ui/service-failure-message.js");
 await import("../../ui/session-status.js");
@@ -61,7 +64,7 @@ describe("IINA sidebar lifecycle contract", () => {
   it("updates stable Profile rows and mounts one editor only in the active row", () => {
     const renderStart = sidebarSource.indexOf("function renderProfiles");
     const renderEnd = sidebarSource.indexOf(
-      'window.iina?.onMessage("subtitle-style:state"',
+      'onBusinessMessage("subtitle-style:state"',
       renderStart,
     );
     const renderSource = sidebarSource.slice(renderStart, renderEnd);
@@ -162,8 +165,11 @@ describe("IINA sidebar lifecycle contract", () => {
     const testStart = sidebarSource.indexOf('testProfileButton.addEventListener("click"');
     const testEnd = sidebarSource.indexOf('saveProfileButton.addEventListener("click"', testStart);
     const testHandler = sidebarSource.slice(testStart, testEnd);
-    const resultStart = sidebarSource.indexOf('onMessage("provider:test-result"');
-    const resultEnd = sidebarSource.indexOf('onMessage("provider:models-result"', resultStart);
+    const resultStart = sidebarSource.indexOf('onBusinessMessage("provider:test-result"');
+    const resultEnd = sidebarSource.indexOf(
+      'onBusinessMessage("provider:models-result"',
+      resultStart,
+    );
     const resultHandler = sidebarSource.slice(resultStart, resultEnd);
     const deleteStart = sidebarSource.indexOf('deleteProfileButton.addEventListener("click"');
     const confirmStart = sidebarSource.indexOf(
@@ -174,8 +180,10 @@ describe("IINA sidebar lifecycle contract", () => {
 
     expect(testHandler).toContain("sidebarState.beginDrawerTest(requestId)");
     expect(testHandler).toContain("if (!started) return");
-    expect(testHandler).toContain('profileTestStatus.textContent = "Testing…"');
-    expect(sidebarSource.match(/Testing…/g)).toHaveLength(1);
+    expect(testHandler).toContain(
+      'profileTestStatus.textContent = localizedText(uiFeedback("sidebar.testing"))',
+    );
+    expect(testHandler.match(/uiFeedback\("sidebar\.testing"\)/g)).toHaveLength(1);
     expect(resultHandler).toContain("currentTest.requestId !== result.requestId");
     expect(resultHandler).toContain("currentTest.drawerId !== result.drawerId");
     expect(resultHandler).toContain("currentTest.draftRevision !== result.draftRevision");
@@ -185,12 +193,17 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(sidebarSource).toContain("reconcileDrawerAfterAuthority(previousTest)");
     expect(sidebarSource).toContain('window.addEventListener("pagehide"');
     expect(openDeleteHandler).not.toContain("cancelActiveDrawerTest");
-    expect(resultHandler.match(/profileTestStatus\.textContent = message/g)).toHaveLength(1);
+    expect(
+      resultHandler.match(/profileTestStatus\.textContent = localizedText\(message\)/g),
+    ).toHaveLength(1);
   });
 
   it("clears Test ownership for every drawer invalidation without creating another result node", () => {
-    const resultStart = sidebarSource.indexOf('onMessage("provider:test-result"');
-    const resultEnd = sidebarSource.indexOf('onMessage("provider:models-result"', resultStart);
+    const resultStart = sidebarSource.indexOf('onBusinessMessage("provider:test-result"');
+    const resultEnd = sidebarSource.indexOf(
+      'onBusinessMessage("provider:models-result"',
+      resultStart,
+    );
     const resultHandler = sidebarSource.slice(resultStart, resultEnd);
     const closeStart = sidebarSource.indexOf("function clearProfileDrawer");
     const closeEnd = sidebarSource.indexOf("function openProfileDrawer", closeStart);
@@ -253,7 +266,7 @@ describe("IINA sidebar lifecycle contract", () => {
     const readyEnd = mainSource.indexOf('runtime.sidebar.onMessage("ui:poll"', readyStart);
     const readySource = mainSource.slice(readyStart, readyEnd);
     expect(readySource).not.toContain("provider:models");
-    expect(sidebarSource).toContain('onMessage("provider:models-result"');
+    expect(sidebarSource).toContain('onBusinessMessage("provider:models-result"');
   });
 
   it("lets the live webview request state instead of posting from the player timer", () => {
@@ -345,20 +358,20 @@ describe("IINA sidebar lifecycle contract", () => {
     expect(handlerSource).toContain('queueSidebarMessage("profile:deleted"');
     expect(globalSource).toContain("publishProfileAuthority()");
     expect(sidebarSource).toContain("deleteSucceeded");
-    expect(sidebarSource).toContain('onMessage("profile:deleted"');
+    expect(sidebarSource).toContain('onBusinessMessage("profile:deleted"');
     expect(sidebarSource).toContain('setActionBusy("delete", result.profileId, false)');
   });
 
   it("keeps request-correlated operation feedback separate from session polling", () => {
     expect(sidebarSource).toContain("pendingOperations");
-    expect(sidebarSource).toContain('onMessage("operation:result"');
+    expect(sidebarSource).toContain('onBusinessMessage("operation:result"');
     expect(sidebarSource).toContain("requestId");
     expect(sidebarSource).toContain("aria-busy");
   });
 
   it("settles only the matching target-language save and rolls failures back", () => {
-    const resultStart = sidebarSource.indexOf('onMessage("operation:result"');
-    const errorStart = sidebarSource.indexOf('onMessage("operation:error"', resultStart);
+    const resultStart = sidebarSource.indexOf('onBusinessMessage("operation:result"');
+    const errorStart = sidebarSource.indexOf('onBusinessMessage("operation:error"', resultStart);
     const stateStart = sidebarSource.indexOf('onMessage("state:update"', errorStart);
     const resultSource = sidebarSource.slice(resultStart, errorStart);
     const errorSource = sidebarSource.slice(errorStart, stateStart);
@@ -375,8 +388,8 @@ describe("IINA sidebar lifecycle contract", () => {
   });
 
   it("keeps a pending candidate across stale snapshots and ignores late or duplicate results", () => {
-    const resultStart = sidebarSource.indexOf('onMessage("operation:result"');
-    const errorStart = sidebarSource.indexOf('onMessage("operation:error"', resultStart);
+    const resultStart = sidebarSource.indexOf('onBusinessMessage("operation:result"');
+    const errorStart = sidebarSource.indexOf('onBusinessMessage("operation:error"', resultStart);
     const stateStart = sidebarSource.indexOf('onMessage("state:update"', errorStart);
     const stateSource = sidebarSource.slice(stateStart);
 
@@ -453,7 +466,7 @@ describe("IINA sidebar lifecycle contract", () => {
       "Subtitle preparation timed out. Playback continues.",
       "Subtitle preparation failed. Playback continues.",
     ])
-      expect(sessionStatusSource).toContain(text);
+      expect(Object.values(en.messages)).toContain(text);
     expect(sidebarSource).toContain('postMessage("subtitle:retry-preparation"');
     expect(sidebarSource).toContain("canRetry");
     expect(mainSource).toContain('runtime.sidebar.onMessage("subtitle:retry-preparation"');
@@ -468,9 +481,13 @@ describe("IINA sidebar lifecycle contract", () => {
     const stateStart = sidebarSource.indexOf('window.iina?.onMessage("state:update"');
     const stateHandler = sidebarSource.slice(stateStart);
 
-    expect(sessionStatusSource).toContain(
-      'unsupportedType: "Subtitle type not supported. Select a text subtitle in IINA."',
-    );
+    expect(
+      globalThis.subtandemLocalization.feedback(
+        globalThis.subtandemResolveSessionPresentation({
+          sourcePreparation: { state: "unsupportedType", canRetry: false },
+        }).message,
+      ),
+    ).toBe("Subtitle type not supported. Select a text subtitle in IINA.");
     expect(sessionStatusSource).not.toContain(
       "This subtitle type is not supported. Select a text subtitle in IINA.",
     );
@@ -478,7 +495,9 @@ describe("IINA sidebar lifecycle contract", () => {
       "sessionPresentation.signature !== lastSessionPresentationSignature",
     );
     expect(
-      stateHandler.match(/statusMessage\.textContent = sessionPresentation\.text/g),
+      stateHandler.match(
+        /statusMessage\.textContent = localizedText\(sessionPresentation\.message\)/g,
+      ),
     ).toHaveLength(1);
     expect(sidebarHtml.match(/id="status"/g)).toHaveLength(1);
     expect(
@@ -498,9 +517,11 @@ describe("IINA sidebar lifecycle contract", () => {
       providerError: { category: "network" },
     });
 
-    expect(noService?.text).toBe("No translation service enabled. Enable one to translate.");
-    expect(reEnabled?.text).toBe("Preparing nearby translations…");
-    expect(disabled?.text).toBe("Translation is off");
+    expect(localizer.feedback(noService?.message ?? null)).toBe(
+      "No translation service enabled. Enable one to translate.",
+    );
+    expect(localizer.feedback(reEnabled?.message ?? null)).toBe("Preparing nearby translations…");
+    expect(localizer.feedback(disabled?.message ?? null)).toBe("Translation is off");
     expect(sessionStatusSource).not.toContain("Enable and test a translation service");
     expect(sidebarHtml.match(/id="status"/g)).toHaveLength(1);
     expect(sidebarSource).toContain(
@@ -543,10 +564,9 @@ describe("IINA sidebar lifecycle contract", () => {
   });
 
   it("renders Session failures through one safe presentation projection", () => {
-    expect(sidebarHtml).toContain('<script src="./session-status.ts"></script>');
-    expect(sidebarHtml.indexOf("./session-status.ts")).toBeLessThan(
-      sidebarHtml.indexOf("./sidebar.ts"),
-    );
+    expect(sidebarHtml).toContain('<script type="module" src="./sidebar-entry.ts"></script>');
+    const entry = readFileSync(new URL("../../ui/sidebar-entry.ts", import.meta.url), "utf8");
+    expect(entry.indexOf("./session-status.js")).toBeLessThan(entry.indexOf("./sidebar.js"));
     expect(sidebarSource).toContain("subtandemResolveSessionPresentation");
     expect(sidebarSource).not.toContain("safeProviderErrorDetail");
     expect(sidebarSource).not.toContain("HTTP ${error.statusCode}");
@@ -568,14 +588,17 @@ describe("IINA sidebar lifecycle contract", () => {
         ...competing,
         status: "disabled",
       }),
-    ).toMatchObject({ text: "Translation is off", state: "disabled" });
+    ).toMatchObject({
+      message: { messageKey: "sidebar.translationIsOff", params: {} },
+      state: "disabled",
+    });
   });
 
   it("hides stale subtitle details and Retry whenever the Session is disabled", () => {
     const state = globalThis.createSubTandemSidebarState();
     state.beginOperation(
       { requestId: "stale-retry", regionId: "subtitle-retry", actionId: "retry-preparation" },
-      "Retrying…",
+      { messageKey: "sidebar.retrying", params: {} },
     );
     expect(
       globalThis.subtandemResolveSessionSourceDetails({
@@ -731,9 +754,9 @@ describe("Subtitle Font lifecycle contract", () => {
     expect(sidebarSource).toMatch(/postMessage\(\s*"subtitle-style:picker-open"/);
     expect(sidebarSource).toContain('kind: "font"');
     expect(sidebarSource).toContain('fontButton.setAttribute("aria-busy"');
-    expect(sidebarSource).toContain('onMessage("subtitle-style:state"');
-    expect(sidebarSource).toContain('onMessage("subtitle-style:save-result"');
-    expect(sidebarSource).toContain('onMessage("subtitle-style:picker-result"');
+    expect(sidebarSource).toContain('onBusinessMessage("subtitle-style:state"');
+    expect(sidebarSource).toContain('onBusinessMessage("subtitle-style:save-result"');
+    expect(sidebarSource).toContain('onBusinessMessage("subtitle-style:picker-result"');
     expect(sidebarSource).not.toMatch(/rawError|stderr|helperToken/);
   });
 

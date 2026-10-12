@@ -1,3 +1,5 @@
+import { UiLanguageAuthority } from "./app/ui-language-authority.js";
+import { parseUiLanguageGet } from "./domain/messages.js";
 import type {
   CredentialReference,
   CredentialOwner,
@@ -500,9 +502,11 @@ const translationSessions = new Map<string, TranslationContext>();
 
 const initialAuthorityGets = new Set<string>();
 const profileInitializationDeadline = Date.now() + 15_000;
+const globalAuthorityId = localUuid();
+const uiLanguageAuthority = new UiLanguageAuthority(globalAuthorityId);
 const profileReady = (async () => {
   profileAuthority = await restoreProfileActivationAuthority({
-    authorityId: localUuid(),
+    authorityId: globalAuthorityId,
     profiles,
     store: profileStateStore,
     createCommitId: localUuid,
@@ -528,6 +532,19 @@ function requestId(raw: unknown): string {
 }
 
 const globalMailbox = new GlobalMailbox(new IinaGlobalMailboxFileStore(iina.file));
+globalMailbox.onMessage("ui-language:get", (raw: unknown, playerId?: string) => {
+  if (!playerId || !globalMailbox.isRegistered(playerId)) return;
+  try {
+    const message = parseUiLanguageGet(raw);
+    const context = uiLanguageAuthority.resolve(message.sample);
+    globalMailbox.postMessage(playerId, "ui-language:state", {
+      requestId: message.requestId,
+      context,
+    });
+  } catch {
+    return;
+  }
+});
 interface DraftContext {
   message: ProviderDraftRequest;
   identity: CredentialOwner;
@@ -587,6 +604,11 @@ for (const action of ["open", "confirm", "operation", "close"]) {
 }
 globalMailbox.onSessionClose((playerId, reason) => {
   const permanent = reason !== "expired";
+  if (activeStylePicker?.playerId === playerId) {
+    const session = activeStylePicker;
+    failActiveStylePicker();
+    void stylePickerClient?.cancel(session.requestId).catch(() => undefined);
+  }
   void cancelDraftRequests((owner) => owner.senderId === playerId);
   void draftRequests.releaseSender(playerId, permanent);
   credentialChannels.close(playerId);
@@ -812,6 +834,8 @@ function stylePickerLocator() {
 }
 
 async function ensureStylePickerClient(): Promise<StylePickerClient> {
+  const language = uiLanguageAuthority.context;
+  if (!language) throw new Error("STYLE_PICKER_START_FAILED");
   if (stylePickerClient) return stylePickerClient;
   if (stylePickerStartup) return stylePickerStartup;
   stylePickerStartup = (async () => {
@@ -821,7 +845,7 @@ async function ensureStylePickerClient(): Promise<StylePickerClient> {
     const session = await StylePickerProcess.bootstrap(
       new IinaStylePickerProcessLauncher(iina.utils),
       files,
-      { dataDirectory, fileDirectory: "@data" },
+      { dataDirectory, fileDirectory: "@data", uiLocale: language.locale },
       executable,
     );
     const client = new StylePickerClient(session, new IinaStylePickerHttpBridge(iina.http));
@@ -952,6 +976,7 @@ async function handleStylePickerEvent(
   client: StylePickerClient,
   event: StylePickerEvent,
 ): Promise<void> {
+  if (stylePickerClient !== client) return;
   if (event.type === "font-catalog-changed") {
     await refreshFontAvailability(client);
     return;
@@ -990,6 +1015,7 @@ function startStylePickerPolling(client: StylePickerClient): void {
     }
     try {
       const batch = await client.events(stylePickerEventRevision);
+      if (stylePickerClient !== client) return;
       if (batch.gap) {
         stylePickerEventRevision = batch.latestRevision;
         failActiveStylePicker();
@@ -1002,8 +1028,11 @@ function startStylePickerPolling(client: StylePickerClient): void {
       }
       hostTimers.setTimeout(() => void poll(), 100);
     } catch {
+      if (stylePickerClient !== client) return;
       stylePickerClient = null;
+      stylePickerEventRevision = 0;
       stylePickerPolling = false;
+      void client.shutdown().catch(() => undefined);
       failActiveStylePicker();
       const preferredFamily = subtitleStyleAuthority.snapshot().committedStyle.fontFamily;
       const state = subtitleStyleAuthority.updateFontResolution(

@@ -30,7 +30,9 @@ SubTandem keeps the original subtitle visible while independently displaying the
 
 ## ✨ Features
 
-- **Live bilingual subtitles:** Keep the original subtitle selected in IINA while SubTandem renders translations centered horizontally at your chosen vertical position without occupying another subtitle track.
+- **An interface in IINA’s language:** On IINA 1.5.0 or later, SubTandem follows IINA’s interface language, covering all 31 language variants shipped with IINA 1.5.0. Controls, status and error messages, accessibility text, the plugin description, and font and color pickers use that language. Hebrew uses a right-to-left layout. System-provided picker text may fall back to a language available in macOS.
+- **Localized option lists:** Target languages, fonts, named color presets, and discovered models are sorted for the interface language. **Custom model ID…** stays first in every service’s model list. Changing the interface language keeps your selected translation target, font, and colors.
+- **Live bilingual subtitles:** Keep the original subtitle selected in IINA while SubTandem renders translations centered horizontally at your chosen vertical position without occupying another subtitle track. Translations in right-to-left languages such as Arabic and Hebrew keep punctuation, parentheses, numbers, and mixed text in the correct reading order.
 - **Persistent translation styling:** Adjust Font color, Size, family, Bold/Italic, Border color/Width, and Background color under **Subtitle**. Defaults are white Size 40 system text, black Width 3 border, and transparent background. All three colors share presets and **Show Colors…** with alpha; an unavailable saved font temporarily uses the system font and restores automatically when available.
 - **Embedded and external text subtitles:** Works with local Matroska SubRip/ASS/SSA, local MOV/MP4 `mov_text`, and readable external SRT/ASS tracks selected in IINA. The release includes the required extractor; no external `ffmpeg` or `ffprobe` is needed.
 - **Your choice of translation service:** Use OpenAI, Claude, DeepSeek, or Ollama. You can also connect services compatible with OpenAI or Claude.
@@ -43,7 +45,7 @@ SubTandem keeps the original subtitle visible while independently displaying the
 
 - macOS 12 or later
 - A Mac with Secure Enclave to save or use a nonempty API key; services that do not require one remain supported.
-- IINA 1.4.0 or later
+- IINA 1.4.0 or later; automatic interface language requires IINA 1.5.0 or later
 - A supported local embedded text subtitle or readable external SRT/ASS/SSA track
 - An OpenAI, Claude, DeepSeek, or Ollama service with a model you can use. See the setup guidance below for each service.
 
@@ -97,6 +99,8 @@ After any installation method, approve the requested plugin permissions if promp
 
 ## 🌍 Quick Start
 
+SubTandem follows IINA’s application language; restart IINA after changing it. Older hosts, unsupported languages, or unavailable language information use English. A missing translation also falls back to English. There is no separate plugin language setting. The steps below use English control names; your interface may show their localized equivalents.
+
 1. Load a local video and select a supported embedded text subtitle or external SRT/ASS subtitle as the primary subtitle in IINA.
 2. Under **Subtitle**, select the exact target language. The selected translation service understands each cue's source language inside the translation request; there is no source-language confirmation step.
 3. Under **Translation service**, choose **New profile** and create an OpenAI, Claude, DeepSeek, or Ollama profile. New drafts use **Use system proxy settings** by default. If the service requires authentication, enter its API key before manually refreshing the model list. Select a returned model, or enter an exact custom Model ID.
@@ -118,7 +122,7 @@ Expand a profile summary to edit it in place. The action row keeps **Test** on t
 
 - The default API root is `https://api.anthropic.com`. For Claude, enter your Anthropic **API key** and choose a model available to your account.
 - Refresh the model list and choose a model, or enter its exact **Model ID**.
-- For a Claude-compatible service, replace **API root** with its API root. Leave **API key** blank if that service accepts requests without one. You can refresh models, test, save, and enable the Profile without a key.
+- For a Claude-compatible service, replace **API root** with its API root. Leave **API key** blank if that service accepts requests without one. You can refresh models, test, save, and enable the profile without a key.
 
 ### DeepSeek
 
@@ -132,16 +136,16 @@ Expand a profile summary to edit it in place. The action row keeps **Test** on t
 - Refresh the model list and choose an installed model, or enter its exact **Model ID**.
 - For a remote Ollama server, change **API root** to its server root. Enter an **API key** only if that server requires one. **Test** checks the connection, model, and structured-output support.
 
-New Profiles use **Use system proxy settings** by default. **Network route** controls model refresh, connection tests, and translation; choose **Connect directly** to bypass the system proxy. Existing Profiles keep their saved route, and a route chosen in the current draft is preserved when you switch services and return.
+New profiles use **Use system proxy settings** by default. **Network route** controls model refresh, connection tests, and translation; choose **Connect directly** to bypass the system proxy. Existing profiles keep their saved route, and a route chosen in the current draft is preserved when you switch services and return.
 
 ## 🔒 Privacy, Credentials, and Cost
 
 - SubTandem sends only nearby subtitle cue text, the exact target language, opaque cue identifiers, and limited neighboring context to the one profile you explicitly enable. The service understands the source language inside that translation request. It does not send video or audio content.
 - The `video-overlay` permission displays the current translation in a local, non-interactive overlay. The overlay does not accept input or enable dragging on the video, does not use network or WebView storage, and is cleared with the playback session.
-- API keys are stored as authenticated encrypted data in the plugin’s private `credentials.json`, alongside Profile settings and hardware-bound recovery material. Secure Enclave protects the encryption keys; saving a nonempty API key or using a saved API key fails when the required hardware protection is unavailable. Empty API keys and explicitly clearing one remain supported. API keys stay out of IINA preferences, logs, diagnostics and the plugin package. On the same Mac and user account with valid system keys, newly saved API keys remain available after restarting IINA, restarting the Mac and signing in, or later plugin upgrades, without extra authorization, a master password, or biometric prompts.
-- Open a Profile to edit its saved API key. It starts masked; **Show API key** reveals it only in the current drawer. **Save** replaces it with the current input, and saving an empty field clears it. A failed read leaves an editable empty field without changing the saved data. **Cancel** discards edits.
-- Upgrading from the previous plaintext format preserves Profile settings and a valid enabled selection but clears saved API keys. Enter them again when needed. SubTandem cleans copies it manages; APFS/Time Machine snapshots, offline copies and other backups can still contain old API keys. Rotate old API keys with your service.
-- Back up the complete `credentials.json` with its paired recovery material. Recovery requires the original device, user and a valid system key environment, and is not guaranteed even there. Another device or user cannot recover the saved API keys; re-enter them for each Profile.
+- API keys are stored as authenticated encrypted data in the plugin’s private `credentials.json`, alongside profile settings and hardware-bound recovery material. Secure Enclave protects the encryption keys; saving a nonempty API key or using a saved API key fails when the required hardware protection is unavailable. Empty API keys and explicitly clearing one remain supported. API keys stay out of IINA preferences, logs, diagnostics and the plugin package. On the same Mac and user account with valid system keys, newly saved API keys remain available after restarting IINA, restarting the Mac and signing in, or later plugin upgrades, without extra authorization, a master password, or biometric prompts.
+- Open a profile to edit its saved API key. It starts masked; **Show API key** reveals it only in the current drawer. **Save** replaces it with the current input, and saving an empty field clears it. A failed read leaves an editable empty field without changing the saved data. **Cancel** discards edits.
+- Upgrading from the previous plaintext format preserves profile settings and a valid enabled selection but clears saved API keys. Enter them again when needed. SubTandem cleans copies it manages; APFS/Time Machine snapshots, offline copies and other backups can still contain old API keys. Rotate old API keys with your service.
+- Back up the complete `credentials.json` with its paired recovery material. Recovery requires the original device, user and a valid system key environment, and is not guaranteed even there. Another device or user cannot recover the saved API keys; re-enter them for each profile.
 - For embedded text subtitles, the bundled extractor reads only the selected stream from the current local media into a session-only temporary SRT. It does not support remote media or image-based subtitles, and removes temporary extraction data after parsing, cancellation, timeout, or shutdown.
 - Translations are cached only for the current video session and are cleared when the video changes, playback ends, or the window closes.
 - Short tracks, unknown-source text, and text already matching the exact target language are still sent to the enabled service and may incur charges. Your provider applies its own data and content policies; batching and session caching reduce calls but do not guarantee a maximum cost.
@@ -153,14 +157,12 @@ SubTandem does not perform audio transcription, OCR or extraction of image-based
 ## 🛠️ Troubleshooting
 
 - **Select a supported text subtitle:** Select a local embedded SubRip/ASS/SSA/`mov_text` track or an external SRT/ASS track as IINA's primary subtitle. Remote embedded and image-based tracks are not supported; use the displayed state to reselect a text track or retry a failed preparation.
-- **Translation failed:** Follow the specific action shown in Session. Depending on the failure, test the Profile and check its API root, exact model ID, API key, network route, account limits, or Ollama process. Playback and the original subtitle continue normally.
-- **An empty Profile list after startup:** If saved settings cannot load, **New profile** remains available. Damaged settings may be reset; create and save a new Profile to continue. A temporary access problem preserves valid saved Profiles, which can reappear when access returns. If saving fails, your draft remains available for retry. A failed read of one API key does not reset the list.
+- **Translation failed:** Follow the specific action shown in Session. Depending on the failure, test the profile and check its API root, exact model ID, API key, network route, account limits, or Ollama process. Playback and the original subtitle continue normally.
+- **An empty profile list after startup:** If saved settings cannot load, **New profile** remains available. Damaged settings may be reset; create and save a new profile to continue. A temporary access problem preserves valid saved profiles, which can reappear when access returns. If saving fails, your draft remains available for retry. A failed read of one API key does not reset the list.
 - **Credential could not be saved:** Install the release package rather than using an incomplete development copy, make sure the plugin data directory is writable, and fully restart IINA.
-- **No rendered translation:** Confirm that the intended Profile switch and **Translate** are both enabled. Playback must also be within the time range of an available translated cue.
-- **Network or proxy trouble:** New Profiles use system proxy settings. Check the system proxy configuration, or choose **Connect directly** for that Profile. Save, test, and enable the new revision.
+- **No rendered translation:** Confirm that the intended profile switch and **Translate** are both enabled. Playback must also be within the time range of an available translated cue.
+- **Network or proxy trouble:** New profiles use system proxy settings. Check the system proxy configuration, or choose **Connect directly** for that profile. Save, test, and enable the new revision.
 
 ## ☕ Support SubTandem
 
 If SubTandem helps you, you can voluntarily buy its creator a coffee through [Afdian](https://www.ifdian.net/item/ea1ff37a97ed11f19a9f52540025c377?utm_source=copylink&utm_medium=link) or [Ko-fi](https://ko-fi.com/ianhsia).
-
-SubTandem remains free and fully featured for everyone. Support does not unlock extra features, priority translation, or exclusive builds, and it does not include translation service API credits. Your selected provider may charge separately under its own terms and content policies.

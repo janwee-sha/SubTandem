@@ -3,6 +3,8 @@ set -eu
 
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 
+node "$ROOT_DIR/scripts/build-localization.mjs" --check
+
 mkdir -p "$ROOT_DIR/dist/ui"
 find "$ROOT_DIR/dist/ui" -mindepth 1 -delete
 if [ -d "$ROOT_DIR/dist/main" ]; then

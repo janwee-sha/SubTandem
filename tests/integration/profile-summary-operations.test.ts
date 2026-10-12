@@ -58,14 +58,17 @@ describe("Profile summary operations", () => {
 
     const activation = row.querySelector(".profile-activation input");
     expect(activation.dataset.profileId).toBe("saved");
-    expect(activation.getAttribute("aria-label")).toBe("Enable Saved profile");
+    expect(activation.getAttribute("aria-label")).toBe("Enable \u2068Saved profile\u2069");
     activation.checked = true;
     h.element("#profiles").dispatch("change", activation);
     expect(h.messages.at(-1)).toMatchObject({
       name: "profile-activation:set",
       data: { payload: { profileId: "saved", profileRevision: 2, enabled: true } },
     });
-    h.receive("state:update", { profiles: [] });
+    h.receive("state:update", {
+      profileAuthority: { ...authority, stateVersion: 3, profiles: [] },
+      profiles: [],
+    });
     expect(h.evaluate('profileRows.has("saved")')).toBe(false);
   });
 });

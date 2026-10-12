@@ -13,6 +13,12 @@ import {
   validateHelperFacts,
 } from "../../scripts/audit-release.mjs";
 
+import {
+  NATIVE_FILES,
+  NATIVE_EXECUTABLES,
+  STYLE_PICKER_EXECUTABLE,
+} from "../../scripts/native-package.mjs";
+
 const regularMode = 0o100644;
 const executableMode = 0o100755;
 
@@ -34,21 +40,11 @@ const validEntries = [
     unixMode: regularMode,
     encrypted: false,
   },
-  {
-    name: "dist/native/subtandem-transport",
-    unixMode: executableMode,
+  ...NATIVE_FILES.map((file) => ({
+    name: `dist/native/${file}`,
+    unixMode: NATIVE_EXECUTABLES.includes(file) ? executableMode : regularMode,
     encrypted: false,
-  },
-  {
-    name: "dist/native/subtandem-subtitle-extractor",
-    unixMode: executableMode,
-    encrypted: false,
-  },
-  {
-    name: "dist/native/subtandem-style-picker",
-    unixMode: executableMode,
-    encrypted: false,
-  },
+  })),
 ];
 
 describe("release archive audit", () => {
@@ -84,7 +80,7 @@ describe("release archive audit", () => {
     ).toThrow(/required archive entry/i);
     expect(() =>
       validateArchiveEntries(
-        validEntries.filter((entry) => entry.name !== "dist/native/subtandem-style-picker"),
+        validEntries.filter((entry) => entry.name !== `dist/native/${STYLE_PICKER_EXECUTABLE}`),
       ),
     ).toThrow(/required archive entry/i);
   });

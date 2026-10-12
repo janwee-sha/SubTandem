@@ -53,6 +53,7 @@ interface SubTandemOverlayLayout {
 interface SubTandemOverlayFrame {
   renderRevision: number;
   lines: string[];
+  direction: "ltr" | "rtl";
   position: number;
   region: SubTandemOverlayRegion;
   style: SubTandemOverlayTextStyle;
@@ -262,7 +263,9 @@ function createSubTandemOverlayState(): SubTandemOverlayStateCoordinator {
       const record = base(value);
       if (
         !record ||
-        Object.keys(record).sort().join(",") !== "lines,position,region,renderRevision,style" ||
+        Object.keys(record).sort().join(",") !==
+          "direction,lines,position,region,renderRevision,style" ||
+        (record.direction !== "ltr" && record.direction !== "rtl") ||
         !Array.isArray(record.lines) ||
         record.lines.length === 0 ||
         record.lines.some((line) => typeof line !== "string") ||
@@ -273,6 +276,7 @@ function createSubTandemOverlayState(): SubTandemOverlayStateCoordinator {
       frame = {
         renderRevision,
         lines: [...record.lines] as string[],
+        direction: record.direction,
         position: record.position as number,
         region: { ...(record.region as unknown as SubTandemOverlayRegion) },
         style: cloneStyle(record.style as SubTandemOverlayTextStyle),

@@ -263,11 +263,38 @@ function createHarness(options: HarnessOptions): RuntimeHarness {
   };
 }
 
+const languageMailboxes: Array<{ close(): void }> = [];
+async function settleLanguage() {
+  const { hostClock } = await import("../../src/adapters/iina/host-timers.js");
+  for (let index = 0; index < 3; index++) {
+    await vi.advanceTimersByTimeAsync(50);
+    hostClock.pulse();
+  }
+}
+
 async function startHarness(harness: RuntimeHarness): Promise<void> {
   vi.resetModules();
   vi.stubGlobal("iina", harness.runtime);
+  const { GlobalMailbox, IinaGlobalMailboxFileStore } =
+    await import("../../src/adapters/iina/global-mailbox.js");
+  const { UiLanguageAuthority } = await import("../../src/app/ui-language-authority.js");
+  const { parseUiLanguageGet } = await import("../../src/domain/messages.js");
+  const mailbox = new GlobalMailbox(
+    new IinaGlobalMailboxFileStore(harness.runtime.file as IINA.API.File),
+  );
+  const authority = new UiLanguageAuthority("startup-language-authority");
+  mailbox.onMessage("ui-language:get", (raw, playerId) => {
+    const request = parseUiLanguageGet(raw);
+    mailbox.postMessage(playerId!, "ui-language:state", {
+      requestId: request.requestId,
+      context: authority.resolve(request.sample),
+    });
+  });
+  languageMailboxes.push(mailbox);
   await import("../../src/main.js");
   await vi.advanceTimersByTimeAsync(100);
+  harness.triggerSidebar("ui:poll");
+  await settleLanguage();
 }
 
 async function settle(): Promise<void> {
@@ -280,13 +307,14 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  for (const mailbox of languageMailboxes.splice(0)) mailbox.close();
   vi.clearAllTimers();
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
 describe("translation-disabled Main startup", () => {
-  it("settles a completely unresponsive Global locally at the first initialization deadline", async () => {
+  it("settles an unresponsive Profile authority at the first deadline after language resolution", async () => {
     const harness = createHarness({ enabled: false, selection: "external" });
     await startHarness(harness);
     harness.triggerSidebar("ui:ready");
@@ -595,6 +623,7 @@ it("advances the host clocks from Sidebar ticks without flushing UI and ignores 
   const tick = vi.fn();
   harness.runtime.global = { postMessage: tick };
   await startHarness(harness);
+  tick.mockClear();
   const { hostClock } = await import("../../src/adapters/iina/host-timers.js");
   const callback = vi.fn();
   const interval = hostClock.setInterval(callback, 20);
@@ -626,6 +655,8 @@ it("rewires a reused player when its hidden window becomes visible without windo
   harness.triggerSidebar("ui:poll");
   await vi.advanceTimersByTimeAsync(100);
   expect(harness.trace.filter((item) => item === "sidebar:load")).toHaveLength(2);
+  harness.triggerSidebar("ui:poll");
+  await settleLanguage();
   harness.triggerSidebar("credential-channel:open", {
     requestId: "invalid-open-after-reopen",
     revision: 1,

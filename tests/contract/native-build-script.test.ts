@@ -100,3 +100,90 @@ describe("native build script", () => {
     );
   });
 });
+
+describe("signed native app delivery", () => {
+  it("audits generated resources, actual full-app signature, executable metadata and all file hashes", async () => {
+    const { nativePackageFixture } = await import("../helpers/native-package-fixture.js");
+    const { auditNativePackage, writeNativeHashes, NATIVE_FILES } =
+      await import("../../scripts/native-package.mjs");
+    const fixture = nativePackageFixture();
+    try {
+      writeNativeHashes(fixture.native, fixture.hashFile);
+      const facts = auditNativePackage(
+        fixture.native,
+        process.cwd(),
+        fixture.version,
+        fixture.hashFile,
+      );
+      expect(Object.keys(facts)).toEqual([...NATIVE_FILES].sort());
+      expect(facts["SubTandemStylePicker.app/Contents/_CodeSignature/CodeResources"]).toMatch(
+        /^[a-f0-9]{64}$/,
+      );
+    } finally {
+      fixture.cleanup();
+    }
+  });
+});
+
+describe("native delivery fault rejection", () => {
+  it("rejects every missing locale, extra locale, bare picker, test asset, plist, resource and signature tampering", async () => {
+    const { execFileSync } = await import("node:child_process");
+    const { mkdirSync, readFileSync, rmSync, writeFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const { UI_LOCALES } = await import("../../shared/localization/locales.js");
+    const { nativePackageFixture } = await import("../helpers/native-package-fixture.js");
+    const { auditNativePackage, writeNativeHashes } =
+      await import("../../scripts/native-package.mjs");
+    const fixture = nativePackageFixture();
+    const audit = () =>
+      auditNativePackage(fixture.native, process.cwd(), fixture.version, fixture.hashFile);
+    try {
+      writeNativeHashes(fixture.native, fixture.hashFile);
+      for (const locale of UI_LOCALES) {
+        const file = join(fixture.app, `Contents/Resources/${locale}.lproj/Localizable.strings`);
+        const bytes = readFileSync(file);
+        rmSync(file);
+        expect(audit).toThrow(/allowlist/);
+        writeFileSync(file, bytes);
+      }
+      for (const name of [
+        "subtandem-style-picker",
+        "SubTandemStylePicker.app/Contents/Resources/ar.lproj/Localizable.strings",
+        "SubTandemStylePicker.app/Contents/Resources/credential-host-probe.js",
+        "SubTandemStylePicker.app/Contents/Tests/test.swift",
+      ]) {
+        const file = join(fixture.native, name);
+        mkdirSync(join(file, ".."), { recursive: true });
+        writeFileSync(file, "injected");
+        expect(audit).toThrow(/allowlist/);
+        rmSync(file);
+        if (name.includes("ar.lproj")) rmSync(join(file, ".."), { recursive: true });
+        if (name.includes("Tests")) rmSync(join(file, ".."), { recursive: true });
+      }
+      const resource = join(fixture.app, "Contents/Resources/he.lproj/Localizable.strings");
+      const text = readFileSync(resource);
+      writeFileSync(resource, text.toString() + '\n"unexpected" = "value";\n');
+      execFileSync("codesign", ["--force", "--sign", "-", fixture.app], { stdio: "pipe" });
+      expect(audit).toThrow(/resource differs/);
+      writeFileSync(resource, text);
+      execFileSync("codesign", ["--force", "--sign", "-", fixture.app], { stdio: "pipe" });
+      writeNativeHashes(fixture.native, fixture.hashFile);
+      const signature = join(fixture.app, "Contents/_CodeSignature/CodeResources");
+      const bytes = readFileSync(signature);
+      writeFileSync(signature, "invalid signature");
+      expect(audit).toThrow();
+      writeFileSync(signature, bytes);
+      const plist = join(fixture.app, "Contents/Info.plist");
+      const original = readFileSync(plist);
+      execFileSync("plutil", ["-replace", "CFBundleDevelopmentRegion", "-string", "he", plist]);
+      expect(audit).toThrow(/plist/);
+      writeFileSync(plist, original);
+      const hashes = JSON.parse(readFileSync(fixture.hashFile, "utf8"));
+      delete hashes["SubTandemStylePicker.app/Contents/Resources/en.lproj/Localizable.strings"];
+      writeFileSync(fixture.hashFile, JSON.stringify(hashes));
+      expect(audit).toThrow(/hash/);
+    } finally {
+      fixture.cleanup();
+    }
+  });
+});

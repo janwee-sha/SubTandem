@@ -85,3 +85,31 @@ describe("subtitle style authority", () => {
     );
   });
 });
+
+describe("picker result snapshots", () => {
+  it("accepts the authority snapshot of the current revision after preview, availability and commit", () => {
+    const authority = new SubtitleStyleAuthority(DEFAULT_SUBTITLE_TEXT_STYLE);
+    const follower = new SubtitleStyleFollower();
+    const preview = authority.preview("current-font", "bold", true);
+    follower.apply(preview.state);
+    expect(follower.apply(authority.snapshot())).toBe(true);
+    const availability = authority.updateFontResolution({
+      preferredFamily: null,
+      effectiveFamily: null,
+      fallbackActive: false,
+      availability: "available",
+      catalogRevision: 1,
+    });
+    follower.apply(availability);
+    expect(follower.apply(authority.snapshot())).toBe(true);
+    const committed = authority.commit(authority.beginCommit("current-font", "bold", true).intent);
+    follower.apply(committed.state);
+    expect(follower.apply(authority.snapshot())).toBe(true);
+    expect(() =>
+      follower.apply({
+        ...authority.snapshot(),
+        liveStyle: { ...DEFAULT_SUBTITLE_TEXT_STYLE, fontSize: 70 },
+      }),
+    ).toThrow("CONFLICTING_SUBTITLE_STYLE_STATE");
+  });
+});

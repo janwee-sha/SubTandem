@@ -37,7 +37,7 @@ interface SessionPresentationInput {
 }
 
 interface SessionPresentation {
-  text: string;
+  message: LocalizedFeedback;
   state: string;
   signature: string;
 }
@@ -49,8 +49,12 @@ interface SessionSourceDetails {
 }
 
 interface Window {
-  subtandemServiceFailureMessage(error: SessionFailureInput | null | undefined): string | null;
-  subtandemSessionFailureMessage(error: SessionFailureInput | null | undefined): string | null;
+  subtandemServiceFailureFeedback(
+    error: SessionFailureInput | null | undefined,
+  ): LocalizedFeedback | null;
+  subtandemSessionFailureFeedback(
+    error: SessionFailureInput | null | undefined,
+  ): LocalizedFeedback | null;
   subtandemResolveSessionPresentation(input: SessionPresentationInput): SessionPresentation | null;
   subtandemResolveSessionSourceDetails(input: SessionPresentationInput): SessionSourceDetails;
   subtandemSubtitleFormatLabel(format: string): string;
@@ -61,42 +65,97 @@ const subtitleFormatLabels: Record<string, string> = {
   subrip: "SRT (SubRip)",
   ass: "ASS (Advanced SubStation Alpha)",
   ssa: "SSA (SubStation Alpha)",
-  mov_text: "MP4 timed text",
 };
 
 function subtitleFormatLabel(format: string): string {
-  return subtitleFormatLabels[format] ?? "Unknown subtitle format";
+  if (format === "mov_text")
+    return (globalThis as typeof globalThis & Window).subtandemLocalization.format(
+      "sidebar.mp4TimedText",
+    );
+  return (
+    subtitleFormatLabels[format] ??
+    (globalThis as typeof globalThis & Window).subtandemLocalization.format(
+      "sidebar.unknownSubtitleFormat",
+    )
+  );
 }
 
-const sessionStatusLabels: Partial<Record<SessionPresentationStatus, string>> = {
-  disabled: "Translation is off",
-  waitingForSubtitle: "Select a readable external SRT or ASS subtitle",
-  waitingForConfiguration: "No translation service enabled. Enable one to translate.",
-  preparing: "Preparing nearby translations…",
-  running: "Translations are running",
+const sessionStatusLabels: Partial<Record<SessionPresentationStatus, LocalizedFeedback>> = {
+  disabled: (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.translationIsOff",
+  ),
+  waitingForSubtitle: (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.selectAReadableExternalSRTOrASS",
+  ),
+  waitingForConfiguration: (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.noTranslationServiceEnabledEnableOneTo",
+  ),
+  preparing: (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.preparingNearbyTranslations",
+  ),
+  running: (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.translationsAreRunning",
+  ),
 };
 
-const sessionSourceIssueLabels: Record<string, string> = {
-  "not-external": "Select an external SRT or ASS subtitle track.",
-  unreadable: "IINA has not exposed readable subtitle data yet; reselect the external subtitle.",
-  "unsupported-format": "The selected external subtitle is not readable SRT or ASS text.",
-  "unsupported-encoding": "The selected subtitle encoding is not supported.",
-  empty: "The selected subtitle contains no readable cues.",
+const sessionSourceIssueLabels: Record<string, LocalizedFeedback> = {
+  "not-external": (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.selectAnExternalSRTOrASSSubtitle",
+  ),
+  unreadable: (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.iinaHasNotExposedReadableSubtitleData",
+  ),
+  "unsupported-format": (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.theSelectedExternalSubtitleIsNotReadable",
+  ),
+  "unsupported-encoding": (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.theSelectedSubtitleEncodingIsNotSupported",
+  ),
+  empty: (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.theSelectedSubtitleContainsNoReadableCues",
+  ),
 };
 
-const sessionSourcePreparationLabels: Record<SessionSourcePreparationState, string> = {
-  preparing: "Preparing the selected embedded subtitle…",
-  ready: "",
-  unsupportedType: "Subtitle type not supported. Select a text subtitle in IINA.",
-  remoteUnsupported: "Embedded subtitles in remote media are not supported.",
-  emptyOrUnreadable: "The selected subtitle is empty or unreadable.",
-  timedOut: "Subtitle preparation timed out. Playback continues.",
-  failed: "Subtitle preparation failed. Playback continues.",
-  invalidated: "The subtitle selection changed. Reselect a subtitle in IINA.",
+const sessionSourcePreparationLabels: Record<
+  SessionSourcePreparationState,
+  LocalizedFeedback | null
+> = {
+  preparing: (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.preparingTheSelectedEmbeddedSubtitle",
+  ),
+  ready: null,
+  unsupportedType: (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.subtitleTypeNotSupportedSelectAText",
+  ),
+  remoteUnsupported: (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.embeddedSubtitlesInRemoteMediaAreNot",
+  ),
+  emptyOrUnreadable: (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.theSelectedSubtitleIsEmptyOrUnreadable",
+  ),
+  timedOut: (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.subtitlePreparationTimedOutPlaybackContinues",
+  ),
+  failed: (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.subtitlePreparationFailedPlaybackContinues",
+  ),
+  invalidated: (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+    "sidebar.theSubtitleSelectionChangedReselectASubtitle",
+  ),
 };
 
-function presentation(text: string, state: string): SessionPresentation {
-  return { text, state, signature: `${state}\u0000${text}` };
+function presentation(
+  message: LocalizedFeedback | null | undefined,
+  state: string,
+): SessionPresentation {
+  const resolved =
+    message ??
+    (globalThis as typeof globalThis & Window).subtandemLocalization.message("feedback.generic");
+  return {
+    message: resolved,
+    state,
+    signature: `${state}\u0000${resolved.messageKey}\u0000${JSON.stringify(resolved.params)}`,
+  };
 }
 
 function resolveSessionPresentation(input: SessionPresentationInput): SessionPresentation | null {
@@ -113,14 +172,14 @@ function resolveSessionPresentation(input: SessionPresentationInput): SessionPre
   if (input.status === "waitingForConfiguration" || input.status === "waitingForSubtitle")
     return presentation(sessionStatusLabels[input.status]!, input.status);
   if (input.status === "partialFailure" || input.status === "serviceUnavailable") {
-    const text = (globalThis as typeof globalThis & Window).subtandemServiceFailureMessage(
+    const text = (globalThis as typeof globalThis & Window).subtandemServiceFailureFeedback(
       input.providerError,
     );
     return text ? presentation(text, input.status) : null;
   }
   if (input.status === "running" || input.status === "preparing")
     return presentation(sessionStatusLabels[input.status]!, input.status);
-  return null;
+  return input.status === undefined ? null : presentation(null, "unknown");
 }
 
 function resolveSessionSourceDetails(input: SessionPresentationInput): SessionSourceDetails {
@@ -137,9 +196,9 @@ function resolveSessionSourceDetails(input: SessionPresentationInput): SessionSo
   };
 }
 
-(globalThis as typeof globalThis & Window).subtandemSessionFailureMessage = (
+(globalThis as typeof globalThis & Window).subtandemSessionFailureFeedback = (
   globalThis as typeof globalThis & Window
-).subtandemServiceFailureMessage;
+).subtandemServiceFailureFeedback;
 (globalThis as typeof globalThis & Window).subtandemResolveSessionPresentation =
   resolveSessionPresentation;
 (globalThis as typeof globalThis & Window).subtandemResolveSessionSourceDetails =

@@ -29,6 +29,7 @@ export async function globalProviderHarness(
   credentialConfigured?: Record<string, boolean>,
 ) {
   vi.resetModules();
+  const unregisteredPlayers = new Set<string>();
   const handlers = new Map<string, (data: unknown, sender?: string) => unknown>();
   const closed: Array<(sender: string) => void> = [];
   const startup: Array<() => unknown> = [];
@@ -53,6 +54,9 @@ export async function globalProviderHarness(
   });
   vi.doMock("../../src/adapters/iina/global-mailbox.js", () => ({
     GlobalMailbox: class {
+      isRegistered(playerId: string) {
+        return !unregisteredPlayers.has(playerId);
+      }
       onMessage(name: string, callback: (data: unknown, sender?: string) => unknown) {
         handlers.set(name, callback);
       }
@@ -153,11 +157,14 @@ export async function globalProviderHarness(
   });
   vi.doMock("../../src/providers/profile-activation.js", async (original) => ({
     ...(await original<Record<string, unknown>>()),
-    restoreProfileActivationAuthority: async (options: { profiles: ProviderProfiles }) => {
+    restoreProfileActivationAuthority: async (options: {
+      profiles: ProviderProfiles;
+      authorityId: string;
+    }) => {
       profiles = options.profiles;
       await readyGate;
       profiles.hydrate(saved);
-      authority = createTestProfileAuthority(profiles, credentialConfigured);
+      authority = createTestProfileAuthority(profiles, credentialConfigured, options.authorityId);
       if (activateSaved && saved[0]) await activateTestProfile(authority, saved[0]);
       return authority;
     },
@@ -269,6 +276,10 @@ export async function globalProviderHarness(
       return authority;
     },
     replies,
+    registerPlayer: (playerId: string) => unregisteredPlayers.delete(playerId),
+    unregisterPlayer: (playerId: string) => unregisteredPlayers.add(playerId),
+    sendRaw: (name: string, data: unknown, playerId = "window") =>
+      handlers.get(name)?.(data, playerId),
     ready,
     reads,
     startup,

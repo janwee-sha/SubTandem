@@ -5,7 +5,7 @@ ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 STAGE_PARENT="$ROOT_DIR/build/package"
 STAGE_DIR="$STAGE_PARENT/SubTandem"
 PLUGIN_CLI=${IINA_PLUGIN_BIN:-/Applications/IINA.app/Contents/MacOS/iina-plugin}
-ARTIFACT="$STAGE_PARENT/SubTandem-0.2.1.iinaplgz"
+ARTIFACT="$STAGE_PARENT/SubTandem-0.3.0.iinaplgz"
 
 if [ ! -x "$PLUGIN_CLI" ]; then
   echo "IINA plugin CLI not found or not executable: $PLUGIN_CLI" >&2
@@ -17,7 +17,7 @@ case "$STAGE_DIR" in
   *) echo "Refusing to clean unexpected staging path: $STAGE_DIR" >&2; exit 1 ;;
 esac
 case "$ARTIFACT" in
-  "$ROOT_DIR"/build/package/SubTandem-0.2.1.iinaplgz) ;;
+  "$ROOT_DIR"/build/package/SubTandem-0.3.0.iinaplgz) ;;
   *) echo "Refusing to replace unexpected artifact path: $ARTIFACT" >&2; exit 1 ;;
 esac
 
@@ -39,7 +39,7 @@ rm -f "$ARTIFACT"
   "$PLUGIN_CLI" pack SubTandem
 )
 
-for required in Info.json README.md LICENSE THIRD_PARTY_NOTICES.txt dist/main.js dist/global.js dist/ui/sidebar.html dist/ui/overlay.html dist/native/subtandem-transport dist/native/subtandem-subtitle-extractor dist/native/subtandem-style-picker; do
+for required in Info.json README.md LICENSE THIRD_PARTY_NOTICES.txt dist/main.js dist/global.js dist/ui/sidebar.html dist/ui/overlay.html dist/native/subtandem-transport dist/native/subtandem-subtitle-extractor dist/native/SubTandemStylePicker.app/Contents/MacOS/subtandem-style-picker dist/native/SubTandemStylePicker.app/Contents/Info.plist; do
   if ! unzip -Z1 "$ARTIFACT" | grep -Fqx "$required"; then
     echo "Packed artifact is missing $required" >&2
     exit 1

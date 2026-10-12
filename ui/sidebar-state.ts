@@ -37,7 +37,7 @@ interface SidebarOperationRequest {
   actionId: string;
   profileId?: string;
   revision?: number;
-  busyMessage?: string;
+  busyMessage?: LocalizedFeedback | null;
 }
 
 interface SidebarRegionRequest {
@@ -50,7 +50,7 @@ interface SidebarFeedback {
   regionId: string;
   actionId: string;
   phase: SidebarFeedbackPhase;
-  message: string;
+  message: LocalizedFeedback | null;
   visibility: "assistive" | "visible";
 }
 
@@ -77,8 +77,8 @@ interface ModelControlState {
   knownModelIds: string[];
   contextKey: string;
   refreshState: "idle" | "busy" | "success" | "error";
-  refreshMessage: string;
-  validationError: string | null;
+  refreshMessage: LocalizedFeedback | null;
+  validationError: LocalizedFeedback | null;
 }
 
 interface SidebarDrawerSourceProfile {
@@ -92,7 +92,7 @@ interface SidebarDrawerTestState {
   drawerId: string;
   draftRevision: number;
   phase: "testing" | "passed" | "failed";
-  message: string;
+  message: LocalizedFeedback | null;
 }
 
 interface SidebarProfileDrawerState {
@@ -225,7 +225,7 @@ interface SidebarSubtitleStyleState {
     { requestId: string; interactionId: string } | null
   >;
   feedbackByField: Record<SidebarSubtitleStyleField, "idle" | "saving" | "saved">;
-  groupError: string | null;
+  groupError: LocalizedFeedback | null;
   fontResolution: SidebarFontResolution;
   colorTarget: "fontColor" | "borderColor" | "backgroundColor" | null;
   nativeColorSession: {
@@ -271,7 +271,7 @@ interface SidebarStateSnapshot {
     string,
     { profileId: string; enabled: boolean; stateVersion: number }
   >;
-  profileActivationErrors: Record<string, string>;
+  profileActivationErrors: Record<string, LocalizedFeedback>;
   credentialDisplayProfileId: string | null;
   profileTests: Record<string, unknown>;
   requests: Record<string, SidebarOperationRequest>;
@@ -324,7 +324,7 @@ interface SidebarStateCoordinator {
   finishDrawerTest(
     requestId: string,
     succeeded: boolean,
-    message: string,
+    message: LocalizedFeedback | null,
     drawerId?: string,
     draftRevision?: number,
   ): SidebarDrawerTestState | null;
@@ -345,9 +345,9 @@ interface SidebarStateCoordinator {
     checked: boolean;
     disabled: boolean;
     busy: boolean;
-    accessibleName: string;
-    error: string | null;
-    readinessMessage: string | null;
+    accessibleName: LocalizedFeedback;
+    error: LocalizedFeedback | null;
+    readinessMessage: LocalizedFeedback | null;
   };
   beginProfileActivation(requestId: string, profileId: string, enabled: boolean): boolean;
   expireProfileActivation(requestId: string): boolean;
@@ -356,15 +356,19 @@ interface SidebarStateCoordinator {
     authorityAccepted: boolean;
     announce: boolean;
   };
-  beginOperation(request: SidebarOperationRequest, message?: string): void;
+  beginOperation(request: SidebarOperationRequest, message?: LocalizedFeedback | null): void;
   finishOperation(
     requestId: string,
     phase: SidebarFeedbackPhase,
-    message: string,
+    message: LocalizedFeedback | null,
     visibility?: SidebarFeedbackVisibility,
   ): { accepted: boolean; request?: SidebarOperationRequest };
   clearOperationRegion(regionId: string): string[];
-  deleteSucceeded(input: { requestId: string; profileId: string; message: string }): {
+  deleteSucceeded(input: {
+    requestId: string;
+    profileId: string;
+    message: LocalizedFeedback | null;
+  }): {
     announced: boolean;
   };
   resetProfileName(serviceTypeLabel: string): void;
@@ -380,14 +384,17 @@ interface SidebarStateCoordinator {
   beginProfileSave(requestId: string): void;
   completeProfileSave(
     requestId: string,
-    fallbackMessage: string,
+    fallbackMessage: LocalizedFeedback | null,
     succeeded?: boolean,
-  ): string | null;
+  ): LocalizedFeedback | null;
   cancelProfileSave(requestId: string): void;
   setModelContext(contextKey: string, value: string): void;
   applyModelCatalog(contextKey: string, models: string[]): boolean;
-  setModelRefreshState(state: ModelControlState["refreshState"], message?: string): void;
-  setModelRequiredError(message: string): void;
+  setModelRefreshState(
+    state: ModelControlState["refreshState"],
+    message?: LocalizedFeedback | null,
+  ): void;
+  setModelRequiredError(message: LocalizedFeedback | null): void;
   clearModelRequiredError(): boolean;
   modelForSave(): string | null;
   selectKnownModel(value: string): void;
@@ -505,7 +512,7 @@ function createSubTandemSidebarState(
       knownModelIds: [],
       contextKey: "",
       refreshState: "idle",
-      refreshMessage: "",
+      refreshMessage: null,
       validationError: null,
     },
     drawer: {
@@ -555,7 +562,7 @@ function createSubTandemSidebarState(
   const writeFeedback = (
     request: SidebarOperationRequest,
     phase: SidebarFeedbackPhase,
-    message: string,
+    message: LocalizedFeedback | null,
     visibility: SidebarFeedbackVisibility = phase === "error" ? "visible" : "assistive",
   ): void => {
     snapshot.activeFeedback = {
@@ -775,11 +782,16 @@ function createSubTandemSidebarState(
       ),
       disabled: !authority?.ready || Object.keys(snapshot.profileActivationRequests).length > 0,
       busy: Boolean(pending),
-      accessibleName: `Enable ${String(profile?.displayName ?? "Profile")}`,
+      accessibleName: (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+        "profile.enable",
+        { name: typeof profile?.displayName === "string" ? profile.displayName : "" },
+      ),
       error: snapshot.profileActivationErrors[profileId] ?? null,
       readinessMessage: authority?.ready
         ? null
-        : "Profile activation is restoring or waiting for storage confirmation.",
+        : (globalThis as typeof globalThis & Window).subtandemLocalization.message(
+            "sidebar.profileActivationIsRestoringOrWaitingFor",
+          ),
     };
   };
 
@@ -824,8 +836,9 @@ function createSubTandemSidebarState(
     const authorityAccepted = applyProfileAuthority(result.authority);
     delete snapshot.expiredProfileActivationRequests[result.requestId];
     if (result.outcome === "failed")
-      snapshot.profileActivationErrors[request.profileId] =
-        "Profile activation could not be changed. Try again.";
+      snapshot.profileActivationErrors[request.profileId] = (
+        globalThis as typeof globalThis & Window
+      ).subtandemLocalization.message("sidebar.profileActivationCouldNotBeChangedTry");
     return {
       accepted: true,
       authorityAccepted,
@@ -842,12 +855,16 @@ function createSubTandemSidebarState(
       enabled: request.enabled,
       stateVersion: request.stateVersion,
     };
-    snapshot.profileActivationErrors[request.profileId] =
-      "Profile activation timed out. Try again.";
+    snapshot.profileActivationErrors[request.profileId] = (
+      globalThis as typeof globalThis & Window
+    ).subtandemLocalization.message("sidebar.profileActivationTimedOutTryAgain");
     return true;
   };
 
-  const beginOperation = (request: SidebarOperationRequest, message = ""): void => {
+  const beginOperation = (
+    request: SidebarOperationRequest,
+    message: LocalizedFeedback | null = null,
+  ): void => {
     const pendingRequest = { ...request, busyMessage: message };
     snapshot.requests[request.requestId] = pendingRequest;
     snapshot.latestRequestByRegion[request.regionId] = {
@@ -860,7 +877,7 @@ function createSubTandemSidebarState(
   const finishOperation = (
     requestId: string,
     phase: SidebarFeedbackPhase,
-    message: string,
+    message: LocalizedFeedback | null,
     visibility?: SidebarFeedbackVisibility,
   ): { accepted: boolean; request?: SidebarOperationRequest } => {
     const request = snapshot.requests[requestId];
@@ -887,7 +904,7 @@ function createSubTandemSidebarState(
   const deleteSucceeded = (input: {
     requestId: string;
     profileId: string;
-    message: string;
+    message: LocalizedFeedback | null;
   }): { announced: boolean } => {
     const request = snapshot.requests[input.requestId];
     const localDelete =
@@ -1045,9 +1062,9 @@ function createSubTandemSidebarState(
 
   const completeProfileSave = (
     requestId: string,
-    fallbackMessage: string,
+    fallbackMessage: LocalizedFeedback | null,
     succeeded = true,
-  ): string | null => {
+  ): LocalizedFeedback | null => {
     const pending = snapshot.pendingProfileSave;
     if (!pending || pending.requestId !== requestId) return null;
     snapshot.pendingProfileSave = null;
@@ -1105,7 +1122,7 @@ function createSubTandemSidebarState(
       knownModelIds: [],
       contextKey: "",
       refreshState: "idle",
-      refreshMessage: "",
+      refreshMessage: null,
       validationError: null,
     };
     modelCatalogs.clear();
@@ -1255,7 +1272,7 @@ function createSubTandemSidebarState(
       drawerId: drawer.drawerId,
       draftRevision: drawer.draftRevision,
       phase: "testing",
-      message: "",
+      message: null,
     };
     return { ...drawer.test };
   };
@@ -1263,7 +1280,7 @@ function createSubTandemSidebarState(
   const finishDrawerTest = (
     requestId: string,
     succeeded: boolean,
-    message: string,
+    message: LocalizedFeedback | null,
     drawerId?: string,
     draftRevision?: number,
   ): SidebarDrawerTestState | null => {
@@ -1303,7 +1320,7 @@ function createSubTandemSidebarState(
       knownModelIds: [],
       contextKey: "",
       refreshState: "idle",
-      refreshMessage: "",
+      refreshMessage: null,
       validationError: null,
     };
     modelCatalogs.clear();
@@ -1316,7 +1333,7 @@ function createSubTandemSidebarState(
       snapshot.modelControl.contextKey = contextKey;
       snapshot.modelControl.knownModelIds = [...(modelCatalogs.get(contextKey) ?? [])];
       snapshot.modelControl.refreshState = "idle";
-      snapshot.modelControl.refreshMessage = "";
+      snapshot.modelControl.refreshMessage = null;
       snapshot.modelControl.validationError = null;
     }
     snapshot.modelControl.value = value;
@@ -1356,12 +1373,15 @@ function createSubTandemSidebarState(
     snapshot.modelControl.mode = "custom";
   };
 
-  const setModelRefreshState = (state: ModelControlState["refreshState"], message = ""): void => {
+  const setModelRefreshState = (
+    state: ModelControlState["refreshState"],
+    message: LocalizedFeedback | null = null,
+  ): void => {
     snapshot.modelControl.refreshState = state;
     snapshot.modelControl.refreshMessage = message;
   };
 
-  const setModelRequiredError = (message: string): void => {
+  const setModelRequiredError = (message: LocalizedFeedback | null): void => {
     snapshot.modelControl.validationError = message;
   };
 
@@ -1627,8 +1647,9 @@ function createSubTandemSidebarState(
         interactionId: string;
       } | null>(null);
       snapshot.subtitleStyle.feedbackByField = fieldRecord<"idle" | "saving" | "saved">("idle");
-      snapshot.subtitleStyle.groupError =
-        "Subtitle style could not be saved. The previous style remains active.";
+      snapshot.subtitleStyle.groupError = (
+        globalThis as typeof globalThis & Window
+      ).subtandemLocalization.message("sidebar.subtitleStyleCouldNotBeSavedThe");
       snapshot.subtitleStyle.colorTarget = null;
       snapshot.subtitleStyle.nativeColorSession = null;
       return true;
@@ -1705,8 +1726,9 @@ function createSubTandemSidebarState(
     snapshot.subtitleStyle.nativeColorSession = null;
     snapshot.subtitleStyle.feedbackByField[session.field] = "idle";
     if (outcome === "failed")
-      snapshot.subtitleStyle.groupError =
-        "The system color picker is unavailable. The previous style remains active.";
+      snapshot.subtitleStyle.groupError = (
+        globalThis as typeof globalThis & Window
+      ).subtandemLocalization.message("sidebar.theSystemColorPickerIsUnavailableThe");
     return true;
   };
 

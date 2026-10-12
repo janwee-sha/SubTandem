@@ -5,7 +5,11 @@ import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 const workspaces: string[] = [];
-const helpers = ["subtandem-transport", "subtandem-subtitle-extractor", "subtandem-style-picker"];
+const helpers = [
+  "subtandem-transport",
+  "subtandem-subtitle-extractor",
+  "SubTandemStylePicker.app/Contents/MacOS/subtandem-style-picker",
+];
 
 afterEach(() => {
   for (const workspace of workspaces.splice(0)) rmSync(workspace, { recursive: true, force: true });
@@ -22,7 +26,7 @@ describe("package build preflight", () => {
     expect(pack).toContain("subtandem-transport");
     expect(pack).toContain("subtandem-subtitle-extractor");
     expect(pack).toContain("subtandem-style-picker");
-    expect(verify).toContain("EXPECTED_NATIVE");
+    expect(verify).toContain("native-package.mjs");
     expect(pack).not.toMatch(/dist\/native\/(?:dialog|alert|confirmation)/i);
     expect(verify).not.toMatch(/dist\/native\/(?:dialog|alert|confirmation)/i);
   });

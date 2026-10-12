@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>io.subtandem.style-picker</string>
+	<key>CFBundleName</key>
+	<string>SubTandemStylePicker</string>
+	<key>CFBundleDisplayName</key>
+	<string>SubTandem</string>
+	<key>CFBundleExecutable</key>
+	<string>subtandem-style-picker</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.3.0</string>
+	<key>CFBundleVersion</key>
+	<string>0.3.0</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>af</string>
+		<string>ca</string>
+		<string>cs</string>
+		<string>da</string>
+		<string>de</string>
+		<string>en</string>
+		<string>en-GB</string>
+		<string>es</string>
+		<string>fi</string>
+		<string>fr</string>
+		<string>he</string>
+		<string>hi</string>
+		<string>hr</string>
+		<string>hu</string>
+		<string>id</string>
+		<string>it</string>
+		<string>ja</string>
+		<string>ko</string>
+		<string>nl</string>
+		<string>pl</string>
+		<string>pt</string>
+		<string>pt-BR</string>
+		<string>ro</string>
+		<string>ru</string>
+		<string>sk</string>
+		<string>sr-Latn</string>
+		<string>sv</string>
+		<string>tr</string>
+		<string>uk</string>
+		<string>zh-Hans</string>
+		<string>zh-Hant</string>
+	</array>
+	<key>LSMinimumSystemVersion</key>
+	<string>12.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+</dict>
+</plist>

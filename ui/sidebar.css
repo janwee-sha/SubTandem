@@ -58,8 +58,11 @@ body {
 }
 
 #app {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   min-width: 0;
+  min-height: 100vh;
   overflow-x: hidden;
 }
 
@@ -69,6 +72,7 @@ body {
 }
 
 .sidebar-section {
+  flex: none;
   width: 100%;
   min-width: 0;
   padding: 14px 20px;
@@ -77,8 +81,69 @@ body {
   gap: 10px;
 }
 
-.sidebar-section:last-child {
+.sidebar-section:last-child,
+.session-section {
   border-bottom: 0;
+}
+
+.support-footer {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 28px 20px 6px;
+  text-align: end;
+}
+
+#support-status:not(:empty) {
+  margin-block-start: 6px;
+}
+
+.support-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-height: 24px;
+  color: var(--label-secondary);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.support-link > span {
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+}
+
+.support-link:hover {
+  color: var(--label-primary);
+}
+
+.support-link:hover > span {
+  text-decoration-color: currentColor;
+}
+
+.support-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+.support-icon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+[dir="rtl"] .support-icon {
+  transform: scaleX(-1);
 }
 
 h2,
@@ -406,7 +471,8 @@ button.secondary {
   min-width: 0;
   gap: 9px;
   max-height: 1600px;
-  padding: 10px 0 2px 18px;
+  padding-block: 10px 2px;
+  padding-inline: 18px 0;
   overflow: hidden;
   transition:
     max-height 250ms ease,
@@ -452,7 +518,7 @@ button.secondary {
 .profile-drawer-actions-end {
   display: flex;
   min-width: 0;
-  margin-left: auto;
+  margin-inline-start: auto;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 5px;
@@ -617,7 +683,7 @@ button.secondary {
   min-width: 2.5rem;
   color: var(--label-primary);
   font-variant-numeric: tabular-nums;
-  text-align: right;
+  text-align: end;
 }
 
 .profile-operation-status:empty,
@@ -754,7 +820,7 @@ dt {
 }
 
 dd {
-  text-align: right;
+  text-align: end;
   font-weight: 600;
 }
 
@@ -922,7 +988,7 @@ dd {
   position: absolute;
   z-index: 10;
   top: 42px;
-  right: 0;
+  inset-inline-end: 0;
   display: grid;
   width: min(286px, 100%);
   gap: 7px;
@@ -1140,12 +1206,12 @@ dd {
   min-width: 0;
 }
 .credential-input input {
-  padding-right: 28px;
+  padding-inline-end: 28px;
   min-width: 0;
 }
 #toggle-provider-key {
   position: absolute;
-  right: 0;
+  inset-inline-end: 0;
   top: 0;
   bottom: 0;
   width: 24px;
@@ -1184,4 +1250,18 @@ dd {
 .profiles[data-empty="true"] .empty {
   margin: 0;
   text-align: center;
+}
+
+[dir="auto"],
+[dir="ltr"] {
+  unicode-bidi: isolate;
+}
+
+[dir="rtl"] .disclosure-indicator {
+  transform: scaleX(-1);
+}
+
+.profile-delete-actions button {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }

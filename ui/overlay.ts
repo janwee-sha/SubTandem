@@ -82,6 +82,7 @@ window.iina?.onMessage("overlay:render", (raw: unknown) => {
   if (!overlayState.applyRender(raw)) return;
   const frame = overlayState.snapshot.frame!;
   applyTypography(currentViewportHeight());
+  translationText.dir = frame.direction;
   writeLines(frame.lines);
   scheduleLayout();
 });

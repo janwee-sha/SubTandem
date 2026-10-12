@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { UI_LOCALES } from "../../shared/localization/locales.js";
+import { uiLanguageRuntime } from "../helpers/ui-language-runtime.js";
+import { describe, expect, it, vi } from "vitest";
 import { WebViewTranslationOverlay } from "../../src/adapters/iina/webview-translation-overlay.js";
 import { SubtitleStylePreferences } from "../../src/adapters/iina/subtitle-style-preferences.js";
 import { SubtitleStyleAuthority } from "../../src/adapters/iina/subtitle-style-sync.js";
@@ -217,5 +219,190 @@ describe("subtitle style lifecycle", () => {
     overlay.setStyle(restored.liveStyle);
     overlay.show(["new window"]);
     expect(view.messages.at(-1)).toMatchObject({ data: { style: saved } });
+  });
+});
+
+describe("localized native sessions through real Main and Global", () => {
+  it.each(UI_LOCALES)(
+    "keeps %s fixed across multiwindow open, preview, confirm, cancel and close",
+    async (locale) => {
+      vi.useFakeTimers();
+      try {
+        const runtime = await uiLanguageRuntime({ nativePicker: true });
+        const first = await runtime.addWindow({ preferred: [locale] });
+        const second = await runtime.addWindow({ preferred: [locale === "he" ? "en" : "he"] });
+        const open = (window: typeof first, requestId: string, kind: string, field: string) =>
+          window.send("subtitle-style:picker-open", {
+            requestId,
+            revision: 1,
+            payload: { kind, field },
+          });
+        const result = (window: typeof first, requestId: string) => {
+          window.poll();
+          return window.messages
+            .filter(
+              (entry) =>
+                entry.name === "subtitle-style:picker-result" && entry.data.requestId === requestId,
+            )
+            .at(-1)?.data;
+        };
+        open(first, "font-first", "font", "fontFamily");
+        await runtime.pump();
+        expect(runtime.exec).toHaveBeenCalledTimes(1);
+        expect(runtime.exec.mock.calls[0]![1].slice(3)).toEqual([
+          "--ui-locale",
+          locale,
+          "-AppleLanguages",
+          `(${locale})`,
+        ]);
+        open(second, "font-second", "font", "fontFamily");
+        await runtime.pump();
+        expect(result(second, "font-second")).toMatchObject({ outcome: "focused" });
+        runtime.nativeEvent({
+          requestId: "font-first",
+          type: "font-confirmed",
+          fontFamily: "Avenir Next",
+        });
+        await runtime.pump();
+        expect(result(first, "font-first")).toMatchObject({ outcome: "confirmed" });
+        expect(
+          runtime.preferences.set.mock.calls.some(
+            ([key, value]) =>
+              key === "translationSubtitleTextStyle" &&
+              JSON.stringify(value).includes("Avenir Next"),
+          ),
+        ).toBe(true);
+        const color = { r: 12, g: 34, b: 56, a: 128 };
+        open(second, "color-second", "color", "fontColor");
+        await runtime.pump();
+        runtime.nativeEvent({ requestId: "color-second", type: "color-preview", color });
+        await runtime.pump();
+        second.poll();
+        expect(
+          second.messages.filter((entry) => entry.name === "subtitle-style:state").at(-1)?.data
+            .liveStyle.fontColor,
+        ).toEqual(color);
+        second.close();
+        await runtime.pump();
+        expect(runtime.network.mock.calls.some(([url]) => url.endsWith("/cancel"))).toBe(true);
+        runtime.nativeEvent({
+          requestId: "color-second",
+          type: "color-closed",
+          changed: true,
+          color,
+        });
+        await runtime.pump();
+        expect(
+          runtime.preferences.set.mock.calls.filter(
+            ([key, value]) =>
+              key === "translationSubtitleTextStyle" && JSON.stringify(value).includes('"r":12'),
+          ),
+        ).toHaveLength(0);
+        open(first, "font-cancel", "font", "fontFamily");
+        await runtime.pump();
+        runtime.nativeEvent({ requestId: "font-cancel", type: "font-cancelled" });
+        await runtime.pump();
+        expect(result(first, "font-cancel")).toMatchObject({ outcome: "cancelled" });
+        expect(runtime.exec).toHaveBeenCalledTimes(1);
+        expect(
+          runtime.network.mock.calls.every(
+            ([, request]) => !Object.hasOwn(request.data, "uiLocale"),
+          ),
+        ).toBe(true);
+        first.close();
+        await runtime.pump();
+      } finally {
+        vi.clearAllTimers();
+        vi.useRealTimers();
+        vi.unstubAllGlobals();
+        vi.doUnmock("../../src/providers/profile-activation.js");
+      }
+    },
+  );
+  it("starts fault-resolved English and rejects invalid native ready locale", async () => {
+    vi.useFakeTimers();
+    try {
+      const runtime = await uiLanguageRuntime({ nativePicker: true, badReadyLocale: true });
+      const window = await runtime.addWindow({ version: "1.4.9", preferred: ["he"] });
+      window.send("subtitle-style:picker-open", {
+        requestId: "bad-ready",
+        revision: 1,
+        payload: { kind: "font", field: "fontFamily" },
+      });
+      await runtime.pump();
+      expect(runtime.exec.mock.calls[0]![1].slice(3)).toEqual([
+        "--ui-locale",
+        "en",
+        "-AppleLanguages",
+        "(en)",
+      ]);
+      window.poll();
+      expect(
+        window.messages.filter((entry) => entry.name === "subtitle-style:picker-result").at(-1)
+          ?.data.outcome,
+      ).toBe("failed");
+      expect(runtime.network).not.toHaveBeenCalled();
+      window.close();
+    } finally {
+      vi.clearAllTimers();
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+      vi.doUnmock("../../src/providers/profile-activation.js");
+    }
+  });
+});
+
+describe("native session authority invalidation", () => {
+  it("cancels the old native interaction before accepting the replacement language authority", async () => {
+    vi.useFakeTimers();
+    try {
+      const runtime = await uiLanguageRuntime({ nativePicker: true });
+      const window = await runtime.addWindow({ preferred: ["he"] });
+      window.send("subtitle-style:picker-open", {
+        requestId: "old-authority-font",
+        revision: 1,
+        payload: { kind: "font", field: "fontFamily" },
+      });
+      await runtime.pump();
+      runtime.dropResponse("profile-activation:state", true);
+      runtime.dropLanguage(true);
+      window.reload();
+      await runtime.pump();
+      const request = [...runtime.frames]
+        .reverse()
+        .find((frame) => frame.frame.name === "profile-activation:get")!.frame.data;
+      runtime.injectResponse("profile-activation:state", {
+        requestId: request.requestId,
+        authority: {
+          ...window.state.profileAuthority,
+          authorityId: "replacement-authority",
+          stateVersion: 1,
+        },
+      });
+      await runtime.pump();
+      expect(
+        runtime.network.mock.calls.some(
+          ([url, request]) =>
+            url.endsWith("/cancel") && request.data.requestId === "old-authority-font",
+        ),
+      ).toBe(true);
+      runtime.nativeEvent({
+        requestId: "old-authority-font",
+        type: "font-confirmed",
+        fontFamily: "Expired Family",
+      });
+      await runtime.pump();
+      expect(
+        runtime.preferences.set.mock.calls.some(([, value]) =>
+          JSON.stringify(value).includes("Expired Family"),
+        ),
+      ).toBe(false);
+      window.close();
+    } finally {
+      vi.clearAllTimers();
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+      vi.doUnmock("../../src/providers/profile-activation.js");
+    }
   });
 });

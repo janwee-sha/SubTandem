@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { createLocalizer } from "../../ui/localization.js";
 import { sidebarHarness } from "../helpers/sidebar-harness.js";
+
+const localizer = createLocalizer("en");
 
 const services = [
   {
@@ -48,15 +51,17 @@ describe.each(services)("$label Profile guidance", (service) => {
     expect(h.element("#provider-proxy-mode").value).toBe("system");
     expect(h.element("#provider-endpoint").value).toBe(service.root);
     expect(h.element("#provider-model").value).toBe("");
-    expect(h.element("#provider-model").placeholder).toBe(service.placeholder);
+    expect(h.element("#provider-model").placeholder).toBe(
+      localizer.format("model.example", { model: service.placeholder.slice(5) }),
+    );
     expect(h.element("#model-hint").textContent).toBe(
-      "Refresh the catalog or enter the exact model ID. Low-effort models are recommended.",
+      localizer.format("sidebar.refreshTheCatalogOrEnterTheExact"),
     );
     expect(h.element("#endpoint-hint").textContent).toBe(
-      `Enter a HTTP(S) ${service.label} API root. Translation requests append ${service.path}.`,
+      localizer.format("endpoint.help", { service: service.label, path: service.path }),
     );
     expect(h.element("#request-url").textContent).toBe(
-      `Actual request:\n${service.root}${service.path}`,
+      localizer.format("endpoint.request", { url: `${service.root}${service.path}` }),
     );
     h.event("pagehide");
   });
@@ -141,7 +146,9 @@ describe.each(services)("$label Profile guidance", (service) => {
       const root = `https://fixture.test/${"long-path-".repeat(40)}/custom`;
       h.element("#provider-endpoint").value = `  ${root}${slash}  `;
       h.element("#provider-endpoint").dispatch("input");
-      expect(h.element("#request-url").textContent).toBe(`Actual request:\n${root}${service.path}`);
+      expect(h.element("#request-url").textContent).toBe(
+        localizer.format("endpoint.request", { url: `${root}${service.path}` }),
+      );
       h.event("pagehide");
     },
   );
@@ -160,7 +167,9 @@ describe.each(services)("$label Profile guidance", (service) => {
     selectService(h, service.kind);
     h.element("#provider-endpoint").value = root;
     h.element("#provider-endpoint").dispatch("input");
-    expect(h.element("#request-url").textContent).toBe("Actual request:\n—");
+    expect(h.element("#request-url").textContent).toBe(
+      localizer.format("endpoint.request", { url: "—" }),
+    );
     expect(h.evaluate("validModelEndpoint()")).toBe(false);
     h.event("pagehide");
   });
@@ -205,10 +214,10 @@ describe.each(services.slice(0, 2))("$label fixed API root paths", (service) => 
     h.element("#provider-endpoint").value = root;
     h.element("#provider-endpoint").dispatch("input");
     expect(h.element("#endpoint-hint").textContent).toBe(
-      `Enter a HTTP(S) ${service.label} API root. Translation requests append ${service.path}.`,
+      localizer.format("endpoint.help", { service: service.label, path: service.path }),
     );
     expect(h.element("#request-url").textContent).toBe(
-      `Actual request:\n${root.replace(/\/+$/, "")}${service.path}`,
+      localizer.format("endpoint.request", { url: `${root.replace(/\/+$/, "")}${service.path}` }),
     );
     h.event("pagehide");
   });
@@ -223,7 +232,9 @@ describe("Claude API root validation", () => {
       selectService(h, "claude");
       h.element("#provider-endpoint").value = root;
       h.element("#provider-endpoint").dispatch("input");
-      expect(h.element("#request-url").textContent).toBe("Actual request:\n—");
+      expect(h.element("#request-url").textContent).toBe(
+        localizer.format("endpoint.request", { url: "—" }),
+      );
       expect(h.evaluate("validModelEndpoint()")).toBe(false);
       h.event("pagehide");
     },
@@ -234,10 +245,10 @@ describe("New Profile heading", () => {
   it("renders the title without an unsaved service subtitle", () => {
     const h = sidebarHarness();
     h.element("#new-profile").dispatch("click");
-    const heading = h.evaluate("newProfileRow.innerHTML");
-    expect(heading).toContain("<strong>New profile</strong>");
-    expect(heading).not.toContain("Unsaved translation service");
-    expect(heading).not.toContain("profile-summary");
+    expect(h.evaluate("newProfileRow.querySelector('strong').textContent")).toBe(
+      localizer.format("sidebar.newProfile"),
+    );
+    expect(h.evaluate("newProfileRow.querySelectorAll('.profile-summary').length")).toBe(0);
     h.event("pagehide");
   });
 });

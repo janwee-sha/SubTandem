@@ -12,9 +12,16 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import {
+  auditNativePackage,
+  NATIVE_FILES,
+  NATIVE_EXECUTABLES,
+  STYLE_PICKER_EXECUTABLE,
+  validateNativeNames,
+} from "./native-package.mjs";
 import { validatePluginUpdateMetadata } from "./plugin-update-metadata.mjs";
 import { readReleaseNotes } from "./release-notes.mjs";
 
@@ -139,7 +146,7 @@ export function validateArchiveEntries(entries, expectedCompliance = {}) {
     "dist/ui/sidebar.html",
     "dist/ui/overlay.html",
     "dist/native/subtandem-subtitle-extractor",
-    "dist/native/subtandem-style-picker",
+    ...NATIVE_FILES.map((file) => `dist/native/${file}`),
     "dist/native/subtandem-transport",
   ];
   for (const name of required) {
@@ -148,23 +155,15 @@ export function validateArchiveEntries(entries, expectedCompliance = {}) {
     }
   }
 
-  const nativeFiles = entries
-    .filter((entry) => entry.name.startsWith("dist/native/") && !entry.name.endsWith("/"))
-    .map((entry) => entry.name)
-    .sort();
-  const expectedNativeFiles = [
-    "dist/native/subtandem-style-picker",
-    "dist/native/subtandem-subtitle-extractor",
-    "dist/native/subtandem-transport",
-  ];
-  if (JSON.stringify(nativeFiles) !== JSON.stringify(expectedNativeFiles)) {
-    throw new Error("The archive native executable allowlist does not match");
-  }
-  for (const name of expectedNativeFiles) {
+  validateNativeNames(
+    entries
+      .filter((entry) => entry.name.startsWith("dist/native/") && entry.name !== "dist/native/")
+      .map((entry) => entry.name.slice("dist/native/".length)),
+  );
+  for (const name of NATIVE_EXECUTABLES.map((file) => `dist/native/${file}`)) {
     const helper = entries.find((entry) => entry.name === name);
-    if (!helper || (helper.unixMode & 0o111) === 0) {
+    if (!helper || (helper.unixMode & 0o111) === 0)
       throw new Error(`The archived native helper is not executable: ${name}`);
-    }
   }
   return entries;
 }
@@ -295,6 +294,7 @@ export function buildReleaseAudit(input) {
     entries: input.entries,
     buildHelpers: input.buildHelpers,
     packageHelpers: input.packageHelpers,
+    nativeFiles: input.nativeFiles,
     ffmpeg: input.ffmpeg,
     releaseNotes: input.releaseNotes,
     hostValidation: {
@@ -561,7 +561,10 @@ export function auditRelease(options) {
     const helperPaths = {
       "subtandem-transport": resolve(options.buildHelper),
       "subtandem-subtitle-extractor": resolve(options.buildExtractor),
-      "subtandem-style-picker": resolve(options.buildStylePicker),
+      [STYLE_PICKER_EXECUTABLE]: join(
+        resolve(options.buildStylePicker),
+        "Contents/MacOS/subtandem-style-picker",
+      ),
     };
     const buildHelpers = {};
     const packageHelpers = {};
@@ -575,6 +578,18 @@ export function auditRelease(options) {
         throw new Error(`Packaged ${name} differs from the audited build`);
       }
     }
+    const buildNativeFiles = auditNativePackage(
+      dirname(resolve(options.buildStylePicker)),
+      process.cwd(),
+      options.expectedVersion,
+    );
+    const packageNativeFiles = auditNativePackage(
+      join(temporaryDirectory, "dist/native"),
+      process.cwd(),
+      options.expectedVersion,
+    );
+    if (JSON.stringify(buildNativeFiles) !== JSON.stringify(packageNativeFiles))
+      throw new Error("Packaged native files differ from audited build");
     const byteSize = statSync(artifactPath).size;
     const sha256 = createHash("sha256").update(archiveBuffer).digest("hex");
     const artifactName = basename(artifactPath);
@@ -598,6 +613,7 @@ export function auditRelease(options) {
       entries,
       buildHelpers,
       packageHelpers,
+      nativeFiles: packageNativeFiles,
       ffmpeg,
       releaseNotes,
     });

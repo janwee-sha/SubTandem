@@ -81,11 +81,12 @@ export function createTestProfileAuthority(
   credentialConfigured: Record<string, boolean> = Object.fromEntries(
     profiles.listLatest().map((profile) => [profile.profileId, true]),
   ),
+  authorityId = "test-authority",
 ): ProfileActivationAuthority {
   let commitSequence = 0;
   let storeRevision = 0;
   const authority = new ProfileActivationAuthority({
-    authorityId: "test-authority",
+    authorityId,
     profiles,
     storeRevision,
     credentialConfigured,

@@ -58,13 +58,14 @@ final class StylePickerServer: @unchecked Sendable {
     private var listener: NWListener?
 
     @MainActor
-    init(token: String, catalog: FontCatalog, onShutdown: @escaping @Sendable () -> Void) {
+    init(token: String, catalog: FontCatalog, localizer: NativeLocalizer, onShutdown: @escaping @Sendable () -> Void) {
         self.token = token
         self.catalog = catalog
-        self.fontPicker = FontPickerController(catalog: catalog)
-        self.colorPicker = ColorPickerController()
+        self.fontPicker = FontPickerController(catalog: catalog, localizer: localizer)
+        self.colorPicker = ColorPickerController(localizer: localizer)
         self.onShutdown = onShutdown
-        catalog.startObserving { [events] revision in
+        catalog.startObserving { [weak self, events] revision in
+            Task { @MainActor in self?.fontPicker.reloadCatalog() }
             events.append(requestId: "catalog", payload: .fontCatalogChanged(revision))
         }
     }

@@ -2,9 +2,10 @@ import Foundation
 
 func runFontPickerTests() throws {
     let families = ["Avenir Next", "Helvetica Neue", "Noto Sans CJK"]
-    try check(FontCatalog.filteredFamilies(families, query: "avenir") == ["Avenir Next"], "font filtering")
-    try check(FontCatalog.filteredFamilies(families, query: "SANS") == ["Noto Sans CJK"], "case-insensitive filtering")
-    try check(FontCatalog.filteredFamilies(families, query: "") == families, "empty font filtering")
+    let directory = FontCatalog(locale: "en", families: families)
+    try check(directory.directory(query: "avenir").options.map(\.familyId) == ["Avenir Next"], "font filtering")
+    try check(directory.directory(query: "SANS").options.map(\.familyId) == ["Noto Sans CJK"], "case-insensitive filtering")
+    try check(directory.directory().options.map(\.familyId) == families, "empty font filtering")
 
     let selection = FontSelection(originalFamily: "Avenir Next")
     selection.preview("Helvetica Neue")
@@ -12,7 +13,7 @@ func runFontPickerTests() throws {
     selection.preview("Helvetica Neue")
     try check(selection.confirm() == "Helvetica Neue", "font confirm")
 
-    let catalog = FontCatalog(families: ["Avenir Next", "Helvetica Neue"])
+    let catalog = FontCatalog(locale: "en", families: ["Avenir Next", "Helvetica Neue"])
     try check(catalog.status(for: nil) == FontStatus(availability: .available, catalogRevision: 0), "system font status")
     try check(catalog.status(for: "Avenir Next").availability == .available, "available font status")
     try check(catalog.status(for: "Missing Family").availability == .unavailable, "unavailable font status")

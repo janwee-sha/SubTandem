@@ -1,0 +1,9 @@
+import "./localization.js";
+import "../shared/provider-endpoint.js";
+import "./service-failure-message.js";
+import "./provider-status.js";
+import "./sidebar-state.js";
+import "./profile-card-interactions.js";
+import "./session-status.js";
+import "./credential-editor-entry.js";
+import "./sidebar.js";

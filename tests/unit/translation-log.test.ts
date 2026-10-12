@@ -119,6 +119,6 @@ describe("session translation log", () => {
     await controller.whenIdle();
 
     expect(controller.cacheSize).toBe(1);
-    expect(show).toHaveBeenCalledWith(["translated"]);
+    expect(show).toHaveBeenCalledWith(["translated"], "ltr");
   });
 });

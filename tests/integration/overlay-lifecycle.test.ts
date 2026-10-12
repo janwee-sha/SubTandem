@@ -210,3 +210,38 @@ describe("translation overlay lifecycle", () => {
     }
   });
 });
+
+describe("target language direction reaches the translation WebView", () => {
+  it.each(["ar", "dv", "fa", "he", "ps", "sd", "ug", "ur", "yi"])(
+    "renders %s with RTL and changes to LTR after switching targets",
+    async (targetLanguage) => {
+      const host = new FakeIinaOverlay();
+      const event = new FakeIinaEvent();
+      const overlay = new WebViewTranslationOverlay(host, event);
+      const controller = new PlaybackController({
+        playerId: "direction",
+        provider: new DeterministicFakeProvider(""),
+        overlay,
+        targetLanguage,
+      });
+      controller.setSource({ cues, contentHash: "direction", format: "srt" });
+      controller.tick(0);
+      await controller.whenIdle();
+      event.trigger("iina.plugin-overlay-loaded");
+      host.trigger("overlay:ready");
+      expect(host.messages.at(-1)).toMatchObject({
+        name: "overlay:render",
+        data: { direction: "rtl", lines: ["first"] },
+      });
+      controller.setTargetLanguage("zh-Hans");
+      expect(host.messages.at(-1)?.name).toBe("overlay:clear");
+      controller.tick(0);
+      await controller.whenIdle();
+      expect(host.messages.at(-1)).toMatchObject({
+        name: "overlay:render",
+        data: { direction: "ltr", lines: ["first"] },
+      });
+      controller.close();
+    },
+  );
+});

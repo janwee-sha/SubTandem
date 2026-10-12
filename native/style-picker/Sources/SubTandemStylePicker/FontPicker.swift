@@ -14,6 +14,10 @@ final class FontSelection {
         previewFamily = family
     }
 
+    func selectedRow(in options: [SelectableFont]) -> Int? {
+        options.firstIndex { $0.familyId == previewFamily }
+    }
+
     func confirm() -> String? {
         previewFamily
     }
@@ -26,6 +30,7 @@ final class FontSelection {
 @MainActor
 final class FontPickerController: NSObject, NSTableViewDataSource, NSTableViewDelegate, NSWindowDelegate {
     private let catalog: FontCatalog
+    private let localizer: NativeLocalizer
     private let panel = NSPanel(
         contentRect: NSRect(x: 0, y: 0, width: 460, height: 410),
         styleMask: [.titled, .closable, .resizable],
@@ -34,20 +39,22 @@ final class FontPickerController: NSObject, NSTableViewDataSource, NSTableViewDe
     )
     private let search = NSSearchField()
     private let table = NSTableView()
-    private let preview = NSTextField(labelWithString: "SubTandem Preview")
-    private let chooseButton = NSButton(title: "Choose", target: nil, action: nil)
-    private let cancelButton = NSButton(title: "Cancel", target: nil, action: nil)
+    private let preview = NSTextField(labelWithString: "")
+    private let chooseButton = NSButton(title: "", target: nil, action: nil)
+    private let cancelButton = NSButton(title: "", target: nil, action: nil)
     private var scroll = NSScrollView()
     private var selection = FontSelection(originalFamily: nil)
-    private var filtered: [String] = []
+    private var filtered: [SelectableFont] = []
+    private var restoringSelection = false
     private var requestId: String?
     private var fontSize = 40
     private var bold = false
     private var italic = false
     private var complete: ((String?, Bool) -> Void)?
 
-    init(catalog: FontCatalog) {
+    init(catalog: FontCatalog, localizer: NativeLocalizer) {
         self.catalog = catalog
+        self.localizer = localizer
         super.init()
         configure()
     }
@@ -63,14 +70,16 @@ final class FontPickerController: NSObject, NSTableViewDataSource, NSTableViewDe
         italic = request.italic
         complete = completion
         search.stringValue = ""
-        filtered = catalog.allFamilies()
+        filtered = catalog.directory().options
+        restoringSelection = true
         table.reloadData()
-        if let family = request.fontFamily, let row = filtered.firstIndex(of: family) {
+        if let family = request.fontFamily, let row = filtered.firstIndex(where: { $0.familyId == family }) {
             table.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
             table.scrollRowToVisible(row)
         } else {
             table.deselectAll(nil)
         }
+        restoringSelection = false
         updatePreview()
         NSApp.activate(ignoringOtherApps: true)
         panel.center()
@@ -105,27 +114,36 @@ final class FontPickerController: NSObject, NSTableViewDataSource, NSTableViewDe
         let field = (tableView.makeView(withIdentifier: identifier, owner: self) as? NSTextField)
             ?? NSTextField(labelWithString: "")
         field.identifier = identifier
-        field.stringValue = filtered[row]
+        field.stringValue = filtered[row].label
         field.font = NSFont.systemFont(ofSize: 13)
-        field.setAccessibilityLabel("Font family")
-        field.setAccessibilityValue(filtered[row])
+        field.setAccessibilityLabel(localizer.text(.fontFamily))
+        field.setAccessibilityValue(filtered[row].label)
         return field
     }
 
     func tableViewSelectionDidChange(_ notification: Notification) {
+        if restoringSelection { return }
         guard table.selectedRow >= 0, table.selectedRow < filtered.count else {
             selection.preview(nil)
             updatePreview()
             return
         }
-        selection.preview(filtered[table.selectedRow])
+        selection.preview(filtered[table.selectedRow].familyId)
         updatePreview()
     }
 
     func controlTextDidChange(_ notification: Notification) {
-        filtered = FontCatalog.filteredFamilies(catalog.allFamilies(), query: search.stringValue)
+        reloadCatalog()
+    }
+
+    func reloadCatalog() {
+        restoringSelection = true
+        filtered = catalog.directory(query: search.stringValue).options
         table.reloadData()
-        table.deselectAll(nil)
+        if let row = selection.selectedRow(in: filtered) {
+            table.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        } else { table.deselectAll(nil) }
+        restoringSelection = false
         updatePreview()
     }
 
@@ -135,25 +153,28 @@ final class FontPickerController: NSObject, NSTableViewDataSource, NSTableViewDe
     }
 
     private func configure() {
-        panel.title = "Choose Translation Font"
+        panel.title = localizer.text(.chooseTranslationFont)
+        chooseButton.title = localizer.text(.choose)
+        cancelButton.title = localizer.text(.cancel)
+        preview.stringValue = localizer.text(.subtandemPreview)
         panel.delegate = self
         panel.isReleasedWhenClosed = false
         panel.minSize = NSSize(width: 360, height: 300)
 
-        search.placeholderString = "Search Fonts"
+        search.placeholderString = localizer.text(.searchFonts)
         search.target = self
         search.action = #selector(searchChanged)
         search.sendsSearchStringImmediately = true
-        search.setAccessibilityLabel("Search font families")
+        search.setAccessibilityLabel(localizer.text(.searchFontFamilies))
 
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("FontFamily"))
-        column.title = "Font Family"
+        column.title = localizer.text(.fontFamily)
         table.addTableColumn(column)
         table.headerView = nil
         table.dataSource = self
         table.delegate = self
         table.allowsEmptySelection = true
-        table.setAccessibilityLabel("Available font families")
+        table.setAccessibilityLabel(localizer.text(.availableFontFamilies))
 
         scroll.documentView = table
         scroll.hasVerticalScroller = true
@@ -161,16 +182,16 @@ final class FontPickerController: NSObject, NSTableViewDataSource, NSTableViewDe
 
         preview.alignment = .center
         preview.lineBreakMode = .byTruncatingTail
-        preview.setAccessibilityLabel("Font preview")
+        preview.setAccessibilityLabel(localizer.text(.fontPreview))
 
         chooseButton.target = self
         chooseButton.action = #selector(choose)
         chooseButton.keyEquivalent = "\r"
-        chooseButton.setAccessibilityHelp("Use the selected font family for translations")
+        chooseButton.setAccessibilityHelp(localizer.text(.useTheSelectedFontFamilyForTranslations))
         cancelButton.target = self
         cancelButton.action = #selector(cancelAction)
         cancelButton.keyEquivalent = "\u{1b}"
-        cancelButton.setAccessibilityHelp("Keep the current translation font")
+        cancelButton.setAccessibilityHelp(localizer.text(.keepTheCurrentTranslationFont))
 
         let buttons = NSStackView(views: [cancelButton, chooseButton])
         buttons.orientation = .horizontal
@@ -179,6 +200,10 @@ final class FontPickerController: NSObject, NSTableViewDataSource, NSTableViewDe
         buttons.spacing = 8
 
         let content = NSStackView(views: [search, scroll, preview, buttons])
+        content.userInterfaceLayoutDirection = localizer.isRightToLeft ? .rightToLeft : .leftToRight
+        search.userInterfaceLayoutDirection = content.userInterfaceLayoutDirection
+        table.userInterfaceLayoutDirection = content.userInterfaceLayoutDirection
+        buttons.userInterfaceLayoutDirection = content.userInterfaceLayoutDirection
         content.orientation = .vertical
         content.alignment = .leading
         content.spacing = 10
@@ -195,7 +220,8 @@ final class FontPickerController: NSObject, NSTableViewDataSource, NSTableViewDe
             scroll.widthAnchor.constraint(equalTo: content.widthAnchor, constant: -32),
             scroll.heightAnchor.constraint(greaterThanOrEqualToConstant: 180),
             preview.widthAnchor.constraint(equalTo: content.widthAnchor, constant: -32),
-            buttons.widthAnchor.constraint(equalToConstant: 190),
+            buttons.widthAnchor.constraint(greaterThanOrEqualToConstant: 190),
+            buttons.widthAnchor.constraint(lessThanOrEqualTo: content.widthAnchor, constant: -32),
         ])
     }
 
@@ -229,7 +255,7 @@ final class FontPickerController: NSObject, NSTableViewDataSource, NSTableViewDe
         let size = max(12, min(48, CGFloat(fontSize) * 0.5))
         let base = family.flatMap { NSFontManager.shared.font(withFamily: $0, traits: traits, weight: 5, size: size) }
         preview.font = base ?? NSFont.systemFont(ofSize: size, weight: bold ? .bold : .regular)
-        preview.stringValue = family ?? "System Default — SubTandem Preview"
+        preview.stringValue = family ?? localizer.text(.systemDefaultSubTandemPreview)
         preview.setAccessibilityValue(preview.stringValue)
     }
 }

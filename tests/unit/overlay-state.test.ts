@@ -194,6 +194,7 @@ describe("Overlay DOM layout state", () => {
     expect(
       state.applyRender({
         renderRevision: 1,
+        direction: "ltr",
         lines: ["first", "second"],
         position: 50,
         region,
@@ -216,13 +217,34 @@ describe("Overlay DOM layout state", () => {
 
   it("never revives cleared text from stale render, layout or resize", () => {
     const state = globalThis.createSubTandemOverlayState();
-    state.applyRender({ renderRevision: 4, lines: ["current"], position: 50, region, style });
+    state.applyRender({
+      renderRevision: 4,
+      direction: "ltr",
+      lines: ["current"],
+      position: 50,
+      region,
+      style,
+    });
     expect(state.clear({ renderRevision: 5 })).toBe(true);
     expect(
-      state.applyRender({ renderRevision: 4, lines: ["stale"], position: 75, region, style }),
+      state.applyRender({
+        renderRevision: 4,
+        direction: "ltr",
+        lines: ["stale"],
+        position: 75,
+        region,
+        style,
+      }),
     ).toBe(false);
     expect(
-      state.applyRender({ renderRevision: 5, lines: ["equal"], position: 75, region, style }),
+      state.applyRender({
+        renderRevision: 5,
+        direction: "ltr",
+        lines: ["equal"],
+        position: 75,
+        region,
+        style,
+      }),
     ).toBe(false);
     expect(state.applyLayout({ renderRevision: 4, position: 75, region, style })).toBe(false);
     expect(state.layout(720, 80)).toBeNull();
@@ -234,6 +256,7 @@ describe("Overlay DOM layout state", () => {
     expect(
       state.applyRender({
         renderRevision: 1,
+        direction: "ltr",
         lines: ["text"],
         position: 50,
         region,
@@ -250,5 +273,32 @@ describe("Overlay DOM layout state", () => {
       }),
     ).toBe(false);
     expect(state.clear({ renderRevision: 1, unexpected: true })).toBe(false);
+  });
+});
+
+describe("Overlay reading direction state", () => {
+  it("keeps direction through layout and rejects stale or invalid render messages", () => {
+    const state = globalThis.createSubTandemOverlayState();
+    const render = {
+      renderRevision: 1,
+      lines: ["123 مرحبا."],
+      direction: "rtl",
+      position: 50,
+      region,
+      style,
+    };
+    expect(state.applyRender(render)).toBe(true);
+    expect(state.applyLayout({ renderRevision: 2, position: 75, region, style })).toBe(true);
+    expect(state.snapshot.frame).toMatchObject({ direction: "rtl", lines: render.lines });
+    expect(state.applyRender({ ...render, direction: "ltr" })).toBe(false);
+    for (const direction of [undefined, null, "auto", "RTL", true, 1, {}]) {
+      expect(state.applyRender({ ...render, renderRevision: 3, direction })).toBe(false);
+    }
+    expect(state.snapshot.frame?.direction).toBe("rtl");
+    expect(state.applyRender({ ...render, renderRevision: 3, direction: "ltr" })).toBe(true);
+    expect(state.snapshot.frame?.direction).toBe("ltr");
+    expect(state.clear({ renderRevision: 4 })).toBe(true);
+    expect(state.applyRender({ ...render, renderRevision: 3 })).toBe(false);
+    expect(state.snapshot.frame).toBeNull();
   });
 });

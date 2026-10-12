@@ -1,4 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import { createLocalizer } from "../../ui/localization.js";
+
+const localizer = createLocalizer("en");
 
 beforeAll(async () => {
   await import("../../ui/service-failure-message.js");
@@ -12,7 +15,18 @@ function failureMessage(error: {
   retryable?: boolean;
   userAction?: string;
 }) {
-  return globalThis.subtandemSessionFailureMessage(error);
+  return globalThis.subtandemLocalization.feedback(
+    globalThis.subtandemSessionFailureFeedback(error),
+  );
+}
+
+function expectFailureFeedback(
+  error: Parameters<Window["subtandemSessionFailureFeedback"]>[0],
+  messageKey: string,
+) {
+  const feedback = globalThis.subtandemSessionFailureFeedback(error);
+  expect(feedback).toEqual({ messageKey, params: {} });
+  expect(globalThis.subtandemLocalization.feedback(feedback)).toBe(localizer.format(messageKey));
 }
 
 function presentation(input: {
@@ -38,7 +52,10 @@ function presentation(input: {
       | "invalidated";
   } | null;
 }) {
-  return globalThis.subtandemResolveSessionPresentation(input);
+  const value = globalThis.subtandemResolveSessionPresentation(input);
+  return value
+    ? { ...value, text: globalThis.subtandemLocalization.feedback(value.message) }
+    : null;
 }
 
 describe("Session failure presentation", () => {
@@ -54,82 +71,56 @@ describe("Session failure presentation", () => {
   });
 
   it.each([
-    [{ category: "authentication" }, "Authentication failed. Check the Profile’s API key."],
-    [
-      { category: "authentication", statusCode: 403 },
-      "Access was denied. Check the Profile’s API key and model access.",
-    ],
-    [
-      { category: "configuration" },
-      "The Profile settings were rejected. Check the API root and Model ID.",
-    ],
-    [
-      { category: "network" },
-      "Couldn’t reach the translation service. Check your connection and Network route.",
-    ],
-    [{ category: "timeout" }, "The translation service timed out. Try again."],
-    [{ category: "model" }, "The model is unavailable. Check the Profile’s Model ID."],
-    [
-      { category: "quota" },
-      "The service limit was reached. Check the account quota or try again later.",
-    ],
-    [
-      { category: "refusal" },
-      "The translation service refused this request. Try another model or Profile.",
-    ],
+    [{ category: "authentication" }, "sidebar.authenticationFailedCheckTheProfilesAPIKey"],
+    [{ category: "authentication", statusCode: 403 }, "sidebar.accessWasDeniedCheckTheProfilesAPI"],
+    [{ category: "configuration" }, "sidebar.theProfileSettingsWereRejectedCheckThe"],
+    [{ category: "network" }, "sidebar.couldntReachTheTranslationServiceCheckYour"],
+    [{ category: "timeout" }, "sidebar.theTranslationServiceTimedOutTryAgain"],
+    [{ category: "model" }, "sidebar.theModelIsUnavailableCheckTheProfiles"],
+    [{ category: "quota" }, "sidebar.theServiceLimitWasReachedCheckThe"],
+    [{ category: "refusal" }, "sidebar.theTranslationServiceRefusedThisRequestTry"],
     [
       { category: "protocol", providerCode: "PARTIAL_RESULT" },
-      "The translation service returned an unsupported response. Check the Profile’s service type and model.",
+      "sidebar.theTranslationServiceReturnedAnUnsupportedResponse",
     ],
-    [
-      { category: "http", statusCode: 500 },
-      "The translation service rejected the request. Check the Profile settings and try again.",
-    ],
-    [{}, "Translation failed. Test the Profile and try again."],
-  ])("maps %# to one exact actionable message", (error, expected) => {
-    expect(failureMessage(error)).toBe(expected);
+    [{ category: "http", statusCode: 500 }, "sidebar.theTranslationServiceRejectedTheRequestCheck"],
+    [{}, "sidebar.translationFailedTestTheProfileAndTry"],
+  ])("maps %# to the expected localized feedback", (error, messageKey) => {
+    expectFailureFeedback(error, messageKey);
   });
 
   it("uses the first matching signal and recognizes status-only failures", () => {
-    for (const [input, expected] of [
+    for (const [input, messageKey] of [
       [
         { category: "quota", statusCode: 401 },
-        "Authentication failed. Check the Profile’s API key.",
+        "sidebar.authenticationFailedCheckTheProfilesAPIKey",
       ],
       [
         { category: "configuration", statusCode: 403 },
-        "Access was denied. Check the Profile’s API key and model access.",
+        "sidebar.accessWasDeniedCheckTheProfilesAPI",
       ],
       [
         { category: "network", statusCode: 504 },
-        "Couldn’t reach the translation service. Check your connection and Network route.",
+        "sidebar.couldntReachTheTranslationServiceCheckYour",
       ],
       [
         { category: "configuration", statusCode: 429 },
-        "The Profile settings were rejected. Check the API root and Model ID.",
+        "sidebar.theProfileSettingsWereRejectedCheckThe",
       ],
-      [{ category: "timeout", statusCode: 429 }, "The translation service timed out. Try again."],
-      [
-        { category: "model", statusCode: 429 },
-        "The model is unavailable. Check the Profile’s Model ID.",
-      ],
-      [{ category: "quota", statusCode: 408 }, "The translation service timed out. Try again."],
-      [{ category: "http", statusCode: 504 }, "The translation service timed out. Try again."],
-      [
-        { category: "http", statusCode: 402 },
-        "The service limit was reached. Check the account quota or try again later.",
-      ],
-      [
-        { category: "http", statusCode: 429 },
-        "The service limit was reached. Check the account quota or try again later.",
-      ],
+      [{ category: "timeout", statusCode: 429 }, "sidebar.theTranslationServiceTimedOutTryAgain"],
+      [{ category: "model", statusCode: 429 }, "sidebar.theModelIsUnavailableCheckTheProfiles"],
+      [{ category: "quota", statusCode: 408 }, "sidebar.theTranslationServiceTimedOutTryAgain"],
+      [{ category: "http", statusCode: 504 }, "sidebar.theTranslationServiceTimedOutTryAgain"],
+      [{ category: "http", statusCode: 402 }, "sidebar.theServiceLimitWasReachedCheckThe"],
+      [{ category: "http", statusCode: 429 }, "sidebar.theServiceLimitWasReachedCheckThe"],
     ] as const)
-      expect(failureMessage(input)).toBe(expected);
+      expectFailureFeedback(input, messageKey);
   });
 
   it("treats the normalized unknown code as unknown and cancellation as no failure", () => {
-    expect(failureMessage({ category: "protocol", providerCode: "UNKNOWN_PROVIDER_ERROR" })).toBe(
-      "Translation failed. Test the Profile and try again.",
+    expectFailureFeedback(
+      { category: "protocol", providerCode: "UNKNOWN_PROVIDER_ERROR" },
+      "sidebar.translationFailedTestTheProfileAndTry",
     );
     expect(failureMessage({ category: "cancelled" })).toBeNull();
   });
@@ -186,7 +177,7 @@ describe("Session presentation priority", () => {
     ],
     [
       { status: "serviceUnavailable" as const, providerError: { category: "network" } },
-      "Couldn’t reach the translation service. Check your connection and Network route.",
+      localizer.format("sidebar.couldntReachTheTranslationServiceCheckYour"),
       "serviceUnavailable",
     ],
     [{ status: "running" as const }, "Translations are running", "running"],
@@ -203,7 +194,7 @@ describe("Session presentation priority", () => {
       providerError: { category: "network" },
     });
 
-    expect(first?.signature).toBe("running\u0000Translations are running");
+    expect(first?.signature).toBe("running\u0000sidebar.translationsAreRunning\u0000{}");
     expect(equivalent?.signature).toBe(first?.signature);
     expect(changed?.signature).not.toBe(first?.signature);
   });
@@ -219,11 +210,10 @@ describe("Session presentation priority", () => {
       sourcePreparation: { state: "unsupportedType" },
     });
 
-    expect(first).toEqual({
+    expect(first).toMatchObject({
       text: "Subtitle type not supported. Select a text subtitle in IINA.",
       state: "unsupportedType",
-      signature:
-        "unsupportedType\u0000Subtitle type not supported. Select a text subtitle in IINA.",
+      signature: "unsupportedType\u0000sidebar.subtitleTypeNotSupportedSelectAText\u0000{}",
     });
     expect(equivalent?.signature).toBe(first?.signature);
     expect(presentation({ status: "waitingForSubtitle", sourceIssue: "unreadable" })?.text).toBe(
@@ -234,11 +224,11 @@ describe("Session presentation priority", () => {
   it("keeps the no-service message stable while preserving disabled and subtitle priority", () => {
     const noService = presentation({ status: "waitingForConfiguration" });
 
-    expect(noService).toEqual({
+    expect(noService).toMatchObject({
       text: "No translation service enabled. Enable one to translate.",
       state: "waitingForConfiguration",
       signature:
-        "waitingForConfiguration\u0000No translation service enabled. Enable one to translate.",
+        "waitingForConfiguration\u0000sidebar.noTranslationServiceEnabledEnableOneTo\u0000{}",
     });
     expect(presentation({ status: "waitingForConfiguration" })?.signature).toBe(
       noService?.signature,

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="./sidebar.css" />
   </head>
   <body>
-    <main id="app">
+    <main id="app" inert aria-busy="true">
       <section class="sidebar-section" aria-labelledby="languages-heading">
         <div class="section-title-row">
-          <h2 id="languages-heading">Subtitle</h2>
+          <h2 id="languages-heading" data-i18n="sidebar.subtitle">Subtitle</h2>
           <div class="translation-toggle">
             <label class="switch">
               <input id="enabled" type="checkbox" />
-              <span>Translate</span>
+              <span data-i18n="sidebar.translate">Translate</span>
             </label>
             <p
               id="translation-status"
@@ -25,15 +25,16 @@
           </div>
         </div>
         <label class="setting-row">
-          <span>Target Language</span>
+          <span data-i18n="sidebar.targetLanguage">Target Language</span>
           <select id="target-language" aria-describedby="language-status" disabled></select>
         </label>
         <p id="language-status" class="operation-status" role="status" aria-live="polite"></p>
         <div class="position-control">
-          <label for="translation-position">Position</label>
+          <label for="translation-position" data-i18n="sidebar.position">Position</label>
           <div class="position-input-row">
             <input
               id="translation-position"
+              dir="ltr"
               type="range"
               min="0"
               max="100"
@@ -41,7 +42,7 @@
               value="0"
               aria-describedby="translation-position-status"
             />
-            <output id="translation-position-value" for="translation-position">0</output>
+            <output id="translation-position-value" dir="ltr" for="translation-position">0</output>
           </div>
           <p
             id="translation-position-status"
@@ -55,13 +56,13 @@
           class="subtitle-style-controls"
           aria-labelledby="subtitle-style-heading"
         >
-          <h3 id="subtitle-style-heading">Text Style</h3>
+          <h3 id="subtitle-style-heading" data-i18n="sidebar.textStyle">Text Style</h3>
           <div class="subtitle-style-surface">
             <fieldset id="subtitle-font-group" class="subtitle-style-group">
-              <legend>Font</legend>
+              <legend data-i18n="sidebar.font">Font</legend>
               <div class="subtitle-style-fields subtitle-style-font-fields">
                 <div class="subtitle-style-field subtitle-style-color-field">
-                  <label for="subtitle-font-color">Color</label>
+                  <label for="subtitle-font-color" data-i18n="sidebar.color">Color</label>
                   <button
                     id="subtitle-font-color"
                     class="subtitle-color-trigger"
@@ -70,13 +71,14 @@
                     aria-expanded="false"
                     aria-controls="subtitle-color-palette"
                     aria-label="Font Color: White · 100%"
+                    data-i18n-aria-label="sidebar.fontColorWhite100"
                   >
                     <span class="subtitle-color-swatch" aria-hidden="true"></span>
                   </button>
                 </div>
                 <label class="subtitle-style-field" for="subtitle-font-size">
-                  <span>Size</span>
-                  <select id="subtitle-font-size">
+                  <span data-i18n="sidebar.size">Size</span>
+                  <select id="subtitle-font-size" dir="ltr">
                     <option value="30">30</option>
                     <option value="35">35</option>
                     <option value="40" selected>40</option>
@@ -89,13 +91,14 @@
                   </select>
                 </label>
                 <div class="subtitle-style-field subtitle-font-picker-field">
-                  <label for="subtitle-font-family">Font</label>
+                  <label for="subtitle-font-family" data-i18n="sidebar.font">Font</label>
                   <button
                     id="subtitle-font-family"
                     class="subtitle-font-button secondary"
                     type="button"
                     aria-describedby="subtitle-font-status"
                     aria-busy="false"
+                    data-i18n="sidebar.systemDefault"
                   >
                     System Default
                   </button>
@@ -104,11 +107,11 @@
               <div class="subtitle-style-options">
                 <label class="subtitle-style-check" for="subtitle-font-bold">
                   <input id="subtitle-font-bold" type="checkbox" />
-                  <span>Bold</span>
+                  <span data-i18n="sidebar.bold">Bold</span>
                 </label>
                 <label class="subtitle-style-check" for="subtitle-font-italic">
                   <input id="subtitle-font-italic" type="checkbox" />
-                  <span>Italic</span>
+                  <span data-i18n="sidebar.italic">Italic</span>
                 </label>
               </div>
               <p
@@ -119,10 +122,10 @@
               ></p>
             </fieldset>
             <fieldset id="subtitle-border-group" class="subtitle-style-group">
-              <legend>Border</legend>
+              <legend data-i18n="sidebar.border">Border</legend>
               <div class="subtitle-style-fields subtitle-style-border-fields">
                 <div class="subtitle-style-field subtitle-style-color-field">
-                  <label for="subtitle-border-color">Color</label>
+                  <label for="subtitle-border-color" data-i18n="sidebar.color">Color</label>
                   <button
                     id="subtitle-border-color"
                     class="subtitle-color-trigger"
@@ -131,13 +134,14 @@
                     aria-expanded="false"
                     aria-controls="subtitle-color-palette"
                     aria-label="Border Color: Black · 100%"
+                    data-i18n-aria-label="sidebar.borderColorBlack100"
                   >
                     <span class="subtitle-color-swatch" aria-hidden="true"></span>
                   </button>
                 </div>
                 <label class="subtitle-style-field" for="subtitle-border-width">
-                  <span>Width</span>
-                  <select id="subtitle-border-width">
+                  <span data-i18n="sidebar.width">Width</span>
+                  <select id="subtitle-border-width" dir="ltr">
                     <option value="0">0</option>
                     <option value="0.25">0.25</option>
                     <option value="0.5">0.5</option>
@@ -153,10 +157,10 @@
               </div>
             </fieldset>
             <fieldset id="subtitle-background-group" class="subtitle-style-group">
-              <legend>Background</legend>
+              <legend data-i18n="sidebar.background">Background</legend>
               <div class="subtitle-style-fields">
                 <div class="subtitle-style-field subtitle-style-color-field">
-                  <label for="subtitle-background-color">Color</label>
+                  <label for="subtitle-background-color" data-i18n="sidebar.color">Color</label>
                   <button
                     id="subtitle-background-color"
                     class="subtitle-color-trigger"
@@ -165,6 +169,7 @@
                     aria-expanded="false"
                     aria-controls="subtitle-color-palette"
                     aria-label="Background Color: Transparent · 0%"
+                    data-i18n-aria-label="sidebar.backgroundColorTransparent0"
                   >
                     <span class="subtitle-color-swatch" aria-hidden="true"></span>
                   </button>
@@ -178,15 +183,22 @@
             role="dialog"
             aria-label="Translation subtitle color presets"
             hidden
+            data-i18n-aria-label="sidebar.translationSubtitleColorPresets"
           >
-            <div class="subtitle-color-favorites" role="radiogroup" aria-label="Common colors">
+            <div
+              class="subtitle-color-favorites"
+              role="radiogroup"
+              aria-label="Common colors"
+              data-i18n-aria-label="sidebar.commonColors"
+            >
               <button
                 type="button"
                 role="radio"
                 aria-checked="false"
                 aria-label="Transparent"
-                data-color-name="Transparent"
+                data-color-id="transparent"
                 data-rgba="0,0,0,0"
+                data-i18n-aria-label="sidebar.transparent"
               >
                 <span class="palette-swatch palette-transparent" aria-hidden="true"></span>
               </button>
@@ -195,8 +207,9 @@
                 role="radio"
                 aria-checked="false"
                 aria-label="White"
-                data-color-name="White"
+                data-color-id="white"
                 data-rgba="255,255,255,255"
+                data-i18n-aria-label="sidebar.white"
               >
                 <span class="palette-swatch palette-white" aria-hidden="true"></span>
               </button>
@@ -205,8 +218,9 @@
                 role="radio"
                 aria-checked="false"
                 aria-label="Red"
-                data-color-name="Red"
+                data-color-id="red"
                 data-rgba="255,59,48,255"
+                data-i18n-aria-label="sidebar.red"
               >
                 <span class="palette-swatch palette-red" aria-hidden="true"></span>
               </button>
@@ -215,8 +229,9 @@
                 role="radio"
                 aria-checked="false"
                 aria-label="Orange"
-                data-color-name="Orange"
+                data-color-id="orange"
                 data-rgba="255,149,0,255"
+                data-i18n-aria-label="sidebar.orange"
               >
                 <span class="palette-swatch palette-orange" aria-hidden="true"></span>
               </button>
@@ -225,8 +240,9 @@
                 role="radio"
                 aria-checked="false"
                 aria-label="Yellow"
-                data-color-name="Yellow"
+                data-color-id="yellow"
                 data-rgba="255,204,0,255"
+                data-i18n-aria-label="sidebar.yellow"
               >
                 <span class="palette-swatch palette-yellow" aria-hidden="true"></span>
               </button>
@@ -235,8 +251,9 @@
                 role="radio"
                 aria-checked="false"
                 aria-label="Green"
-                data-color-name="Green"
+                data-color-id="green"
                 data-rgba="52,199,89,255"
+                data-i18n-aria-label="sidebar.green"
               >
                 <span class="palette-swatch palette-green" aria-hidden="true"></span>
               </button>
@@ -245,8 +262,9 @@
                 role="radio"
                 aria-checked="false"
                 aria-label="Cyan"
-                data-color-name="Cyan"
+                data-color-id="cyan"
                 data-rgba="50,173,230,255"
+                data-i18n-aria-label="sidebar.cyan"
               >
                 <span class="palette-swatch palette-cyan" aria-hidden="true"></span>
               </button>
@@ -255,8 +273,9 @@
                 role="radio"
                 aria-checked="false"
                 aria-label="Blue"
-                data-color-name="Blue"
+                data-color-id="blue"
                 data-rgba="0,122,255,255"
+                data-i18n-aria-label="sidebar.blue"
               >
                 <span class="palette-swatch palette-blue" aria-hidden="true"></span>
               </button>
@@ -265,8 +284,9 @@
                 role="radio"
                 aria-checked="false"
                 aria-label="Purple"
-                data-color-name="Purple"
+                data-color-id="purple"
                 data-rgba="175,82,222,255"
+                data-i18n-aria-label="sidebar.purple"
               >
                 <span class="palette-swatch palette-purple" aria-hidden="true"></span>
               </button>
@@ -275,14 +295,27 @@
                 role="radio"
                 aria-checked="false"
                 aria-label="Black"
-                data-color-name="Black"
+                data-color-id="black"
                 data-rgba="0,0,0,255"
+                data-i18n-aria-label="sidebar.black"
               >
                 <span class="palette-swatch palette-black" aria-hidden="true"></span>
               </button>
             </div>
-            <div class="subtitle-color-grid" role="radiogroup" aria-label="Color shades"></div>
-            <button id="subtitle-show-colors" class="secondary" type="button">Show Colors…</button>
+            <div
+              class="subtitle-color-grid"
+              role="radiogroup"
+              aria-label="Color shades"
+              data-i18n-aria-label="sidebar.colorShades"
+            ></div>
+            <button
+              id="subtitle-show-colors"
+              class="secondary"
+              type="button"
+              data-i18n="sidebar.showColors"
+            >
+              Show Colors…
+            </button>
           </div>
           <p
             id="subtitle-style-error"
@@ -296,18 +329,24 @@
       <section class="sidebar-section" aria-labelledby="provider-heading">
         <div class="section-heading profile-section-heading">
           <div>
-            <h2 id="provider-heading">Translation service</h2>
-            <p>Subtitle text is sent only to the Profile you explicitly enable.</p>
+            <h2 id="provider-heading" data-i18n="sidebar.translationService">
+              Translation service
+            </h2>
+            <p data-i18n="sidebar.subtitleTextIsSentOnlyToThe">
+              Subtitle text is sent only to the profile you explicitly enable.
+            </p>
           </div>
-          <button id="new-profile" class="secondary" type="button">New profile</button>
+          <button id="new-profile" class="secondary" type="button" data-i18n="sidebar.newProfile">
+            New profile
+          </button>
         </div>
         <div id="profiles" class="profiles group-surface" data-empty="true">
-          <p class="empty">No profiles yet.</p>
+          <p class="empty" data-i18n="sidebar.noProfilesYet">No profiles yet.</p>
         </div>
         <div id="profile-drawer" class="profile-drawer" hidden>
           <div class="profile-drawer-form">
             <label class="field">
-              <span>Service type</span>
+              <span data-i18n="sidebar.serviceType">Service type</span>
               <select id="provider-kind">
                 <option value="openai">OpenAI</option>
                 <option value="claude">Claude</option>
@@ -316,32 +355,35 @@
               </select>
             </label>
             <label class="field">
-              <span>Profile name</span>
-              <input id="profile-name" type="text" value="OpenAI" autocomplete="off" />
+              <span data-i18n="sidebar.profileName">Profile name</span>
+              <input id="profile-name" dir="auto" type="text" value="OpenAI" autocomplete="off" />
             </label>
             <label class="field">
-              <span>API root</span>
+              <span data-i18n="sidebar.apiRoot">API root</span>
               <input
                 id="provider-endpoint"
+                dir="ltr"
                 type="url"
                 value="https://api.openai.com"
                 aria-describedby="endpoint-hint request-url"
                 autocomplete="off"
                 required
               />
-              <small id="endpoint-hint"
-                >Enter a HTTP(S) OpenAI API root. Translation requests append
+              <small id="endpoint-hint" data-i18n="sidebar.enterAHTTPSOpenAIAPIRoot"
+                >Enter an HTTP(S) OpenAI API root. Translation requests append
                 /v1/chat/completions.</small
               >
-              <small id="request-url"
+              <small id="request-url" data-i18n="sidebar.actualRequestHttpsApiOpenaiComV1"
                 >Actual request: https://api.openai.com/v1/chat/completions</small
               >
             </label>
             <div id="model-row" class="field">
-              <label for="provider-model-select">Model ID</label>
+              <label for="provider-model-select" data-i18n="sidebar.modelID">Model ID</label>
               <div class="model-control">
-                <select id="provider-model-select" aria-describedby="model-hint">
-                  <option value="__custom__">Custom model ID…</option>
+                <select id="provider-model-select" dir="ltr" aria-describedby="model-hint">
+                  <option value="__custom__" data-i18n="sidebar.customModelID">
+                    Custom model ID…
+                  </option>
                 </select>
                 <button
                   id="refresh-models"
@@ -349,6 +391,7 @@
                   type="button"
                   aria-label="Refresh model list"
                   aria-busy="false"
+                  data-i18n-aria-label="sidebar.refreshModelList"
                 >
                   <svg
                     class="refresh-icon"
@@ -362,13 +405,15 @@
               </div>
               <input
                 id="provider-model"
+                dir="ltr"
                 type="text"
                 placeholder="e.g. gpt-6-luna"
                 aria-describedby="model-hint"
                 autocomplete="off"
                 required
+                data-i18n-placeholder="sidebar.eGGpt6Luna"
               />
-              <small id="model-hint"
+              <small id="model-hint" data-i18n="sidebar.refreshTheCatalogOrEnterTheExact"
                 >Refresh the catalog or enter the exact model ID. Low-effort models are
                 recommended.</small
               >
@@ -380,26 +425,32 @@
               ></p>
             </div>
             <label class="field">
-              <span>Network route</span>
+              <span data-i18n="sidebar.networkRoute">Network route</span>
               <select id="provider-proxy-mode" aria-describedby="proxy-mode-hint">
-                <option value="direct">Connect directly</option>
-                <option value="system" selected>Use system proxy settings</option>
+                <option value="direct" data-i18n="sidebar.connectDirectly">Connect directly</option>
+                <option value="system" selected data-i18n="sidebar.useSystemProxySettings">
+                  Use system proxy settings
+                </option>
               </select>
-              <small id="proxy-mode-hint"
+              <small
+                id="proxy-mode-hint"
+                data-i18n="sidebar.chooseHowSubTandemConnectsToThisService"
                 >Choose how SubTandem connects to this service for model refresh, connection tests,
                 and translation.</small
               >
             </label>
             <div id="credential-row" class="field">
-              <label for="provider-key">API key</label>
+              <label for="provider-key" data-i18n="sidebar.apiKey">API key</label>
               <div class="credential-input">
                 <input
                   id="provider-key"
+                  dir="ltr"
                   type="password"
                   autocomplete="off"
                   placeholder="Optional"
                   aria-describedby="credential-hint"
                   maxlength="8192"
+                  data-i18n-placeholder="sidebar.optional"
                 />
                 <button
                   id="toggle-provider-key"
@@ -407,6 +458,7 @@
                   aria-label="Show API key"
                   aria-pressed="false"
                   disabled
+                  data-i18n-aria-label="sidebar.showAPIKey"
                 >
                   <svg
                     class="credential-eye"
@@ -420,7 +472,9 @@
                   </svg>
                 </button>
               </div>
-              <small id="credential-hint">Enter an API key if the service requires one.</small>
+              <small id="credential-hint" data-i18n="sidebar.enterAnAPIKeyIfTheService"
+                >Enter an API key if the service requires one.</small
+              >
             </div>
           </div>
           <div class="profile-drawer-actions">
@@ -430,6 +484,7 @@
                 class="secondary"
                 type="button"
                 aria-describedby="profile-test-status"
+                data-i18n="sidebar.test"
               >
                 Test
               </button>
@@ -441,10 +496,24 @@
               ></p>
             </div>
             <div class="profile-drawer-commit-row">
-              <button id="delete-profile" class="secondary danger" type="button">Delete</button>
+              <button
+                id="delete-profile"
+                class="secondary danger"
+                type="button"
+                data-i18n="sidebar.delete"
+              >
+                Delete
+              </button>
               <div class="profile-drawer-actions-end">
-                <button id="cancel-profile" class="secondary" type="button">Cancel</button>
-                <button id="save-profile" type="button">Save</button>
+                <button
+                  id="cancel-profile"
+                  class="secondary"
+                  type="button"
+                  data-i18n="sidebar.cancel"
+                >
+                  Cancel
+                </button>
+                <button id="save-profile" type="button" data-i18n="sidebar.save">Save</button>
               </div>
             </div>
           </div>
@@ -462,10 +531,20 @@
           <div class="status-line">
             <span id="status-dot" aria-hidden="true"></span>
             <div>
-              <h2 id="status-heading">Session</h2>
-              <p id="status" role="status" aria-live="polite">Waiting for IINA…</p>
+              <h2 id="status-heading" data-i18n="sidebar.session">Session</h2>
+              <p id="status" role="status" aria-live="polite" data-i18n="sidebar.waitingForIINA">
+                Waiting for IINA…
+              </p>
               <div id="source-preparation-controls" class="source-preparation-controls" hidden>
-                <button id="retry-subtitle" class="secondary" type="button" hidden>Retry</button>
+                <button
+                  id="retry-subtitle"
+                  class="secondary"
+                  type="button"
+                  hidden
+                  data-i18n="sidebar.retry"
+                >
+                  Retry
+                </button>
                 <p
                   id="subtitle-retry-status"
                   class="operation-status"
@@ -477,20 +556,35 @@
           </div>
           <dl id="source-summary" hidden>
             <div>
-              <dt>Format</dt>
+              <dt data-i18n="sidebar.format">Format</dt>
               <dd id="source-format">—</dd>
             </div>
             <div>
-              <dt>Translated cues</dt>
+              <dt data-i18n="sidebar.translatedCues">Translated cues</dt>
               <dd id="cache-size">—</dd>
             </div>
             <div>
-              <dt>Total cues</dt>
+              <dt data-i18n="sidebar.totalCues">Total cues</dt>
               <dd id="source-cues">—</dd>
             </div>
           </dl>
         </div>
       </section>
+      <footer class="support-footer">
+        <a
+          id="support-link"
+          class="support-link"
+          aria-describedby="support-status"
+          data-i18n-title="support.openInBrowser"
+          title="Open the support page in your browser"
+        >
+          <span data-i18n="support.label">Support SubTandem</span>
+          <svg class="support-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="M9 2h5v5M14 2 7 9M6 3H2v11h11v-4" />
+          </svg>
+        </a>
+        <p id="support-status" class="operation-status" role="status" aria-live="polite"></p>
+      </footer>
       <p id="operation-announcer" class="assistive-only" role="status" aria-live="polite"></p>
     </main>
     <div id="profile-delete-backdrop" class="profile-delete-backdrop" hidden>
@@ -506,7 +600,7 @@
           <path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5" />
         </svg>
         <div class="profile-delete-copy">
-          <h2 id="profile-delete-title">Delete Profile?</h2>
+          <h2 id="profile-delete-title" data-i18n="sidebar.deleteProfile">Delete profile?</h2>
           <p id="profile-delete-description"></p>
           <p
             id="profile-delete-status"
@@ -516,18 +610,25 @@
           ></p>
         </div>
         <div class="profile-delete-actions">
-          <button id="confirm-profile-delete" class="danger" type="button">Delete</button>
-          <button id="cancel-profile-delete" class="secondary" type="button">Cancel</button>
+          <button
+            id="confirm-profile-delete"
+            class="danger"
+            type="button"
+            data-i18n="sidebar.delete"
+          >
+            Delete
+          </button>
+          <button
+            id="cancel-profile-delete"
+            class="secondary"
+            type="button"
+            data-i18n="sidebar.cancel"
+          >
+            Cancel
+          </button>
         </div>
       </section>
     </div>
-    <script src="../shared/provider-endpoint.ts"></script>
-    <script src="./service-failure-message.ts"></script>
-    <script src="./provider-status.ts"></script>
-    <script src="./sidebar-state.ts"></script>
-    <script src="./profile-card-interactions.ts"></script>
-    <script src="./session-status.ts"></script>
-    <script type="module" src="./credential-editor-entry.ts"></script>
-    <script src="./sidebar.ts"></script>
+    <script type="module" src="./sidebar-entry.ts"></script>
   </body>
 </html>

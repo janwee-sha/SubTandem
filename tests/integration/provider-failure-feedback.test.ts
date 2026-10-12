@@ -1,4 +1,5 @@
 import { beforeAll, expect, it } from "vitest";
+import { createLocalizer } from "../../ui/localization.js";
 import { OpenAICompatibleProvider } from "../../src/providers/openai.js";
 import { DeepSeekProvider } from "../../src/providers/deepseek.js";
 import { ClaudeProvider } from "../../src/providers/claude.js";
@@ -7,6 +8,8 @@ import { normalizeProviderError } from "../../src/domain/errors.js";
 import { failureTransport } from "../helpers/provider-failure-contract.js";
 import type { ProviderTransportRequest } from "../../src/providers/transport.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
+
+const localizer = createLocalizer("en");
 beforeAll(async () => {
   await import("../../ui/service-failure-message.js");
   await import("../../ui/provider-status.js");
@@ -46,14 +49,18 @@ for (const kind of ["openai", "deepseek", "claude", "ollama"] as const) {
         }
         expect(caught).toBeDefined();
         const safe = normalizeProviderError(caught);
-        const expected =
+        const messageKey =
           signal === "length"
-            ? "The translation service returned an unsupported response. Check the Profile’s service type and model."
-            : "The translation service refused this request. Try another model or Profile.";
-        expect(globalThis.subtandemProviderTestStatusMessage({ ...safe, ok: false })).toBe(
-          expected,
-        );
-        expect(globalThis.subtandemSessionFailureMessage(safe)).toBe(expected);
+            ? "sidebar.theTranslationServiceReturnedAnUnsupportedResponse"
+            : "sidebar.theTranslationServiceRefusedThisRequestTry";
+        const testFeedback = globalThis.subtandemProviderTestStatusFeedback({ ...safe, ok: false });
+        const sessionFeedback = globalThis.subtandemSessionFailureFeedback(safe);
+        for (const feedback of [testFeedback, sessionFeedback]) {
+          expect(feedback).toEqual({ messageKey, params: {} });
+          expect(globalThis.subtandemLocalization.feedback(feedback)).toBe(
+            localizer.format(messageKey),
+          );
+        }
         expect(JSON.stringify(safe)).not.toMatch(/private-|private\.example/);
         expect(calls.filter((call) => call.method === "POST")).toHaveLength(1);
       },

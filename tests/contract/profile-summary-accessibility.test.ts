@@ -19,8 +19,8 @@ describe("Profile summary accessibility", () => {
     const row = h.evaluate('profileRows.get("accessible")');
     const disclosure = row.querySelector(".profile-disclosure");
     const activation = row.querySelector(".profile-activation input");
-    expect(disclosure.getAttribute("aria-label")).toBe("Edit <Name & Co>");
-    expect(activation.getAttribute("aria-label")).toBe("Enable <Name & Co>");
+    expect(disclosure.getAttribute("aria-label")).toBe("Edit \u2068<Name & Co>\u2069");
+    expect(activation.getAttribute("aria-label")).toBe("Enable \u2068<Name & Co>\u2069");
     expect(disclosure.getAttribute("aria-describedby")).toBeNull();
 
     h.resize(row.querySelector("strong"), 100, 200);
@@ -30,9 +30,13 @@ describe("Profile summary accessibility", () => {
       child.className.includes("profile-overflow-description"),
     );
     expect(description?.id).toBe(disclosure.getAttribute("aria-describedby"));
-    expect(description?.textContent).toContain("Name: <Name & Co>");
-    expect(description?.textContent).toContain("Service and model: Claude · <long-model>&");
-    expect(description?.textContent).toContain("API root: https://example.test/?a=1&b=<value>");
+    expect(description?.textContent).toContain("\u2068Name\u2069: \u2068<Name & Co>\u2069");
+    expect(description?.textContent).toContain(
+      "\u2068Service and model\u2069: \u2068Claude · <long-model>&\u2069",
+    );
+    expect(description?.textContent).toContain(
+      "\u2068API root\u2069: \u2068https://example.test/?a=1&b=<value>\u2069",
+    );
     expect(description?.textContent).not.toMatch(/macOS proxy|key saved|secret-key/);
     expect(activation.getAttribute("aria-describedby")).toBeNull();
 

@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { createLocalizer } from "../../ui/localization.js";
 import { describe, expect, it } from "vitest";
 import {
   GLOBAL_MESSAGE_NAMES,
@@ -30,37 +31,15 @@ import "../../ui/session-status.js";
 import "../../ui/provider-status.js";
 import { makeProviderRequest } from "./provider-test-helpers.js";
 
+const localizer = createLocalizer("en");
+
+const ui = globalThis as typeof globalThis & Window;
 const providerTestStatusMessage = (
-  globalThis as typeof globalThis & {
-    subtandemProviderTestStatusMessage(result: {
-      ok?: boolean;
-      category?: string;
-      statusCode?: number;
-      code?: string;
-      userAction?: string;
-      providerKind?: "openai" | "claude" | "deepseek" | "ollama";
-    }): string;
-  }
-).subtandemProviderTestStatusMessage;
-const sessionFailureMessage = (
-  globalThis as typeof globalThis & {
-    subtandemSessionFailureMessage(result: {
-      category?: string;
-      statusCode?: number;
-      providerCode?: string;
-    }): string | null;
-  }
-).subtandemSessionFailureMessage;
+  result: Parameters<Window["subtandemProviderTestStatusFeedback"]>[0],
+) => ui.subtandemLocalization.feedback(ui.subtandemProviderTestStatusFeedback(result)) ?? "";
 const modelCatalogStatusMessage = (
-  globalThis as typeof globalThis & {
-    subtandemModelCatalogStatusMessage(result: {
-      ok?: boolean;
-      count?: number;
-      category?: string;
-      credentialSource?: "saved" | "entered" | "none";
-    }): string;
-  }
-).subtandemModelCatalogStatusMessage;
+  result: Parameters<Window["subtandemModelCatalogStatusFeedback"]>[0],
+) => ui.subtandemLocalization.feedback(ui.subtandemModelCatalogStatusFeedback(result)) ?? "";
 
 function parsePlaintextDraft(value: unknown) {
   try {
@@ -275,7 +254,7 @@ describe("Sidebar/Main/Global security messages", () => {
         code: "TEST_INVALIDATED",
         userAction: "RETRY",
       }),
-    ).toBe("This test is no longer current. Review the Profile and test again.");
+    ).toBe(localizer.format("sidebar.thisTestIsNoLongerCurrentReview"));
     expect(
       providerTestStatusMessage({
         ok: false,
@@ -284,20 +263,18 @@ describe("Sidebar/Main/Global security messages", () => {
         userAction: "CHECK_ENDPOINT",
         providerKind: "claude",
       }),
-    ).toBe(
-      "The translation service returned an unsupported response. Check the Profile’s service type and model.",
-    );
-    expect(providerStatusSource).toContain("subtandemServiceFailureMessage");
+    ).toBe(localizer.format("sidebar.theTranslationServiceReturnedAnUnsupportedResponse"));
+    expect(providerStatusSource).toContain("subtandemServiceFailureFeedback");
     expect(
       providerTestStatusMessage({
         ok: false,
         category: "authentication",
         userAction: "CHECK_CREDENTIALS",
       }),
-    ).toBe("Authentication failed. Check the Profile’s API key.");
+    ).toBe(localizer.format("sidebar.authenticationFailedCheckTheProfilesAPIKey"));
     expect(
       providerTestStatusMessage({ ok: false, category: "model", userAction: "CHECK_MODEL" }),
-    ).toBe("The model is unavailable. Check the Profile’s Model ID.");
+    ).toBe(localizer.format("sidebar.theModelIsUnavailableCheckTheProfiles"));
     expect(
       providerTestStatusMessage({ ok: false, category: "quota", userAction: "CHECK_QUOTA" }),
     ).toBe("The service limit was reached. Check the account quota or try again later.");
@@ -311,7 +288,7 @@ describe("Sidebar/Main/Global security messages", () => {
         statusCode: 503,
         userAction: "CHECK_NETWORK",
       }),
-    ).toBe("Couldn’t reach the translation service. Check your connection and Network route.");
+    ).toBe(localizer.format("sidebar.couldntReachTheTranslationServiceCheckYour"));
     expect(
       providerTestStatusMessage({
         ok: false,
@@ -319,7 +296,7 @@ describe("Sidebar/Main/Global security messages", () => {
         userAction: "CHECK_ENDPOINT",
         providerKind: "ollama",
       }),
-    ).toBe("The Profile settings were rejected. Check the API root and Model ID.");
+    ).toBe(localizer.format("sidebar.theProfileSettingsWereRejectedCheckThe"));
     expect(
       providerTestStatusMessage({
         ok: false,
@@ -327,9 +304,7 @@ describe("Sidebar/Main/Global security messages", () => {
         userAction: "CHECK_ENDPOINT",
         providerKind: "openai",
       }),
-    ).toBe(
-      "The translation service rejected the request. Check the Profile settings and try again.",
-    );
+    ).toBe(localizer.format("sidebar.theTranslationServiceRejectedTheRequestCheck"));
     expect(
       providerTestStatusMessage({
         ok: false,
@@ -337,66 +312,68 @@ describe("Sidebar/Main/Global security messages", () => {
         userAction: "CHECK_ENDPOINT",
         providerKind: "claude",
       }),
-    ).toBe("The Profile settings were rejected. Check the API root and Model ID.");
+    ).toBe(localizer.format("sidebar.theProfileSettingsWereRejectedCheckThe"));
   });
 
-  it("uses the same exact eleven service failure messages for Session and Profile Test", () => {
+  it("uses the same eleven localized service failure keys for Session and Profile Test", () => {
     const cases = [
       [
         { category: "authentication", userAction: "CHECK_CREDENTIALS" },
-        "Authentication failed. Check the Profile’s API key.",
+        "sidebar.authenticationFailedCheckTheProfilesAPIKey",
       ],
       [
         { category: "authentication", statusCode: 403, userAction: "CHECK_CREDENTIALS" },
-        "Access was denied. Check the Profile’s API key and model access.",
+        "sidebar.accessWasDeniedCheckTheProfilesAPI",
       ],
       [
         { category: "configuration", userAction: "CHECK_ENDPOINT" },
-        "The Profile settings were rejected. Check the API root and Model ID.",
+        "sidebar.theProfileSettingsWereRejectedCheckThe",
       ],
       [
         { category: "network", statusCode: 502, userAction: "CHECK_NETWORK" },
-        "Couldn’t reach the translation service. Check your connection and Network route.",
+        "sidebar.couldntReachTheTranslationServiceCheckYour",
       ],
       [
         { category: "timeout", userAction: "CHECK_NETWORK" },
-        "The translation service timed out. Try again.",
+        "sidebar.theTranslationServiceTimedOutTryAgain",
       ],
       [
         { category: "model", userAction: "CHECK_MODEL" },
-        "The model is unavailable. Check the Profile’s Model ID.",
+        "sidebar.theModelIsUnavailableCheckTheProfiles",
       ],
       [
         { category: "quota", userAction: "CHECK_QUOTA" },
-        "The service limit was reached. Check the account quota or try again later.",
+        "sidebar.theServiceLimitWasReachedCheckThe",
       ],
       [
         { category: "refusal", userAction: "NONE" },
-        "The translation service refused this request. Try another model or Profile.",
+        "sidebar.theTranslationServiceRefusedThisRequestTry",
       ],
       [
         { category: "protocol", code: "INVALID_MESSAGE", userAction: "CHECK_ENDPOINT" },
-        "The translation service returned an unsupported response. Check the Profile’s service type and model.",
+        "sidebar.theTranslationServiceReturnedAnUnsupportedResponse",
       ],
       [
         { category: "http", statusCode: 400, userAction: "CHECK_ENDPOINT" },
-        "The translation service rejected the request. Check the Profile settings and try again.",
+        "sidebar.theTranslationServiceRejectedTheRequestCheck",
       ],
       [
         { category: "protocol", code: "UNKNOWN_PROVIDER_ERROR", userAction: "NONE" },
-        "Translation failed. Test the Profile and try again.",
+        "sidebar.translationFailedTestTheProfileAndTry",
       ],
     ] as const;
 
-    for (const [input, expected] of cases) {
-      expect(
-        sessionFailureMessage({
-          category: input.category,
-          ...(input.statusCode === undefined ? {} : { statusCode: input.statusCode }),
-          ...(input.code === undefined ? {} : { providerCode: input.code }),
-        }),
-      ).toBe(expected);
-      expect(providerTestStatusMessage(input)).toBe(expected);
+    for (const [input, messageKey] of cases) {
+      const sessionFeedback = ui.subtandemSessionFailureFeedback({
+        category: input.category,
+        ...(input.statusCode === undefined ? {} : { statusCode: input.statusCode }),
+        ...(input.code === undefined ? {} : { providerCode: input.code }),
+      });
+      const testFeedback = ui.subtandemProviderTestStatusFeedback(input);
+      for (const feedback of [sessionFeedback, testFeedback]) {
+        expect(feedback).toEqual({ messageKey, params: {} });
+        expect(ui.subtandemLocalization.feedback(feedback)).toBe(localizer.format(messageKey));
+      }
     }
   });
 
@@ -408,7 +385,7 @@ describe("Sidebar/Main/Global security messages", () => {
         code: "TEST_INVALIDATED",
         userAction: "RETRY",
       }),
-    ).toBe("This test is no longer current. Review the Profile and test again.");
+    ).toBe(localizer.format("sidebar.thisTestIsNoLongerCurrentReview"));
     expect(providerTestStatusMessage({ category: "cancelled", userAction: "NONE" })).toBe("");
     expect(providerTestStatusMessage({ userAction: "RESTART_IINA" })).toMatch(
       /secure transport helper.*Restart IINA/i,
@@ -421,8 +398,12 @@ describe("Sidebar/Main/Global security messages", () => {
   it("distinguishes entered, saved and absent credentials in model refresh guidance", () => {
     expect(modelCatalogStatusMessage({ ok: true, count: 1 })).toBe("1 model available.");
     expect(modelCatalogStatusMessage({ ok: true, count: 3 })).toBe("3 models available.");
+    expect(ui.subtandemModelCatalogStatusFeedback({ ok: true, count: 0 })).toEqual({
+      messageKey: "sidebar.noModelsWereReturnedCustomModelID",
+      params: {},
+    });
     expect(modelCatalogStatusMessage({ ok: true, count: 0 })).toBe(
-      "No models were returned. Custom model ID remains available.",
+      localizer.format("sidebar.noModelsWereReturnedCustomModelID"),
     );
     expect(
       modelCatalogStatusMessage({

@@ -49,19 +49,25 @@ LIBDISPATCH_COOPERATIVE_POOL_STRICT=1 "$BUILD_DIR/subtandem-transport-contract-t
 
 STYLE_PICKER_SOURCE="$ROOT_DIR/native/style-picker/Sources/SubTandemStylePicker"
 STYLE_PICKER_TESTS="$ROOT_DIR/native/style-picker/Tests/SubTandemStylePickerTests"
-STYLE_PICKER_BUILD="$ROOT_DIR/native/style-picker/.build/contract-tests"
-mkdir -p "$STYLE_PICKER_BUILD"
+STYLE_PICKER_BUILD="$ROOT_DIR/build/native-tests"
+STYLE_PICKER_APP="$STYLE_PICKER_BUILD/SubTandemStylePicker.app"
+mkdir -p "$STYLE_PICKER_APP/Contents/MacOS"
+cp "$ROOT_DIR/native/style-picker/Info.plist" "$STYLE_PICKER_APP/Contents/Info.plist"
+node "$ROOT_DIR/scripts/build-localization.mjs" --native-resources "$STYLE_PICKER_APP/Contents/Resources"
 swiftc -parse-as-library \
   "$STYLE_PICKER_SOURCE/Protocol.swift" \
+  "$STYLE_PICKER_SOURCE/Localization.swift" \
   "$STYLE_PICKER_SOURCE/FontCatalog.swift" \
   "$STYLE_PICKER_SOURCE/FontPicker.swift" \
   "$STYLE_PICKER_SOURCE/ColorPicker.swift" \
   "$STYLE_PICKER_SOURCE/DetachedBootstrap.swift" \
   "$STYLE_PICKER_TESTS/ProtocolTests.swift" \
   "$STYLE_PICKER_TESTS/FontPickerTests.swift" \
+  "$STYLE_PICKER_TESTS/FontCatalogTests.swift" \
+  "$STYLE_PICKER_TESTS/LocalizationTests.swift" \
   "$STYLE_PICKER_TESTS/ColorPickerTests.swift" \
-  -o "$STYLE_PICKER_BUILD/subtandem-style-picker-tests"
-"$STYLE_PICKER_BUILD/subtandem-style-picker-tests"
+  -o "$STYLE_PICKER_APP/Contents/MacOS/subtandem-style-picker"
+"$STYLE_PICKER_APP/Contents/MacOS/subtandem-style-picker" "$ROOT_DIR"
 
 "$ROOT_DIR/scripts/build-ffmpeg.sh" "${SUBTANDEM_FFMPEG_SOURCE:-$ROOT_DIR/native/.build/ffmpeg/downloads/ffmpeg-8.1.2.tar.xz}"
 EXTRACTOR_PREFIX="$ROOT_DIR/native/.build/ffmpeg/arm64"
