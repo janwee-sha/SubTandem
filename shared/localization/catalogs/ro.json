@@ -2,7 +2,7 @@
   "locale": "ro",
   "messages": {
     "support.label": "Susține SubTandem",
-    "support.openInBrowser": "Deschide pagina de susținere GitHub în browser",
+    "support.openInBrowser": "Deschide pagina de susținere în browser",
     "support.openFailed": "Pagina de susținere nu a putut fi deschisă. Încearcă din nou.",
     "sidebar.red": "Roșu",
     "sidebar.orange": "Portocaliu",

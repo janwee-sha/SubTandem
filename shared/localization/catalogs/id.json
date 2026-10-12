@@ -2,7 +2,7 @@
   "locale": "id",
   "messages": {
     "support.label": "Dukung SubTandem",
-    "support.openInBrowser": "Buka halaman dukungan GitHub di browser",
+    "support.openInBrowser": "Buka halaman dukungan di browser",
     "support.openFailed": "Halaman dukungan tidak dapat dibuka. Coba lagi.",
     "sidebar.red": "Merah",
     "sidebar.orange": "Jingga",

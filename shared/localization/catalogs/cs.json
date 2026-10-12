@@ -2,7 +2,7 @@
   "locale": "cs",
   "messages": {
     "support.label": "Podpořit SubTandem",
-    "support.openInBrowser": "Otevřít stránku podpory na GitHubu v prohlížeči",
+    "support.openInBrowser": "Otevřít stránku podpory v prohlížeči",
     "support.openFailed": "Stránku podpory se nepodařilo otevřít. Zkuste to znovu.",
     "sidebar.red": "Červená",
     "sidebar.orange": "Oranžová",

@@ -2,7 +2,7 @@
   "locale": "hu",
   "messages": {
     "support.label": "A SubTandem támogatása",
-    "support.openInBrowser": "A GitHub támogatási oldalának megnyitása a böngészőben",
+    "support.openInBrowser": "A támogatási oldal megnyitása a böngészőben",
     "support.openFailed": "Nem sikerült megnyitni a támogatási oldalt. Próbálja újra.",
     "sidebar.red": "Piros",
     "sidebar.orange": "Narancssárga",

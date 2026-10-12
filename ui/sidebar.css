@@ -87,10 +87,11 @@ body {
 }
 
 .support-footer {
-  flex: none;
-  margin-block-start: auto;
-  display: grid;
-  justify-items: end;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
   padding: 28px 20px 6px;
   text-align: end;
 }
@@ -110,14 +111,18 @@ body {
   cursor: pointer;
 }
 
-.support-link:hover {
-  color: var(--label-primary);
+.support-link > span {
   text-decoration: underline;
+  text-decoration-color: transparent;
   text-underline-offset: 3px;
 }
 
-.support-link:active {
-  opacity: 0.7;
+.support-link:hover {
+  color: var(--label-primary);
+}
+
+.support-link:hover > span {
+  text-decoration-color: currentColor;
 }
 
 .support-link:focus-visible {

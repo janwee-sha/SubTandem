@@ -2,7 +2,7 @@
   "locale": "nl",
   "messages": {
     "support.label": "Steun SubTandem",
-    "support.openInBrowser": "Open de GitHub-steunpagina in je browser",
+    "support.openInBrowser": "Open de steunpagina in je browser",
     "support.openFailed": "De steunpagina kon niet worden geopend. Probeer het opnieuw.",
     "sidebar.red": "Rood",
     "sidebar.orange": "Oranje",

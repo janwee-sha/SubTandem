@@ -2,7 +2,7 @@
   "locale": "ja",
   "messages": {
     "support.label": "SubTandem を支援",
-    "support.openInBrowser": "GitHub の支援ページをブラウザで開く",
+    "support.openInBrowser": "支援ページをブラウザで開く",
     "support.openFailed": "支援ページを開けませんでした。もう一度お試しください。",
     "sidebar.red": "赤",
     "sidebar.orange": "オレンジ",

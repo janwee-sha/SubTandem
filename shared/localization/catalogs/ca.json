@@ -2,7 +2,7 @@
   "locale": "ca",
   "messages": {
     "support.label": "Dona suport a SubTandem",
-    "support.openInBrowser": "Obre la pàgina de suport de GitHub al navegador",
+    "support.openInBrowser": "Obre la pàgina de suport al navegador",
     "support.openFailed": "No s’ha pogut obrir la pàgina de suport. Torna-ho a provar.",
     "sidebar.red": "Vermell",
     "sidebar.orange": "Taronja",

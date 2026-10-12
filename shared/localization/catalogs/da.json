@@ -2,7 +2,7 @@
   "locale": "da",
   "messages": {
     "support.label": "Støt SubTandem",
-    "support.openInBrowser": "Åbn støttesiden på GitHub i din browser",
+    "support.openInBrowser": "Åbn støttesiden i din browser",
     "support.openFailed": "Støttesiden kunne ikke åbnes. Prøv igen.",
     "sidebar.red": "Rød",
     "sidebar.orange": "Orange",

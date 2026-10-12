@@ -2,7 +2,7 @@
   "locale": "hi",
   "messages": {
     "support.label": "SubTandem का समर्थन करें",
-    "support.openInBrowser": "ब्राउज़र में GitHub का समर्थन पृष्ठ खोलें",
+    "support.openInBrowser": "ब्राउज़र में समर्थन पृष्ठ खोलें",
     "support.openFailed": "समर्थन पृष्ठ नहीं खुल सका। फिर से कोशिश करें।",
     "sidebar.red": "लाल",
     "sidebar.orange": "नारंगी",

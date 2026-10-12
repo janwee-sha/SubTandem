@@ -2,7 +2,7 @@
   "locale": "zh-Hant",
   "messages": {
     "support.label": "支持 SubTandem",
-    "support.openInBrowser": "在瀏覽器中開啟 GitHub 贊助頁面",
+    "support.openInBrowser": "在瀏覽器中開啟贊助頁面",
     "support.openFailed": "無法開啟贊助頁面，請再試一次。",
     "sidebar.red": "紅色",
     "sidebar.orange": "橙色",

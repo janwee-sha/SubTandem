@@ -2,7 +2,7 @@
   "locale": "zh-Hans",
   "messages": {
     "support.label": "支持 SubTandem",
-    "support.openInBrowser": "在浏览器中打开 GitHub 打赏页面",
+    "support.openInBrowser": "在浏览器中打开打赏页面",
     "support.openFailed": "无法打开打赏页面，请重试。",
     "sidebar.red": "红色",
     "sidebar.orange": "橙色",

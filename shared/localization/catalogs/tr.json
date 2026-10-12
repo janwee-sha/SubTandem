@@ -2,7 +2,7 @@
   "locale": "tr",
   "messages": {
     "support.label": "SubTandem’i destekleyin",
-    "support.openInBrowser": "GitHub destek sayfasını tarayıcınızda açın",
+    "support.openInBrowser": "Destek sayfasını tarayıcınızda açın",
     "support.openFailed": "Destek sayfası açılamadı. Tekrar deneyin.",
     "sidebar.red": "Kırmızı",
     "sidebar.orange": "Turuncu",
