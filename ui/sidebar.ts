@@ -111,6 +111,8 @@ const subtitleShowColors = document.querySelector<HTMLButtonElement>("#subtitle-
 const subtitleStyleError = document.querySelector<HTMLParagraphElement>("#subtitle-style-error")!;
 const operationAnnouncer = document.querySelector<HTMLParagraphElement>("#operation-announcer")!;
 const appElement = document.querySelector<HTMLElement>("#app")!;
+const supportLink = document.querySelector<HTMLAnchorElement>("#support-link")!;
+const supportStatus = document.querySelector<HTMLParagraphElement>("#support-status")!;
 const profileDeleteBackdrop = document.querySelector<HTMLElement>("#profile-delete-backdrop")!;
 const profileDeleteDialog = document.querySelector<HTMLElement>("#profile-delete-dialog")!;
 const profileDeleteTitle = document.querySelector<HTMLHeadingElement>("#profile-delete-title")!;
@@ -225,6 +227,8 @@ const profiles = new Map<string, ProfileView>();
 const sidebarState = window.createSubTandemSidebarState();
 let renderedUiAuthority: string | null = null;
 let uiSnapshotReady = false;
+let pendingSupportRequestId: string | null = null;
+let supportOpenFailed = false;
 const retiredUiAuthorities = new Set<string>();
 const pendingSidebarEvents: Array<() => void> = [];
 function onBusinessMessage(name: string, callback: (raw: unknown) => void): void {
@@ -2507,6 +2511,36 @@ function reorderNamedOptions(): void {
   renderModelControl();
 }
 
+function renderSupportEntry(): void {
+  supportLink.setAttribute("href", window.subtandemLocalization.supportPageUrl());
+  supportStatus.textContent = supportOpenFailed
+    ? localizedText(uiFeedback("support.openFailed"))
+    : "";
+  supportStatus.dataset.state = supportOpenFailed ? "error" : "";
+}
+
+supportLink.addEventListener("click", (event) => {
+  event.preventDefault();
+  if (!uiSnapshotReady || appElement.getAttribute("aria-hidden") === "true") return;
+  pendingSupportRequestId = nextRequestId();
+  supportOpenFailed = false;
+  renderSupportEntry();
+  window.iina?.postMessage("support:open", envelope({}, pendingSupportRequestId));
+});
+
+onBusinessMessage("support:open-result", (raw: unknown) => {
+  const result = raw as { requestId?: unknown; ok?: unknown };
+  if (
+    !pendingSupportRequestId ||
+    result.requestId !== pendingSupportRequestId ||
+    typeof result.ok !== "boolean"
+  )
+    return;
+  pendingSupportRequestId = null;
+  supportOpenFailed = !result.ok;
+  renderSupportEntry();
+});
+
 function renderStaticLocalization(): void {
   for (const element of Array.from(document.querySelectorAll<HTMLElement>("[data-i18n]")))
     element.textContent = localizedText(uiFeedback(element.dataset.i18n!));
@@ -2533,6 +2567,7 @@ function renderStaticLocalization(): void {
   reorderNamedOptions();
   renderCredentialVisibility();
   applyProviderKindLocalization();
+  renderSupportEntry();
 }
 
 function applyProviderKindLocalization(): void {
@@ -2553,6 +2588,8 @@ window.iina?.onMessage("state:update", (raw: unknown) => {
     retiredUiAuthorities.add(renderedUiAuthority);
     window.subtandemLocalization.clearDirectories();
     uiSnapshotReady = false;
+    pendingSupportRequestId = null;
+    supportOpenFailed = false;
     pendingSidebarEvents.splice(0);
     cancelPendingProfileSaveForContextChange();
     sidebarState.snapshot.drawer.savePhase = null;

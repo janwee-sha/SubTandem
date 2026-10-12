@@ -1,6 +1,19 @@
 import type { MessageDefinition } from "./types.js";
 
 export const MESSAGE_DEFINITIONS = {
+  "support.label": {
+    params: {},
+    surfaces: ["sidebar"],
+  },
+  "support.openInBrowser": {
+    params: {},
+    surfaces: ["sidebar"],
+  },
+  "support.openFailed": {
+    params: {},
+    surfaces: ["sidebar"],
+  },
+
   "sidebar.red": {
     params: {},
     surfaces: ["sidebar"],

@@ -752,6 +752,13 @@ export function parseTranslationBatchProgress(value: unknown): TranslationBatchP
   };
 }
 
+export function parseSupportOpenRequest(value: unknown): RpcEnvelope<Record<string, never>> {
+  const message = parseEnvelope(value);
+  if (!exactKeys(message.payload as Record<string, unknown>, []))
+    throw new Error("INVALID_MESSAGE");
+  return { ...message, payload: {} };
+}
+
 export function parseEnvelope(value: unknown): RpcEnvelope {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("INVALID_MESSAGE");

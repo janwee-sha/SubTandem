@@ -1,6 +1,9 @@
 {
   "locale": "he",
   "messages": {
+    "support.label": "תמיכה ב־⁦SubTandem⁩",
+    "support.openInBrowser": "פתיחת דף התמיכה ב־GitHub בדפדפן",
+    "support.openFailed": "לא ניתן לפתוח את דף התמיכה. יש לנסות שוב.",
     "sidebar.red": "אדום",
     "sidebar.orange": "כתום",
     "sidebar.yellow": "צהוב",

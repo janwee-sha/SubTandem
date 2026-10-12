@@ -1,6 +1,9 @@
 {
   "locale": "fi",
   "messages": {
+    "support.label": "Tue SubTandemia",
+    "support.openInBrowser": "Avaa GitHubin tukisivu selaimessa",
+    "support.openFailed": "Tukisivua ei voitu avata. Yritä uudelleen.",
     "sidebar.red": "Punainen",
     "sidebar.orange": "Oranssi",
     "sidebar.yellow": "Keltainen",

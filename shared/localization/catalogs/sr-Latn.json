@@ -1,6 +1,9 @@
 {
   "locale": "sr-Latn",
   "messages": {
+    "support.label": "Podržite SubTandem",
+    "support.openInBrowser": "Otvori stranicu za podršku na GitHub-u u pregledaču",
+    "support.openFailed": "Nije moguće otvoriti stranicu za podršku. Pokušajte ponovo.",
     "sidebar.red": "Crvena",
     "sidebar.orange": "Narandžasta",
     "sidebar.yellow": "Žuta",

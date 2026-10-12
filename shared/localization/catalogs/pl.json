@@ -1,6 +1,9 @@
 {
   "locale": "pl",
   "messages": {
+    "support.label": "Wesprzyj SubTandem",
+    "support.openInBrowser": "Otwórz stronę wsparcia na GitHubie w przeglądarce",
+    "support.openFailed": "Nie udało się otworzyć strony wsparcia. Spróbuj ponownie.",
     "sidebar.red": "Czerwony",
     "sidebar.orange": "Pomarańczowy",
     "sidebar.yellow": "Żółty",

@@ -1,4 +1,5 @@
 import { parseSidebarStateUpdate } from "../src/domain/messages.js";
+import { supportPageUrl } from "../shared/support.js";
 import { canonicalUiLocale, isUiLocale, type UiLocale } from "../shared/localization/locales.js";
 import { MESSAGE_DEFINITIONS } from "../shared/localization/message-definitions.js";
 import af from "../shared/localization/catalogs/af.json";
@@ -381,6 +382,9 @@ export function createLocalizationRuntime(initialLocale: unknown = "en") {
       items: readonly NamedOptionSource[],
     ) {
       return directory.project(current.locale, kind, revision, items).options;
+    },
+    supportPageUrl() {
+      return supportPageUrl(current.locale);
     },
     clearDirectories() {
       directory.clear();

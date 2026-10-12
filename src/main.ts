@@ -1,5 +1,6 @@
 import { sampleHostUiContext } from "./adapters/iina/host-ui-context.js";
-import { parseUiLanguageState } from "./domain/messages.js";
+import { parseUiLanguageState, parseSupportOpenRequest } from "./domain/messages.js";
+import { supportPageUrl } from "../shared/support.js";
 import type { HostUiContext } from "../shared/localization/types.js";
 import { installCredentialMainRelay } from "./adapters/iina/sidebar-rpc.js";
 import { PlaybackController } from "./app/controller.js";
@@ -668,6 +669,27 @@ function wirePlayer(hostRuntime: MainRuntime, playerId: string): PlaybackControl
         }).forwarded,
     },
   );
+  runtime.sidebar.onMessage("support:open", (raw: unknown) => {
+    if (!uiLanguage || !playerWired) return;
+    let requestId: string;
+    try {
+      requestId = parseSupportOpenRequest(raw).requestId;
+    } catch {
+      return;
+    }
+    let ok = false;
+    try {
+      ok = runtime.utils.open(supportPageUrl(uiLanguage.locale)) === true;
+    } catch {
+      ok = false;
+    }
+    queueSidebarMessage("support:open-result", {
+      requestId,
+      authorityId: uiLanguage.authorityId,
+      ok,
+    });
+    flushSidebarMessages();
+  });
   runtime.sidebar.onMessage("ui:ready", () => {
     if (!playerWired) {
       if (legacyWindowVisibility && legacyWindowClosed) {

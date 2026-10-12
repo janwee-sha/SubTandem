@@ -129,6 +129,7 @@ export async function uiLanguageRuntime(
         ? "/private/Plugins/.data/io.subtandem.iina"
         : path,
     exec,
+    open: vi.fn(() => true),
   };
   vi.stubGlobal("iina", {
     file,

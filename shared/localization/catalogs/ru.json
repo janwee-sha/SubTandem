@@ -1,6 +1,9 @@
 {
   "locale": "ru",
   "messages": {
+    "support.label": "Поддержать SubTandem",
+    "support.openInBrowser": "Открыть страницу поддержки на GitHub в браузере",
+    "support.openFailed": "Не удалось открыть страницу поддержки. Попробуйте ещё раз.",
     "sidebar.red": "Красный",
     "sidebar.orange": "Оранжевый",
     "sidebar.yellow": "Жёлтый",
