@@ -30,7 +30,9 @@ SubTandem keeps the original subtitle visible while independently displaying the
 
 ## ✨ Features
 
-- **Live bilingual subtitles:** Keep the original subtitle selected in IINA while SubTandem renders translations centered horizontally at your chosen vertical position without occupying another subtitle track.
+- **An interface in IINA’s language:** On IINA 1.5.0 or later, SubTandem follows IINA’s interface language, covering all 31 language variants shipped with IINA 1.5.0. Controls, status and error messages, accessibility text, the plugin description, and font and color pickers use that language. Hebrew uses a right-to-left layout. System-provided picker text may fall back to a language available in macOS.
+- **Localized option lists:** Target languages, fonts, named color presets, and discovered models are sorted for the interface language. **Custom model ID…** stays first in every service’s model list. Changing the interface language keeps your selected translation target, font, and colors.
+- **Live bilingual subtitles:** Keep the original subtitle selected in IINA while SubTandem renders translations centered horizontally at your chosen vertical position without occupying another subtitle track. Translations in right-to-left languages such as Arabic and Hebrew keep punctuation, parentheses, numbers, and mixed text in the correct reading order.
 - **Persistent translation styling:** Adjust Font color, Size, family, Bold/Italic, Border color/Width, and Background color under **Subtitle**. Defaults are white Size 40 system text, black Width 3 border, and transparent background. All three colors share presets and **Show Colors…** with alpha; an unavailable saved font temporarily uses the system font and restores automatically when available.
 - **Embedded and external text subtitles:** Works with local Matroska SubRip/ASS/SSA, local MOV/MP4 `mov_text`, and readable external SRT/ASS tracks selected in IINA. The release includes the required extractor; no external `ffmpeg` or `ffprobe` is needed.
 - **Your choice of translation service:** Use OpenAI, Claude, DeepSeek, or Ollama. You can also connect services compatible with OpenAI or Claude.
@@ -43,7 +45,7 @@ SubTandem keeps the original subtitle visible while independently displaying the
 
 - macOS 12 or later
 - A Mac with Secure Enclave to save or use a nonempty API key; services that do not require one remain supported.
-- IINA 1.4.0 or later
+- IINA 1.4.0 or later; automatic interface language requires IINA 1.5.0 or later
 - A supported local embedded text subtitle or readable external SRT/ASS/SSA track
 - An OpenAI, Claude, DeepSeek, or Ollama service with a model you can use. See the setup guidance below for each service.
 
@@ -96,6 +98,8 @@ Development builds of IINA can install SubTandem directly from the available plu
 After any installation method, approve the requested plugin permissions if prompted, make sure the checkbox next to SubTandem is enabled, and restart IINA. Then play a video, open IINA's sidebar, and select the **SubTandem** tab.
 
 ## 🌍 Quick Start
+
+SubTandem follows IINA’s application language; restart IINA after changing it. Older hosts, unsupported languages, or unavailable language information use English. A missing translation also falls back to English. There is no separate plugin language setting. The steps below use English control names; your interface may show their localized equivalents.
 
 1. Load a local video and select a supported embedded text subtitle or external SRT/ASS subtitle as the primary subtitle in IINA.
 2. Under **Subtitle**, select the exact target language. The selected translation service understands each cue's source language inside the translation request; there is no source-language confirmation step.
