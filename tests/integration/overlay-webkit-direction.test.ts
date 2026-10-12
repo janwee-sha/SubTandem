@@ -21,6 +21,12 @@ const samples = {
   en: "Hello (123).",
   "zh-Hans": "你好 (123).",
 };
+interface GlyphGeometry {
+  x: number;
+  top: number;
+  boundingCenter: number;
+  clientRects: Array<{ left: number; top: number; width: number; height: number }>;
+}
 interface ProbeResult {
   id: string;
   direction: string;
@@ -29,6 +35,7 @@ interface ProbeResult {
     first: number;
     period: number;
     digits: number[];
+    digitGeometry: GlyphGeometry[];
     open: number;
     close: number;
     top: number;
@@ -71,6 +78,8 @@ beforeAll(() => {
     overlay.show([sample, `Alice: ${sample}`], getTargetLanguageDirection(id));
     return { id, data: host.messages.at(-1)!.data };
   });
+  overlay.show([samples.ar, `Alice: ${samples.ar}`], "rtl");
+  const calibrationFrame = host.messages.at(-1)!.data;
   writeFileSync(
     resolve(resources, "runner.js"),
     `
@@ -78,23 +87,42 @@ beforeAll(() => {
   await document.fonts.ready;
   const results = [];
   const element = document.querySelector("#translation-text");
-  for (const frame of ${JSON.stringify(frames)}) {
-    window.probeMessages["overlay:render"](frame.data);
+  const readFrame = (id) => {
     const lines = [...element.childNodes].filter(node => node.nodeType === Node.TEXT_NODE).map(node => {
       const center = (index) => {
         const range = document.createRange();
         range.setStart(node, index); range.setEnd(node, index + 1);
-        const rect = range.getBoundingClientRect();
-        return { x: rect.left + rect.width / 2, top: rect.top };
+        const bounds = range.getBoundingClientRect();
+        const clientRects = Array.from(range.getClientRects(), rect => ({
+          left: rect.left, top: rect.top, width: rect.width, height: rect.height,
+        }));
+        const glyphRects = clientRects.filter(rect => rect.width > 0 && rect.height > 0);
+        if (glyphRects.length !== 1)
+          throw new Error(JSON.stringify({ id, text: node.textContent, index, clientRects }));
+        const rect = glyphRects[0];
+        return { x: rect.left + rect.width / 2, top: rect.top,
+          boundingCenter: bounds.left + bounds.width / 2, clientRects };
       };
       const number = node.textContent.indexOf("123");
+      const digitGeometry = [0, 1, 2].map(offset => center(number + offset));
       return { text: node.textContent, first: center(0).x, period: center(node.length - 1).x,
-        digits: [0, 1, 2].map(offset => center(number + offset).x),
+        digits: digitGeometry.map(glyph => glyph.x), digitGeometry,
         open: center(node.textContent.indexOf("(")).x, close: center(node.textContent.indexOf(")")).x, top: center(0).top };
     });
-    results.push({ id: frame.id, direction: getComputedStyle(element).direction, lines });
+    return { id, direction: getComputedStyle(element).direction, lines };
+  };
+  for (const frame of ${JSON.stringify(frames)}) {
+    window.probeMessages["overlay:render"](frame.data);
+    results.push(readFrame(frame.id));
   }
-  window.probeMessages["overlay:clear"]({ renderRevision: ${frames.length + 1} });
+  window.probeMessages["overlay:render"](${JSON.stringify(calibrationFrame)});
+  element.dir = "ltr";
+  results.push(readFrame("ltr-control"));
+  element.dir = "rtl";
+  element.style.unicodeBidi = "bidi-override";
+  results.push(readFrame("override-control"));
+  element.style.removeProperty("unicode-bidi");
+  window.probeMessages["overlay:clear"]({ renderRevision: ${frames.length + 2} });
   results.push({ id: "clear", hidden: document.querySelector("#translation").hidden, lines: [] });
   window.webkit.messageHandlers.result.postMessage(results);
 })();`,
@@ -129,6 +157,15 @@ beforeAll(() => {
       timeout: 50000,
     }),
   ) as ProbeResult[];
+  const boundaryMeasurements = results.flatMap((result) =>
+    result.lines.flatMap((line, lineIndex) =>
+      line.digitGeometry
+        .filter((glyph) => Math.abs(glyph.x - glyph.boundingCenter) > 0.5)
+        .map((glyph) => ({ id: result.id, line: lineIndex, ...glyph })),
+    ),
+  );
+  if (boundaryMeasurements.length > 0)
+    console.info(JSON.stringify({ overlayRangeBoundaryMeasurements: boundaryMeasurements }));
   mkdirSync(resolve("build"), { recursive: true });
   writeFileSync(
     resolve("build/overlay-direction-results.json"),
@@ -157,11 +194,25 @@ describe("actual WebKit Overlay punctuation and number ordering", () => {
           expect(line.open).toBeLessThan(line.digits[0]!);
           expect(line.close).toBeGreaterThan(line.digits[2]!);
         }
-        expect(line.digits[0]).toBeLessThan(line.digits[1]!);
-        expect(line.digits[1]).toBeLessThan(line.digits[2]!);
+        const evidence = JSON.stringify({ id, text: line.text, digits: line.digitGeometry });
+        expect(line.digits[0], evidence).toBeLessThan(line.digits[1]!);
+        expect(line.digits[1], evidence).toBeLessThan(line.digits[2]!);
       }
     },
   );
+  it("detects misplaced punctuation when the target paragraph direction is lost", () => {
+    const result = results.find((entry) => entry.id === "ltr-control")!;
+    expect(result.direction).toBe("ltr");
+    for (const line of result.lines) expect(line.period).toBeGreaterThan(line.first);
+  });
+  it("detects actual reversed digits under a bidi override", () => {
+    const result = results.find((entry) => entry.id === "override-control")!;
+    expect(result.direction).toBe("rtl");
+    for (const line of result.lines) {
+      expect(line.digits[0]).toBeGreaterThan(line.digits[1]!);
+      expect(line.digits[1]).toBeGreaterThan(line.digits[2]!);
+    }
+  });
   it("clears the rendered candidate", () => {
     expect(results.find((entry) => entry.id === "clear")?.hidden).toBe(true);
   });
