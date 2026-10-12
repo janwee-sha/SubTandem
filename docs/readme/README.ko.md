@@ -161,5 +161,3 @@ SubTandem는 오디오 전사, 이미지 기반 자막 OCR/추출, 원격 미디
 ## ☕ SubTandem 후원하기
 
 SubTandem가 도움이 되었다면 [Afdian](https://www.ifdian.net/item/ea1ff37a97ed11f19a9f52540025c377?utm_source=copylink&utm_medium=link) 또는 [Ko-fi](https://ko-fi.com/ianhsia)에서 자발적으로 제작자에게 커피 한 잔을 사 주세요.
-
-SubTandem는 누구에게나 무료이며 모든 기능을 제공합니다. 후원으로 추가 기능, 우선 번역 또는 전용 빌드가 잠금 해제되지 않으며 번역 서비스 API 크레딧도 포함되지 않습니다. 선택한 Provider는 자체 약관과 콘텐츠 정책에 따라 별도로 요금을 부과할 수 있습니다.

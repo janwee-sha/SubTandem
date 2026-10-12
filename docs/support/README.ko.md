@@ -6,6 +6,4 @@ SubTandem이 도움이 되었다면 [Afdian](https://www.ifdian.net/item/ea1ff37
 
 SubTandem은 오픈 소스를 유지합니다. 개발과 유지 보수를 후원해 주셔서 감사합니다.
 
-선택한 번역 서비스 제공자는 자체 약관과 콘텐츠 정책에 따라 별도로 요금을 부과할 수 있습니다.
-
 [SubTandem](https://github.com/janwee-sha/SubTandem)

@@ -6,6 +6,4 @@ Si SubTandem vous aide, vous pouvez offrir volontairement un café à son créat
 
 SubTandem reste open source. Merci de soutenir son développement et sa maintenance.
 
-Le fournisseur de traduction que vous choisissez peut facturer ses services séparément, selon ses propres conditions et politiques de contenu.
-
 [SubTandem](https://github.com/janwee-sha/SubTandem)

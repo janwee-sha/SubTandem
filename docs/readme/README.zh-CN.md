@@ -168,5 +168,3 @@ SubTandem 不提供音频转写、图形字幕 OCR/提取、远程媒体内嵌�
 ![请 SubTandem 创作者喝杯咖啡的爱发电二维码](assets/aifadian-sponsor.webp)
 
 </div>
-
-SubTandem 对所有人保持免费且功能完整。打赏不会解锁额外功能、优先翻译或专属版本，也不包含翻译服务 API 额度。你选择的 Provider 可能根据其条款与内容政策独立收费。

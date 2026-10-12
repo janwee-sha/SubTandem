@@ -6,6 +6,4 @@ If SubTandem helps you, you can voluntarily buy its creator a coffee through [Af
 
 SubTandem stays open source. Thank you for supporting its development and maintenance.
 
-Your chosen translation service provider may charge separately under its own terms and content policies.
-
 [SubTandem](https://github.com/janwee-sha/SubTandem)

@@ -6,8 +6,6 @@
 
 SubTandem 保持开源。感谢你支持项目的开发与维护。
 
-你选择的翻译服务提供商可能根据其条款与内容政策独立收费。
-
 [![请 SubTandem 创作者喝杯咖啡的爱发电二维码](../readme/assets/aifadian-sponsor.webp)](https://www.ifdian.net/item/ea1ff37a97ed11f19a9f52540025c377?utm_source=copylink&utm_medium=link)
 
 [SubTandem](https://github.com/janwee-sha/SubTandem)

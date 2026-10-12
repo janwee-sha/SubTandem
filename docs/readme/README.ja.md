@@ -161,5 +161,3 @@ SubTandemは、音声文字起こし、画像ベース字幕のOCR/抽出、リ�
 ## ☕ SubTandemを支援
 
 SubTandemがお役に立った場合は、[Afdian](https://www.ifdian.net/item/ea1ff37a97ed11f19a9f52540025c377?utm_source=copylink&utm_medium=link)または[Ko-fi](https://ko-fi.com/ianhsia)で、作者にコーヒーを一杯おごる形で任意に支援できます。
-
-SubTandemはすべての人に無料で全機能を提供します。支援によって追加機能、優先翻訳、専用ビルドが解放されることはなく、翻訳サービスのAPIクレジットも含まれません。選択したProviderは、その利用規約とコンテンツポリシーに基づいて別途料金を請求する場合があります。

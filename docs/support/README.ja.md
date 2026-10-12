@@ -6,6 +6,4 @@ SubTandem が役に立ったら、[Afdian](https://www.ifdian.net/item/ea1ff37a9
 
 SubTandem はオープンソースであり続けます。開発と保守へのご支援に感謝します。
 
-選択した翻訳サービスの提供元は、独自の利用規約やコンテンツポリシーに基づき、別途料金を請求する場合があります。
-
 [SubTandem](https://github.com/janwee-sha/SubTandem)
