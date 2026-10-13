@@ -10,7 +10,7 @@
 [![macOS](https://img.shields.io/badge/macOS-12%2B-000000?style=for-the-badge&logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=for-the-badge&logo=gnu&logoColor=white)](https://github.com/janwee-sha/SubTandem/blob/main/LICENSE)
 
-[English](../../README.md) · [简体中文](README.zh-CN.md) · [한국어](README.ko.md) · [日本語](README.ja.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · **Français**
+[English](../../README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-Hant.md) · [한국어](README.ko.md) · [日本語](README.ja.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · **Français**
 
 </div>
 
@@ -30,16 +30,15 @@ SubTandem conserve les sous-titres d'origine et affiche séparément leur traduc
 
 ## ✨ Fonctionnalités
 
-- **Une interface dans la langue d’IINA :** avec IINA 1.5.0 ou version ultérieure, SubTandem suit automatiquement la langue d’IINA et couvre les 31 variantes linguistiques fournies avec IINA 1.5.0. Cela inclut les commandes, les messages d’état et d’erreur, les textes d’accessibilité, la description du plugin et les sélecteurs de police et de couleur. L’hébreu utilise une disposition de droite à gauche. Les textes système des sélecteurs peuvent utiliser une autre langue disponible dans macOS.
-- **Des listes adaptées à votre langue :** les langues cibles, les polices, les couleurs prédéfinies nommées et les modèles récupérés sont triés selon la langue de l’interface. **Identifiant de modèle personnalisé…** reste en tête de la liste de chaque service. Changer la langue de l’interface conserve la langue cible, la police et les couleurs sélectionnées.
-- **Sous-titres bilingues en temps réel :** le texte d'origine reste sélectionné dans IINA, tandis que SubTandem centre horizontalement la traduction à la position verticale choisie sans occuper une autre piste. Les traductions de droite à gauche, notamment en arabe et en hébreu, affichent la ponctuation, les parenthèses, les nombres et les textes mixtes dans le bon ordre de lecture.
-- **Style de traduction persistant :** réglez sous **Sous-titres** la couleur et la famille de police, la **Taille**, le **Gras** et l’**Italique**, la couleur et la largeur de bordure, ainsi que l’arrière-plan. Les valeurs par défaut sont un texte blanc de taille 40 avec la police système, une bordure noire de largeur 3 et un fond transparent. Les trois couleurs partagent les préréglages et **Afficher les couleurs…** avec transparence ; une police enregistrée indisponible utilise temporairement la police système et revient automatiquement lorsqu’elle redevient disponible.
+- **Sous-titres bilingues en temps réel :** le texte d'origine reste sélectionné dans IINA, tandis que SubTandem centre horizontalement la traduction à la position verticale choisie sans occuper une autre piste.
 - **Sous-titres texte intégrés et externes :** prend en charge Matroska SubRip/ASS/SSA et MOV/MP4 `mov_text` locaux, ainsi que les SRT/ASS externes. L'extracteur est inclus ; aucun `ffmpeg` ou `ffprobe` externe n'est requis.
 - **Service de traduction au choix :** utilisez OpenAI, Claude, DeepSeek ou Ollama. Vous pouvez aussi connecter des services compatibles avec OpenAI ou Claude.
 - **Priorité à la lecture :** la traduction ne met jamais la vidéo en pause et ne masque pas les sous-titres d'origine.
-- **Requêtes limitées :** SubTandem ne traduit que les cue proches, limite les tâches simultanées par fenêtre de lecture et ne met en cache les résultats réussis que pendant la session vidéo actuelle.
-- **Plusieurs profile :** développez un profile dans la liste groupée pour le modifier sur place, ou utilisez **Nouveau profil** à côté du titre. Le bouton **Tester** vérifie le brouillon du tiroir courant ; seul l'interrupteur indépendant active une révision enregistrée exacte dans toutes les fenêtres.
-- **Contrôle du proxy :** les nouveaux profile utilisent les paramètres du proxy système par défaut ; choisissez une route réseau pour chaque profile.
+- **Requêtes limitées :** SubTandem ne traduit que les sous-titres proches de la position de lecture, limite les tâches simultanées par fenêtre et ne met en cache les résultats réussis que pendant la session vidéo actuelle.
+- **Style de traduction enregistré :** personnalisez la police, la taille, le gras, l’italique, la couleur du texte, la bordure et l’arrière-plan sous **Sous-titres**. Les préréglages de couleur et le sélecteur de couleurs de macOS prennent en charge la transparence, et vos réglages sont conservés pour les utilisations suivantes.
+- **Plusieurs profils :** enregistrez des réglages pour différents services et modèles, modifiez-les et testez-les sur place, puis changez de profil actif. Votre choix s’applique à toutes les fenêtres de lecture et reste enregistré après le redémarrage d’IINA.
+- **Routage réseau :** choisissez pour chaque profil une connexion directe ou les paramètres du proxy système pour l’actualisation des modèles, les tests de connexion et les requêtes de traduction. La connexion directe contourne le proxy système ; les nouveaux profils utilisent les paramètres du proxy système par défaut.
+- **Une interface dans la langue d’IINA :** avec IINA 1.5.0 ou version ultérieure, SubTandem suit automatiquement la langue d’IINA et couvre les 31 variantes linguistiques fournies avec IINA 1.5.0. Cela inclut les commandes, les messages d’état et d’erreur, les textes d’accessibilité, la description du plugin et les sélecteurs de police et de couleur. Les textes système des sélecteurs peuvent utiliser une autre langue disponible dans macOS.
 
 ## ✅ Configuration requise
 

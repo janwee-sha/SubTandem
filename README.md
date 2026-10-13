@@ -10,7 +10,7 @@
 [![macOS](https://img.shields.io/badge/macOS-12%2B-000000?style=for-the-badge&logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=for-the-badge&logo=gnu&logoColor=white)](https://github.com/janwee-sha/SubTandem/blob/main/LICENSE)
 
-**English** · [简体中文](docs/readme/README.zh-CN.md) · [한국어](docs/readme/README.ko.md) · [日本語](docs/readme/README.ja.md) · [Русский](docs/readme/README.ru.md) · [العربية](docs/readme/README.ar.md) · [Français](docs/readme/README.fr.md)
+**English** · [简体中文](docs/readme/README.zh-CN.md) · [繁體中文](docs/readme/README.zh-Hant.md) · [한국어](docs/readme/README.ko.md) · [日本語](docs/readme/README.ja.md) · [Русский](docs/readme/README.ru.md) · [العربية](docs/readme/README.ar.md) · [Français](docs/readme/README.fr.md)
 
 </div>
 
@@ -30,16 +30,15 @@ SubTandem keeps the original subtitle visible while independently displaying the
 
 ## ✨ Features
 
-- **An interface in IINA’s language:** On IINA 1.5.0 or later, SubTandem follows IINA’s interface language, covering all 31 language variants shipped with IINA 1.5.0. Controls, status and error messages, accessibility text, the plugin description, and font and color pickers use that language. Hebrew uses a right-to-left layout. System-provided picker text may fall back to a language available in macOS.
-- **Localized option lists:** Target languages, fonts, named color presets, and discovered models are sorted for the interface language. **Custom model ID…** stays first in every service’s model list. Changing the interface language keeps your selected translation target, font, and colors.
-- **Live bilingual subtitles:** Keep the original subtitle selected in IINA while SubTandem renders translations centered horizontally at your chosen vertical position without occupying another subtitle track. Translations in right-to-left languages such as Arabic and Hebrew keep punctuation, parentheses, numbers, and mixed text in the correct reading order.
-- **Persistent translation styling:** Adjust Font color, Size, family, Bold/Italic, Border color/Width, and Background color under **Subtitle**. Defaults are white Size 40 system text, black Width 3 border, and transparent background. All three colors share presets and **Show Colors…** with alpha; an unavailable saved font temporarily uses the system font and restores automatically when available.
+- **Live bilingual subtitles:** Keep the original subtitle selected in IINA while SubTandem renders translations centered horizontally at your chosen vertical position without occupying another subtitle track.
 - **Embedded and external text subtitles:** Works with local Matroska SubRip/ASS/SSA, local MOV/MP4 `mov_text`, and readable external SRT/ASS tracks selected in IINA. The release includes the required extractor; no external `ffmpeg` or `ffprobe` is needed.
 - **Your choice of translation service:** Use OpenAI, Claude, DeepSeek, or Ollama. You can also connect services compatible with OpenAI or Claude.
 - **Playback-first behavior:** Translation work never pauses the video or hides the original subtitle.
 - **Bounded requests:** SubTandem translates only nearby cues, limits concurrent work per player window, and caches successful results only for the current video session.
-- **Multiple profiles:** Expand a profile in the grouped list to edit it, or use **New profile** beside the section title. Test the current drawer draft, then use the independent switch to enable one exact saved revision globally across windows and restarts.
-- **Proxy control:** New profiles use system proxy settings by default; choose a network route for each profile.
+- **Persistent translation styling:** Customize the font, size, bold and italic styles, text color, border, and background under **Subtitle**. Color presets and the macOS color picker support transparency, and your style settings are saved for future use.
+- **Multiple profiles:** Save settings for different services and models, edit and test them in place, and switch the active profile. Your choice applies across player windows and is retained after restarting IINA.
+- **Network routing:** Choose whether each profile connects directly or uses the system proxy settings for model refreshes, connection tests, and translation requests. Direct connections bypass the system proxy; new profiles use system proxy settings by default.
+- **An interface in IINA’s language:** On IINA 1.5.0 or later, SubTandem follows IINA’s interface language, covering all 31 language variants shipped with IINA 1.5.0. Controls, status and error messages, accessibility text, the plugin description, and font and color pickers use that language. System-provided picker text may fall back to a language available in macOS.
 
 ## ✅ Requirements
 
