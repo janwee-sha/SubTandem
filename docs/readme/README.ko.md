@@ -52,49 +52,36 @@ SubTandem는 번역 모델을 다운로드하거나 실행하지 않습니다.
 
 ## 🚀 설치
 
-IINA를 열고 **환경설정 → 플러그인**으로 이동합니다. 플러그인 관리 화면에서는 다음 설치 방법을 사용할 수 있습니다.
+아래 단계와 스크린샷은 IINA 1.5.0 이상의 영어 인터페이스를 기준으로 합니다. **Settings → Plugins**를 열고 **Get Plugins…** 또는 **Install Local Package…**를 선택합니다.
 
 <div align="center">
 
-![GitHub에서 설치 및 패키지 설치 버튼이 표시된 IINA 플러그인 관리 화면](assets/plugin-manager.webp)
+![Get Plugins와 Install Local Package 버튼이 표시된 IINA 플러그인 관리 화면](assets/plugin-manager.webp)
 
 </div>
 
-### GitHub에서 설치(권장)
+### Get Plugins
 
-1. **깃허브에서 설치…**를 클릭합니다.
-2. `user/repo` 입력란에 `janwee-sha/SubTandem`를 입력하고 설치를 확인합니다.
-3. 설치된 플러그인 목록에 SubTandem가 나타날 때까지 기다립니다.
+**Get Plugins…**를 클릭한 뒤 다음 중 한 가지 방법으로 설치합니다.
+
+- **저장소 이름 입력:** 상단의 `owner/repo` 입력란에 `janwee-sha/SubTandem`을 입력하고 옆의 **Install**을 클릭합니다.
+- **커뮤니티 플러그인 목록에서 선택:** 목록에서 **SubTandem**을 선택하고 오른쪽 세부 정보 영역의 **Install**을 클릭합니다.
 
 <div align="center">
 
-![GitHub에서 SubTandem를 설치하는 IINA 대화상자](assets/install_from_github.webp)
+![owner/repo 입력란과 SubTandem이 선택된 커뮤니티 플러그인 목록이 있는 IINA Get Plugins 대화상자](assets/get-plugins.webp)
 
 </div>
 
-SubTandem v0.1.0에는 IINA 업데이트 메타데이터가 포함되어 있습니다. 위 방법 중 하나로 설치하면 IINA에서 이후 버전을 확인하고 설치할 수 있습니다.
+설치가 완료되면 **Done**을 클릭하여 플러그인 관리 화면으로 돌아갑니다.
 
-### 다운로드한 패키지 설치
+### Install Local Package
 
 1. [Releases](https://github.com/janwee-sha/SubTandem/releases) 페이지에서 최신 `SubTandem-X.Y.Z.iinaplgz` 패키지를 다운로드합니다.
-2. **환경설정 → 플러그인**으로 돌아가 **패키지 설치…**를 클릭합니다.
+2. **Settings → Plugins**로 돌아가 **Install Local Package…**를 클릭합니다.
 3. 다운로드한 `.iinaplgz` 파일을 선택하고 설치를 확인합니다.
 
-### 플러그인 목록에서 설치(IINA 개발 버전)
-
-IINA 개발 버전에서는 사용 가능한 플러그인 목록에서 SubTandem를 직접 설치할 수 있습니다.
-
-1. **환경설정 → 플러그인**을 열고 새 플러그인 설치 화면으로 이동합니다.
-2. 사용 가능한 플러그인 목록에서 **SubTandem**를 선택합니다.
-3. 설치를 확인하고 설치된 플러그인 목록에 SubTandem가 나타날 때까지 기다립니다.
-
-<div align="center">
-
-![IINA 개발 버전의 사용 가능한 플러그인 목록에서 선택된 SubTandem](assets/install_from_plugins_list.webp)
-
-</div>
-
-어느 방법을 사용하든 권한 요청이 표시되면 승인하고 SubTandem 옆의 체크상자가 활성화되어 있는지 확인한 다음 IINA를 다시 시작합니다. 이후 영상을 재생하고 IINA 사이드바를 연 뒤 **SubTandem** 탭을 선택합니다.
+어느 방법을 사용하든 플러그인 권한 요청이 표시되면 승인합니다. 설치 후 SubTandem 옆의 스위치가 켜져 있는지 확인하고 IINA를 다시 시작합니다. 이후 영상을 재생하고 IINA 사이드바를 연 뒤 **SubTandem** 탭을 선택합니다.
 
 ## 🌍 빠른 시작
 

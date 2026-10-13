@@ -52,49 +52,36 @@
 
 ## 🚀 التثبيت
 
-افتح IINA وانتقل إلى **Settings → Plugins**. تدعم واجهة إدارة الإضافات طرق التثبيت التالية.
+تستخدم الخطوات ولقطات الشاشة أدناه الواجهة الإنجليزية في IINA 1.5.0 أو أحدث. افتح **Settings → Plugins** واختر **Get Plugins…** أو **Install Local Package…**.
 
 <div align="center">
 
-![واجهة إدارة إضافات IINA وبها زرا التثبيت من GitHub وتثبيت الحزمة](assets/plugin-manager.webp)
+![واجهة إدارة إضافات IINA وبها زرا Get Plugins وInstall Local Package](assets/plugin-manager.webp)
 
 </div>
 
-### التثبيت من GitHub (موصى به)
+### Get Plugins
 
-1. انقر **Install from GitHub…**.
-2. أدخل `janwee-sha/SubTandem` في حقل `user/repo`، ثم أكد التثبيت.
-3. انتظر حتى يظهر SubTandem في قائمة الإضافات المثبتة.
+انقر **Get Plugins…**، ثم اختر إحدى طريقتي التثبيت:
+
+- **إدخال اسم المستودع:** أدخل `janwee-sha/SubTandem` في حقل `owner/repo` في الأعلى، ثم انقر **Install** بجواره.
+- **الاختيار من قائمة إضافات المجتمع:** اختر **SubTandem** من القائمة، ثم انقر **Install** في لوحة التفاصيل على اليمين.
 
 <div align="center">
 
-![مربع حوار IINA لتثبيت SubTandem من GitHub](assets/install_from_github.webp)
+![مربع حوار Get Plugins في IINA مع حقل owner/repo وتحديد SubTandem في قائمة إضافات المجتمع](assets/get-plugins.webp)
 
 </div>
 
-يتضمن SubTandem v0.1.0 بيانات تحديث IINA. ثبّته بأي من الطرق المذكورة أعلاه كي يتمكن IINA من التحقق من الإصدارات اللاحقة وتثبيتها.
+بعد اكتمال التثبيت، انقر **Done** للعودة إلى واجهة إدارة الإضافات.
 
-### تثبيت حزمة تم تنزيلها
+### Install Local Package
 
 1. افتح صفحة [Releases](https://github.com/janwee-sha/SubTandem/releases) ونزّل أحدث حزمة `SubTandem-X.Y.Z.iinaplgz`.
-2. ارجع إلى **Settings → Plugins** وانقر **Install Package…**.
+2. ارجع إلى **Settings → Plugins** وانقر **Install Local Package…**.
 3. اختر ملف `.iinaplgz` الذي نزّلته وأكد التثبيت.
 
-### التثبيت من قائمة الإضافات (إصدار IINA التطويري)
-
-تتيح إصدارات IINA التطويرية تثبيت SubTandem مباشرة من قائمة الإضافات المتاحة.
-
-1. افتح **Settings → Plugins**، ثم افتح مربع حوار تثبيت إضافة جديدة.
-2. اختر **SubTandem** من قائمة الإضافات المتاحة.
-3. أكد التثبيت وانتظر حتى يظهر SubTandem في قائمة الإضافات المثبتة.
-
-<div align="center">
-
-![تحديد SubTandem في قائمة الإضافات المتاحة في إصدار IINA التطويري](assets/install_from_plugins_list.webp)
-
-</div>
-
-أيًا كانت طريقة التثبيت، وافق على أذونات الإضافة المطلوبة إذا ظهرت، وتأكد من تفعيل مربع الاختيار بجوار SubTandem، ثم أعد تشغيل IINA. بعد ذلك شغّل فيديو، وافتح الشريط الجانبي في IINA، واختر تبويب **SubTandem**.
+أيًا كانت الطريقة، وافق على أذونات الإضافة المطلوبة إذا ظهرت. بعد التثبيت، تأكد من تشغيل المفتاح بجوار SubTandem، ثم أعد تشغيل IINA. بعد ذلك شغّل فيديو، وافتح الشريط الجانبي في IINA، واختر تبويب **SubTandem**.
 
 ## 🌍 البدء السريع
 

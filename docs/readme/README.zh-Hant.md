@@ -52,49 +52,36 @@ SubTandem 不會下載或啟動翻譯模型。
 
 ## 🚀 安裝
 
-開啟 IINA，進入「**偏好設定 → 外掛程式**」。外掛程式管理介面支援以下安裝方式。
+以下步驟和截圖以 IINA 1.5.0 及以上版本的英文介面為例。開啟 **Settings → Plugins**（設定 → 外掛程式），選擇 **Get Plugins…** 或 **Install Local Package…**。
 
 <div align="center">
 
-![IINA 外掛程式管理介面中的「從 GitHub 安裝」和「安裝外掛」按鈕](assets/plugin-manager.webp)
+![IINA 外掛程式管理介面中的 Get Plugins 和 Install Local Package 按鈕](assets/plugin-manager.webp)
 
 </div>
 
-### 從 GitHub 安裝（建議）
+### Get Plugins
 
-1. 按一下「**從 GitHub 安裝…**」。
-2. 在 `user/repo` 輸入框中填入 `janwee-sha/SubTandem`，然後確認安裝。
-3. 等待 SubTandem 出現在「已安裝的外掛」列表中。
+按一下 **Get Plugins…**，然後任選一種方式安裝：
+
+- **輸入儲存庫名稱：** 在頂部的 `owner/repo` 輸入框中填入 `janwee-sha/SubTandem`，按一下旁邊的 **Install**。
+- **從社群外掛程式列表選擇：** 在列表中選擇 **SubTandem**，按一下右側詳細資訊中的 **Install**。
 
 <div align="center">
 
-![從 GitHub 安裝 SubTandem 的 IINA 對話框](assets/install_from_github.webp)
+![IINA 的 Get Plugins 對話框，包含 owner/repo 輸入框和已選取 SubTandem 的社群外掛程式列表](assets/get-plugins.webp)
 
 </div>
 
-SubTandem v0.1.0 已包含 IINA 更新中繼資料。使用上述任一方式完成安裝後，IINA 可以檢查並安裝後續版本。
+安裝完成後，按一下 **Done** 返回外掛程式管理介面。
 
-### 安裝下載的外掛套件
+### Install Local Package
 
-1. 開啟 [Releases](https://github.com/janwee-sha/SubTandem/releases) 頁面，下載最新的 `SubTandem-X.Y.Z.iinaplgz`。
-2. 返回「**偏好設定 → 外掛程式**」，按一下「**安裝外掛…**」。
-3. 選擇剛下載的 `.iinaplgz` 檔案並確認安裝。
+1. 開啟 [Releases](https://github.com/janwee-sha/SubTandem/releases) 頁面，下載最新的 `SubTandem-X.Y.Z.iinaplgz` 安裝套件。
+2. 返回 **Settings → Plugins**，按一下 **Install Local Package…**。
+3. 選擇下載的 `.iinaplgz` 檔案並確認安裝。
 
-### 從外掛程式列表安裝（開發版 IINA）
-
-開發版 IINA 可以直接從可用外掛程式列表安裝 SubTandem。
-
-1. 開啟「**偏好設定 → 外掛程式**」，進入新外掛程式安裝介面。
-2. 在可用外掛程式列表中選擇 **SubTandem**。
-3. 確認安裝，並等待 SubTandem 出現在「已安裝的外掛」列表中。
-
-<div align="center">
-
-![開發版 IINA 的可用外掛程式列表中已選擇 SubTandem](assets/install_from_plugins_list.webp)
-
-</div>
-
-無論使用哪種方式，如 IINA 提示授權，請允許所要求的外掛程式權限；確認 SubTandem 左側的核取方塊已勾選，然後重新啟動 IINA。之後播放影片、開啟 IINA 側邊欄並選擇 **SubTandem** 分頁。
+無論使用哪種方式，如 IINA 提示授權，請允許所要求的外掛程式權限。安裝完成後，確認 SubTandem 旁的開關已開啟，然後重新啟動 IINA。之後播放影片、開啟 IINA 側邊欄並選擇 **SubTandem** 分頁。
 
 ## 🌍 快速入門
 

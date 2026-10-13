@@ -52,49 +52,36 @@ SubTandemは翻訳モデルをダウンロードしたり起動したりしま�
 
 ## 🚀 インストール
 
-IINAを開き、**環境設定 → プラグイン**へ移動します。プラグイン管理画面では、次の方法でインストールできます。
+以下の手順とスクリーンショットは、IINA 1.5.0以降の英語表示を使用しています。**Settings → Plugins**を開き、**Get Plugins…**または**Install Local Package…**を選びます。
 
 <div align="center">
 
-![「GitHubからインストール」と「パッケージをインストール」が表示されたIINAのプラグイン管理画面](assets/plugin-manager.webp)
+![Get PluginsとInstall Local Packageボタンが表示されたIINAのプラグイン管理画面](assets/plugin-manager.webp)
 
 </div>
 
-### GitHubからインストール（推奨）
+### Get Plugins
 
-1. **GitHubからインストール…**をクリックします。
-2. `user/repo`欄に`janwee-sha/SubTandem`と入力し、インストールを確定します。
-3. インストール済みプラグインの一覧にSubTandemが表示されるまで待ちます。
+**Get Plugins…**をクリックし、次のいずれかの方法でインストールします。
+
+- **リポジトリ名を入力：** 上部の`owner/repo`欄に`janwee-sha/SubTandem`と入力し、横の**Install**をクリックします。
+- **コミュニティのプラグイン一覧から選択：** 一覧で**SubTandem**を選び、右側の詳細欄にある**Install**をクリックします。
 
 <div align="center">
 
-![GitHubからSubTandemをインストールするIINAのダイアログ](assets/install_from_github.webp)
+![owner/repo入力欄と、SubTandemが選択されたコミュニティのプラグイン一覧を含むIINAのGet Pluginsダイアログ](assets/get-plugins.webp)
 
 </div>
 
-SubTandem v0.1.0にはIINAのアップデート情報が含まれています。上記のいずれかの方法でインストールすると、IINAで後続バージョンを確認してインストールできます。
+インストールが完了したら、**Done**をクリックしてプラグイン管理画面に戻ります。
 
-### ダウンロードしたパッケージをインストール
+### Install Local Package
 
-1. [Releases](https://github.com/janwee-sha/SubTandem/releases)ページから最新の`SubTandem-X.Y.Z.iinaplgz`をダウンロードします。
-2. **環境設定 → プラグイン**に戻り、**パッケージをインストール…**をクリックします。
+1. [Releases](https://github.com/janwee-sha/SubTandem/releases)ページから最新の`SubTandem-X.Y.Z.iinaplgz`パッケージをダウンロードします。
+2. **Settings → Plugins**に戻り、**Install Local Package…**をクリックします。
 3. ダウンロードした`.iinaplgz`ファイルを選択し、インストールを確定します。
 
-### プラグイン一覧からインストール（IINA開発版）
-
-IINAの開発版では、利用可能なプラグイン一覧からSubTandemを直接インストールできます。
-
-1. **環境設定 → プラグイン**を開き、新規プラグインのインストール画面に進みます。
-2. 利用可能なプラグイン一覧から**SubTandem**を選択します。
-3. インストールを確定し、インストール済みプラグインの一覧にSubTandemが表示されるまで待ちます。
-
-<div align="center">
-
-![IINA開発版の利用可能なプラグイン一覧で選択されたSubTandem](assets/install_from_plugins_list.webp)
-
-</div>
-
-いずれの方法でも、権限を求められた場合は承認し、SubTandemの横にあるチェックボックスが有効になっていることを確認してからIINAを再起動します。その後、動画を再生してIINAのサイドバーを開き、**SubTandem**タブを選択します。
+いずれの方法でも、プラグインの権限を求められた場合は承認してください。インストール後、SubTandemの横にあるスイッチがオンになっていることを確認し、IINAを再起動します。その後、動画を再生してIINAのサイドバーを開き、**SubTandem**タブを選択します。
 
 ## 🌍 クイックスタート
 

@@ -52,49 +52,36 @@ SubTandem ne télécharge ni ne démarre les modèles de traduction.
 
 ## 🚀 Installation
 
-Ouvrez IINA et accédez à **Préférences → Modules externes**. Le gestionnaire de modules permet les méthodes d'installation suivantes.
+Les étapes et les captures d’écran ci-dessous utilisent l’interface en anglais d’IINA 1.5.0 ou ultérieur. Ouvrez **Settings → Plugins**, puis choisissez **Get Plugins…** ou **Install Local Package…**.
 
 <div align="center">
 
-![Gestionnaire de modules IINA avec les boutons Installer depuis GitHub et Installer le paquet](assets/plugin-manager.webp)
+![Gestionnaire de modules IINA avec les boutons Get Plugins et Install Local Package](assets/plugin-manager.webp)
 
 </div>
 
-### Installer depuis GitHub (recommandé)
+### Get Plugins
 
-1. Cliquez sur **Installer depuis GitHub…**.
-2. Saisissez `janwee-sha/SubTandem` dans le champ `user/repo`, puis confirmez l'installation.
-3. Attendez que SubTandem apparaisse dans la liste des modules installés.
+Cliquez sur **Get Plugins…**, puis choisissez l’une des deux méthodes :
+
+- **Saisir un dépôt :** entrez `janwee-sha/SubTandem` dans le champ `owner/repo` en haut, puis cliquez sur **Install** à côté.
+- **Choisir dans la liste des modules de la communauté :** sélectionnez **SubTandem** dans la liste, puis cliquez sur **Install** dans le panneau de détails à droite.
 
 <div align="center">
 
-![Boîte de dialogue IINA pour installer SubTandem depuis GitHub](assets/install_from_github.webp)
+![Boîte de dialogue Get Plugins d’IINA avec le champ owner/repo et SubTandem sélectionné dans la liste des modules de la communauté](assets/get-plugins.webp)
 
 </div>
 
-SubTandem v0.1.0 inclut les métadonnées de mise à jour IINA. Installez-le avec l’une des méthodes ci-dessus afin qu’IINA puisse rechercher et installer les versions ultérieures.
+Une fois l’installation terminée, cliquez sur **Done** pour revenir au gestionnaire de modules.
 
-### Installer un paquet téléchargé
+### Install Local Package
 
 1. Ouvrez la page [Releases](https://github.com/janwee-sha/SubTandem/releases) et téléchargez le dernier paquet `SubTandem-X.Y.Z.iinaplgz`.
-2. Revenez dans **Préférences → Modules externes** et cliquez sur **Installer le paquet…**.
-3. Sélectionnez le fichier `.iinaplgz` téléchargé et confirmez l'installation.
+2. Revenez dans **Settings → Plugins** et cliquez sur **Install Local Package…**.
+3. Sélectionnez le fichier `.iinaplgz` téléchargé et confirmez l’installation.
 
-### Installer depuis la liste des modules (version de développement d’IINA)
-
-Les versions de développement d’IINA permettent d’installer SubTandem directement depuis la liste des modules disponibles.
-
-1. Ouvrez **Préférences → Modules externes**, puis la boîte de dialogue d’installation d’un nouveau module.
-2. Sélectionnez **SubTandem** dans la liste des modules disponibles.
-3. Confirmez l’installation et attendez que SubTandem apparaisse dans la liste des modules installés.
-
-<div align="center">
-
-![SubTandem sélectionné dans la liste des modules disponibles d’une version de développement d’IINA](assets/install_from_plugins_list.webp)
-
-</div>
-
-Quelle que soit la méthode choisie, approuvez les autorisations demandées si IINA les affiche, vérifiez que la case à côté de SubTandem est cochée, puis redémarrez IINA. Lancez ensuite une vidéo, ouvrez la barre latérale d'IINA et sélectionnez l'onglet **SubTandem**.
+Quelle que soit la méthode choisie, approuvez les autorisations du module si IINA les demande. Après l’installation, vérifiez que l’interrupteur à côté de SubTandem est activé, puis redémarrez IINA. Lancez ensuite une vidéo, ouvrez la barre latérale d’IINA et sélectionnez l’onglet **SubTandem**.
 
 ## 🌍 Démarrage rapide
 
