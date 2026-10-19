@@ -24,7 +24,7 @@ SubTandemは元の字幕を表示したまま、選択した位置に翻訳字�
 
 <div align="center">
 
-![IINAで日本語と英語の二言語字幕を表示するSubTandem](assets/real-time-bilingual-subtitle.webp)
+![IINAで日本語と英語の二言語字幕を表示するSubTandem](assets/real-time-bilingual-subtitle-ja.webp)
 
 </div>
 

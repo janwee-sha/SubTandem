@@ -24,7 +24,7 @@ SubTandem conserve les sous-titres d'origine et affiche séparément leur traduc
 
 <div align="center">
 
-![SubTandem affichant des sous-titres bilingues japonais et anglais dans IINA](assets/real-time-bilingual-subtitle.webp)
+![SubTandem affichant des sous-titres bilingues japonais et anglais dans IINA](assets/real-time-bilingual-subtitle-fr.webp)
 
 </div>
 

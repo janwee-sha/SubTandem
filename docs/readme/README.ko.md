@@ -24,7 +24,7 @@ SubTandem는 원본 자막을 그대로 유지하면서 선택한 위치에 번�
 
 <div align="center">
 
-![IINA에서 일본어와 영어 이중 언어 자막을 표시하는 SubTandem](assets/real-time-bilingual-subtitle.webp)
+![IINA에서 일본어와 영어 이중 언어 자막을 표시하는 SubTandem](assets/real-time-bilingual-subtitle-ko.webp)
 
 </div>
 

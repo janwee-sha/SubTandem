@@ -24,7 +24,7 @@ SubTandem сохраняет оригинальные субтитры и отд
 
 <div align="center">
 
-![SubTandem показывает двуязычные субтитры на японском и английском в IINA](assets/real-time-bilingual-subtitle.webp)
+![SubTandem показывает двуязычные субтитры на японском и английском в IINA](assets/real-time-bilingual-subtitle-ru.webp)
 
 </div>
 

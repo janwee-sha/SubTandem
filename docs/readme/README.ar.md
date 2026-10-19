@@ -24,7 +24,7 @@
 
 <div align="center">
 
-![يعرض SubTandem ترجمة ثنائية اللغة باليابانية والإنجليزية في IINA](assets/real-time-bilingual-subtitle.webp)
+![يعرض SubTandem ترجمة ثنائية اللغة باليابانية والإنجليزية في IINA](assets/real-time-bilingual-subtitle-ar.webp)
 
 </div>
 

@@ -24,7 +24,7 @@ SubTandem 保留原字幕，同时在你选择的位置独立显示译文。
 
 <div align="center">
 
-![SubTandem 在 IINA 中显示日英双语字幕](assets/real-time-bilingual-subtitle.webp)
+![SubTandem 在 IINA 中显示日英双语字幕](assets/real-time-bilingual-subtitle-zh-hans.webp)
 
 </div>
 
