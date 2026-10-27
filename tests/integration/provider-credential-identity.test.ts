@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ProviderProfiles } from "../../src/providers/profiles.js";
+import { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
 import { globalProviderHarness } from "../helpers/global-provider-harness.js";
 
 const changedEndpoints = [

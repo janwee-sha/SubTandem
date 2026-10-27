@@ -1,19 +1,19 @@
-import type { CredentialOwner, CredentialEnvelope } from "../../shared/credential-protocol.js";
+import type { CredentialOwner, CredentialEnvelope } from "../../src/shared/credential-protocol.js";
 import { encryptedSaveFrame, encryptedSaveOwner } from "../helpers/encrypted-profile-fixture.js";
 import { describe, expect, it, vi } from "vitest";
-import { SubTandemError } from "../../src/domain/errors.js";
+import { SubTandemError } from "../../src/runtime/domain/errors.js";
 import type {
   ProfileStateCommitResult,
   ProfileStateStoreSnapshot,
   TransportRequest,
   TransportResponse,
   TransportRpcClient,
-} from "../../src/transport/client.js";
-import { TransportSupervisor } from "../../src/transport/supervisor.js";
-import { TransportClient } from "../../src/transport/client.js";
-import { IinaFileRpcBridge } from "../../src/adapters/iina/provider-transport.js";
+} from "../../src/runtime/transport/client.js";
+import { TransportSupervisor } from "../../src/runtime/transport/supervisor.js";
+import { TransportClient } from "../../src/runtime/transport/client.js";
+import { IinaFileRpcBridge } from "../../src/runtime/adapters/iina/provider-transport.js";
 
-import { HostClock, HostTimers } from "../../src/adapters/iina/host-timers.js";
+import { HostClock, HostTimers } from "../../src/runtime/adapters/iina/host-timers.js";
 
 class FakeTransportClient implements TransportRpcClient {
   available = true;
@@ -620,7 +620,8 @@ describe("transport supervisor", () => {
 
 it("blocks a provider send cancelled while its helper is starting", async () => {
   const { CompletionQueue } = await import("../helpers/profile-activation-harness.js");
-  const { HelperProviderTransport } = await import("../../src/adapters/iina/provider-transport.js");
+  const { HelperProviderTransport } =
+    await import("../../src/runtime/adapters/iina/provider-transport.js");
   const queue = new CompletionQueue<void, TransportRpcClient>();
   const client = new FakeTransportClient();
   const supervisor = new TransportSupervisor(() => queue.hold().promise);

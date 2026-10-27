@@ -11,12 +11,12 @@ import {
   type CredentialEnvelope,
   type CredentialChannelOffer,
   type CredentialOwner,
-} from "../../shared/credential-protocol.js";
+} from "../../src/shared/credential-protocol.js";
 import {
   deriveCredentialKey,
   openCredentialBytes,
   sealCredentialBytes,
-} from "../../ui/credential-channel.js";
+} from "../../src/ui/credential-channel.js";
 
 export class CredentialPeer {
   private sequence = 0;

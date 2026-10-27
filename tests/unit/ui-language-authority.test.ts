@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { UiLanguageAuthority } from "../../src/app/ui-language-authority.js";
-import { UI_LOCALES } from "../../shared/localization/locales.js";
+import { UiLanguageAuthority } from "../../src/runtime/app/ui-language-authority.js";
+import { UI_LOCALES } from "../../src/shared/localization/locales.js";
 const sample = (locale: string) => ({
   hostVersion: "1.5.0",
   preferredLocalization: locale,

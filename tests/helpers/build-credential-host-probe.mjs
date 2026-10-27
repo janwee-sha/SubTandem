@@ -20,11 +20,11 @@ if (process.argv[3] === "prune") {
 } else {
   fs.mkdirSync(directory, { recursive: true });
   const html = fs
-    .readFileSync(path.join(root, "ui/sidebar.html"), "utf8")
+    .readFileSync(path.join(root, "src/ui/sidebar.html"), "utf8")
     .replace(
       /((?:src|href)=")([^"#]+)"/g,
       (_match, prefix, ref) =>
-        `${prefix}${path.relative(directory, path.resolve(root, "ui", ref))}"`,
+        `${prefix}${path.relative(directory, path.resolve(root, "src/ui", ref))}"`,
     )
     .replace(
       "</body>",

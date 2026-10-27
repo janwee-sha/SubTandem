@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   ProfileActivationAuthority,
   restoreProfileActivationAuthority,
-} from "../../src/providers/profile-activation.js";
-import { ProviderProfiles } from "../../src/providers/profiles.js";
+} from "../../src/runtime/providers/profile-activation.js";
+import { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
 import {
   encryptedSaveFrame,
   encryptedSaveOwner,
@@ -16,7 +16,7 @@ import {
   parseProfileStateStoreSnapshot,
   type LocalRpcBridge,
   type ProfileStateStoreSnapshot,
-} from "../../src/transport/client.js";
+} from "../../src/runtime/transport/client.js";
 
 const profile = {
   profileId: "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae",
@@ -94,7 +94,7 @@ function snapshot(): ProfileStateStoreSnapshot {
 describe("versioned Profile state transport", () => {
   it("sends bounded recovery without client supplied state and validates its receipt", async () => {
     const commitId = "00000000-0000-4000-8000-000000000099";
-    const { profileRecoveryRequestDigest } = await import("../../src/transport/client.js");
+    const { profileRecoveryRequestDigest } = await import("../../src/runtime/transport/client.js");
     const result = {
       state: "committed",
       recovery: "reset",

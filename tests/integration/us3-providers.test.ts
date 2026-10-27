@@ -1,27 +1,27 @@
 import { testSavedCredential } from "../contract/provider-test-helpers.js";
 import { describe, expect, it } from "vitest";
-import { ProviderBroker } from "../../src/providers/broker.js";
-import { ProviderProfiles } from "../../src/providers/profiles.js";
-import { OpenAICompatibleProvider } from "../../src/providers/openai.js";
-import { OllamaProvider } from "../../src/providers/ollama.js";
-import { DeepSeekProvider } from "../../src/providers/deepseek.js";
-import { ClaudeProvider } from "../../src/providers/claude.js";
-import type { TranslationProvider } from "../../src/providers/provider.js";
-import type { ProviderTransport } from "../../src/providers/transport.js";
+import { ProviderBroker } from "../../src/runtime/providers/broker.js";
+import { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
+import { OpenAICompatibleProvider } from "../../src/runtime/providers/openai.js";
+import { OllamaProvider } from "../../src/runtime/providers/ollama.js";
+import { DeepSeekProvider } from "../../src/runtime/providers/deepseek.js";
+import { ClaudeProvider } from "../../src/runtime/providers/claude.js";
+import type { TranslationProvider } from "../../src/runtime/providers/provider.js";
+import type { ProviderTransport } from "../../src/runtime/providers/transport.js";
 import {
   acceptProfileListResult,
   beginProfileListRequest,
   createProfileListSyncState,
   removeDeletedProfile,
-} from "../../src/adapters/iina/profile-list-sync.js";
-import "../../ui/sidebar-state.js";
+} from "../../src/runtime/adapters/iina/profile-list-sync.js";
+import "../../src/ui/sidebar-state.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
-import { discoverProviderModels } from "../../src/providers/model-discovery.js";
-import { CredentialScopedProviderCache } from "../../src/providers/provider-cache.js";
+import { discoverProviderModels } from "../../src/runtime/providers/model-discovery.js";
+import { CredentialScopedProviderCache } from "../../src/runtime/providers/provider-cache.js";
 import {
   ModelCatalogSync,
   modelCatalogContextToken,
-} from "../../src/adapters/iina/model-catalog-sync.js";
+} from "../../src/runtime/adapters/iina/model-catalog-sync.js";
 import {
   activateTestProfile,
   authorizedProviderRequest,

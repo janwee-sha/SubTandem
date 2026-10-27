@@ -5,9 +5,9 @@ import {
   StylePickerProcess,
   parseStylePickerReadyFrame,
   type StylePickerHttpBridge,
-} from "../../src/adapters/iina/style-picker-client.js";
-import { UI_LOCALES } from "../../shared/localization/locales.js";
-import type { ReadyFileStore } from "../../src/adapters/iina/transport-process.js";
+} from "../../src/runtime/adapters/iina/style-picker-client.js";
+import { UI_LOCALES } from "../../src/shared/localization/locales.js";
+import type { ReadyFileStore } from "../../src/runtime/adapters/iina/transport-process.js";
 
 class FakeBridge implements StylePickerHttpBridge {
   readonly requests: Array<{

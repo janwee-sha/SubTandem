@@ -2,21 +2,21 @@ import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 describe("IINA sidebar bundle contract", () => {
-  const rawHtml = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
+  const rawHtml = readFileSync(new URL("../../src/ui/sidebar.html", import.meta.url), "utf8");
   const html = rawHtml.replace(/\s+(?:data-i18n(?:-[a-z-]+)?|dir)="[^"]*"/g, "");
-  const sidebarCss = readFileSync(new URL("../../ui/sidebar.css", import.meta.url), "utf8");
-  const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
-  const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
+  const sidebarCss = readFileSync(new URL("../../src/ui/sidebar.css", import.meta.url), "utf8");
+  const sidebarSource = readFileSync(new URL("../../src/ui/sidebar.ts", import.meta.url), "utf8");
+  const mainSource = readFileSync(new URL("../../src/runtime/main.ts", import.meta.url), "utf8");
   const sessionStatusSource = readFileSync(
-    new URL("../../ui/session-status.ts", import.meta.url),
+    new URL("../../src/ui/session-status.ts", import.meta.url),
     "utf8",
   );
-  const serviceFailurePath = new URL("../../ui/service-failure-message.ts", import.meta.url);
+  const serviceFailurePath = new URL("../../src/ui/service-failure-message.ts", import.meta.url);
   const serviceFailureSource = existsSync(serviceFailurePath)
     ? readFileSync(serviceFailurePath, "utf8")
     : "";
   const providerStatusSource = readFileSync(
-    new URL("../../ui/provider-status.ts", import.meta.url),
+    new URL("../../src/ui/provider-status.ts", import.meta.url),
     "utf8",
   );
   const packageJson = JSON.parse(
@@ -52,7 +52,7 @@ describe("IINA sidebar bundle contract", () => {
   });
 
   it("bundles one ordered entry as a classic IINA script", () => {
-    const entry = readFileSync(new URL("../../ui/sidebar-entry.ts", import.meta.url), "utf8");
+    const entry = readFileSync(new URL("../../src/ui/sidebar-entry.ts", import.meta.url), "utf8");
     expect(packageJson.targets?.sidebar?.publicUrl).toBe("./");
     expect(packageJson.targets?.sidebar?.outputFormat).toBe("global");
     expect(html).toContain('<script type="module" src="./sidebar-entry.ts"></script>');
@@ -542,9 +542,9 @@ describe("IINA sidebar bundle contract", () => {
 });
 
 describe("Subtitle Font controls contract", () => {
-  const rawHtml = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
+  const rawHtml = readFileSync(new URL("../../src/ui/sidebar.html", import.meta.url), "utf8");
   const html = rawHtml.replace(/\s+(?:data-i18n(?:-[a-z-]+)?|dir)="[^"]*"/g, "");
-  const css = readFileSync(new URL("../../ui/sidebar.css", import.meta.url), "utf8");
+  const css = readFileSync(new URL("../../src/ui/sidebar.css", import.meta.url), "utf8");
 
   it("places the Font group immediately after Position with all five fields", () => {
     const position = html.indexOf('id="translation-position"');
@@ -633,7 +633,7 @@ describe("Subtitle Font controls contract", () => {
 });
 
 describe("Subtitle Border and Background controls contract", () => {
-  const rawHtml = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
+  const rawHtml = readFileSync(new URL("../../src/ui/sidebar.html", import.meta.url), "utf8");
   const html = rawHtml.replace(/\s+(?:data-i18n(?:-[a-z-]+)?|dir)="[^"]*"/g, "");
 
   it("places Border and Background after Font and before the service section", () => {
@@ -663,9 +663,9 @@ describe("Subtitle Border and Background controls contract", () => {
 });
 
 describe("Shared subtitle color palette contract", () => {
-  const rawHtml = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
+  const rawHtml = readFileSync(new URL("../../src/ui/sidebar.html", import.meta.url), "utf8");
   const html = rawHtml.replace(/\s+(?:data-i18n(?:-[a-z-]+)?|dir)="[^"]*"/g, "");
-  const css = readFileSync(new URL("../../ui/sidebar.css", import.meta.url), "utf8");
+  const css = readFileSync(new URL("../../src/ui/sidebar.css", import.meta.url), "utf8");
 
   it("offers named RGBA presets, selected semantics and one Show Colors entry", () => {
     const paletteStart = html.indexOf('id="subtitle-color-palette"');
@@ -697,7 +697,7 @@ describe.each(["openai", "claude", "deepseek", "ollama"])(
     it("seals each current DOM value and destination without falling back to the saved Key", async () => {
       const { sidebarHarness } = await import("../helpers/sidebar-harness.js");
       const { credentialDecode, credentialText } =
-        await import("../../shared/credential-protocol.js");
+        await import("../../src/shared/credential-protocol.js");
       const h = sidebarHarness();
       const peer = h.connectCredentials();
       const profile = {

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   OverlayPositionPreferenceError,
   OverlayPositionPreferences,
-} from "../../src/adapters/iina/overlay-position-preferences.js";
+} from "../../src/runtime/adapters/iina/overlay-position-preferences.js";
 import { FakeIinaPreferences } from "../helpers/fake-iina.js";
 
 describe("overlay position preferences", () => {

@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { sidebarHarness } from "../helpers/sidebar-harness.js";
 import { uiLanguageRuntime } from "../helpers/ui-language-runtime.js";
-import { UI_LOCALES } from "../../shared/localization/locales.js";
-import { createLocalizer } from "../../ui/localization.js";
+import { UI_LOCALES } from "../../src/shared/localization/locales.js";
+import { createLocalizer } from "../../src/ui/localization.js";
 
 const base = "https://github.com/janwee-sha/SubTandem/blob/main/docs/support/";
 const pageFiles: Record<string, string> = {
@@ -19,7 +19,7 @@ afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();
   vi.unstubAllGlobals();
-  vi.doUnmock("../../src/providers/profile-activation.js");
+  vi.doUnmock("../../src/runtime/providers/profile-activation.js");
 });
 
 describe("Sidebar support entry", () => {

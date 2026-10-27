@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import "../../shared/provider-endpoint.js";
+import "../../src/shared/provider-endpoint.js";
 const { normalizeProviderEndpoint, providerEndpointIdentity, sameProviderService } = (
   globalThis as typeof globalThis & { subtandemProviderEndpoint: SubtandemProviderEndpointApi }
 ).subtandemProviderEndpoint;
-import { ProviderProfiles } from "../../src/providers/profiles.js";
+import { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
 
 const kinds = ["openai", "claude", "deepseek", "ollama"] as const;
 describe.each(kinds)("%s endpoint identity", (kind) => {

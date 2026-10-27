@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { sidebarHarness } from "../helpers/sidebar-harness.js";
-import { createLocalizer } from "../../ui/localization.js";
-import { parseUiLanguageGet, parseUiLanguageState } from "../../src/domain/messages.js";
+import { createLocalizer } from "../../src/ui/localization.js";
+import { parseUiLanguageGet, parseUiLanguageState } from "../../src/runtime/domain/messages.js";
 
 describe("localization privacy and text insertion", () => {
   it("renders mixed-direction names only as text", () => {

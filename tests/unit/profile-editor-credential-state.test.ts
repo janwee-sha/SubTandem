@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 beforeAll(async () => {
-  await import("../../ui/sidebar-state.js");
+  await import("../../src/ui/sidebar-state.js");
 });
 function editor() {
   const state = globalThis.createSubTandemSidebarState([

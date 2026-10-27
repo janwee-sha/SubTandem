@@ -1,18 +1,18 @@
 import { saveTestProfile, encryptedSaveOwner } from "../helpers/encrypted-profile-fixture.js";
-import { profileSaveRequestDigest } from "../../src/transport/client.js";
+import { profileSaveRequestDigest } from "../../src/runtime/transport/client.js";
 import { describe, expect, it, vi } from "vitest";
-import type { ActivationReference, ProfileState } from "../../src/domain/types.js";
+import type { ActivationReference, ProfileState } from "../../src/runtime/domain/types.js";
 import {
   restoreProfileActivationAuthority,
   type ProfileActivationStore,
-} from "../../src/providers/profile-activation.js";
-import { ProviderProfiles } from "../../src/providers/profiles.js";
+} from "../../src/runtime/providers/profile-activation.js";
+import { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
 import type {
   ProfileStateCommitResult,
   ProfileStateStoreSnapshot,
-} from "../../src/transport/client.js";
-import { ProfileActivationSync } from "../../src/adapters/iina/profile-activation-sync.js";
-import { identityHash } from "../../src/domain/identity.js";
+} from "../../src/runtime/transport/client.js";
+import { ProfileActivationSync } from "../../src/runtime/adapters/iina/profile-activation-sync.js";
+import { identityHash } from "../../src/runtime/domain/identity.js";
 import { mkdtempSync, writeFileSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

@@ -4,9 +4,9 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, realpathSync, readFileSy
 import { resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { Parcel } from "@parcel/core";
-import { UI_LOCALES } from "../../shared/localization/locales.js";
-import { LOCALE_CATALOGS } from "../../ui/localization.js";
-import type { CardinalCategory } from "../../shared/localization/types.js";
+import { UI_LOCALES } from "../../src/shared/localization/locales.js";
+import { LOCALE_CATALOGS } from "../../src/ui/localization.js";
+import type { CardinalCategory } from "../../src/shared/localization/types.js";
 
 interface ProbeResult {
   locale: (typeof UI_LOCALES)[number];

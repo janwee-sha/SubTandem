@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { createOptionDirectory, LOCALE_CATALOGS } from "../../ui/localization.js";
-import { UI_LOCALES } from "../../shared/localization/locales.js";
-import { TARGET_LANGUAGES } from "../../src/domain/target-languages.js";
+import { createOptionDirectory, LOCALE_CATALOGS } from "../../src/ui/localization.js";
+import { UI_LOCALES } from "../../src/shared/localization/locales.js";
+import { TARGET_LANGUAGES } from "../../src/runtime/domain/target-languages.js";
 import baseline from "../fixtures/localization/business-values.json";
 
 function checkOrder(locale: string, options: readonly { id: string; label: string }[]) {

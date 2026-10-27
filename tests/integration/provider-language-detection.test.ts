@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { PlaybackController, type TranslationOverlaySink } from "../../src/app/controller.js";
-import { OllamaProvider } from "../../src/providers/ollama.js";
-import type { TranslationProvider } from "../../src/providers/provider.js";
+import {
+  PlaybackController,
+  type TranslationOverlaySink,
+} from "../../src/runtime/app/controller.js";
+import { OllamaProvider } from "../../src/runtime/providers/ollama.js";
+import type { TranslationProvider } from "../../src/runtime/providers/provider.js";
 import { RecordingProvider } from "../helpers/fake-provider.js";
 import {
   buildFixtureCues,

@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
 beforeAll(async () => {
-  await import("../../ui/overlay-state.js");
+  await import("../../src/ui/overlay-state.js");
 });
 
 const region = { top: 0, bottom: 1, marginX: 16, marginY: 16 };

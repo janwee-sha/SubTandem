@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { PlaybackController, type TranslationOverlaySink } from "../../src/app/controller.js";
-import { ClaudeProvider } from "../../src/providers/claude.js";
-import type { ProviderTransportRequest } from "../../src/providers/transport.js";
+import {
+  PlaybackController,
+  type TranslationOverlaySink,
+} from "../../src/runtime/app/controller.js";
+import { ClaudeProvider } from "../../src/runtime/providers/claude.js";
+import type { ProviderTransportRequest } from "../../src/runtime/providers/transport.js";
 import { RecordingProvider } from "../helpers/fake-provider.js";
-import type { SubtitleCue } from "../../src/subtitles/types.js";
+import type { SubtitleCue } from "../../src/runtime/subtitles/types.js";
 
 class Sink implements TranslationOverlaySink {
   frames: string[][] = [];

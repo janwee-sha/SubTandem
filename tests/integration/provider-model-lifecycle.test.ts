@@ -71,7 +71,7 @@ describe.each(kinds)("%s Global models lifecycle", (kind) => {
 
 for (const kind of kinds) {
   it(`${kind} suppresses a credential-epoch response while cancellation is still pending`, async () => {
-    const { ProviderProfiles } = await import("../../src/providers/profiles.js");
+    const { ProviderProfiles } = await import("../../src/runtime/providers/profiles.js");
     const store = new ProviderProfiles(() => "10000000-0000-4000-8000-000000000001");
     const profile = store.save({
       kind,

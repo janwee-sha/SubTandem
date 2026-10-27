@@ -5,7 +5,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 const sidebarSource = ts.createSourceFile(
   "sidebar.ts",
-  readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8"),
+  readFileSync(new URL("../../src/ui/sidebar.ts", import.meta.url), "utf8"),
   ts.ScriptTarget.Latest,
   true,
 );
@@ -27,7 +27,7 @@ function loadSidebarFunctions(names: string[], globals: Record<string, unknown>)
 }
 
 beforeAll(async () => {
-  await import("../../ui/profile-card-interactions.js");
+  await import("../../src/ui/profile-card-interactions.js");
 });
 
 const createCoordinator = (threshold?: number) =>

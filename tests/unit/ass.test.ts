@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseAss } from "../../src/subtitles/ass.js";
+import { parseAss } from "../../src/runtime/subtitles/ass.js";
 
 describe("ASS Events parsing", () => {
   it("uses dynamic Format columns and preserves commas in Dialogue text", () => {

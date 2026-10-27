@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { globalProviderHarness } from "../helpers/global-provider-harness.js";
-import { ProviderProfiles } from "../../src/providers/profiles.js";
+import { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
 
 const saved = new ProviderProfiles(() => "10000000-0000-4000-8000-000000000001").save({
   kind: "openai",

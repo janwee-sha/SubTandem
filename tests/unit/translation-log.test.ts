@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { PlaybackController } from "../../src/app/controller.js";
-import { formatTranslationComparison } from "../../src/app/translation-log.js";
+import { PlaybackController } from "../../src/runtime/app/controller.js";
+import { formatTranslationComparison } from "../../src/runtime/app/translation-log.js";
 
 describe("session translation log", () => {
   it("formats source context and translation as an indented comparison", () => {

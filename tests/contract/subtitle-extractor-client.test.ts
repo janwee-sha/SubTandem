@@ -8,8 +8,8 @@ import {
   type ManagedSubtitleExtractorRpcClient,
   type SubtitlePrepareRequest,
   type SubtitleExtractorRpcBridge,
-} from "../../src/adapters/iina/subtitle-extractor.js";
-import type { ReadyFileStore } from "../../src/adapters/iina/transport-process.js";
+} from "../../src/runtime/adapters/iina/subtitle-extractor.js";
+import type { ReadyFileStore } from "../../src/runtime/adapters/iina/transport-process.js";
 
 class FakeBridge implements SubtitleExtractorRpcBridge {
   readonly calls: Array<{ port: number; path: string; token: string; body: unknown }> = [];

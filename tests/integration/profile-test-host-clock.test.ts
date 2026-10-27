@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ProviderProfiles } from "../../src/providers/profiles.js";
+import { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
 import { createTestProfileAuthority } from "../helpers/profile-activation-harness.js";
 import { CredentialPeer } from "../helpers/credential-peer.js";
 import { FakeIinaEvent } from "../helpers/fake-iina.js";
@@ -130,7 +130,7 @@ async function host() {
       );
     },
   };
-  vi.doMock("../../src/adapters/iina/transport-process.js", async (original) => ({
+  vi.doMock("../../src/runtime/adapters/iina/transport-process.js", async (original) => ({
     ...(await original<Record<string, unknown>>()),
     TransportProcess: class {
       static async bootstrap() {
@@ -144,7 +144,7 @@ async function host() {
       }
     },
   }));
-  vi.doMock("../../src/providers/profile-activation.js", async (original) => ({
+  vi.doMock("../../src/runtime/providers/profile-activation.js", async (original) => ({
     ...(await original<Record<string, unknown>>()),
     restoreProfileActivationAuthority: async (options: {
       profiles: ProviderProfiles;
@@ -225,8 +225,8 @@ async function host() {
     },
   };
   vi.stubGlobal("iina", runtime);
-  await import("../../src/global.js");
-  await import("../../src/main.js");
+  await import("../../src/runtime/global.js");
+  await import("../../src/runtime/main.js");
   await vi.advanceTimersByTimeAsync(100);
   const h = sidebarHarness({
     authorityId: restoredAuthorityId,
@@ -277,8 +277,8 @@ async function host() {
 }
 
 afterEach(() => {
-  vi.doUnmock("../../src/adapters/iina/transport-process.js");
-  vi.doUnmock("../../src/providers/profile-activation.js");
+  vi.doUnmock("../../src/runtime/adapters/iina/transport-process.js");
+  vi.doUnmock("../../src/runtime/providers/profile-activation.js");
   vi.clearAllTimers();
   vi.useRealTimers();
   vi.unstubAllGlobals();

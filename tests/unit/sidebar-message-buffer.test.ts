@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SidebarMessageBuffer } from "../../src/adapters/iina/sidebar-message-buffer.js";
+import { SidebarMessageBuffer } from "../../src/runtime/adapters/iina/sidebar-message-buffer.js";
 
 describe("Sidebar message buffer", () => {
   it("coalesces preview snapshots while preserving rapid results and picker completion", () => {

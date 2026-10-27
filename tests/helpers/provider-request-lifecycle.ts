@@ -3,7 +3,7 @@ import type {
   ProviderTransport,
   ProviderTransportRequest,
   ProviderTransportResponse,
-} from "../../src/providers/transport.js";
+} from "../../src/runtime/providers/transport.js";
 
 export class RequestLifecycleHarness implements ProviderTransport {
   readonly preparation = new CompletionQueue<string, void>();

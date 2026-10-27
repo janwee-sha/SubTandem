@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { normalizeLegacyProviderProfiles, ProviderProfiles } from "../../src/providers/profiles.js";
-import { restoreProfileActivationAuthority } from "../../src/providers/profile-activation.js";
-import { SubTandemError } from "../../src/domain/errors.js";
-import type { ProfileStateCommitResult } from "../../src/transport/client.js";
+import {
+  normalizeLegacyProviderProfiles,
+  ProviderProfiles,
+} from "../../src/runtime/providers/profiles.js";
+import { restoreProfileActivationAuthority } from "../../src/runtime/providers/profile-activation.js";
+import { SubTandemError } from "../../src/runtime/domain/errors.js";
+import type { ProfileStateCommitResult } from "../../src/runtime/transport/client.js";
 
 const id = "10000000-0000-4000-8000-000000000001";
 const input = [
@@ -49,7 +52,7 @@ async function globalMigration(
   } = {},
 ) {
   vi.resetModules();
-  const { SubTandemError: RuntimeError } = await import("../../src/domain/errors.js");
+  const { SubTandemError: RuntimeError } = await import("../../src/runtime/domain/errors.js");
   const calls: Array<{ action: string; data: unknown }> = [];
   const writes: Array<{ key: string; value: unknown }> = [];
   const handlers = new Map<string, (data: unknown, sender?: string) => unknown>();
@@ -74,7 +77,7 @@ async function globalMigration(
     file: {},
     utils: {},
   });
-  vi.doMock("../../src/adapters/iina/global-mailbox.js", () => ({
+  vi.doMock("../../src/runtime/adapters/iina/global-mailbox.js", () => ({
     GlobalMailbox: class {
       onMessage(name: string, callback: (data: unknown, sender?: string) => unknown) {
         handlers.set(name, callback);
@@ -86,10 +89,10 @@ async function globalMigration(
     },
     IinaGlobalMailboxFileStore: class {},
   }));
-  vi.doMock("../../src/adapters/iina/host-timers.js", () => ({
+  vi.doMock("../../src/runtime/adapters/iina/host-timers.js", () => ({
     hostTimers: { setTimeout: () => ({ cancel() {} }), setInterval: () => ({ cancel() {} }) },
   }));
-  vi.doMock("../../src/transport/supervisor.js", () => ({
+  vi.doMock("../../src/runtime/transport/supervisor.js", () => ({
     TransportSupervisor: class {
       async ready() {}
       async profileStateRead() {
@@ -142,7 +145,7 @@ async function globalMigration(
       }
     },
   }));
-  await import("../../src/global.js");
+  await import("../../src/runtime/global.js");
   await handlers.get("profiles:list")!(
     { requestId: "migration-list", revision: 1, payload: {} },
     "window-a",

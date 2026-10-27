@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { sampleHostUiContext } from "../../src/adapters/iina/host-ui-context.js";
-import { UI_LOCALES } from "../../shared/localization/locales.js";
+import { sampleHostUiContext } from "../../src/runtime/adapters/iina/host-ui-context.js";
+import { UI_LOCALES } from "../../src/shared/localization/locales.js";
 
 describe("host UI sampling", () => {
   it("contains a throwing language API property", () => {

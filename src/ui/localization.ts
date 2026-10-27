@@ -1,4 +1,4 @@
-import { parseSidebarStateUpdate } from "../src/domain/messages.js";
+import { parseSidebarStateUpdate } from "../runtime/domain/messages.js";
 import { supportPageUrl } from "../shared/support.js";
 import { canonicalUiLocale, isUiLocale, type UiLocale } from "../shared/localization/locales.js";
 import { MESSAGE_DEFINITIONS } from "../shared/localization/message-definitions.js";

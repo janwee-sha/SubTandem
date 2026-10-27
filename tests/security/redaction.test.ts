@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { diagnostic, safeRequestId } from "../../src/domain/logging.js";
-import { SubtitleExtractorError } from "../../src/adapters/iina/subtitle-extractor.js";
-import { PlaybackController, type TranslationOverlaySink } from "../../src/app/controller.js";
-import type { TranslationProvider } from "../../src/providers/provider.js";
-import { parseTargetLanguageSave } from "../../src/domain/messages.js";
-import { DeepSeekProvider } from "../../src/providers/deepseek.js";
-import { ClaudeProvider } from "../../src/providers/claude.js";
+import { diagnostic, safeRequestId } from "../../src/runtime/domain/logging.js";
+import { SubtitleExtractorError } from "../../src/runtime/adapters/iina/subtitle-extractor.js";
+import {
+  PlaybackController,
+  type TranslationOverlaySink,
+} from "../../src/runtime/app/controller.js";
+import type { TranslationProvider } from "../../src/runtime/providers/provider.js";
+import { parseTargetLanguageSave } from "../../src/runtime/domain/messages.js";
+import { DeepSeekProvider } from "../../src/runtime/providers/deepseek.js";
+import { ClaudeProvider } from "../../src/runtime/providers/claude.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 
 describe("allowlist-only diagnostics", () => {
@@ -342,7 +345,7 @@ describe("allowlist-only diagnostics", () => {
 });
 
 it("releases lifecycle authorization callbacks and jobs at both terminal boundaries", async () => {
-  const { RequestLifecycle } = await import("../../src/providers/request-lifecycle.js");
+  const { RequestLifecycle } = await import("../../src/runtime/providers/request-lifecycle.js");
   const life = new RequestLifecycle();
   for (const requestId of ["complete", "cancel"]) {
     const privateKey = "private-owner-key";

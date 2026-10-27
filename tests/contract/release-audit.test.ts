@@ -116,7 +116,7 @@ describe("release archive audit", () => {
 
   it.each([
     "package.json",
-    "dist/src/main.ts",
+    "dist/src/runtime/main.ts",
     "dist/tests/main.test.js",
     "dist/node_modules/module/index.js",
     "dist/main.js.map",

@@ -4,7 +4,7 @@ func runLocalizationTests() throws {
     let root = URL(fileURLWithPath: CommandLine.arguments[1])
     for locale in UiLocale.allCases {
         let localizer = try NativeLocalizer(locale: locale)
-        let source = root.appendingPathComponent("shared/localization/catalogs/\(locale.rawValue).json")
+        let source = root.appendingPathComponent("src/shared/localization/catalogs/\(locale.rawValue).json")
         let object = try JSONSerialization.jsonObject(with: Data(contentsOf: source)) as! [String: Any]
         let messages = object["messages"] as! [String: Any]
         for key in NativeMessage.allCases {

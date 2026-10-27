@@ -6,20 +6,20 @@ import {
   removeStaleHelperFiles,
   TransportProcess,
   type ReadyFileStore,
-} from "../../src/adapters/iina/transport-process.js";
+} from "../../src/runtime/adapters/iina/transport-process.js";
 import {
   HelperProviderTransport,
   IinaFileRpcBridge,
   IinaProcessLauncher,
-} from "../../src/adapters/iina/provider-transport.js";
-import { HostTimers, type HostTimerApi } from "../../src/adapters/iina/host-timers.js";
-import { SubtitleExtractorProcess } from "../../src/adapters/iina/subtitle-extractor.js";
+} from "../../src/runtime/adapters/iina/provider-transport.js";
+import { HostTimers, type HostTimerApi } from "../../src/runtime/adapters/iina/host-timers.js";
+import { SubtitleExtractorProcess } from "../../src/runtime/adapters/iina/subtitle-extractor.js";
 import {
   TRANSPORT_RPC_ERROR_CODES,
   TransportClient,
   TransportRpcError,
   type LocalRpcBridge,
-} from "../../src/transport/client.js";
+} from "../../src/runtime/transport/client.js";
 
 class FakeBridge implements LocalRpcBridge {
   readonly calls: Array<{
@@ -126,15 +126,18 @@ function readyFrame(createdAtMs = Date.now(), protocolVersion = 2): string {
 describe("transport helper client", () => {
   it("keeps transport and extractor RPC off IINA's HTTP Promise bridge", () => {
     const providerSource = readFileSync(
-      new URL("../../src/adapters/iina/provider-transport.ts", import.meta.url),
+      new URL("../../src/runtime/adapters/iina/provider-transport.ts", import.meta.url),
       "utf8",
     );
     const extractorSource = readFileSync(
-      new URL("../../src/adapters/iina/subtitle-extractor.ts", import.meta.url),
+      new URL("../../src/runtime/adapters/iina/subtitle-extractor.ts", import.meta.url),
       "utf8",
     );
-    const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
-    const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
+    const globalSource = readFileSync(
+      new URL("../../src/runtime/global.ts", import.meta.url),
+      "utf8",
+    );
+    const mainSource = readFileSync(new URL("../../src/runtime/main.ts", import.meta.url), "utf8");
 
     expect(providerSource).not.toContain("IINA.API.HTTP");
     expect(providerSource).not.toContain("this.http");

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { selectActiveTranslations } from "../../src/subtitles/active-translations.js";
-import type { SubtitleCue } from "../../src/subtitles/types.js";
+import { selectActiveTranslations } from "../../src/runtime/subtitles/active-translations.js";
+import type { SubtitleCue } from "../../src/runtime/subtitles/types.js";
 
 function cue(id: string, index: number, startMs: number, endMs: number): SubtitleCue {
   return {

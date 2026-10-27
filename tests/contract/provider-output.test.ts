@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildTranslationTask } from "../../src/providers/translation-task.js";
+import { buildTranslationTask } from "../../src/runtime/providers/translation-task.js";
 import {
   normalizeClaudeOutput,
   validateIdOutput,
   validateStrictIdOutput,
-} from "../../src/providers/validation.js";
-import { encodeWireItems, providerOutputSchema } from "../../src/providers/wire-items.js";
+} from "../../src/runtime/providers/validation.js";
+import { encodeWireItems, providerOutputSchema } from "../../src/runtime/providers/wire-items.js";
 
 describe("strict provider output", () => {
   it("accepts only an exact complete DeepSeek translation object", () => {

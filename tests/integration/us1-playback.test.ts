@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { PlaybackController, type TranslationOverlaySink } from "../../src/app/controller.js";
-import { DeterministicFakeProvider } from "../../src/providers/fake.js";
-import type { TranslationProvider } from "../../src/providers/provider.js";
-import { parseSrt } from "../../src/subtitles/srt.js";
+import {
+  PlaybackController,
+  type TranslationOverlaySink,
+} from "../../src/runtime/app/controller.js";
+import { DeterministicFakeProvider } from "../../src/runtime/providers/fake.js";
+import type { TranslationProvider } from "../../src/runtime/providers/provider.js";
+import { parseSrt } from "../../src/runtime/subtitles/srt.js";
 
 class RecordingOverlay implements TranslationOverlaySink {
   readonly frames: string[][] = [];

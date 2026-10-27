@@ -1,19 +1,19 @@
 import { beforeAll, expect, it } from "vitest";
-import { createLocalizer } from "../../ui/localization.js";
-import { OpenAICompatibleProvider } from "../../src/providers/openai.js";
-import { DeepSeekProvider } from "../../src/providers/deepseek.js";
-import { ClaudeProvider } from "../../src/providers/claude.js";
-import { OllamaProvider } from "../../src/providers/ollama.js";
-import { normalizeProviderError } from "../../src/domain/errors.js";
+import { createLocalizer } from "../../src/ui/localization.js";
+import { OpenAICompatibleProvider } from "../../src/runtime/providers/openai.js";
+import { DeepSeekProvider } from "../../src/runtime/providers/deepseek.js";
+import { ClaudeProvider } from "../../src/runtime/providers/claude.js";
+import { OllamaProvider } from "../../src/runtime/providers/ollama.js";
+import { normalizeProviderError } from "../../src/runtime/domain/errors.js";
 import { failureTransport } from "../helpers/provider-failure-contract.js";
-import type { ProviderTransportRequest } from "../../src/providers/transport.js";
+import type { ProviderTransportRequest } from "../../src/runtime/providers/transport.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 
 const localizer = createLocalizer("en");
 beforeAll(async () => {
-  await import("../../ui/service-failure-message.js");
-  await import("../../ui/provider-status.js");
-  await import("../../ui/session-status.js");
+  await import("../../src/ui/service-failure-message.js");
+  await import("../../src/ui/provider-status.js");
+  await import("../../src/ui/session-status.js");
 });
 for (const kind of ["openai", "deepseek", "claude", "ollama"] as const) {
   for (const operation of ["test", "translation"] as const) {

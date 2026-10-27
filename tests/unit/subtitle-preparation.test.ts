@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { SubtitlePreparationCoordinator } from "../../src/app/subtitle-preparation.js";
-import { utf8Encode } from "../../src/domain/codec.js";
-import { sha256Hex } from "../../src/domain/identity.js";
+import { SubtitlePreparationCoordinator } from "../../src/runtime/app/subtitle-preparation.js";
+import { utf8Encode } from "../../src/runtime/domain/codec.js";
+import { sha256Hex } from "../../src/runtime/domain/identity.js";
 import type {
   SubtitleExtractorRpcClient,
   SubtitlePrepareRequest,
-} from "../../src/adapters/iina/subtitle-extractor.js";
-import { SubtitleExtractorError } from "../../src/adapters/iina/subtitle-extractor.js";
-import type { ExtractedSubtitleResult } from "../../src/subtitles/types.js";
+} from "../../src/runtime/adapters/iina/subtitle-extractor.js";
+import { SubtitleExtractorError } from "../../src/runtime/adapters/iina/subtitle-extractor.js";
+import type { ExtractedSubtitleResult } from "../../src/runtime/subtitles/types.js";
 
 const bytes = utf8Encode("1\n00:00:01,000 --> 00:00:02,000\nHello\n");
 const ids = [

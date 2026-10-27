@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { ConfiguredProvider } from "../../src/providers/provider.js";
-import type { ProviderTransport, ProviderTransportRequest } from "../../src/providers/transport.js";
+import type { ConfiguredProvider } from "../../src/runtime/providers/provider.js";
+import type {
+  ProviderTransport,
+  ProviderTransportRequest,
+} from "../../src/runtime/providers/transport.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 
 export type FailureKind = "openai" | "deepseek" | "claude" | "ollama";

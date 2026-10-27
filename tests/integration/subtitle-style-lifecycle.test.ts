@@ -1,10 +1,10 @@
-import { UI_LOCALES } from "../../shared/localization/locales.js";
+import { UI_LOCALES } from "../../src/shared/localization/locales.js";
 import { uiLanguageRuntime } from "../helpers/ui-language-runtime.js";
 import { describe, expect, it, vi } from "vitest";
-import { WebViewTranslationOverlay } from "../../src/adapters/iina/webview-translation-overlay.js";
-import { SubtitleStylePreferences } from "../../src/adapters/iina/subtitle-style-preferences.js";
-import { SubtitleStyleAuthority } from "../../src/adapters/iina/subtitle-style-sync.js";
-import { DEFAULT_SUBTITLE_TEXT_STYLE } from "../../src/domain/subtitle-style.js";
+import { WebViewTranslationOverlay } from "../../src/runtime/adapters/iina/webview-translation-overlay.js";
+import { SubtitleStylePreferences } from "../../src/runtime/adapters/iina/subtitle-style-preferences.js";
+import { SubtitleStyleAuthority } from "../../src/runtime/adapters/iina/subtitle-style-sync.js";
+import { DEFAULT_SUBTITLE_TEXT_STYLE } from "../../src/runtime/domain/subtitle-style.js";
 import { FakeIinaOverlay, FakeIinaPreferences } from "../helpers/fake-iina.js";
 
 class FakeLifecycle {
@@ -315,7 +315,7 @@ describe("localized native sessions through real Main and Global", () => {
         vi.clearAllTimers();
         vi.useRealTimers();
         vi.unstubAllGlobals();
-        vi.doUnmock("../../src/providers/profile-activation.js");
+        vi.doUnmock("../../src/runtime/providers/profile-activation.js");
       }
     },
   );
@@ -347,7 +347,7 @@ describe("localized native sessions through real Main and Global", () => {
       vi.clearAllTimers();
       vi.useRealTimers();
       vi.unstubAllGlobals();
-      vi.doUnmock("../../src/providers/profile-activation.js");
+      vi.doUnmock("../../src/runtime/providers/profile-activation.js");
     }
   });
 });
@@ -402,7 +402,7 @@ describe("native session authority invalidation", () => {
       vi.clearAllTimers();
       vi.useRealTimers();
       vi.unstubAllGlobals();
-      vi.doUnmock("../../src/providers/profile-activation.js");
+      vi.doUnmock("../../src/runtime/providers/profile-activation.js");
     }
   });
 });

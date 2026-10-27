@@ -6,7 +6,7 @@ import {
   getTargetLanguage,
   isTargetLanguageId,
   TARGET_LANGUAGES,
-} from "../../src/domain/target-languages.js";
+} from "../../src/runtime/domain/target-languages.js";
 
 describe("target language catalog", () => {
   it("contains the exact 156-item business identity set without a display order", () => {

@@ -1,55 +1,58 @@
 import { readFileSync, readdirSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
-import { createLocalizer } from "../../ui/localization.js";
-import en from "../../shared/localization/catalogs/en.json";
-import { parseRetrySubtitlePreparation } from "../../src/domain/messages.js";
+import { createLocalizer } from "../../src/ui/localization.js";
+import en from "../../src/shared/localization/catalogs/en.json";
+import { parseRetrySubtitlePreparation } from "../../src/runtime/domain/messages.js";
 
 const localizer = createLocalizer("en");
-await import("../../ui/sidebar-state.js");
-await import("../../ui/service-failure-message.js");
-await import("../../ui/session-status.js");
+await import("../../src/ui/sidebar-state.js");
+await import("../../src/ui/service-failure-message.js");
+await import("../../src/ui/session-status.js");
 
 describe("IINA sidebar lifecycle contract", () => {
-  const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
+  const mainSource = readFileSync(new URL("../../src/runtime/main.ts", import.meta.url), "utf8");
   const controllerSource = readFileSync(
-    new URL("../../src/app/controller.ts", import.meta.url),
+    new URL("../../src/runtime/app/controller.ts", import.meta.url),
     "utf8",
   );
-  const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
+  const sidebarSource = readFileSync(new URL("../../src/ui/sidebar.ts", import.meta.url), "utf8");
   const sessionStatusSource = readFileSync(
-    new URL("../../ui/session-status.ts", import.meta.url),
+    new URL("../../src/ui/session-status.ts", import.meta.url),
     "utf8",
   );
   const sidebarStateSource = readFileSync(
-    new URL("../../ui/sidebar-state.ts", import.meta.url),
+    new URL("../../src/ui/sidebar-state.ts", import.meta.url),
     "utf8",
   );
-  const sidebarHtml = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
-  const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+  const sidebarHtml = readFileSync(new URL("../../src/ui/sidebar.html", import.meta.url), "utf8");
+  const globalSource = readFileSync(
+    new URL("../../src/runtime/global.ts", import.meta.url),
+    "utf8",
+  );
   const overlayRegionSource = readFileSync(
-    new URL("../../src/adapters/iina/overlay-region-runtime.ts", import.meta.url),
+    new URL("../../src/runtime/adapters/iina/overlay-region-runtime.ts", import.meta.url),
     "utf8",
   );
 
   it("keeps raw host timers inside the managed timer adapter", () => {
-    const adapterDirectory = new URL("../../src/adapters/iina/", import.meta.url);
+    const adapterDirectory = new URL("../../src/runtime/adapters/iina/", import.meta.url);
     const sources = [
-      ["src/main.ts", mainSource],
-      ["src/global.ts", globalSource],
+      ["src/runtime/main.ts", mainSource],
+      ["src/runtime/global.ts", globalSource],
       ...readdirSync(adapterDirectory)
         .filter(
           (name) =>
             name.endsWith(".ts") && name !== "host-timers.ts" && name !== "playback-events.ts",
         )
         .map((name) => [
-          `src/adapters/iina/${name}`,
+          `src/runtime/adapters/iina/${name}`,
           readFileSync(new URL(name, adapterDirectory), "utf8"),
         ]),
     ] as const;
     for (const [path, source] of sources) {
       const managed =
-        path === "src/main.ts"
+        path === "src/runtime/main.ts"
           ? source
               .replace("setTimeout(initializePlayer, 100)", "")
               .replace("clearTimeout(initializePlayerTimer)", "")
@@ -565,7 +568,7 @@ describe("IINA sidebar lifecycle contract", () => {
 
   it("renders Session failures through one safe presentation projection", () => {
     expect(sidebarHtml).toContain('<script type="module" src="./sidebar-entry.ts"></script>');
-    const entry = readFileSync(new URL("../../ui/sidebar-entry.ts", import.meta.url), "utf8");
+    const entry = readFileSync(new URL("../../src/ui/sidebar-entry.ts", import.meta.url), "utf8");
     expect(entry.indexOf("./session-status.js")).toBeLessThan(entry.indexOf("./sidebar.js"));
     expect(sidebarSource).toContain("subtandemResolveSessionPresentation");
     expect(sidebarSource).not.toContain("safeProviderErrorDetail");
@@ -736,9 +739,12 @@ describe("IINA sidebar lifecycle contract", () => {
 });
 
 describe("Subtitle Font lifecycle contract", () => {
-  const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
-  const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
-  const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
+  const mainSource = readFileSync(new URL("../../src/runtime/main.ts", import.meta.url), "utf8");
+  const globalSource = readFileSync(
+    new URL("../../src/runtime/global.ts", import.meta.url),
+    "utf8",
+  );
+  const sidebarSource = readFileSync(new URL("../../src/ui/sidebar.ts", import.meta.url), "utf8");
 
   it("previews and commits each Font field through strict single-field edits", () => {
     expect(sidebarSource).toMatch(/postMessage\(\s*"subtitle-style:edit"/);
@@ -770,9 +776,9 @@ describe("Subtitle Font lifecycle contract", () => {
 });
 
 describe("Subtitle Border and Background lifecycle contract", () => {
-  const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
+  const sidebarSource = readFileSync(new URL("../../src/ui/sidebar.ts", import.meta.url), "utf8");
   const sidebarStateSource = readFileSync(
-    new URL("../../ui/sidebar-state.ts", import.meta.url),
+    new URL("../../src/ui/sidebar-state.ts", import.meta.url),
     "utf8",
   );
 
@@ -795,9 +801,12 @@ describe("Subtitle Border and Background lifecycle contract", () => {
 });
 
 describe("System color picker lifecycle contract", () => {
-  const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
-  const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
-  const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
+  const sidebarSource = readFileSync(new URL("../../src/ui/sidebar.ts", import.meta.url), "utf8");
+  const globalSource = readFileSync(
+    new URL("../../src/runtime/global.ts", import.meta.url),
+    "utf8",
+  );
+  const mainSource = readFileSync(new URL("../../src/runtime/main.ts", import.meta.url), "utf8");
   const colorPickerSource = readFileSync(
     new URL(
       "../../native/style-picker/Sources/SubTandemStylePicker/ColorPicker.swift",

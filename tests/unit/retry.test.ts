@@ -4,7 +4,7 @@ import {
   parseRetryAfter,
   retryDelayMs,
   RetryTimerSet,
-} from "../../src/app/retry-policy.js";
+} from "../../src/runtime/app/retry-policy.js";
 import { FakeClock } from "../helpers/fake-clock.js";
 
 describe("retry policy", () => {

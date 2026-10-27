@@ -1,5 +1,5 @@
-import { CredentialChannelRelay } from "../../src/adapters/iina/global-rpc.js";
-import { installCredentialMainRelay } from "../../src/adapters/iina/sidebar-rpc.js";
+import { CredentialChannelRelay } from "../../src/runtime/adapters/iina/global-rpc.js";
+import { installCredentialMainRelay } from "../../src/runtime/adapters/iina/sidebar-rpc.js";
 import { CompletionQueue } from "./profile-activation-harness.js";
 
 export function credentialRelayHarness() {

@@ -9,7 +9,7 @@ import {
   parseOverlayPositionState,
   parseOverlayReady,
   parseOverlayRender,
-} from "../../src/domain/messages.js";
+} from "../../src/runtime/domain/messages.js";
 
 const envelope = (payload: Record<string, unknown>) => ({
   requestId: "overlay-position.window-a.8",

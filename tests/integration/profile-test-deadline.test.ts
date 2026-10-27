@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { sidebarHarness } from "../helpers/sidebar-harness.js";
-import { CREDENTIAL_LIMITS } from "../../shared/credential-protocol.js";
+import { CREDENTIAL_LIMITS } from "../../src/shared/credential-protocol.js";
 
 const profile = {
   profileId: "one",

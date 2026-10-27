@@ -8,7 +8,7 @@ import {
   markProfileCredentialConfigured,
   removeDeletedProfile,
   upsertCreatedProfile,
-} from "../../src/adapters/iina/profile-list-sync.js";
+} from "../../src/runtime/adapters/iina/profile-list-sync.js";
 
 interface Profile {
   profileId: string;

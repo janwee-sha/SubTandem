@@ -19,14 +19,14 @@
     "test:watch": "vitest",
     "test:native": "./scripts/test-native.sh",
     "typecheck": "tsc -p tsconfig.plugin.json --noEmit && tsc -p tsconfig.webview.json --noEmit",
-    "lint": "eslint src ui shared tests scripts vitest.config.mts",
+    "lint": "eslint src tests scripts vitest.config.mts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "verify:package": "./scripts/verify-package.sh"
   },
   "targets": {
     "entry": {
-      "source": "src/main.ts",
+      "source": "src/runtime/main.ts",
       "distDir": "dist",
       "isLibrary": false,
       "includeNodeModules": true,
@@ -34,7 +34,7 @@
       "optimize": false
     },
     "globalEntry": {
-      "source": "src/global.ts",
+      "source": "src/runtime/global.ts",
       "distDir": "dist",
       "isLibrary": false,
       "includeNodeModules": true,
@@ -42,7 +42,7 @@
       "optimize": false
     },
     "sidebar": {
-      "source": "ui/sidebar.html",
+      "source": "src/ui/sidebar.html",
       "distDir": "dist/ui",
       "publicUrl": "./",
       "sourceMap": false,
@@ -52,7 +52,7 @@
       "includeNodeModules": true
     },
     "overlay": {
-      "source": "ui/overlay.html",
+      "source": "src/ui/overlay.html",
       "distDir": "dist/ui",
       "publicUrl": "./",
       "sourceMap": false,

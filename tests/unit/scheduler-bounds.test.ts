@@ -4,9 +4,9 @@ import {
   needsRefill,
   selectNearbyCues,
   StableSeekGate,
-} from "../../src/app/scheduler.js";
+} from "../../src/runtime/app/scheduler.js";
 import { FakeClock } from "../helpers/fake-clock.js";
-import type { SubtitleCue } from "../../src/subtitles/types.js";
+import type { SubtitleCue } from "../../src/runtime/subtitles/types.js";
 
 const cues = Array.from({ length: 100 }, (_, index): SubtitleCue => ({
   id: `c${index}`,

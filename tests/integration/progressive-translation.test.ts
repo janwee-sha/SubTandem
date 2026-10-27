@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { PlaybackController, type TranslationOverlaySink } from "../../src/app/controller.js";
-import type { TranslationProvider } from "../../src/providers/provider.js";
-import type { TranslationProgressHandler } from "../../src/providers/types.js";
-import type { SubtitleCue } from "../../src/subtitles/types.js";
-import { DeepSeekProvider } from "../../src/providers/deepseek.js";
+import {
+  PlaybackController,
+  type TranslationOverlaySink,
+} from "../../src/runtime/app/controller.js";
+import type { TranslationProvider } from "../../src/runtime/providers/provider.js";
+import type { TranslationProgressHandler } from "../../src/runtime/providers/types.js";
+import type { SubtitleCue } from "../../src/runtime/subtitles/types.js";
+import { DeepSeekProvider } from "../../src/runtime/providers/deepseek.js";
 
 const denseCues = Array.from({ length: 25 }, (_, index): SubtitleCue => ({
   id: `cue-${index + 1}`,

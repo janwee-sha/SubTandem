@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { WebViewTranslationOverlay } from "../../src/adapters/iina/webview-translation-overlay.js";
+import { WebViewTranslationOverlay } from "../../src/runtime/adapters/iina/webview-translation-overlay.js";
 
 const rootFile = (path: string): string =>
   readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
@@ -40,12 +40,12 @@ describe("translation overlay WebView contract", () => {
   });
 
   it("uses tracked local classic-script assets and a network-denying CSP", () => {
-    const html = rootFile("ui/overlay.html");
+    const html = rootFile("src/ui/overlay.html");
     const packageJson = JSON.parse(rootFile("package.json")) as {
       targets?: { overlay?: { source?: string; publicUrl?: string; distDir?: string } };
     };
     expect(packageJson.targets?.overlay).toMatchObject({
-      source: "ui/overlay.html",
+      source: "src/ui/overlay.html",
       publicUrl: "./",
       distDir: "dist/ui",
     });
@@ -57,7 +57,7 @@ describe("translation overlay WebView contract", () => {
   });
 
   it("renders with text nodes and has no network, storage or input APIs", () => {
-    const source = rootFile("ui/overlay.ts");
+    const source = rootFile("src/ui/overlay.ts");
     expect(source).toContain("document.createTextNode");
     expect(source).toContain('window.iina?.onMessage("overlay:initialize"');
     expect(source).toContain('window.iina?.postMessage("overlay:ready", {})');
@@ -72,8 +72,8 @@ describe("translation overlay WebView contract", () => {
   });
 
   it("uses a transparent positioner and shrink-wrapped text block without fixed shadow", () => {
-    const html = rootFile("ui/overlay.html");
-    const css = rootFile("ui/overlay.css");
+    const html = rootFile("src/ui/overlay.html");
+    const css = rootFile("src/ui/overlay.css");
     expect(html).toMatch(
       /<div id="translation"[^>]*hidden>[\s\S]*?<span id="translation-text"><\/span>[\s\S]*?<\/div>/,
     );
@@ -89,8 +89,8 @@ describe("translation overlay WebView contract", () => {
   });
 
   it("applies stroke and alpha background only to the measured text block", () => {
-    const css = rootFile("ui/overlay.css");
-    const source = rootFile("ui/overlay.ts");
+    const css = rootFile("src/ui/overlay.css");
+    const source = rootFile("src/ui/overlay.ts");
     const outerRule = css.match(/#translation\s*\{[\s\S]*?\n}/)?.[0] ?? "";
     const textRule = css.match(/#translation-text\s*\{[\s\S]*?\n}/)?.[0] ?? "";
     expect(outerRule).not.toContain("background:");
@@ -103,9 +103,9 @@ describe("translation overlay WebView contract", () => {
   });
 
   it("uses style-bearing latest-only render/layout revisions and remeasures text", () => {
-    const state = rootFile("ui/overlay-state.ts");
-    const source = rootFile("ui/overlay.ts");
-    const adapter = rootFile("src/adapters/iina/webview-translation-overlay.ts");
+    const state = rootFile("src/ui/overlay-state.ts");
+    const source = rootFile("src/ui/overlay.ts");
+    const adapter = rootFile("src/runtime/adapters/iina/webview-translation-overlay.ts");
     expect(state).toContain("style: SubTandemOverlayTextStyle");
     expect(adapter).toContain("style: cloneSubtitleTextStyle(this.style)");
     expect(adapter).toContain("private renderRevision");
@@ -124,7 +124,7 @@ describe("translation overlay WebView contract", () => {
   });
 
   it("anchors the measured text edge after compensating the positioner line box", () => {
-    const source = rootFile("ui/overlay.ts");
+    const source = rootFile("src/ui/overlay.ts");
     expect(source).toContain('translation.style.top = "auto"');
     expect(source).toContain(
       "const positionerBottomGap = positionerBounds.bottom - textBounds.bottom",
@@ -134,7 +134,7 @@ describe("translation overlay WebView contract", () => {
   });
 
   it("forces the host overlay to remain non-interactive", () => {
-    const adapter = rootFile("src/adapters/iina/webview-translation-overlay.ts");
+    const adapter = rootFile("src/runtime/adapters/iina/webview-translation-overlay.ts");
     expect(adapter).toContain("setClickable(false)");
     expect(adapter).toContain('loadFile("dist/ui/overlay.html")');
     expect(adapter).toContain('this.post("overlay:initialize", {})');

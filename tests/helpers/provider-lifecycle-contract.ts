@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { ConfiguredProvider } from "../../src/providers/provider.js";
-import type { ProviderTransport } from "../../src/providers/transport.js";
+import type { ConfiguredProvider } from "../../src/runtime/providers/provider.js";
+import type { ProviderTransport } from "../../src/runtime/providers/transport.js";
 import { CompletionQueue } from "./profile-activation-harness.js";
 import { failureTransport, type FailureKind } from "./provider-failure-contract.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";

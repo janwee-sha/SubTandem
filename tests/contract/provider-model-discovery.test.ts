@@ -1,11 +1,11 @@
 import { testSavedCredential } from "./provider-test-helpers.js";
 import { describe, expect, it } from "vitest";
-import { discoverProviderModels } from "../../src/providers/model-discovery.js";
+import { discoverProviderModels } from "../../src/runtime/providers/model-discovery.js";
 import type {
   ProviderTransport,
   ProviderTransportRequest,
   ProviderTransportResponse,
-} from "../../src/providers/transport.js";
+} from "../../src/runtime/providers/transport.js";
 
 class CapturingTransport implements ProviderTransport {
   readonly requests: ProviderTransportRequest[] = [];

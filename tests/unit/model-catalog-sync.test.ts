@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ModelCatalogSync,
   modelCatalogContextToken,
-} from "../../src/adapters/iina/model-catalog-sync.js";
+} from "../../src/runtime/adapters/iina/model-catalog-sync.js";
 
 describe("per-window model catalog synchronization", () => {
   it("uses one cache context across trigger sources while isolating profile revisions", () => {

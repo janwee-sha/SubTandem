@@ -1,10 +1,10 @@
-import { UI_LOCALES } from "../../../shared/localization/locales.js";
-import { TARGET_LANGUAGES } from "../../../src/domain/target-languages.js";
+import { UI_LOCALES } from "../../../src/shared/localization/locales.js";
+import { TARGET_LANGUAGES } from "../../../src/runtime/domain/target-languages.js";
 import {
   createLocalizer,
   createOptionDirectory,
   hasIntlCapability,
-} from "../../../ui/localization.js";
+} from "../../../src/ui/localization.js";
 const projector = createOptionDirectory();
 const results = UI_LOCALES.map((locale) => {
   try {

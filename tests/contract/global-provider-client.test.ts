@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GlobalProviderClient } from "../../src/adapters/iina/global-provider-client.js";
+import { GlobalProviderClient } from "../../src/runtime/adapters/iina/global-provider-client.js";
 import { makeProviderRequest } from "./provider-test-helpers.js";
 
 class FakeGlobalPort {

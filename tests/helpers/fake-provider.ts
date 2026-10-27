@@ -1,9 +1,9 @@
-import type { TranslationProvider } from "../../src/providers/provider.js";
+import type { TranslationProvider } from "../../src/runtime/providers/provider.js";
 import type {
   TranslationBatchRequest,
   TranslationBatchResult,
   TranslationProgressHandler,
-} from "../../src/providers/types.js";
+} from "../../src/runtime/providers/types.js";
 
 export class RecordingProvider implements TranslationProvider {
   readonly requests: TranslationBatchRequest[] = [];

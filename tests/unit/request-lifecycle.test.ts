@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { RequestLifecycle } from "../../src/providers/request-lifecycle.js";
+import { RequestLifecycle } from "../../src/runtime/providers/request-lifecycle.js";
 import { RequestLifecycleHarness } from "../helpers/provider-request-lifecycle.js";
 
 const input = (

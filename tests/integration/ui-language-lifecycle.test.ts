@@ -1,15 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { uiLanguageRuntime } from "../helpers/ui-language-runtime.js";
 import { sidebarHarness } from "../helpers/sidebar-harness.js";
-import { UI_LOCALES } from "../../shared/localization/locales.js";
-import { createLocalizer } from "../../ui/localization.js";
+import { UI_LOCALES } from "../../src/shared/localization/locales.js";
+import { createLocalizer } from "../../src/ui/localization.js";
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();
   vi.unstubAllGlobals();
-  vi.doUnmock("../../src/providers/profile-activation.js");
+  vi.doUnmock("../../src/runtime/providers/profile-activation.js");
 });
 const context = (locale: string, authorityId = "current-authority") => ({
   authorityId,

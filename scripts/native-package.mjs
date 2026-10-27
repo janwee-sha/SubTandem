@@ -3,8 +3,8 @@ import { createHash } from "node:crypto";
 import { lstatSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { UI_LOCALES } from "../shared/localization/locales.ts";
-import { MESSAGE_DEFINITIONS } from "../shared/localization/message-definitions.ts";
+import { UI_LOCALES } from "../src/shared/localization/locales.ts";
+import { MESSAGE_DEFINITIONS } from "../src/shared/localization/message-definitions.ts";
 
 export const STYLE_PICKER_APP = "SubTandemStylePicker.app";
 export const STYLE_PICKER_EXECUTABLE = `${STYLE_PICKER_APP}/Contents/MacOS/subtandem-style-picker`;
@@ -100,7 +100,7 @@ export function auditNativePackage(nativeRoot, sourceRoot, version, hashFile) {
     throw new Error("Native app plist does not match delivery contract");
   for (const locale of UI_LOCALES) {
     const catalog = JSON.parse(
-      readFileSync(join(sourceRoot, `shared/localization/catalogs/${locale}.json`), "utf8"),
+      readFileSync(join(sourceRoot, `src/shared/localization/catalogs/${locale}.json`), "utf8"),
     );
     if (
       readFileSync(join(app, `Contents/Resources/${locale}.lproj/Localizable.strings`), "utf8") !==

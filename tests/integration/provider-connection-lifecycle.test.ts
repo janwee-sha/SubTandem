@@ -1,26 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { createLocalizer } from "../../ui/localization.js";
-import { normalizeProviderError } from "../../src/domain/errors.js";
-import { ProviderBroker } from "../../src/providers/broker.js";
-import { ProviderConnectionTests } from "../../src/providers/connection-tests.js";
-import type { ConfiguredProvider } from "../../src/providers/provider.js";
-import { ProviderProfiles } from "../../src/providers/profiles.js";
-import { ModelCatalogSync } from "../../src/adapters/iina/model-catalog-sync.js";
-import type { TranslationBatchRequest, TranslationBatchResult } from "../../src/providers/types.js";
+import { createLocalizer } from "../../src/ui/localization.js";
+import { normalizeProviderError } from "../../src/runtime/domain/errors.js";
+import { ProviderBroker } from "../../src/runtime/providers/broker.js";
+import { ProviderConnectionTests } from "../../src/runtime/providers/connection-tests.js";
+import type { ConfiguredProvider } from "../../src/runtime/providers/provider.js";
+import { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
+import { ModelCatalogSync } from "../../src/runtime/adapters/iina/model-catalog-sync.js";
+import type {
+  TranslationBatchRequest,
+  TranslationBatchResult,
+} from "../../src/runtime/providers/types.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
-import { ClaudeProvider } from "../../src/providers/claude.js";
-import { DeepSeekProvider } from "../../src/providers/deepseek.js";
-import { OllamaProvider } from "../../src/providers/ollama.js";
-import { OpenAICompatibleProvider } from "../../src/providers/openai.js";
-import type { ProviderTransportRequest } from "../../src/providers/transport.js";
+import { ClaudeProvider } from "../../src/runtime/providers/claude.js";
+import { DeepSeekProvider } from "../../src/runtime/providers/deepseek.js";
+import { OllamaProvider } from "../../src/runtime/providers/ollama.js";
+import { OpenAICompatibleProvider } from "../../src/runtime/providers/openai.js";
+import type { ProviderTransportRequest } from "../../src/runtime/providers/transport.js";
 import {
   activateTestProfile,
   authorizedProviderRequest,
   createTestProfileAuthority,
 } from "../helpers/profile-activation-harness.js";
-import "../../ui/service-failure-message.js";
-import "../../ui/session-status.js";
-import "../../ui/provider-status.js";
+import "../../src/ui/service-failure-message.js";
+import "../../src/ui/session-status.js";
+import "../../src/ui/provider-status.js";
 
 const localizer = createLocalizer("en");
 

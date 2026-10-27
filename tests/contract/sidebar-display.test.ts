@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { sidebarHarness } from "../helpers/sidebar-harness.js";
 
-const html = readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8");
+const html = readFileSync(new URL("../../src/ui/sidebar.html", import.meta.url), "utf8");
 
 describe("Session source summary", () => {
   it("keeps labels and values adjacent in Format, Translated cues, Total cues order", () => {

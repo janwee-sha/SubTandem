@@ -1,17 +1,20 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
-import { freezeTranslationTargets } from "../../src/app/request-builder.js";
-import { OllamaProvider } from "../../src/providers/ollama.js";
-import { OpenAICompatibleProvider } from "../../src/providers/openai.js";
-import { DeepSeekProvider } from "../../src/providers/deepseek.js";
-import { ClaudeProvider } from "../../src/providers/claude.js";
-import type { ProviderTransport, ProviderTransportRequest } from "../../src/providers/transport.js";
+import { freezeTranslationTargets } from "../../src/runtime/app/request-builder.js";
+import { OllamaProvider } from "../../src/runtime/providers/ollama.js";
+import { OpenAICompatibleProvider } from "../../src/runtime/providers/openai.js";
+import { DeepSeekProvider } from "../../src/runtime/providers/deepseek.js";
+import { ClaudeProvider } from "../../src/runtime/providers/claude.js";
+import type {
+  ProviderTransport,
+  ProviderTransportRequest,
+} from "../../src/runtime/providers/transport.js";
 import type {
   ProviderAttemptError,
   TranslationBatchRequest,
   TranslationBatchResult,
-} from "../../src/providers/types.js";
+} from "../../src/runtime/providers/types.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 import {
   freezeFixtureTargets,

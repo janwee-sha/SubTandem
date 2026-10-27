@@ -1,24 +1,24 @@
 import { sidebarHarness } from "../helpers/sidebar-harness.js";
 import { testSavedCredential } from "../contract/provider-test-helpers.js";
 import { describe, expect, it, vi } from "vitest";
-import { diagnostic } from "../../src/domain/logging.js";
+import { diagnostic } from "../../src/runtime/domain/logging.js";
 import {
   parseProviderModelsResult,
   parseProviderTestResult,
   sanitizedProfileView,
-} from "../../src/domain/messages.js";
+} from "../../src/runtime/domain/messages.js";
 import { readFileSync } from "node:fs";
-import { SubtitlePreparationCoordinator } from "../../src/app/subtitle-preparation.js";
-import { SubtitleExtractorError } from "../../src/adapters/iina/subtitle-extractor.js";
-import { PlaybackController } from "../../src/app/controller.js";
+import { SubtitlePreparationCoordinator } from "../../src/runtime/app/subtitle-preparation.js";
+import { SubtitleExtractorError } from "../../src/runtime/adapters/iina/subtitle-extractor.js";
+import { PlaybackController } from "../../src/runtime/app/controller.js";
 import {
   buildClaudeTranslationTask,
   buildTranslationTask,
-} from "../../src/providers/translation-task.js";
-import { discoverProviderModels } from "../../src/providers/model-discovery.js";
+} from "../../src/runtime/providers/translation-task.js";
+import { discoverProviderModels } from "../../src/runtime/providers/model-discovery.js";
 import { RecordingProvider } from "../helpers/fake-provider.js";
-import { ClaudeProvider } from "../../src/providers/claude.js";
-import type { ProviderTransportRequest } from "../../src/providers/transport.js";
+import { ClaudeProvider } from "../../src/runtime/providers/claude.js";
+import type { ProviderTransportRequest } from "../../src/runtime/providers/transport.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 
 describe("credential and content leakage boundaries", () => {
@@ -38,8 +38,11 @@ describe("credential and content leakage boundaries", () => {
     expect(JSON.stringify(view)).not.toMatch(/synthetic-legacy-value|apiKey|credential":/);
   });
   it("keeps style-picker token, bodies and native failures out of user-visible source", () => {
-    const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
-    const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
+    const globalSource = readFileSync(
+      new URL("../../src/runtime/global.ts", import.meta.url),
+      "utf8",
+    );
+    const sidebarSource = readFileSync(new URL("../../src/ui/sidebar.ts", import.meta.url), "utf8");
     expect(sidebarSource).not.toMatch(/helperToken|Authorization|stderr|rawError/);
     expect(globalSource).not.toContain("console.log");
     expect(globalSource).not.toContain("console.error");

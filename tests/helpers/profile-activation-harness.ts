@@ -1,7 +1,7 @@
-import { ProfileActivationAuthority } from "../../src/providers/profile-activation.js";
-import type { ProviderProfiles } from "../../src/providers/profiles.js";
-import type { ProviderProfileSnapshot } from "../../src/providers/types.js";
-import type { ProfileStateCommitResult } from "../../src/transport/client.js";
+import { ProfileActivationAuthority } from "../../src/runtime/providers/profile-activation.js";
+import type { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
+import type { ProviderProfileSnapshot } from "../../src/runtime/providers/types.js";
+import type { ProfileStateCommitResult } from "../../src/runtime/transport/client.js";
 
 export interface ControlledOperation<Input, Output> {
   readonly input: Input;

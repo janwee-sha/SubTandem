@@ -130,7 +130,7 @@ describe("native delivery fault rejection", () => {
     const { execFileSync } = await import("node:child_process");
     const { mkdirSync, readFileSync, rmSync, writeFileSync } = await import("node:fs");
     const { join } = await import("node:path");
-    const { UI_LOCALES } = await import("../../shared/localization/locales.js");
+    const { UI_LOCALES } = await import("../../src/shared/localization/locales.js");
     const { nativePackageFixture } = await import("../helpers/native-package-fixture.js");
     const { auditNativePackage, writeNativeHashes } =
       await import("../../scripts/native-package.mjs");

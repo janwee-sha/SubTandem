@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { AuthoritySnapshot } from "../../src/domain/types.js";
-import { ProfileActivationSync } from "../../src/adapters/iina/profile-activation-sync.js";
+import type { AuthoritySnapshot } from "../../src/runtime/domain/types.js";
+import { ProfileActivationSync } from "../../src/runtime/adapters/iina/profile-activation-sync.js";
 
 function snapshot(stateVersion: number, authorityId = "authority-1"): AuthoritySnapshot {
   return {

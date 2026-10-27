@@ -2,16 +2,16 @@ import { describe, expect, it } from "vitest";
 import { createHash } from "node:crypto";
 import business from "../fixtures/localization/business-values.json";
 import baseline from "../fixtures/localization/translation-request-baseline.json";
-import { UI_LOCALES } from "../../shared/localization/locales.js";
-import { TARGET_LANGUAGES } from "../../src/domain/target-languages.js";
-import { TargetLanguageSession } from "../../src/app/target-language-session.js";
-import { createOptionDirectory } from "../../ui/localization.js";
+import { UI_LOCALES } from "../../src/shared/localization/locales.js";
+import { TARGET_LANGUAGES } from "../../src/runtime/domain/target-languages.js";
+import { TargetLanguageSession } from "../../src/runtime/app/target-language-session.js";
+import { createOptionDirectory } from "../../src/ui/localization.js";
 import {
   buildTranslationTask,
   buildOllamaTranslationTask,
   buildDeepSeekTranslationTask,
   buildClaudeTranslationTask,
-} from "../../src/providers/translation-task.js";
+} from "../../src/runtime/providers/translation-task.js";
 const builders = {
   openai: buildTranslationTask,
   ollama: buildOllamaTranslationTask,

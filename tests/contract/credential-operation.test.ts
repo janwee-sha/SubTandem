@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CredentialEditor } from "../../ui/credential-editor.js";
+import { CredentialEditor } from "../../src/ui/credential-editor.js";
 import { CredentialPeer } from "../helpers/credential-peer.js";
-import { credentialDecode, credentialText } from "../../shared/credential-protocol.js";
-import { credentialSnapshotDigest } from "../../ui/credential-channel.js";
+import { credentialDecode, credentialText } from "../../src/shared/credential-protocol.js";
+import { credentialSnapshotDigest } from "../../src/ui/credential-channel.js";
 
 const source = { profileId: "profile-a", profileRevision: 2, endpointFingerprint: "source-a" };
 const drawer = {

@@ -4,8 +4,8 @@ import {
   GlobalMailbox,
   MainGlobalMailbox,
   type GlobalMailboxFileStore,
-} from "../../src/adapters/iina/global-mailbox.js";
-import { HostTimers, type HostTimerApi } from "../../src/adapters/iina/host-timers.js";
+} from "../../src/runtime/adapters/iina/global-mailbox.js";
+import { HostTimers, type HostTimerApi } from "../../src/runtime/adapters/iina/host-timers.js";
 
 class MemoryMailboxFiles implements GlobalMailboxFileStore {
   readonly contents = new Map<string, string>();

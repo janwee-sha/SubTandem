@@ -1,5 +1,5 @@
 import { SidebarCredentialChannel, credentialRandomId } from "./credential-channel.js";
-import { identityHash } from "../src/domain/identity.js";
+import { identityHash } from "../runtime/domain/identity.js";
 import {
   credentialAssert,
   credentialSourceArray,

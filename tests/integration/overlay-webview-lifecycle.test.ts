@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { WebViewTranslationOverlay } from "../../src/adapters/iina/webview-translation-overlay.js";
+import { WebViewTranslationOverlay } from "../../src/runtime/adapters/iina/webview-translation-overlay.js";
 import { FakeIinaEvent, FakeIinaOverlay } from "../helpers/fake-iina.js";
 
 function createOverlay(host = new FakeIinaOverlay(), event = new FakeIinaEvent()) {

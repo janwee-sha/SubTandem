@@ -1,7 +1,7 @@
 import { vi } from "vitest";
 import { sidebarHarness } from "./sidebar-harness.js";
 import { createTestProfileAuthority } from "./profile-activation-harness.js";
-import type { ProviderProfiles } from "../../src/providers/profiles.js";
+import type { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
 
 export interface LanguageWindowOptions {
   version?: unknown;
@@ -142,7 +142,7 @@ export async function uiLanguageRuntime(
         globalHandlers.set(name, callback),
     },
   });
-  vi.doMock("../../src/providers/profile-activation.js", async (original) => ({
+  vi.doMock("../../src/runtime/providers/profile-activation.js", async (original) => ({
     ...(await original<Record<string, unknown>>()),
     restoreProfileActivationAuthority: async ({
       profiles,
@@ -152,8 +152,8 @@ export async function uiLanguageRuntime(
       authorityId: string;
     }) => createTestProfileAuthority(profiles, {}, authorityId),
   }));
-  await import("../../src/global.js");
-  clocks.push((await import("../../src/adapters/iina/host-timers.js")).hostClock);
+  await import("../../src/runtime/global.js");
+  clocks.push((await import("../../src/runtime/adapters/iina/host-timers.js")).hostClock);
   const pump = async (steps = 6) => {
     for (let index = 0; index < steps; index++) {
       await vi.advanceTimersByTimeAsync(50);
@@ -258,8 +258,8 @@ export async function uiLanguageRuntime(
         },
       };
       vi.stubGlobal("iina", runtime);
-      await import("../../src/main.js");
-      clocks.push((await import("../../src/adapters/iina/host-timers.js")).hostClock);
+      await import("../../src/runtime/main.js");
+      clocks.push((await import("../../src/runtime/adapters/iina/host-timers.js")).hostClock);
       await vi.advanceTimersByTimeAsync(100);
       sidebarHandlers.get("ui:poll")?.({});
       await pump();

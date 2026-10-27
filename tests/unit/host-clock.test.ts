@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { HostClock, HostTimers, hostClock } from "../../src/adapters/iina/host-timers.js";
+import { HostClock, HostTimers, hostClock } from "../../src/runtime/adapters/iina/host-timers.js";
 describe("host callback clock", () => {
   it("runs callbacks only from an active host pulse and never catches up old polling", () => {
     let now = 0,

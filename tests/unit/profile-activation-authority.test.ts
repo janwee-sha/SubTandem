@@ -1,12 +1,12 @@
 import { saveTestProfile, encryptedSaveOwner } from "../helpers/encrypted-profile-fixture.js";
 import { describe, expect, it, vi } from "vitest";
-import type { ProfileState } from "../../src/domain/types.js";
-import { ProfileActivationAuthority } from "../../src/providers/profile-activation.js";
-import { ProviderProfiles } from "../../src/providers/profiles.js";
+import type { ProfileState } from "../../src/runtime/domain/types.js";
+import { ProfileActivationAuthority } from "../../src/runtime/providers/profile-activation.js";
+import { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
 import type {
   ProfileStateCommitResult,
   ProfileStateStoreSnapshot,
-} from "../../src/transport/client.js";
+} from "../../src/runtime/transport/client.js";
 import { CompletionQueue } from "../helpers/profile-activation-harness.js";
 
 function setup(

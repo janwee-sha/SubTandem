@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   SubtitleStylePreferenceError,
   SubtitleStylePreferences,
-} from "../../src/adapters/iina/subtitle-style-preferences.js";
-import { DEFAULT_SUBTITLE_TEXT_STYLE } from "../../src/domain/subtitle-style.js";
+} from "../../src/runtime/adapters/iina/subtitle-style-preferences.js";
+import { DEFAULT_SUBTITLE_TEXT_STYLE } from "../../src/runtime/domain/subtitle-style.js";
 import { FakeIinaPreferences } from "../helpers/fake-iina.js";
 
 describe("subtitle style preferences", () => {

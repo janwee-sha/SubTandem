@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { PlaybackController, type TranslationOverlaySink } from "../../src/app/controller.js";
-import { DeterministicFakeProvider } from "../../src/providers/fake.js";
-import type { SubtitleCue } from "../../src/subtitles/types.js";
+import {
+  PlaybackController,
+  type TranslationOverlaySink,
+} from "../../src/runtime/app/controller.js";
+import { DeterministicFakeProvider } from "../../src/runtime/providers/fake.js";
+import type { SubtitleCue } from "../../src/runtime/subtitles/types.js";
 import { createTranslationAlignmentFixture } from "../helpers/translation-alignment.js";
-import { OverlayPositionPreferences } from "../../src/adapters/iina/overlay-position-preferences.js";
+import { OverlayPositionPreferences } from "../../src/runtime/adapters/iina/overlay-position-preferences.js";
 import {
   OverlayPositionAuthority,
   OverlayPositionFollower,
-} from "../../src/adapters/iina/overlay-position-sync.js";
-import { WebViewTranslationOverlay } from "../../src/adapters/iina/webview-translation-overlay.js";
+} from "../../src/runtime/adapters/iina/overlay-position-sync.js";
+import { WebViewTranslationOverlay } from "../../src/runtime/adapters/iina/webview-translation-overlay.js";
 import { FakeIinaEvent, FakeIinaOverlay, FakeIinaPreferences } from "../helpers/fake-iina.js";
 
 class RecordingOverlay implements TranslationOverlaySink {

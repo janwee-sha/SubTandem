@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TranslationEnabledPreferences } from "../../src/adapters/iina/translation-enabled-preferences.js";
+import { TranslationEnabledPreferences } from "../../src/runtime/adapters/iina/translation-enabled-preferences.js";
 
 class Store {
   readonly values = new Map<string, unknown>();

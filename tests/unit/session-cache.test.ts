@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { SessionTranslationCache, type CacheIdentity } from "../../src/app/session-cache.js";
+import {
+  SessionTranslationCache,
+  type CacheIdentity,
+} from "../../src/runtime/app/session-cache.js";
 
 const identity: CacheIdentity = {
   sessionId: "session-1",

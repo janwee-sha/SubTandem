@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { SubtitlePreparationCoordinator } from "../../src/app/subtitle-preparation.js";
-import { utf8Encode } from "../../src/domain/codec.js";
-import { sha256Hex } from "../../src/domain/identity.js";
+import { SubtitlePreparationCoordinator } from "../../src/runtime/app/subtitle-preparation.js";
+import { utf8Encode } from "../../src/runtime/domain/codec.js";
+import { sha256Hex } from "../../src/runtime/domain/identity.js";
 import type {
   SubtitleSelectionSnapshot,
   SubtitleSourcePort,
-} from "../../src/adapters/iina/subtitle-source.js";
+} from "../../src/runtime/adapters/iina/subtitle-source.js";
 
 type SelectionKind = "external" | "embedded" | "unsupported";
 
@@ -265,7 +265,7 @@ function createHarness(options: HarnessOptions): RuntimeHarness {
 
 const languageMailboxes: Array<{ close(): void }> = [];
 async function settleLanguage() {
-  const { hostClock } = await import("../../src/adapters/iina/host-timers.js");
+  const { hostClock } = await import("../../src/runtime/adapters/iina/host-timers.js");
   for (let index = 0; index < 3; index++) {
     await vi.advanceTimersByTimeAsync(50);
     hostClock.pulse();
@@ -276,9 +276,9 @@ async function startHarness(harness: RuntimeHarness): Promise<void> {
   vi.resetModules();
   vi.stubGlobal("iina", harness.runtime);
   const { GlobalMailbox, IinaGlobalMailboxFileStore } =
-    await import("../../src/adapters/iina/global-mailbox.js");
-  const { UiLanguageAuthority } = await import("../../src/app/ui-language-authority.js");
-  const { parseUiLanguageGet } = await import("../../src/domain/messages.js");
+    await import("../../src/runtime/adapters/iina/global-mailbox.js");
+  const { UiLanguageAuthority } = await import("../../src/runtime/app/ui-language-authority.js");
+  const { parseUiLanguageGet } = await import("../../src/runtime/domain/messages.js");
   const mailbox = new GlobalMailbox(
     new IinaGlobalMailboxFileStore(harness.runtime.file as IINA.API.File),
   );
@@ -291,7 +291,7 @@ async function startHarness(harness: RuntimeHarness): Promise<void> {
     });
   });
   languageMailboxes.push(mailbox);
-  await import("../../src/main.js");
+  await import("../../src/runtime/main.js");
   await vi.advanceTimersByTimeAsync(100);
   harness.triggerSidebar("ui:poll");
   await settleLanguage();
@@ -624,7 +624,7 @@ it("advances the host clocks from Sidebar ticks without flushing UI and ignores 
   harness.runtime.global = { postMessage: tick };
   await startHarness(harness);
   tick.mockClear();
-  const { hostClock } = await import("../../src/adapters/iina/host-timers.js");
+  const { hostClock } = await import("../../src/runtime/adapters/iina/host-timers.js");
   const callback = vi.fn();
   const interval = hostClock.setInterval(callback, 20);
   const before = harness.messages().length;

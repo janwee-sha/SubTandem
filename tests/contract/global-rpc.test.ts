@@ -1,18 +1,21 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { GlobalRpcRouter } from "../../src/adapters/iina/global-rpc.js";
+import { GlobalRpcRouter } from "../../src/runtime/adapters/iina/global-rpc.js";
 import {
   GLOBAL_MESSAGE_NAMES,
   SIDEBAR_MESSAGE_NAMES,
   parseProviderTestResult,
-} from "../../src/domain/messages.js";
+} from "../../src/runtime/domain/messages.js";
 
 describe("authoritative global RPC routing", () => {
   it("keeps business messages off the synchronous bridge and allows only clock pulses", () => {
-    const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
-    const globalSource = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+    const mainSource = readFileSync(new URL("../../src/runtime/main.ts", import.meta.url), "utf8");
+    const globalSource = readFileSync(
+      new URL("../../src/runtime/global.ts", import.meta.url),
+      "utf8",
+    );
     const mailboxSource = readFileSync(
-      new URL("../../src/adapters/iina/global-mailbox.ts", import.meta.url),
+      new URL("../../src/runtime/adapters/iina/global-mailbox.ts", import.meta.url),
       "utf8",
     );
     for (const source of [mainSource, globalSource, mailboxSource]) {
@@ -27,7 +30,7 @@ describe("authoritative global RPC routing", () => {
   });
 
   it("routes the complete Claude lifecycle through shared strict RPC names", () => {
-    const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+    const source = readFileSync(new URL("../../src/runtime/global.ts", import.meta.url), "utf8");
     expect(source).toContain('import { ClaudeProvider } from "./providers/claude.js"');
     expect(source).toContain('case "claude"');
     expect(source).toContain("new ClaudeProvider(");
@@ -60,7 +63,7 @@ describe("authoritative global RPC routing", () => {
   });
 
   it("invalidates obsolete Provider work before publishing without waiting for slow cancellation", () => {
-    const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+    const source = readFileSync(new URL("../../src/runtime/global.ts", import.meta.url), "utf8");
     const start = source.indexOf('onMessage("profile-activation:set"');
     const end = source.indexOf('onMessage("provider:models"', start);
     const handler = source.slice(start, end);
@@ -78,7 +81,7 @@ describe("authoritative global RPC routing", () => {
 
   it("isolates startup pagination from a cancelled drawer", async () => {
     const { globalProviderHarness } = await import("../helpers/global-provider-harness.js");
-    const { ProviderProfiles } = await import("../../src/providers/profiles.js");
+    const { ProviderProfiles } = await import("../../src/runtime/providers/profiles.js");
     const profiles = new ProviderProfiles(() => "saved");
     const saved = profiles.save({
       kind: "claude",
@@ -116,7 +119,7 @@ describe("authoritative global RPC routing", () => {
   });
 
   it("invalidates every cached revision and credential context after replacement", () => {
-    const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+    const source = readFileSync(new URL("../../src/runtime/global.ts", import.meta.url), "utf8");
     expect(source).toContain("clearProfileProviderCache(profile.profileId)");
     expect(source).toContain("clearProfileModelCatalogs(profile.profileId)");
     expect(source).toContain("cancelProfileModelRequests(profile.profileId)");
@@ -146,7 +149,7 @@ describe("authoritative global RPC routing", () => {
   });
 
   it("advances credential ownership when a Profile is deleted", () => {
-    const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
+    const source = readFileSync(new URL("../../src/runtime/global.ts", import.meta.url), "utf8");
     const start = source.indexOf('onMessage("profile:delete"');
     const end = source.indexOf('onMessage("credential:set"', start);
     const handler = source.slice(start, end);
@@ -189,8 +192,11 @@ describe("authoritative global RPC routing", () => {
   });
 
   it("allows only the fixed unknown Provider sentinel across the Test result wire", () => {
-    const source = readFileSync(new URL("../../src/global.ts", import.meta.url), "utf8");
-    const messages = readFileSync(new URL("../../src/domain/messages.ts", import.meta.url), "utf8");
+    const source = readFileSync(new URL("../../src/runtime/global.ts", import.meta.url), "utf8");
+    const messages = readFileSync(
+      new URL("../../src/runtime/domain/messages.ts", import.meta.url),
+      "utf8",
+    );
     const safeUnknown = {
       requestId: "test-unknown-1",
       drawerId: "drawer-1",

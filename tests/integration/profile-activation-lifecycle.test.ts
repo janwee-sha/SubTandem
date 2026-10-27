@@ -1,16 +1,16 @@
 import { saveTestProfile } from "../helpers/encrypted-profile-fixture.js";
 import { describe, expect, it } from "vitest";
-import type { TranslationProvider } from "../../src/providers/provider.js";
-import { ProviderBroker } from "../../src/providers/broker.js";
-import { ProfileActivationAuthority } from "../../src/providers/profile-activation.js";
-import { ProviderProfiles } from "../../src/providers/profiles.js";
+import type { TranslationProvider } from "../../src/runtime/providers/provider.js";
+import { ProviderBroker } from "../../src/runtime/providers/broker.js";
+import { ProfileActivationAuthority } from "../../src/runtime/providers/profile-activation.js";
+import { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
 import type {
   ProviderProfileSnapshot,
   TranslationBatchRequest,
   TranslationBatchResult,
-} from "../../src/providers/types.js";
-import type { ProfileState } from "../../src/domain/types.js";
-import type { ProfileStateCommitResult } from "../../src/transport/client.js";
+} from "../../src/runtime/providers/types.js";
+import type { ProfileState } from "../../src/runtime/domain/types.js";
+import type { ProfileStateCommitResult } from "../../src/runtime/transport/client.js";
 import { CompletionQueue } from "../helpers/profile-activation-harness.js";
 
 function setup() {

@@ -1,10 +1,13 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { PlaybackController, type TranslationOverlaySink } from "../../src/app/controller.js";
-import { SubtitlePreparationCoordinator } from "../../src/app/subtitle-preparation.js";
-import { utf8Encode } from "../../src/domain/codec.js";
-import { sha256Hex } from "../../src/domain/identity.js";
-import { classifySubtitleSelection } from "../../src/adapters/iina/subtitle-source.js";
+import {
+  PlaybackController,
+  type TranslationOverlaySink,
+} from "../../src/runtime/app/controller.js";
+import { SubtitlePreparationCoordinator } from "../../src/runtime/app/subtitle-preparation.js";
+import { utf8Encode } from "../../src/runtime/domain/codec.js";
+import { sha256Hex } from "../../src/runtime/domain/identity.js";
+import { classifySubtitleSelection } from "../../src/runtime/adapters/iina/subtitle-source.js";
 import { RecordingProvider } from "../helpers/fake-provider.js";
 
 const subtitle = "1\n00:00:01,000 --> 00:00:02,000\nHello\n";
@@ -24,7 +27,7 @@ class RecordingOverlay implements TranslationOverlaySink {
 }
 
 describe("embedded subtitle translation", () => {
-  const mainSource = readFileSync(new URL("../../src/main.ts", import.meta.url), "utf8");
+  const mainSource = readFileSync(new URL("../../src/runtime/main.ts", import.meta.url), "utf8");
   it("uses only the current selected Matroska track's raw format for display", async () => {
     const bytes = utf8Encode(subtitle);
     let sourceFormat: "ssa" | "ass" | null = "ssa";

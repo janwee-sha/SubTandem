@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   TargetLanguagePreferences,
   TargetLanguagePreferenceError,
-} from "../../src/adapters/iina/target-language-preferences.js";
+} from "../../src/runtime/adapters/iina/target-language-preferences.js";
 
 class Store {
   values = new Map<string, unknown>();

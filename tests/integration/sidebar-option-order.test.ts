@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { sidebarHarness } from "../helpers/sidebar-harness.js";
-import { UI_LOCALES } from "../../shared/localization/locales.js";
-import { TARGET_LANGUAGES } from "../../src/domain/target-languages.js";
-import { createLocalizer, createOptionDirectory, LOCALE_CATALOGS } from "../../ui/localization.js";
+import { UI_LOCALES } from "../../src/shared/localization/locales.js";
+import { TARGET_LANGUAGES } from "../../src/runtime/domain/target-languages.js";
+import {
+  createLocalizer,
+  createOptionDirectory,
+  LOCALE_CATALOGS,
+} from "../../src/ui/localization.js";
 import baseline from "../fixtures/localization/business-values.json";
 
 describe("actual Sidebar named DOM and identity", () => {

@@ -11,11 +11,11 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { UI_LOCALES } from "../../shared/localization/locales.js";
-import { LOCALE_CATALOGS, validMessageTemplate } from "../../ui/localization.js";
-import { MESSAGE_DEFINITIONS } from "../../shared/localization/message-definitions.js";
-import type { MessageDefinition } from "../../shared/localization/types.js";
-import en from "../../shared/localization/catalogs/en.json";
+import { UI_LOCALES } from "../../src/shared/localization/locales.js";
+import { LOCALE_CATALOGS, validMessageTemplate } from "../../src/ui/localization.js";
+import { MESSAGE_DEFINITIONS } from "../../src/shared/localization/message-definitions.js";
+import type { MessageDefinition } from "../../src/shared/localization/types.js";
+import en from "../../src/shared/localization/catalogs/en.json";
 
 const temporaryRoots: string[] = [];
 afterEach(() => {
@@ -25,19 +25,20 @@ function syntheticResources() {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "subtandem-localization-contract-")));
   temporaryRoots.push(root);
   for (const file of [
+    "src/package.json",
     "scripts/build-localization.mjs",
     "scripts/native-package.mjs",
-    "shared/localization/locales.ts",
-    "shared/localization/message-definitions.ts",
-    "shared/localization/types.ts",
-    "src/domain/target-languages.ts",
+    "src/shared/localization/locales.ts",
+    "src/shared/localization/message-definitions.ts",
+    "src/shared/localization/types.ts",
+    "src/runtime/domain/target-languages.ts",
     "Info.json",
   ]) {
     const destination = join(root, file);
     mkdirSync(join(destination, ".."), { recursive: true });
     cpSync(new URL(`../../${file}`, import.meta.url), destination);
   }
-  const directory = join(root, "shared/localization/catalogs");
+  const directory = join(root, "src/shared/localization/catalogs");
   mkdirSync(directory, { recursive: true });
   for (const locale of UI_LOCALES) {
     const catalog = structuredClone(en) as any;
@@ -117,7 +118,7 @@ describe("production localization resources", () => {
     for (const args of [
       ["--check", "extra"],
       ["--unknown"],
-      ["--native-resources", join(root, "shared/Resources")],
+      ["--native-resources", join(root, "src/shared/Resources")],
       ["--native-resources", "build/Resources"],
       ["--native-resources", join(root, "build/../Resources")],
     ])

@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { GlobalMailbox, MainGlobalMailbox } from "../../src/adapters/iina/global-mailbox.js";
+import {
+  GlobalMailbox,
+  MainGlobalMailbox,
+} from "../../src/runtime/adapters/iina/global-mailbox.js";
 import {
   IinaFileRpcBridge,
   IinaProcessLauncher,
-} from "../../src/adapters/iina/provider-transport.js";
-import { TransportProcess } from "../../src/adapters/iina/transport-process.js";
+} from "../../src/runtime/adapters/iina/provider-transport.js";
+import { TransportProcess } from "../../src/runtime/adapters/iina/transport-process.js";
 import { CredentialWriteObserver } from "../helpers/credential-write-observer.js";
 import { encryptedSaveFrame, encryptedSaveOwner } from "../helpers/encrypted-profile-fixture.js";
-import { ProviderProfiles } from "../../src/providers/profiles.js";
+import { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
 
 const secret = "synthetic-write-key-雪";
 const profile = new ProviderProfiles(() => "10000000-0000-4000-8000-000000000001").save({
@@ -187,7 +190,7 @@ it("keeps recovery intents free of draft credentials through cancellation and re
       maxConcurrentRequests: 4,
       timers: { setInterval: () => ({ cancel() {} }) },
     });
-    const client = new (await import("../../src/transport/client.js")).TransportClient(
+    const client = new (await import("../../src/runtime/transport/client.js")).TransportClient(
       { port: 12345, token: "synthetic-rpc-token" },
       bridge,
     );

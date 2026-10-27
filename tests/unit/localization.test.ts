@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { createLocalizer } from "../../ui/localization.js";
-import en from "../../shared/localization/catalogs/en.json";
-import { MESSAGE_DEFINITIONS } from "../../shared/localization/message-definitions.js";
+import { createLocalizer } from "../../src/ui/localization.js";
+import en from "../../src/shared/localization/catalogs/en.json";
+import { MESSAGE_DEFINITIONS } from "../../src/shared/localization/message-definitions.js";
 describe("production English formatter", () => {
   it("has every definition and a complete target and color directory", () => {
     expect(Object.keys(en.messages).sort()).toEqual(Object.keys(MESSAGE_DEFINITIONS).sort());

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { OpenAICompatibleProvider } from "../../src/providers/openai.js";
-import { ClaudeProvider } from "../../src/providers/claude.js";
-import { DeepSeekProvider } from "../../src/providers/deepseek.js";
-import { OllamaProvider } from "../../src/providers/ollama.js";
-import { discoverProviderModels } from "../../src/providers/model-discovery.js";
-import type { ProviderTransportRequest } from "../../src/providers/transport.js";
+import { OpenAICompatibleProvider } from "../../src/runtime/providers/openai.js";
+import { ClaudeProvider } from "../../src/runtime/providers/claude.js";
+import { DeepSeekProvider } from "../../src/runtime/providers/deepseek.js";
+import { OllamaProvider } from "../../src/runtime/providers/ollama.js";
+import { discoverProviderModels } from "../../src/runtime/providers/model-discovery.js";
+import type { ProviderTransportRequest } from "../../src/runtime/providers/transport.js";
 
 const constructors = {
   openai: OpenAICompatibleProvider,

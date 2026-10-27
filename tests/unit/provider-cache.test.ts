@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { CredentialScopedProviderCache } from "../../src/providers/provider-cache.js";
-import type { ConfiguredProvider } from "../../src/providers/provider.js";
-import type { ProviderProfileSnapshot } from "../../src/providers/types.js";
+import { CredentialScopedProviderCache } from "../../src/runtime/providers/provider-cache.js";
+import type { ConfiguredProvider } from "../../src/runtime/providers/provider.js";
+import type { ProviderProfileSnapshot } from "../../src/runtime/providers/types.js";
 
 const profile = {
   profileId: "00000000-0000-4000-8000-000000000001",

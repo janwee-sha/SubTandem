@@ -4,12 +4,12 @@ import { registerFailureContract } from "../helpers/provider-failure-contract.js
 import { registerProbeContract } from "../helpers/provider-probe-contract.js";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { DeepSeekProvider } from "../../src/providers/deepseek.js";
+import { DeepSeekProvider } from "../../src/runtime/providers/deepseek.js";
 import type {
   ProviderTransport,
   ProviderTransportRequest,
   ProviderTransportResponse,
-} from "../../src/providers/transport.js";
+} from "../../src/runtime/providers/transport.js";
 import { makeProviderRequest } from "./provider-test-helpers.js";
 
 function successResponse(request: ProviderTransportRequest): ProviderTransportResponse {
@@ -38,7 +38,7 @@ function successResponse(request: ProviderTransportRequest): ProviderTransportRe
 describe("DeepSeek provider", () => {
   it("keeps its fixed dialect on the renamed shared batch helper", () => {
     const source = readFileSync(
-      new URL("../../src/providers/deepseek.ts", import.meta.url),
+      new URL("../../src/runtime/providers/deepseek.ts", import.meta.url),
       "utf8",
     );
 

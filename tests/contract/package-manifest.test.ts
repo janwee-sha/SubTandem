@@ -230,8 +230,8 @@ describe("IINA package manifest", () => {
     const verify = rootFile("scripts/verify-package.sh");
     const pack = rootFile("scripts/pack.sh");
     const runtime = [
-      rootFile("src/main.ts"),
-      rootFile("src/adapters/iina/webview-translation-overlay.ts"),
+      rootFile("src/runtime/main.ts"),
+      rootFile("src/runtime/adapters/iina/webview-translation-overlay.ts"),
     ].join("\n");
     expect(build).toContain("--target overlay");
     expect(verify).toContain("dist/ui/overlay.html");

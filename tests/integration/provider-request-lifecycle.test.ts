@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { globalProviderHarness } from "../helpers/global-provider-harness.js";
-import { ProviderProfiles } from "../../src/providers/profiles.js";
-import { ProviderBroker } from "../../src/providers/broker.js";
+import { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
+import { ProviderBroker } from "../../src/runtime/providers/broker.js";
 import {
   CompletionQueue,
   activateTestProfile,
@@ -10,7 +10,7 @@ import {
 } from "../helpers/profile-activation-harness.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 import { endingResponse } from "../helpers/provider-failure-contract.js";
-import type { TranslationProvider } from "../../src/providers/provider.js";
+import type { TranslationProvider } from "../../src/runtime/providers/provider.js";
 const flush = async () => {
   for (let i = 0; i < 25; i++) await Promise.resolve();
 };

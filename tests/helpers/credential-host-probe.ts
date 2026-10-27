@@ -1,6 +1,6 @@
-import { SidebarCredentialChannel, credentialRandomId } from "../../ui/credential-channel.js";
+import { SidebarCredentialChannel, credentialRandomId } from "../../src/ui/credential-channel.js";
 import fixture from "../fixtures/credentials/host-probe.json";
-import type { CredentialOperationSnapshot } from "../../shared/credential-protocol.js";
+import type { CredentialOperationSnapshot } from "../../src/shared/credential-protocol.js";
 
 const port = window.iina;
 const panel = document.createElement("section");

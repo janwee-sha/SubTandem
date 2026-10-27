@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { createContext, runInContext } from "node:vm";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import { WebViewTranslationOverlay } from "../../src/adapters/iina/webview-translation-overlay.js";
+import { WebViewTranslationOverlay } from "../../src/runtime/adapters/iina/webview-translation-overlay.js";
 import { FakeIinaEvent, FakeIinaOverlay } from "../helpers/fake-iina.js";
 
 class TextElement {
@@ -42,7 +42,7 @@ function loadOverlay() {
     clearInterval: () => undefined,
   });
   context.window = context;
-  for (const path of ["ui/overlay-state.ts", "ui/overlay.ts"]) {
+  for (const path of ["src/ui/overlay-state.ts", "src/ui/overlay.ts"]) {
     const source = readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
     runInContext(
       ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022 } })

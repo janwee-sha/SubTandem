@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createLocalizer } from "../../ui/localization.js";
+import { createLocalizer } from "../../src/ui/localization.js";
 import { sidebarHarness } from "../helpers/sidebar-harness.js";
 
 const localizer = createLocalizer("en");

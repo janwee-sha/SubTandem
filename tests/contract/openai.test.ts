@@ -4,14 +4,17 @@ import { registerFailureContract } from "../helpers/provider-failure-contract.js
 import { registerProbeContract } from "../helpers/provider-probe-contract.js";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { OpenAICompatibleProvider } from "../../src/providers/openai.js";
-import type { ProviderTransport } from "../../src/providers/transport.js";
-import { buildTranslationTask } from "../../src/providers/translation-task.js";
+import { OpenAICompatibleProvider } from "../../src/runtime/providers/openai.js";
+import type { ProviderTransport } from "../../src/runtime/providers/transport.js";
+import { buildTranslationTask } from "../../src/runtime/providers/translation-task.js";
 import { makeProviderRequest } from "./provider-test-helpers.js";
 
 describe("OpenAI-compatible provider", () => {
   it("keeps its existing dialect on the renamed shared batch helper", () => {
-    const source = readFileSync(new URL("../../src/providers/openai.ts", import.meta.url), "utf8");
+    const source = readFileSync(
+      new URL("../../src/runtime/providers/openai.ts", import.meta.url),
+      "utf8",
+    );
 
     expect(source).toContain('from "./translation-batches.js"');
     expect(source).not.toContain("chat-completions");

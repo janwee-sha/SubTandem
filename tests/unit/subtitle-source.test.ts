@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { utf8Encode } from "../../src/domain/codec.js";
-import { sha256Hex } from "../../src/domain/identity.js";
+import { utf8Encode } from "../../src/runtime/domain/codec.js";
+import { sha256Hex } from "../../src/runtime/domain/identity.js";
 import {
   classifySubtitleSelection,
   IinaSubtitleSourcePort,
   normalizeSubtitleCodec,
   readSelectedSubtitle,
-} from "../../src/adapters/iina/subtitle-source.js";
-import { loadPreparedSubtitleSource, loadSubtitleSource } from "../../src/subtitles/source.js";
+} from "../../src/runtime/adapters/iina/subtitle-source.js";
+import {
+  loadPreparedSubtitleSource,
+  loadSubtitleSource,
+} from "../../src/runtime/subtitles/source.js";
 
 describe("selected subtitle source", () => {
   const content = "1\n00:00:01,000 --> 00:00:02,000\nHello\n";

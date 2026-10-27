@@ -4,8 +4,8 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, realpathSync, readFileSy
 import { resolve } from "node:path";
 import { tmpdir } from "node:os";
 import ts from "typescript";
-import { getTargetLanguageDirection } from "../../src/domain/target-languages.js";
-import { WebViewTranslationOverlay } from "../../src/adapters/iina/webview-translation-overlay.js";
+import { getTargetLanguageDirection } from "../../src/runtime/domain/target-languages.js";
+import { WebViewTranslationOverlay } from "../../src/runtime/adapters/iina/webview-translation-overlay.js";
 import { FakeIinaEvent, FakeIinaOverlay } from "../helpers/fake-iina.js";
 
 const samples = {
@@ -59,12 +59,12 @@ beforeAll(() => {
   for (const name of ["overlay-state", "overlay"]) {
     writeFileSync(
       resolve(resources, `${name}.js`),
-      ts.transpileModule(readFileSync(resolve("ui", `${name}.ts`), "utf8"), {
+      ts.transpileModule(readFileSync(resolve("src/ui", `${name}.ts`), "utf8"), {
         compilerOptions: { target: ts.ScriptTarget.ES2022 },
       }).outputText,
     );
   }
-  writeFileSync(resolve(resources, "overlay.css"), readFileSync(resolve("ui/overlay.css")));
+  writeFileSync(resolve(resources, "overlay.css"), readFileSync(resolve("src/ui/overlay.css")));
   writeFileSync(
     resolve(resources, "bridge.js"),
     `window.probeMessages = {}; window.iina = { onMessage: (name, callback) => window.probeMessages[name] = callback, postMessage: () => {} };`,
@@ -127,7 +127,7 @@ beforeAll(() => {
   window.webkit.messageHandlers.result.postMessage(results);
 })();`,
   );
-  const html = readFileSync(resolve("ui/overlay.html"), "utf8")
+  const html = readFileSync(resolve("src/ui/overlay.html"), "utf8")
     .replace("</head>", '<script src="./bridge.js"></script></head>')
     .replaceAll('.ts"', '.js"')
     .replace("</body>", '<script src="./runner.js"></script></body>');

@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { createLocalizer } from "../../ui/localization.js";
+import { createLocalizer } from "../../src/ui/localization.js";
 import { describe, expect, it } from "vitest";
 import {
   GLOBAL_MESSAGE_NAMES,
@@ -23,12 +23,12 @@ import {
   parseProviderTestRequest,
   parseProviderTestResult,
   sanitizedProfileView,
-} from "../../src/domain/messages.js";
-import { normalizeProviderError } from "../../src/domain/errors.js";
-import { SESSION_STATUSES, USER_ACTIONS } from "../../src/domain/status.js";
-import "../../ui/service-failure-message.js";
-import "../../ui/session-status.js";
-import "../../ui/provider-status.js";
+} from "../../src/runtime/domain/messages.js";
+import { normalizeProviderError } from "../../src/runtime/domain/errors.js";
+import { SESSION_STATUSES, USER_ACTIONS } from "../../src/runtime/domain/status.js";
+import "../../src/ui/service-failure-message.js";
+import "../../src/ui/session-status.js";
+import "../../src/ui/provider-status.js";
 import { makeProviderRequest } from "./provider-test-helpers.js";
 
 const localizer = createLocalizer("en");
@@ -50,9 +50,9 @@ function parsePlaintextDraft(value: unknown) {
 }
 
 describe("Sidebar/Main/Global security messages", () => {
-  const sidebarSource = readFileSync(new URL("../../ui/sidebar.ts", import.meta.url), "utf8");
+  const sidebarSource = readFileSync(new URL("../../src/ui/sidebar.ts", import.meta.url), "utf8");
   const providerStatusSource = readFileSync(
-    new URL("../../ui/provider-status.ts", import.meta.url),
+    new URL("../../src/ui/provider-status.ts", import.meta.url),
     "utf8",
   );
   const profile = {
@@ -831,7 +831,8 @@ describe("Sidebar/Main/Global security messages", () => {
 
 describe("precise model cancellation", () => {
   it("accepts only an exact model ID or the window close payload", async () => {
-    const { parseProviderModelsCancelRequest } = await import("../../src/domain/messages.js");
+    const { parseProviderModelsCancelRequest } =
+      await import("../../src/runtime/domain/messages.js");
     for (const payload of [{}, { modelRequestId: "model.1-a_b" }])
       expect(
         parseProviderModelsCancelRequest({ requestId: "cancel", revision: 1, payload }).payload,

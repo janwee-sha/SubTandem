@@ -1,4 +1,4 @@
-import type { SubtitleCue } from "../../src/subtitles/types.js";
+import type { SubtitleCue } from "../../src/runtime/subtitles/types.js";
 
 function cue(id: string, index: number, startMs: number, endMs: number, text: string): SubtitleCue {
   return {

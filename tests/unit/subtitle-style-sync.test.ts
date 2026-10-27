@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   SubtitleStyleAuthority,
   SubtitleStyleFollower,
-} from "../../src/adapters/iina/subtitle-style-sync.js";
-import { DEFAULT_SUBTITLE_TEXT_STYLE } from "../../src/domain/subtitle-style.js";
+} from "../../src/runtime/adapters/iina/subtitle-style-sync.js";
+import { DEFAULT_SUBTITLE_TEXT_STYLE } from "../../src/runtime/domain/subtitle-style.js";
 
 describe("subtitle style authority", () => {
   it("merges different-field previews and persists only the committing field", () => {

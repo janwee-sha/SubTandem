@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { sanitizedProfileView } from "../../src/domain/messages.js";
-import { normalizeProviderEndpoint, ProviderProfiles } from "../../src/providers/profiles.js";
+import { sanitizedProfileView } from "../../src/runtime/domain/messages.js";
+import {
+  normalizeProviderEndpoint,
+  ProviderProfiles,
+} from "../../src/runtime/providers/profiles.js";
 
 describe("latest provider Profiles", () => {
   it("normalizes and revises only the latest Profile", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { freezeTranslationTargets } from "../../src/app/request-builder.js";
-import type { SubtitleCue } from "../../src/subtitles/types.js";
+import { freezeTranslationTargets } from "../../src/runtime/app/request-builder.js";
+import type { SubtitleCue } from "../../src/runtime/subtitles/types.js";
 import { createTranslationAlignmentFixture } from "../helpers/translation-alignment.js";
 
 function makeCue(index: number, text: string): SubtitleCue {

@@ -5,7 +5,7 @@ import {
   DEFAULT_SUBTITLE_MARGIN_Y,
   isOverlayPosition,
   normalizeOverlayRegion,
-} from "../../src/domain/overlay-position.js";
+} from "../../src/runtime/domain/overlay-position.js";
 
 describe("overlay position domain", () => {
   it("accepts every integer from 0 through 100 and rejects everything else", () => {

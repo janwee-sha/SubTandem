@@ -5,8 +5,8 @@ import { tmpdir } from "node:os";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { vi } from "vitest";
-import { CredentialEditor } from "../../ui/credential-editor.js";
-import type { SaveProfileInput } from "../../src/providers/profiles.js";
+import { CredentialEditor } from "../../src/ui/credential-editor.js";
+import type { SaveProfileInput } from "../../src/runtime/providers/profiles.js";
 
 export const nativeLifecycleExecutable = fileURLToPath(
   new URL("../../dist/native/subtandem-transport", import.meta.url),
@@ -55,7 +55,8 @@ export async function nativeGlobalLifecycle(
       await delay(20);
     }
     const session = JSON.parse(readFileSync(ready, "utf8"));
-    const { TransportClient, TransportRpcError } = await import("../../src/transport/client.js");
+    const { TransportClient, TransportRpcError } =
+      await import("../../src/runtime/transport/client.js");
     client = new TransportClient(session, {
       async post<T>(
         port: number,
@@ -108,7 +109,7 @@ export async function nativeGlobalLifecycle(
       file: {},
       utils: {},
     });
-    vi.doMock("../../src/adapters/iina/global-mailbox.js", () => ({
+    vi.doMock("../../src/runtime/adapters/iina/global-mailbox.js", () => ({
       GlobalMailbox: class {
         onMessage(name: string, callback: (data: unknown, sender?: string) => unknown) {
           handlers.set(name, callback);
@@ -123,10 +124,10 @@ export async function nativeGlobalLifecycle(
       },
       IinaGlobalMailboxFileStore: class {},
     }));
-    vi.doMock("../../src/adapters/iina/host-timers.js", () => ({
+    vi.doMock("../../src/runtime/adapters/iina/host-timers.js", () => ({
       hostTimers: { setTimeout: () => ({ cancel() {} }), setInterval: () => ({ cancel() {} }) },
     }));
-    vi.doMock("../../src/transport/supervisor.js", async (original) => {
+    vi.doMock("../../src/runtime/transport/supervisor.js", async (original) => {
       const module = await original<any>();
       return {
         ...module,
@@ -137,7 +138,7 @@ export async function nativeGlobalLifecycle(
         },
       };
     });
-    await import("../../src/global.js");
+    await import("../../src/runtime/global.js");
     let sequence = 0;
     const sender = "native-lifecycle-window";
     const send = async (name: string, payload: unknown, requestId = `lifecycle.${++sequence}`) => {
@@ -220,7 +221,7 @@ export async function nativeGlobalLifecycle(
     };
     const createProvider = async (playerId = sender) => {
       const { GlobalProviderClient } =
-        await import("../../src/adapters/iina/global-provider-client.js");
+        await import("../../src/runtime/adapters/iina/global-provider-client.js");
       return new GlobalProviderClient({
         onMessage: (name, callback) => listeners.set(name, callback),
         postMessage: (name, data) => {
@@ -268,9 +269,9 @@ export async function nativeGlobalLifecycle(
       await stop();
       rmSync(root, { recursive: true, force: true });
       vi.unstubAllGlobals();
-      vi.doUnmock("../../src/adapters/iina/global-mailbox.js");
-      vi.doUnmock("../../src/adapters/iina/host-timers.js");
-      vi.doUnmock("../../src/transport/supervisor.js");
+      vi.doUnmock("../../src/runtime/adapters/iina/global-mailbox.js");
+      vi.doUnmock("../../src/runtime/adapters/iina/host-timers.js");
+      vi.doUnmock("../../src/runtime/transport/supervisor.js");
     },
   };
 }

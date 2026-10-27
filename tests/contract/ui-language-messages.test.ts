@@ -3,7 +3,7 @@ import {
   parseUiLanguageGet,
   parseUiLanguageState,
   parseSidebarStateUpdate,
-} from "../../src/domain/messages.js";
+} from "../../src/runtime/domain/messages.js";
 const sample = { hostVersion: "1.5.0", preferredLocalization: "he", failure: null };
 const context = {
   authorityId: "authority",

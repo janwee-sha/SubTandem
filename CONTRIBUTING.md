@@ -47,8 +47,9 @@ requirements, development links, and release-package validation.
 
 ## Repository Layout
 
-- `src/` contains the TypeScript plugin runtime, domain logic, providers, and IINA adapters.
-- `ui/` contains the sidebar and translation-overlay WebViews.
+- `src/runtime/` contains the TypeScript plugin runtime, domain logic, providers, and IINA adapters.
+- `src/ui/` contains the sidebar and translation-overlay WebViews.
+- `src/shared/` contains shared protocols, validation, and localization resources.
 - `native/` contains the Swift transport, subtitle extractor, and style picker.
 - `tests/` contains unit, integration, contract, and security tests.
 - `scripts/` contains the supported build, package, verification, and release tooling.

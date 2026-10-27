@@ -1,7 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { parseSubtitleStyleEdit, parseSubtitleStylePickerOpen } from "../../src/domain/messages.js";
-import { SubtitleStylePreferences } from "../../src/adapters/iina/subtitle-style-preferences.js";
+import {
+  parseSubtitleStyleEdit,
+  parseSubtitleStylePickerOpen,
+} from "../../src/runtime/domain/messages.js";
+import { SubtitleStylePreferences } from "../../src/runtime/adapters/iina/subtitle-style-preferences.js";
 import { FakeIinaPreferences } from "../helpers/fake-iina.js";
 
 const envelope = (payload: Record<string, unknown>) => ({

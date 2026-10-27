@@ -9,5 +9,5 @@
     "rootDir": ".",
     "outDir": "build/webview"
   },
-  "include": ["ui/**/*.ts", "shared/**/*.ts"]
+  "include": ["src/ui/**/*.ts", "src/shared/**/*.ts"]
 }

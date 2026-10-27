@@ -4,14 +4,14 @@ import { registerFailureContract } from "../helpers/provider-failure-contract.js
 import { registerProbeContract } from "../helpers/provider-probe-contract.js";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { ClaudeProvider } from "../../src/providers/claude.js";
+import { ClaudeProvider } from "../../src/runtime/providers/claude.js";
 import type {
   ProviderTransport,
   ProviderTransportRequest,
   ProviderTransportResponse,
-} from "../../src/providers/transport.js";
+} from "../../src/runtime/providers/transport.js";
 import { makeProviderRequest } from "./provider-test-helpers.js";
-import { providerOutputSchema } from "../../src/providers/wire-items.js";
+import { providerOutputSchema } from "../../src/runtime/providers/wire-items.js";
 
 const successFixture = JSON.parse(
   readFileSync("tests/fixtures/providers/claude-success.json", "utf8"),

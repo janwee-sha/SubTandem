@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ProviderConnectionTests } from "../../src/providers/connection-tests.js";
-import type { ConfiguredProvider } from "../../src/providers/provider.js";
+import { ProviderConnectionTests } from "../../src/runtime/providers/connection-tests.js";
+import type { ConfiguredProvider } from "../../src/runtime/providers/provider.js";
 
 function configuredProvider(cancelled: string[]): ConfiguredProvider {
   return {

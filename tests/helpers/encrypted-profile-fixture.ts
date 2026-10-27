@@ -1,27 +1,27 @@
 import type {
   ProfileActivationAuthority,
   ProfileSaveReservation,
-} from "../../src/providers/profile-activation.js";
-import type { SaveProfileInput } from "../../src/providers/profiles.js";
+} from "../../src/runtime/providers/profile-activation.js";
+import type { SaveProfileInput } from "../../src/runtime/providers/profiles.js";
 import {
   profileSaveRequestDigest,
   type ProfileStateCommitResult,
-} from "../../src/transport/client.js";
+} from "../../src/runtime/transport/client.js";
 import {
   credentialBase64,
   credentialDecode,
   credentialNonce,
   credentialOperationAAD,
   credentialUtf8,
-} from "../../shared/credential-protocol.js";
+} from "../../src/shared/credential-protocol.js";
 import type {
   CredentialEnvelope,
   CredentialOperationContext,
   CredentialOperationSnapshot,
   CredentialOwner,
   CredentialSnapshotState,
-} from "../../shared/credential-protocol.js";
-import { credentialSnapshotDigest, sealCredentialBytes } from "../../ui/credential-channel.js";
+} from "../../src/shared/credential-protocol.js";
+import { credentialSnapshotDigest, sealCredentialBytes } from "../../src/ui/credential-channel.js";
 import vectors from "../fixtures/credentials/channel-vectors.json";
 
 export const encryptedSaveOwner: CredentialOwner = {

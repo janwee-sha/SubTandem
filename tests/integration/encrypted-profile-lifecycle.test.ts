@@ -1,12 +1,12 @@
-import { profileSaveRequestDigest } from "../../src/transport/client.js";
+import { profileSaveRequestDigest } from "../../src/runtime/transport/client.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ProfileActivationAuthority,
   type ProfileSaveReservation,
-} from "../../src/providers/profile-activation.js";
-import { ProviderProfiles } from "../../src/providers/profiles.js";
-import type { ProfileState } from "../../src/domain/types.js";
-import type { ProfileStateCommitResult } from "../../src/transport/client.js";
+} from "../../src/runtime/providers/profile-activation.js";
+import { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
+import type { ProfileState } from "../../src/runtime/domain/types.js";
+import type { ProfileStateCommitResult } from "../../src/runtime/transport/client.js";
 import { encryptedSaveFrame, encryptedSaveOwner } from "../helpers/encrypted-profile-fixture.js";
 import { existsSync } from "node:fs";
 import {
@@ -14,7 +14,7 @@ import {
   nativeLifecycleExecutable,
 } from "../helpers/native-global-lifecycle.js";
 import { ProviderSimulator } from "../helpers/provider-server.js";
-import { PlaybackController } from "../../src/app/controller.js";
+import { PlaybackController } from "../../src/runtime/app/controller.js";
 
 const input = {
   displayName: "Synthetic",

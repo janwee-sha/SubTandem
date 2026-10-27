@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   OverlayPositionAuthority,
   OverlayPositionFollower,
-} from "../../src/adapters/iina/overlay-position-sync.js";
+} from "../../src/runtime/adapters/iina/overlay-position-sync.js";
 
 describe("overlay position synchronization", () => {
   it("assigns monotonic intent sequences and committed revisions", () => {

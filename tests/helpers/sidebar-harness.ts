@@ -1,5 +1,5 @@
-import { createLocalizationRuntime } from "../../ui/localization.js";
-import { CredentialEditor } from "../../ui/credential-editor.js";
+import { createLocalizationRuntime } from "../../src/ui/localization.js";
+import { CredentialEditor } from "../../src/ui/credential-editor.js";
 import { CredentialPeer } from "./credential-peer.js";
 import { readFileSync } from "node:fs";
 import { createContext, runInContext } from "node:vm";
@@ -274,7 +274,7 @@ export function sidebarHarness(
   });
   materializeHtml(
     document,
-    readFileSync(new URL("../../ui/sidebar.html", import.meta.url), "utf8"),
+    readFileSync(new URL("../../src/ui/sidebar.html", import.meta.url), "utf8"),
   );
   const messages: Array<{ name: string; data: any }> = [];
   const listeners = new Map<string, (data: unknown) => void>();
@@ -436,13 +436,13 @@ export function sidebarHarness(
   document.querySelector("#provider-kind").value = "openai";
   document.querySelector("#provider-proxy-mode").value = "system";
   for (const path of [
-    "shared/provider-endpoint.ts",
-    "ui/service-failure-message.ts",
-    "ui/provider-status.ts",
-    "ui/sidebar-state.ts",
-    "ui/profile-card-interactions.ts",
-    "ui/session-status.ts",
-    "ui/sidebar.ts",
+    "src/shared/provider-endpoint.ts",
+    "src/ui/service-failure-message.ts",
+    "src/ui/provider-status.ts",
+    "src/ui/sidebar-state.ts",
+    "src/ui/profile-card-interactions.ts",
+    "src/ui/session-status.ts",
+    "src/ui/sidebar.ts",
   ]) {
     const source = readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
     runInContext(

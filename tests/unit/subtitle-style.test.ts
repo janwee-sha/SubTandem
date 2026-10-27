@@ -9,7 +9,7 @@ import {
   renderBorderWidth,
   renderFontSize,
   resolveEffectiveFontFamily,
-} from "../../src/domain/subtitle-style.js";
+} from "../../src/runtime/domain/subtitle-style.js";
 
 describe("subtitle text style domain", () => {
   it("defines the eight-field upgrade-safe default", () => {

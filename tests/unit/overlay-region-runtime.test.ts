@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { OverlayRegionRuntime } from "../../src/adapters/iina/overlay-region-runtime.js";
+import { OverlayRegionRuntime } from "../../src/runtime/adapters/iina/overlay-region-runtime.js";
 
 class RegionMpv {
   readonly reads: string[] = [];

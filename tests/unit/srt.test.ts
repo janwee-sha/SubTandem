@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseSrt } from "../../src/subtitles/srt.js";
+import { parseSrt } from "../../src/runtime/subtitles/srt.js";
 
 describe("SRT", () => {
   it("parses BOM, CRLF, multiline cues, overlap and exact milliseconds", () => {

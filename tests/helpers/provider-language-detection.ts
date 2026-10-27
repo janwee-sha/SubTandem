@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 
-import { freezeTranslationTargets } from "../../src/app/request-builder.js";
-import type { FrozenTranslationTarget } from "../../src/providers/types.js";
-import type { SubtitleCue } from "../../src/subtitles/types.js";
+import { freezeTranslationTargets } from "../../src/runtime/app/request-builder.js";
+import type { FrozenTranslationTarget } from "../../src/runtime/providers/types.js";
+import type { SubtitleCue } from "../../src/runtime/subtitles/types.js";
 
 export interface ProviderLanguageDetectionCase {
   id: string;

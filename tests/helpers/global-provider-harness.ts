@@ -1,17 +1,20 @@
-import type * as SupervisorModule from "../../src/transport/supervisor.js";
+import type * as SupervisorModule from "../../src/runtime/transport/supervisor.js";
 import { CredentialPeer } from "./credential-peer.js";
-import { CredentialEditor } from "../../ui/credential-editor.js";
-import { validateProfileSave, profileSaveRequestDigest } from "../../src/transport/client.js";
-import { canonicalJson } from "../../src/domain/identity.js";
-import { identityHash } from "../../src/domain/identity.js";
-import { SidebarCredentialChannel } from "../../ui/credential-channel.js";
+import { CredentialEditor } from "../../src/ui/credential-editor.js";
+import {
+  validateProfileSave,
+  profileSaveRequestDigest,
+} from "../../src/runtime/transport/client.js";
+import { canonicalJson } from "../../src/runtime/domain/identity.js";
+import { identityHash } from "../../src/runtime/domain/identity.js";
+import { SidebarCredentialChannel } from "../../src/ui/credential-channel.js";
 import {
   type CredentialOperationSnapshot,
   type CredentialSourceProfile,
   type DraftOperationReference,
-} from "../../shared/credential-protocol.js";
-import type { CredentialEnvelope, CredentialOwner } from "../../shared/credential-protocol.js";
-import type { SaveProfileInput } from "../../src/providers/profiles.js";
+} from "../../src/shared/credential-protocol.js";
+import type { CredentialEnvelope, CredentialOwner } from "../../src/shared/credential-protocol.js";
+import type { SaveProfileInput } from "../../src/runtime/providers/profiles.js";
 import { vi } from "vitest";
 import {
   CompletionQueue,
@@ -19,8 +22,8 @@ import {
   activateTestProfile,
 } from "./profile-activation-harness.js";
 import { RequestLifecycleHarness } from "./provider-request-lifecycle.js";
-import type { ProviderProfiles } from "../../src/providers/profiles.js";
-import type { ProviderProfileSnapshot } from "../../src/providers/types.js";
+import type { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
+import type { ProviderProfileSnapshot } from "../../src/runtime/providers/types.js";
 
 export async function globalProviderHarness(
   saved: ProviderProfileSnapshot[] = [],
@@ -52,7 +55,7 @@ export async function globalProviderHarness(
     preferences: { get: () => undefined, set: vi.fn(), sync: vi.fn() },
     file: {},
   });
-  vi.doMock("../../src/adapters/iina/global-mailbox.js", () => ({
+  vi.doMock("../../src/runtime/adapters/iina/global-mailbox.js", () => ({
     GlobalMailbox: class {
       isRegistered(playerId: string) {
         return !unregisteredPlayers.has(playerId);
@@ -71,7 +74,7 @@ export async function globalProviderHarness(
     },
     IinaGlobalMailboxFileStore: class {},
   }));
-  vi.doMock("../../src/adapters/iina/host-timers.js", () => ({
+  vi.doMock("../../src/runtime/adapters/iina/host-timers.js", () => ({
     hostTimers: {
       setTimeout: (callback: () => unknown) => {
         startup.push(callback);
@@ -80,14 +83,14 @@ export async function globalProviderHarness(
       setInterval: () => ({ cancel() {} }),
     },
   }));
-  vi.doMock("../../src/adapters/iina/provider-transport.js", async (original) => ({
+  vi.doMock("../../src/runtime/adapters/iina/provider-transport.js", async (original) => ({
     ...(await original<Record<string, unknown>>()),
     HelperProviderTransport: class {
       request = transport.request.bind(transport);
       cancel = transport.cancel.bind(transport);
     },
   }));
-  vi.doMock("../../src/credentials/store.js", async (original) => ({
+  vi.doMock("../../src/runtime/credentials/store.js", async (original) => ({
     ...(await original<Record<string, unknown>>()),
     HelperProfileStateStore: class {
       async save(owner: CredentialOwner, frame: CredentialEnvelope) {
@@ -125,7 +128,7 @@ export async function globalProviderHarness(
       }
     },
   }));
-  vi.doMock("../../src/transport/supervisor.js", async (original) => {
+  vi.doMock("../../src/runtime/transport/supervisor.js", async (original) => {
     const { TransportSupervisor } = await original<typeof SupervisorModule>();
     return {
       TransportSupervisor: class extends TransportSupervisor {
@@ -155,7 +158,7 @@ export async function globalProviderHarness(
       },
     };
   });
-  vi.doMock("../../src/providers/profile-activation.js", async (original) => ({
+  vi.doMock("../../src/runtime/providers/profile-activation.js", async (original) => ({
     ...(await original<Record<string, unknown>>()),
     restoreProfileActivationAuthority: async (options: {
       profiles: ProviderProfiles;
@@ -169,7 +172,7 @@ export async function globalProviderHarness(
       return authority;
     },
   }));
-  await import("../../src/global.js");
+  await import("../../src/runtime/global.js");
   return {
     transport,
     saveCalls,

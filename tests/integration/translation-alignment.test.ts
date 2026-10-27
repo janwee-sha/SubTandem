@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { PlaybackController, type TranslationOverlaySink } from "../../src/app/controller.js";
+import {
+  PlaybackController,
+  type TranslationOverlaySink,
+} from "../../src/runtime/app/controller.js";
 import { RecordingProvider } from "../helpers/fake-provider.js";
 import { createTranslationAlignmentFixture } from "../helpers/translation-alignment.js";
 

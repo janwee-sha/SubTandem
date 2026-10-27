@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { EpochBootstrapGate } from "../../src/app/epoch-bootstrap-gate.js";
+import { EpochBootstrapGate } from "../../src/runtime/app/epoch-bootstrap-gate.js";
 
 describe("EpochBootstrapGate", () => {
   it("shares one in-flight bootstrap", async () => {

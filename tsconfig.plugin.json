@@ -9,5 +9,5 @@
     "rootDir": ".",
     "outDir": "build/plugin"
   },
-  "include": ["src/**/*.ts", "shared/**/*.ts"]
+  "include": ["src/runtime/**/*.ts", "src/shared/**/*.ts"]
 }

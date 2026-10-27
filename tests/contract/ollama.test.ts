@@ -4,9 +4,9 @@ import { registerFailureContract } from "../helpers/provider-failure-contract.js
 import { registerProbeContract } from "../helpers/provider-probe-contract.js";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { OllamaProvider } from "../../src/providers/ollama.js";
-import type { ProviderTransport } from "../../src/providers/transport.js";
-import { buildOllamaTranslationTask } from "../../src/providers/translation-task.js";
+import { OllamaProvider } from "../../src/runtime/providers/ollama.js";
+import type { ProviderTransport } from "../../src/runtime/providers/transport.js";
+import { buildOllamaTranslationTask } from "../../src/runtime/providers/translation-task.js";
 import {
   loadOllamaQualityAcceptanceFixture,
   ollamaQualityIssues,
@@ -46,7 +46,10 @@ function parseOllamaPromptPayload(content: string): OllamaPromptPayload {
 
 describe("Ollama native provider", () => {
   it("keeps each native chat to one item within the two-item contract limit", () => {
-    const source = readFileSync(new URL("../../src/providers/ollama.ts", import.meta.url), "utf8");
+    const source = readFileSync(
+      new URL("../../src/runtime/providers/ollama.ts", import.meta.url),
+      "utf8",
+    );
 
     expect(source).toContain("MAX_ITEMS_PER_CHAT_REQUEST = 1");
     expect(source).not.toMatch(/translation-batches|chat-completions/);

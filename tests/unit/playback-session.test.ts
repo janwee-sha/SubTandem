@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { PlaybackSession } from "../../src/app/playback-session.js";
+import { PlaybackSession } from "../../src/runtime/app/playback-session.js";
 
 describe("player-local PlaybackSession", () => {
   it("handles nullable position and pause/resume without invalidating the file", () => {

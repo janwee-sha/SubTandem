@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TargetLanguageSession } from "../../src/app/target-language-session.js";
+import { TargetLanguageSession } from "../../src/runtime/app/target-language-session.js";
 
 describe("target language session commit point", () => {
   it("keeps the committed target until a matching Global success arrives", () => {

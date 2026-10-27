@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { p256 } from "@noble/curves/nist.js";
 import { sidebarHarness } from "../helpers/sidebar-harness.js";
-import { ProviderProfiles } from "../../src/providers/profiles.js";
+import { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
 import {
   credentialBase64,
   credentialDecode,
@@ -11,12 +11,12 @@ import {
   credentialOperationAAD,
   credentialText,
   parseCredentialOffer,
-} from "../../shared/credential-protocol.js";
+} from "../../src/shared/credential-protocol.js";
 import {
   deriveCredentialKey,
   openCredentialBytes,
   sealCredentialBytes,
-} from "../../ui/credential-channel.js";
+} from "../../src/ui/credential-channel.js";
 
 async function tick() {
   for (let i = 0; i < 10; i++) await Promise.resolve();

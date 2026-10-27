@@ -3,12 +3,12 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { nativeResourceText } from "./native-package.mjs";
-import { UI_LOCALES } from "../shared/localization/locales.ts";
-import { MESSAGE_DEFINITIONS } from "../shared/localization/message-definitions.ts";
-import { TARGET_LANGUAGES } from "../src/domain/target-languages.ts";
+import { UI_LOCALES } from "../src/shared/localization/locales.ts";
+import { MESSAGE_DEFINITIONS } from "../src/shared/localization/message-definitions.ts";
+import { TARGET_LANGUAGES } from "../src/runtime/domain/target-languages.ts";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const catalogRoot = path.join(root, "shared/localization/catalogs");
+const catalogRoot = path.join(root, "src/shared/localization/catalogs");
 const colorIds = [
   "transparent",
   "white",

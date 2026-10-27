@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { HelperProfileStateStore } from "../../src/credentials/store.js";
-import { SubTandemError } from "../../src/domain/errors.js";
+import { HelperProfileStateStore } from "../../src/runtime/credentials/store.js";
+import { SubTandemError } from "../../src/runtime/domain/errors.js";
 import { encryptedSaveFrame, encryptedSaveOwner } from "../helpers/encrypted-profile-fixture.js";
-import type { TransportRpcClient } from "../../src/transport/client.js";
+import type { TransportRpcClient } from "../../src/runtime/transport/client.js";
 
 const profile = {
   profileId: "7a90a4e6-cc4f-4f59-99b7-8ff522f887ae",

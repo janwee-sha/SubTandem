@@ -8,11 +8,11 @@ import {
   credentialKeyInfo,
   credentialHandshakeAAD,
   credentialOperationAAD,
-} from "../../../shared/credential-protocol.ts";
+} from "../../../src/shared/credential-protocol.ts";
 import type {
   CredentialChannelOffer,
   CredentialOperationContext,
-} from "../../../shared/credential-protocol.ts";
+} from "../../../src/shared/credential-protocol.ts";
 
 const b64 = credentialBase64;
 const clientPrivateKey = Uint8Array.from({ length: 32 }, (_, index) => index + 1);

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { base64Decode, base64Encode, utf8Decode, utf8Encode } from "../../src/domain/codec.js";
-import { canonicalJson, sha256Hex } from "../../src/domain/identity.js";
+import {
+  base64Decode,
+  base64Encode,
+  utf8Decode,
+  utf8Encode,
+} from "../../src/runtime/domain/codec.js";
+import { canonicalJson, sha256Hex } from "../../src/runtime/domain/identity.js";
 
 describe("JavaScriptCore-safe codecs", () => {
   it("round-trips Unicode without browser globals", () => {

@@ -14,18 +14,18 @@ import {
   parseCredentialEnvelope,
   parseCredentialOffer,
   parseCredentialSnapshot,
-} from "../../shared/credential-protocol.js";
+} from "../../src/shared/credential-protocol.js";
 import type {
   CredentialDirection,
   CredentialOperationContext,
-} from "../../shared/credential-protocol.js";
+} from "../../src/shared/credential-protocol.js";
 import {
   SidebarCredentialChannel,
   deriveCredentialKey,
   sealCredentialBytes,
   openCredentialBytes,
   credentialSnapshotDigest,
-} from "../../ui/credential-channel.js";
+} from "../../src/ui/credential-channel.js";
 
 const decode = (value: string) => credentialDecode(value, 32768);
 const offer = parseCredentialOffer(vectors.offer);
@@ -149,7 +149,7 @@ describe("credential production codec", () => {
 import type {
   CredentialChannelOffer,
   CredentialOperationSnapshot,
-} from "../../shared/credential-protocol.js";
+} from "../../src/shared/credential-protocol.js";
 
 afterEach(() => vi.useRealTimers());
 

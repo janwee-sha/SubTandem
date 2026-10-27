@@ -1,11 +1,11 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { createLocalizer } from "../../ui/localization.js";
+import { createLocalizer } from "../../src/ui/localization.js";
 
 const localizer = createLocalizer("en");
 
 beforeAll(async () => {
-  await import("../../ui/service-failure-message.js");
-  await import("../../ui/session-status.js");
+  await import("../../src/ui/service-failure-message.js");
+  await import("../../src/ui/session-status.js");
 });
 
 function failureMessage(error: {

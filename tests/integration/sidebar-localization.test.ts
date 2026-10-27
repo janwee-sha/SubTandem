@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { sidebarHarness } from "../helpers/sidebar-harness.js";
-import { UI_LOCALES } from "../../shared/localization/locales.js";
-import { LOCALE_CATALOGS, createLocalizer } from "../../ui/localization.js";
-import { TARGET_LANGUAGES } from "../../src/domain/target-languages.js";
-import { ProviderProfiles } from "../../src/providers/profiles.js";
+import { UI_LOCALES } from "../../src/shared/localization/locales.js";
+import { LOCALE_CATALOGS, createLocalizer } from "../../src/ui/localization.js";
+import { TARGET_LANGUAGES } from "../../src/runtime/domain/target-languages.js";
+import { ProviderProfiles } from "../../src/runtime/providers/profiles.js";
 
 describe("Sidebar language rendering", () => {
   it.each(UI_LOCALES)("initializes and operates in %s", (locale) => {

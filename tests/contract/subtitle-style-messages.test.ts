@@ -7,8 +7,8 @@ import {
   parseSubtitleStyleSaveResult,
   parseSubtitleStyleState,
   serializeSubtitleStyleState,
-} from "../../src/domain/messages.js";
-import { DEFAULT_SUBTITLE_TEXT_STYLE } from "../../src/domain/subtitle-style.js";
+} from "../../src/runtime/domain/messages.js";
+import { DEFAULT_SUBTITLE_TEXT_STYLE } from "../../src/runtime/domain/subtitle-style.js";
 
 const resolution = {
   preferredFamily: null,

@@ -1,27 +1,27 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PlaybackController } from "../../src/app/controller.js";
-import { GlobalProviderClient } from "../../src/adapters/iina/global-provider-client.js";
+import { PlaybackController } from "../../src/runtime/app/controller.js";
+import { GlobalProviderClient } from "../../src/runtime/adapters/iina/global-provider-client.js";
 import {
   MainGlobalMailbox,
   type GlobalMailboxFileStore,
-} from "../../src/adapters/iina/global-mailbox.js";
-import { hostClock as mainHostClock } from "../../src/adapters/iina/host-timers.js";
-import { ProfileActivationSync } from "../../src/adapters/iina/profile-activation-sync.js";
-import { parseProfileActivationState } from "../../src/domain/messages.js";
-import type { AuthoritySnapshot, ProfileState } from "../../src/domain/types.js";
-import type { TranslationBatchRequest } from "../../src/providers/types.js";
-import type { ProfileStateCommitResult } from "../../src/transport/client.js";
-import { parseSrt } from "../../src/subtitles/srt.js";
+} from "../../src/runtime/adapters/iina/global-mailbox.js";
+import { hostClock as mainHostClock } from "../../src/runtime/adapters/iina/host-timers.js";
+import { ProfileActivationSync } from "../../src/runtime/adapters/iina/profile-activation-sync.js";
+import { parseProfileActivationState } from "../../src/runtime/domain/messages.js";
+import type { AuthoritySnapshot, ProfileState } from "../../src/runtime/domain/types.js";
+import type { TranslationBatchRequest } from "../../src/runtime/providers/types.js";
+import type { ProfileStateCommitResult } from "../../src/runtime/transport/client.js";
+import { parseSrt } from "../../src/runtime/subtitles/srt.js";
 import { makeProviderRequest } from "../contract/provider-test-helpers.js";
 
-vi.mock("../../src/providers/model-discovery.js", () => ({
+vi.mock("../../src/runtime/providers/model-discovery.js", () => ({
   discoverProviderModels: vi.fn(async () => []),
 }));
 
 async function setup(restoreActive = false) {
-  const { HelperProfileStateStore } = await import("../../src/credentials/store.js");
-  const { OllamaProvider } = await import("../../src/providers/ollama.js");
-  const { ProviderProfiles } = await import("../../src/providers/profiles.js");
+  const { HelperProfileStateStore } = await import("../../src/runtime/credentials/store.js");
+  const { OllamaProvider } = await import("../../src/runtime/providers/ollama.js");
+  const { ProviderProfiles } = await import("../../src/runtime/providers/profiles.js");
   let sequence = 0;
   const profiles = new ProviderProfiles(
     () => `00000000-0000-4000-8000-${String(++sequence).padStart(12, "0")}`,
@@ -125,8 +125,8 @@ async function setup(restoreActive = false) {
     preferences: { get: () => undefined },
     file: mailboxFiles,
   });
-  await import("../../src/global.js");
-  const { hostClock } = await import("../../src/adapters/iina/host-timers.js");
+  await import("../../src/runtime/global.js");
+  const { hostClock } = await import("../../src/runtime/adapters/iina/host-timers.js");
   let drainQueue = Promise.resolve();
   const drain = async (): Promise<void> => {
     drainQueue = drainQueue.then(async () => {

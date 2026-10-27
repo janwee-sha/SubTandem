@@ -1,4 +1,4 @@
-import type { TranslationBatchRequest } from "../../src/providers/types.js";
+import type { TranslationBatchRequest } from "../../src/runtime/providers/types.js";
 
 export function makeProviderRequest(): TranslationBatchRequest {
   return {

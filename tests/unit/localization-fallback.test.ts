@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { createLocalizer, hasIntlCapability, LOCALE_CATALOGS } from "../../ui/localization.js";
-import { UI_LOCALES } from "../../shared/localization/locales.js";
-import type { LocaleCatalog, MessageParams } from "../../shared/localization/types.js";
-import en from "../../shared/localization/catalogs/en.json";
+import { createLocalizer, hasIntlCapability, LOCALE_CATALOGS } from "../../src/ui/localization.js";
+import { UI_LOCALES } from "../../src/shared/localization/locales.js";
+import type { LocaleCatalog, MessageParams } from "../../src/shared/localization/types.js";
+import en from "../../src/shared/localization/catalogs/en.json";
 
 const generic = en.messages["feedback.generic"];
 function brokenCatalog(value: unknown): LocaleCatalog {
